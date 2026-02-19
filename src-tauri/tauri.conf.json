@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "Papercut",
   "version": "0.1.0",
   "identifier": "com.papercut.app",
   "build": {
@@ -12,9 +12,16 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Papercut",
+        "width": 740,
+        "height": 520,
+        "minWidth": 600,
+        "minHeight": 440,
+        "center": true,
+        "resizable": true,
+        "decorations": true,
+        "dragDropEnabled": true
       }
     ],
     "security": {
