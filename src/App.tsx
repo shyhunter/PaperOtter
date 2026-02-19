@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingCard } from '@/components/LandingCard';
+import { StepBar } from '@/components/StepBar';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName } from '@/lib/fileValidation';
@@ -57,10 +58,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      {/* StepBar placeholder — implemented in plan 01-03 */}
-      <div className="h-14 border-b border-border flex items-center px-6">
-        <span className="text-xs text-muted-foreground">Step bar — plan 01-03</span>
-      </div>
+      <StepBar current={currentStep} />
 
       {/* Main content area */}
       {currentStep === 0 && (
