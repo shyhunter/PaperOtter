@@ -6,11 +6,27 @@ import { StepBar } from '@/components/StepBar';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
 import { SaveStep } from '@/components/SaveStep';
+import { ImageConfigureStep } from '@/components/ImageConfigureStep';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName } from '@/lib/fileValidation';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
-import type { FileEntry, AppStep, PdfProcessingOptions } from '@/types/file';
+import { useImageProcessor } from '@/hooks/useImageProcessor';
+import { Button } from '@/components/ui/button';
+import type { FileEntry, AppStep, PdfProcessingOptions, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+
+function detectImageFormat(filePath: string): ImageOutputFormat {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'png') return 'png';
+  if (ext === 'webp') return 'webp';
+  return 'jpeg'; // jpg and jpeg both map to 'jpeg'
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(2)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
 
 // Lazily load pdf-lib only when needed (avoids parsing the full lib on startup)
 async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSizeBytes: number }> {
@@ -29,6 +45,7 @@ function App() {
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
 
   const pdfProcessor = usePdfProcessor();
+  const imageProcessor = useImageProcessor();
 
   // Reset everything and go back to landing
   const handleStartOver = useCallback(() => {
@@ -37,7 +54,8 @@ function App() {
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
     pdfProcessor.reset();
-  }, [pdfProcessor]);
+    imageProcessor.reset();
+  }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback((filePath: string) => {
@@ -76,12 +94,19 @@ function App() {
     }
   }, [fileEntry]);
 
-  // Advance to Compare step when processing completes with a result
+  // Advance to Compare step when PDF processing completes with a result
   useEffect(() => {
     if (pdfProcessor.result && currentStep === 1) {
       setCurrentStep(2);
     }
   }, [pdfProcessor.result, currentStep]);
+
+  // Advance to Compare step when image processing completes with a result
+  useEffect(() => {
+    if (imageProcessor.result && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [imageProcessor.result, currentStep]);
 
   const dragState = useFileDrop(handleFileSelected);
 
@@ -107,6 +132,14 @@ function App() {
     [fileEntry, pdfProcessor],
   );
 
+  const handleGenerateImagePreview = useCallback(
+    (options: ImageProcessingOptions) => {
+      if (!fileEntry) return;
+      imageProcessor.run(fileEntry.path, options);
+    },
+    [fileEntry, imageProcessor],
+  );
+
   const handleSave = useCallback(() => {
     // Advance to Save step — implemented in plan 02-03
     setCurrentStep(3);
@@ -121,7 +154,8 @@ function App() {
     setCurrentStep(0);
     setFileEntry(null);
     pdfProcessor.reset();
-  }, [pdfProcessor]);
+    imageProcessor.reset();
+  }, [pdfProcessor, imageProcessor]);
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -150,24 +184,38 @@ function App() {
         />
       )}
 
-      {/* Step 1: Configure — image (Phase 3 placeholder) */}
+      {/* Step 1: Configure — image */}
       {currentStep === 1 && fileEntry?.format === 'image' && (
+        <ImageConfigureStep
+          fileName={fileEntry.name}
+          fileSizeBytes={0}
+          sourceFormat={detectImageFormat(fileEntry.path)}
+          isProcessing={imageProcessor.isProcessing}
+          error={imageProcessor.error}
+          lastResult={imageProcessor.result}
+          onGeneratePreview={handleGenerateImagePreview}
+          onBack={handleBackFromConfigure}
+        />
+      )}
+
+      {/* Step 2: Compare — image (placeholder, wired in 03-03) */}
+      {currentStep === 2 && imageProcessor.result && fileEntry?.format === 'image' && (
         <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">{fileEntry.name}</p>
-            <p className="text-xs text-muted-foreground mt-1">Image processing coming in Phase 3.</p>
-            <button
-              type="button"
-              onClick={handleBackFromConfigure}
-              className="mt-4 text-xs text-primary underline"
-            >
+          <div className="text-center space-y-3">
+            <p className="text-sm font-medium text-foreground">
+              Processed: {formatBytes(imageProcessor.result.outputSizeBytes)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Full compare view coming in 03-03.
+            </p>
+            <Button size="sm" onClick={() => { setCurrentStep(1); imageProcessor.reset(); }}>
               Back
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Step 2: Compare */}
+      {/* Step 2: Compare — PDF */}
       {currentStep === 2 && pdfProcessor.result && (
         <CompareStep
           result={pdfProcessor.result}
