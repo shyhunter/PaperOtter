@@ -46,3 +46,31 @@ export interface PdfProcessingResult {
   targetMet: boolean;           // false when compressionEnabled + target not achieved
   bestAchievableSizeBytes: number | null; // set when targetMet=false
 }
+
+// Image Processing types
+
+export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
+
+export interface ImageProcessingOptions {
+  quality: number;                  // 1–100 for JPEG/WebP; 1–100 mapped to PNG compression 0–9 in Rust
+  outputFormat: ImageOutputFormat;  // target format (defaults to source format in UI)
+
+  // Resize — off by default (resizeEnabled = false)
+  resizeEnabled: boolean;
+  resizeExact: boolean;             // false = preserve aspect ratio, true = exact (aspect ratio unlocked)
+  targetWidth: number | null;       // px; null when resize disabled
+  targetHeight: number | null;      // px; null when resize disabled
+}
+
+export interface ImageProcessingResult {
+  bytes: Uint8Array;            // processed image bytes
+  sourceBytes: Uint8Array;      // original unmodified bytes (for Before panel)
+  inputSizeBytes: number;
+  outputSizeBytes: number;
+  outputFormat: ImageOutputFormat;
+  quality: number;              // quality value used (for stats display in CompareStep)
+  sourceWidth: number;          // original image width in px (from createImageBitmap)
+  sourceHeight: number;         // original image height in px
+  outputWidth: number;          // processed image width in px
+  outputHeight: number;         // processed image height in px
+}
