@@ -13,6 +13,10 @@ export interface SaveStepProps {
   processedBytes: Uint8Array;
   /** Source file name — used as default name in the save dialog (with suffix) */
   sourceFileName: string;
+  /** Optional override for the default save filename (replaces buildDefaultSaveName) */
+  defaultSaveName?: string;
+  /** Optional override for the OS file-type filter (replaces PDF Document filter) */
+  saveFilters?: Array<{ name: string; extensions: string[] }>;
   /** Called with the saved path on success */
   onSaveComplete: (savedPath: string) => void;
   /** Called when user cancels the save dialog */
@@ -32,6 +36,8 @@ function buildDefaultSaveName(sourceFileName: string): string {
 export function SaveStep({
   processedBytes,
   sourceFileName,
+  defaultSaveName,
+  saveFilters,
   onSaveComplete,
   onCancel,
   onBack,
@@ -46,8 +52,8 @@ export function SaveStep({
     let savePath: string | null = null;
     try {
       savePath = await save({
-        filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
-        defaultPath: buildDefaultSaveName(sourceFileName),
+        filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+        defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
       });
     } catch (err) {
       // Dialog open error (unlikely but handle gracefully)
@@ -78,7 +84,7 @@ export function SaveStep({
       setError(message);
       setSaveState('error');
     }
-  }, [processedBytes, sourceFileName, onSaveComplete, onCancel]);
+  }, [processedBytes, sourceFileName, defaultSaveName, saveFilters, onSaveComplete, onCancel]);
 
   // Auto-trigger the save dialog as soon as this step mounts
   useEffect(() => {
@@ -94,7 +100,7 @@ export function SaveStep({
             {saveState === 'dialog-open' ? 'Choose a save location…' : 'Saving…'}
           </p>
           <p className="text-xs text-muted-foreground">
-            {saveState === 'writing' ? `Writing ${buildDefaultSaveName(sourceFileName)}` : ''}
+            {saveState === 'writing' ? `Writing ${defaultSaveName ?? buildDefaultSaveName(sourceFileName)}` : ''}
           </p>
         </div>
       </div>

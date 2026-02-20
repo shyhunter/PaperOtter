@@ -23,13 +23,14 @@ export function useImageProcessor(): UseImageProcessorReturn {
   const [state, setState] = useState<ImageProcessorState>(INITIAL_STATE);
 
   const run = useCallback(async (sourcePath: string, options: ImageProcessingOptions): Promise<void> => {
-    setState({ isProcessing: true, result: null, error: null });
+    // Preserve previous result while processing so ImageCompareStep can show stale overlay
+    setState((prev) => ({ ...prev, isProcessing: true, error: null }));
     try {
       const result = await processImage(sourcePath, options);
       setState({ isProcessing: false, result, error: null });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Image processing failed. The file may be corrupted or unsupported.';
-      setState({ isProcessing: false, result: null, error: message });
+      setState((prev) => ({ ...prev, isProcessing: false, error: message }));
     }
   }, []);
 

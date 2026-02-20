@@ -254,13 +254,8 @@ export function ImageConfigureStep({
               step="1"
               value={quality}
               onChange={(e) => setQuality(Number(e.target.value))}
-              onMouseUp={() => {
-                // Fire processing on mouse-up only (not on every drag tick)
-                // onChange only updates visual slider state; processing fires here
-              }}
-              onTouchEnd={() => {
-                // Same pattern for touch devices
-              }}
+              onMouseUp={handleSubmit}
+              onTouchEnd={handleSubmit}
               disabled={isProcessing}
               className="w-full accent-primary disabled:opacity-50"
             />
