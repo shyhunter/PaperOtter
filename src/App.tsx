@@ -5,6 +5,7 @@ import { LandingCard } from '@/components/LandingCard';
 import { StepBar } from '@/components/StepBar';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
+import { SaveStep } from '@/components/SaveStep';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName } from '@/lib/fileValidation';
@@ -176,20 +177,26 @@ function App() {
         />
       )}
 
-      {/* Step 3: Save — placeholder until plan 02-03 */}
-      {currentStep === 3 && pdfProcessor.result && (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">Save step — coming in plan 02-03</p>
-            <button
-              type="button"
-              onClick={() => setCurrentStep(2)}
-              className="mt-4 text-xs text-primary underline"
-            >
-              Back to Compare
-            </button>
-          </div>
-        </div>
+      {/* Step 3: Save */}
+      {currentStep === 3 && pdfProcessor.result && fileEntry && (
+        <SaveStep
+          processedBytes={pdfProcessor.result.bytes}
+          sourceFileName={fileEntry.name}
+          onSaveComplete={(savedPath) => {
+            // Stay on Compare — user may inspect stats again or save to a second location
+            toast.success('File saved', {
+              description: savedPath,
+            });
+            setCurrentStep(2);
+          }}
+          onCancel={() => {
+            // User cancelled the dialog — go back to Compare silently
+            setCurrentStep(2);
+          }}
+          onBack={() => {
+            setCurrentStep(2);
+          }}
+        />
       )}
 
       <Toaster position="bottom-center" />
