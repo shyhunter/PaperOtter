@@ -12,12 +12,12 @@ import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions } from '@/types/file';
 
 // Lazily load pdf-lib only when needed (avoids parsing the full lib on startup)
-async function getPdfPageCount(filePath: string): Promise<number> {
+async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSizeBytes: number }> {
   const { readFile } = await import('@tauri-apps/plugin-fs');
   const { PDFDocument } = await import('pdf-lib');
   const bytes = await readFile(filePath);
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-  return doc.getPageCount();
+  return { pageCount: doc.getPageCount(), fileSizeBytes: bytes.byteLength };
 }
 
 function App() {
@@ -25,6 +25,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
+  const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
 
   const pdfProcessor = usePdfProcessor();
 
@@ -33,6 +34,7 @@ function App() {
     setFileEntry(null);
     setCurrentStep(0);
     setSourcePdfPageCount(1);
+    setSourcePdfFileSizeBytes(0);
     pdfProcessor.reset();
   }, [pdfProcessor]);
 
@@ -61,11 +63,14 @@ function App() {
     }, 600);
   }, []);
 
-  // Load source PDF page count when a PDF is selected
+  // Load source PDF page count and file size when a PDF is selected
   useEffect(() => {
     if (fileEntry?.format === 'pdf') {
-      getPdfPageCount(fileEntry.path)
-        .then(setSourcePdfPageCount)
+      getPdfMeta(fileEntry.path)
+        .then(({ pageCount, fileSizeBytes }) => {
+          setSourcePdfPageCount(pageCount);
+          setSourcePdfFileSizeBytes(fileSizeBytes);
+        })
         .catch(() => setSourcePdfPageCount(1)); // fallback; will validate on processing
     }
   }, [fileEntry]);
@@ -135,6 +140,7 @@ function App() {
         <ConfigureStep
           fileName={fileEntry.name}
           pageCount={sourcePdfPageCount}
+          fileSizeBytes={sourcePdfFileSizeBytes}
           isProcessing={pdfProcessor.isProcessing}
           progress={pdfProcessor.progress}
           error={pdfProcessor.error}

@@ -2,7 +2,7 @@
 // - Centered card layout (not full-screen)
 // - File picker button and drop zone hint have EQUAL visual prominence (side-by-side)
 // - Visual tone: polished and modern — subtle gradients, shadows, touch of color
-// - Subtle tagline (e.g. "Compress, resize, convert — stays on your device")
+// - Tagline prominent above card (large, readable)
 // - Entire window is a drop target; CARD animates in response (not just the card area)
 // - Card drag-over: border glows, background shifts, subtle scale
 // - Mid-drag: green for valid, red/neutral for unsupported
@@ -22,7 +22,7 @@ interface LandingCardProps {
 
 export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCardProps) {
   const cardClass = cn(
-    'relative w-full max-w-md mx-auto transition-all duration-200 select-none',
+    'relative w-full max-w-2xl mx-auto transition-all duration-200 select-none',
     dragState === 'over-valid' &&
       'border-primary/70 bg-primary/5 shadow-primary/20 shadow-xl scale-[1.015]',
     dragState === 'over-invalid' &&
@@ -38,11 +38,11 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
   );
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <div className="flex flex-col items-center gap-4 w-full max-w-md">
+    <div className="flex flex-1 items-center justify-center p-8">
+      <div className="flex flex-col items-center gap-6 w-full max-w-2xl">
 
-        {/* Tagline — subtle, above the card */}
-        <p className="text-sm text-muted-foreground/70 tracking-wide text-center">
+        {/* Tagline — prominent, above the card */}
+        <p className="text-xl font-medium text-foreground text-center">
           Compress, resize, convert — stays on your device
         </p>
 
@@ -58,35 +58,35 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
                 onClick={onPickerClick}
                 disabled={isLoading}
                 className={cn(
-                  'group flex flex-col items-center justify-center gap-3 p-8 rounded-l-xl',
+                  'group flex flex-col items-center justify-center gap-5 p-14 rounded-l-xl',
                   'hover:bg-accent/50 transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
               >
                 <div className={cn(
-                  'flex h-12 w-12 items-center justify-center rounded-full',
+                  'flex h-20 w-20 items-center justify-center rounded-full',
                   'bg-primary/10 text-primary transition-transform duration-150',
                   'group-hover:scale-105 group-hover:bg-primary/20',
                 )}>
-                  <FolderOpen className="h-6 w-6" />
+                  <FolderOpen className="h-10 w-10" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Open file</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">PDF, JPG, PNG, WebP</p>
+                  <p className="text-base font-medium text-foreground">Open file</p>
+                  <p className="text-sm text-muted-foreground mt-1">PDF, JPG, PNG, WebP</p>
                 </div>
               </button>
 
               {/* Drop zone half */}
               <div
                 className={cn(
-                  'flex flex-col items-center justify-center gap-3 p-8 rounded-r-xl',
+                  'flex flex-col items-center justify-center gap-5 p-14 rounded-r-xl',
                   dragState === 'over-valid' && 'bg-primary/10',
                   dragState === 'over-invalid' && 'bg-destructive/10',
                 )}
               >
                 <div className={cn(
-                  'flex h-12 w-12 items-center justify-center rounded-full',
+                  'flex h-20 w-20 items-center justify-center rounded-full',
                   'transition-all duration-150',
                   dragState === 'over-valid'
                     ? 'bg-primary/20 text-primary scale-110'
@@ -94,11 +94,11 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
                       ? 'bg-destructive/20 text-destructive'
                       : 'bg-muted text-muted-foreground',
                 )}>
-                  <Upload className="h-6 w-6" />
+                  <Upload className="h-10 w-10" />
                 </div>
                 <div className="text-center">
                   <p className={cn(
-                    'text-sm font-medium transition-colors',
+                    'text-base font-medium transition-colors',
                     dragState === 'over-valid' && 'text-primary',
                     dragState === 'over-invalid' && 'text-destructive',
                     dragState === 'idle' && 'text-foreground',
@@ -107,7 +107,7 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
                     {dragState === 'over-invalid' && 'Unsupported file'}
                     {dragState === 'idle' && 'Drop file here'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {dragState === 'idle' ? 'Anywhere on the window' : '\u00a0'}
                   </p>
                 </div>
@@ -116,11 +116,11 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
 
             {/* Loading bar — visible briefly after valid drop before advancing */}
             {isLoading && (
-              <div className="px-6 pb-4 pt-2">
+              <div className="px-8 pb-6 pt-3">
                 <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                   <div className="h-full bg-primary animate-pulse rounded-full" />
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">Loading file...</p>
+                <p className="text-sm text-muted-foreground text-center mt-2">Loading file...</p>
               </div>
             )}
           </CardContent>

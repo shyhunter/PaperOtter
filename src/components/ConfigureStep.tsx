@@ -2,11 +2,13 @@ import { useState, useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 
 export interface ConfigureStepProps {
   fileName: string;
-  pageCount: number;  // total pages in source PDF (for range validation)
+  pageCount: number;        // total pages in source PDF (for range validation)
+  fileSizeBytes: number;    // original file size — shown in header so users know what target to set
   isProcessing: boolean;
   progress: { current: number; total: number } | null;
   error: string | null;
@@ -14,11 +16,12 @@ export interface ConfigureStepProps {
   onBack: () => void;
 }
 
+// Ordered from most compression → least compression (matching user expectations)
 const QUALITY_LEVELS: { value: PdfQualityLevel; label: string; description: string }[] = [
-  { value: 'low',     label: 'Low',     description: 'Smallest possible file — structural optimisation only' },
-  { value: 'medium',  label: 'Medium',  description: 'Default — re-save with structural packing' },
-  { value: 'high',    label: 'High',    description: 'Prioritise quality — resize only if configured' },
-  { value: 'maximum', label: 'Maximum', description: 'No optimisation — resize only if configured' },
+  { value: 'low',     label: 'Maximum', description: 'Strongest structural compression' },
+  { value: 'medium',  label: 'High',    description: 'Balanced — structural packing (default)' },
+  { value: 'high',    label: 'Medium',  description: 'Moderate — prioritise quality' },
+  { value: 'maximum', label: 'Low',     description: 'Minimal processing — pass-through re-save' },
 ];
 
 const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
@@ -58,9 +61,17 @@ function parseSizeInput(input: string): number | null {
   return Math.round(value * multipliers[unit]);
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '';
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(2)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
+
 export function ConfigureStep({
   fileName,
   pageCount,
+  fileSizeBytes,
   isProcessing,
   progress,
   error,
@@ -69,13 +80,12 @@ export function ConfigureStep({
 }: ConfigureStepProps) {
   const formId = useId();
 
-  // Compression state
-  const [compressionEnabled, setCompressionEnabled] = useState(true);
+  // Compression is always active — no enable toggle
   const [qualityLevel, setQualityLevel] = useState<PdfQualityLevel>('medium');
   const [targetSizeInput, setTargetSizeInput] = useState('');
   const [sizeInputError, setSizeInputError] = useState<string | null>(null);
 
-  // Resize state
+  // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
   const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
   const [customWidthMm, setCustomWidthMm] = useState<string>('210');
@@ -92,7 +102,7 @@ export function ConfigureStep({
     setSizeInputError(null);
 
     let targetSizeBytes: number | null = null;
-    if (compressionEnabled && targetSizeInput.trim() !== '') {
+    if (targetSizeInput.trim() !== '') {
       targetSizeBytes = parseSizeInput(targetSizeInput);
       if (targetSizeBytes === null) {
         setSizeInputError('Enter a valid size like "2 MB", "500 KB", or "1.5 GB"');
@@ -101,7 +111,7 @@ export function ConfigureStep({
     }
 
     const options: Omit<PdfProcessingOptions, 'onProgress'> = {
-      compressionEnabled,
+      compressionEnabled: true, // always on
       qualityLevel,
       targetSizeBytes,
       resizeEnabled,
@@ -114,105 +124,113 @@ export function ConfigureStep({
     onGeneratePreview(options);
   }
 
-  // Progress percentage for progress bar
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
-      <div className="w-full max-w-lg space-y-6">
+    <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+      <div className="w-full max-w-lg space-y-4 my-auto">
 
         {/* File name header */}
         <div className="text-center">
           <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{pageCount} page{pageCount !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {pageCount} page{pageCount !== 1 ? 's' : ''}
+            {fileSizeBytes > 0 && (
+              <span className="ml-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
+            )}
+          </p>
         </div>
 
-        {/* Compression section */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Optimise file size</h2>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={compressionEnabled}
-                onChange={(e) => setCompressionEnabled(e.target.checked)}
-                className="rounded"
-              />
-              Enable
+        {/* Compression section — always visible, no toggle */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Optimise file size</h2>
+
+          {/* Compression level selector */}
+          <fieldset>
+            <legend className="text-xs text-muted-foreground mb-2">Compression level</legend>
+            <div className="grid grid-cols-4 gap-1">
+              {QUALITY_LEVELS.map(({ value, label, description }) => (
+                <label
+                  key={value}
+                  title={description}
+                  className={cn(
+                    'flex flex-col items-center gap-1 rounded-md border px-2 py-2 cursor-pointer text-xs transition-colors select-none',
+                    qualityLevel === value
+                      ? 'border-primary bg-primary/5 text-foreground'
+                      : 'border-border text-muted-foreground hover:border-primary/50',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`${formId}-quality`}
+                    value={value}
+                    checked={qualityLevel === value}
+                    onChange={() => setQualityLevel(value)}
+                    className="sr-only"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {/* Target size input */}
+          <div className="space-y-1">
+            <label htmlFor={`${formId}-target-size`} className="text-xs text-muted-foreground">
+              Target size (optional, e.g. 2 MB)
             </label>
+            <input
+              id={`${formId}-target-size`}
+              type="text"
+              value={targetSizeInput}
+              onChange={(e) => { setTargetSizeInput(e.target.value); setSizeInputError(null); }}
+              placeholder="e.g. 2 MB"
+              disabled={isProcessing}
+              className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+            />
+            {sizeInputError && (
+              <p className="text-xs text-destructive">{sizeInputError}</p>
+            )}
           </div>
 
-          {compressionEnabled && (
-            <div className="space-y-3">
-              {/* Quality level selector */}
-              <fieldset>
-                <legend className="sr-only">Quality level</legend>
-                <div className="grid grid-cols-4 gap-1">
-                  {QUALITY_LEVELS.map(({ value, label, description }) => (
-                    <label
-                      key={value}
-                      title={description}
-                      className={`flex flex-col items-center gap-1 rounded-md border px-2 py-2 cursor-pointer text-xs transition-colors select-none ${
-                        qualityLevel === value
-                          ? 'border-primary bg-primary/5 text-foreground'
-                          : 'border-border text-muted-foreground hover:border-primary/50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`${formId}-quality`}
-                        value={value}
-                        checked={qualityLevel === value}
-                        onChange={() => setQualityLevel(value)}
-                        className="sr-only"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+          <p className="text-xs text-muted-foreground">
+            Structural optimisation only — image quality is preserved.
+            {fileSizeBytes > 0
+              ? ` To reduce size, set a target below ${formatBytes(fileSizeBytes)}.`
+              : ' Set a target smaller than your current file for meaningful reduction.'}
+          </p>
+        </div>
 
-              {/* Target size input */}
-              <div className="space-y-1">
-                <label htmlFor={`${formId}-target-size`} className="text-xs text-muted-foreground">
-                  Target size (optional, e.g. 2 MB)
-                </label>
-                <input
-                  id={`${formId}-target-size`}
-                  type="text"
-                  value={targetSizeInput}
-                  onChange={(e) => { setTargetSizeInput(e.target.value); setSizeInputError(null); }}
-                  placeholder="e.g. 2 MB"
-                  disabled={isProcessing}
-                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-                />
-                {sizeInputError && (
-                  <p className="text-xs text-destructive">{sizeInputError}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Note: PDF optimisation is structural only — exact target size is not guaranteed.
-                </p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Page resize section */}
-        <section className="space-y-3">
+        {/* Resize pages section — always visible, toggled via switch */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground">Resize pages</h2>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={resizeEnabled}
-                onChange={(e) => setResizeEnabled(e.target.checked)}
-                className="rounded"
+
+            {/* Prominent pill toggle switch */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={resizeEnabled}
+              aria-label="Enable page resize"
+              onClick={() => setResizeEnabled((v) => !v)}
+              disabled={isProcessing}
+              className={cn(
+                'relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                resizeEnabled ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                  resizeEnabled ? 'translate-x-6' : 'translate-x-1',
+                )}
               />
-              Enable
-            </label>
+            </button>
           </div>
 
-          {resizeEnabled && (
+          {resizeEnabled ? (
             <div className="space-y-3">
               {/* Preset dropdown */}
               <div className="space-y-1">
@@ -232,7 +250,7 @@ export function ConfigureStep({
                 </select>
               </div>
 
-              {/* Custom width × height fields — only shown when preset is 'custom' */}
+              {/* Custom width × height fields */}
               {pagePreset === 'custom' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -287,8 +305,12 @@ export function ConfigureStep({
                 />
               </div>
             </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Enable to change page dimensions — A4, A3, Letter, or custom size.
+            </p>
           )}
-        </section>
+        </div>
 
         {/* Processing progress */}
         {isProcessing && (
@@ -317,7 +339,7 @@ export function ConfigureStep({
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={isProcessing || (!compressionEnabled && !resizeEnabled)}
+            disabled={isProcessing}
             className="flex-1"
           >
             {isProcessing ? 'Processing…' : 'Generate Preview'}

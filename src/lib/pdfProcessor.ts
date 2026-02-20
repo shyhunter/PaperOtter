@@ -95,6 +95,7 @@ export async function processPdf(
 
   return {
     bytes: processedBytes,
+    sourceBytes,          // original bytes — used by CompareStep for Before preview
     outputSizeBytes,
     inputSizeBytes,
     pageCount,

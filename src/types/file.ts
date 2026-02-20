@@ -37,7 +37,8 @@ export interface PdfProcessingOptions {
 }
 
 export interface PdfProcessingResult {
-  bytes: Uint8Array;
+  bytes: Uint8Array;        // processed PDF bytes
+  sourceBytes: Uint8Array;  // original unmodified PDF bytes (for Before preview)
   outputSizeBytes: number;
   inputSizeBytes: number;
   pageCount: number;
