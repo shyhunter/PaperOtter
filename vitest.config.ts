@@ -4,8 +4,11 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: false, // explicit imports — keeps test files self-documenting
-    environment: 'node', // pdf-lib works in Node; pdfThumbnail (canvas/pdfjs) is excluded
-    include: ['src/**/*.test.ts'],  // only pick up our tests — exclude .claude/ GSD tests
+    environment: 'node', // default for lib tests — pdf-lib works in Node
+    environmentMatchGlobs: [
+      ['src/components/**/*.test.tsx', 'jsdom'], // component tests need DOM
+    ],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',

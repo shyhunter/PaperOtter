@@ -1,0 +1,81 @@
+/// One-shot binary: generates committed test fixture images.
+/// Run once from src-tauri/: cargo run --bin generate_fixtures
+/// Output goes into ../../test-fixtures/ relative to this crate.
+use image::{ImageBuffer, Rgb};
+use std::path::Path;
+
+fn main() {
+    let out_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("parent dir")
+        .join("test-fixtures");
+
+    std::fs::create_dir_all(&out_dir).expect("create test-fixtures/");
+
+    // ── sample.jpg — 300×200 landscape gradient (sky + mountain silhouette) ──
+    let jpg_path = out_dir.join("sample.jpg");
+    let width = 300u32;
+    let height = 200u32;
+
+    let img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::from_fn(width, height, |x, y| {
+        let sky_fraction = (y as f32) / (height as f32 * 0.6);
+        if y < (height as f32 * 0.6) as u32 {
+            // Sky: from pale blue (top) to deeper blue (horizon)
+            let t = sky_fraction.clamp(0.0, 1.0);
+            Rgb([
+                (200.0 - t * 60.0) as u8,
+                (220.0 - t * 40.0) as u8,
+                (255.0 - t * 20.0) as u8,
+            ])
+        } else {
+            // Mountain silhouette: dark textured grey-blue
+            let noise = ((x as f32 * 0.15).sin() * 18.0
+                + (x as f32 * 0.07 + y as f32 * 0.05).cos() * 12.0) as i32;
+            Rgb([
+                (55_i32 + noise).clamp(30, 100) as u8,
+                (65_i32 + noise).clamp(35, 110) as u8,
+                (80_i32 + noise).clamp(50, 130) as u8,
+            ])
+        }
+    });
+
+    img.save_with_format(&jpg_path, image::ImageFormat::Jpeg)
+        .expect("save sample.jpg");
+
+    let meta = std::fs::metadata(&jpg_path).unwrap();
+    println!("sample.jpg  {}×{}  {} bytes", width, height, meta.len());
+
+    // ── sample.png — 200×200 colourful circle on transparent background ────
+    use image::{ImageBuffer, Rgba};
+    let png_path = out_dir.join("sample.png");
+    let size = 200u32;
+    let cx = size / 2;
+    let cy = size / 2;
+    let radius = 80u32;
+
+    let img_png: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_fn(size, size, |x, y| {
+        let dx = (x as i32 - cx as i32).abs() as u32;
+        let dy = (y as i32 - cy as i32).abs() as u32;
+        let dist_sq = dx * dx + dy * dy;
+        if dist_sq <= radius * radius {
+            // Gradient fill inside circle
+            Rgba([
+                ((x * 255) / size) as u8,
+                ((y * 255) / size) as u8,
+                128,
+                255, // fully opaque
+            ])
+        } else {
+            Rgba([0, 0, 0, 0]) // transparent
+        }
+    });
+
+    img_png
+        .save_with_format(&png_path, image::ImageFormat::Png)
+        .expect("save sample.png");
+
+    let meta_png = std::fs::metadata(&png_path).unwrap();
+    println!("sample.png  {}×{}  {} bytes", size, size, meta_png.len());
+
+    println!("Fixtures written to: {}", out_dir.display());
+}

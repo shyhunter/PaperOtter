@@ -81,13 +81,7 @@ export function ImageConfigureStep({
   function getQualityLabel(): string {
     if (outputFormat === 'png') {
       const compressionDisplay = Math.round(((100 - quality) * 9) / 100);
-      if (lastResult) {
-        return `Compression: ${compressionDisplay}/9 — ~${formatBytes(lastResult.outputSizeBytes)}`;
-      }
       return `Compression: ${compressionDisplay}/9`;
-    }
-    if (lastResult) {
-      return `${quality}% — ~${formatBytes(lastResult.outputSizeBytes)}`;
     }
     return `${quality}%`;
   }
@@ -254,8 +248,6 @@ export function ImageConfigureStep({
               step="1"
               value={quality}
               onChange={(e) => setQuality(Number(e.target.value))}
-              onMouseUp={handleSubmit}
-              onTouchEnd={handleSubmit}
               disabled={isProcessing}
               className="w-full accent-primary disabled:opacity-50"
             />
@@ -272,7 +264,7 @@ export function ImageConfigureStep({
             <button
               type="button"
               role="switch"
-              aria-checked={resizeEnabled}
+              aria-checked={resizeEnabled ? 'true' : 'false'}
               aria-label="Enable resize"
               onClick={() => setResizeEnabled((v) => !v)}
               disabled={isProcessing}

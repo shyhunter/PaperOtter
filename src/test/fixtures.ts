@@ -1,4 +1,4 @@
-import { PDFDocument, PageSizes } from 'pdf-lib';
+import { PDFDocument, PageSizes, StandardFonts } from 'pdf-lib';
 
 // ─── Image fixtures ───────────────────────────────────────────────────────────
 // These are synthetic byte arrays with the correct format magic bytes.
@@ -51,6 +51,28 @@ export async function createMinimalPdf(
     pdfDoc.addPage(size);
   }
   return pdfDoc.save();
+}
+
+/**
+ * Creates a realistic multi-page PDF with embedded Helvetica text on each page.
+ * More representative of real-world PDFs than the empty-page fixture.
+ */
+export async function createContentPdf(pageCount = 3): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  for (let i = 0; i < pageCount; i++) {
+    const page = doc.addPage(PageSizes.A4);
+    const { height } = page.getSize();
+    page.drawText(
+      `Page ${i + 1} — Lorem ipsum dolor sit amet, consectetur adipiscing elit.`,
+      { x: 50, y: height - 100, size: 12, font },
+    );
+    page.drawText(
+      'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      { x: 50, y: height - 120, size: 12, font },
+    );
+  }
+  return doc.save({ useObjectStreams: true });
 }
 
 /**
