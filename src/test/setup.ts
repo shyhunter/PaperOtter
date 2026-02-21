@@ -1,4 +1,9 @@
-import { vi } from 'vitest';
+import { vi, expect } from 'vitest';
+import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
+
+// Extend Vitest's expect with @testing-library/jest-dom matchers
+// (toBeInTheDocument, toBeDisabled, toHaveTextContent, etc.)
+expect.extend(jestDomMatchers);
 
 // Mock @tauri-apps/plugin-fs — the native plugin is not available in a Node test environment.
 // Individual tests control what readFile returns via vi.mocked(readFile).mockResolvedValue(...)

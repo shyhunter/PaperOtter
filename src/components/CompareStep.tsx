@@ -168,6 +168,17 @@ export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStep
         </div>
       )}
 
+      {/* Structural-only notice — shown when size barely changed (quality level has no effect) */}
+      {result.targetMet && result.inputSizeBytes > 0 &&
+        Math.abs(result.inputSizeBytes - result.outputSizeBytes) / result.inputSizeBytes < 0.02 && (
+        <div className="mx-4 mt-3 rounded-md border border-border bg-muted/40 px-4 py-2 flex-none">
+          <p className="text-xs text-muted-foreground">
+            PDF compression is structural only — image content is unchanged. The quality level setting has no effect yet.
+            Full compression is planned for a future update.
+          </p>
+        </div>
+      )}
+
       {/* Side-by-side preview panels */}
       <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
         <PreviewPanel

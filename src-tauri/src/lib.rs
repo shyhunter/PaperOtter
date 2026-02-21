@@ -392,6 +392,40 @@ mod tests {
         );
     }
 
+    /// Quality 30 must be substantially smaller than quality 90 (mid-range check).
+    /// This complements the q1 vs q100 extreme test and covers the typical user range.
+    #[test]
+    fn jpeg_quality_30_substantially_smaller_than_quality_90() {
+        let src = make_noisy_jpeg(400, 400);
+        let q30 = encode_image(&src, 30, "jpeg", None, None, false).expect("q30 failed");
+        let q90 = encode_image(&src, 90, "jpeg", None, None, false).expect("q90 failed");
+        assert!(
+            q30.len() < q90.len(),
+            "JPEG quality 30 ({} bytes) should be smaller than quality 90 ({} bytes)",
+            q30.len(),
+            q90.len()
+        );
+        // Quality 30 should be under 70% of quality 90's size on high-frequency content
+        assert!(
+            (q30.len() as f64) < (q90.len() as f64) * 0.70,
+            "Expected quality 30 < 70% the size of quality 90; got quality 30={} bytes, quality 90={} bytes",
+            q30.len(),
+            q90.len()
+        );
+    }
+
+    /// JPEG source re-encoded as PNG produces valid PNG magic bytes (format conversion).
+    #[test]
+    fn jpeg_to_png_conversion_produces_png_magic_bytes() {
+        let src = make_simple_jpeg(80, 80);
+        let out = encode_image(&src, 80, "png", None, None, false).expect("jpeg→png failed");
+        assert_eq!(
+            &out[0..4],
+            &[0x89, 0x50, 0x4E, 0x47],
+            "JPEG→PNG conversion must produce PNG magic bytes (89 50 4E 47)"
+        );
+    }
+
     // ─── Error cases ──────────────────────────────────────────────────────────
 
     /// Unsupported output format returns a descriptive error.

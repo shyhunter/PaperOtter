@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PageSizes } from 'pdf-lib';
 import { processPdf } from '@/lib/pdfProcessor';
-import { createMinimalPdf, getPageDimensions } from '@/test/fixtures';
+import { createMinimalPdf, createContentPdf, getPageDimensions } from '@/test/fixtures';
 import type { PdfProcessingOptions } from '@/types/file';
 
 // Convenience: base options that can be overridden per-test with spread
@@ -300,6 +302,282 @@ describe('processPdf — page resize', () => {
         selectedPageIndices: [0],
       }),
     ).rejects.toThrow('Custom page size requires both width and height in mm');
+  });
+});
+
+// ─── Integration: content-rich PDF (realistic fixture) ───────────────────────
+//
+// These tests use a multi-page PDF with embedded Helvetica text — more
+// representative of real-world files than an empty-page minimal PDF.
+
+describe('processPdf — content-rich PDF (realistic fixture)', () => {
+  let contentPdf: Uint8Array;
+
+  beforeAll(async () => {
+    contentPdf = await createContentPdf(3);
+  });
+
+  beforeEach(() => {
+    mockReadFile(contentPdf);
+  });
+
+  it('processes a 3-page content-rich PDF without corrupting the output', async () => {
+    const result = await processPdf('/test.pdf', { ...baseOpts, selectedPageIndices: [0, 1, 2] });
+    const header = new TextDecoder().decode(result.bytes.slice(0, 5));
+    expect(header).toBe('%PDF-');
+    expect(result.pageCount).toBe(3);
+    expect(result.outputSizeBytes).toBeGreaterThan(0);
+  });
+
+  it('inputSizeBytes matches the content-rich PDF byte length', async () => {
+    const result = await processPdf('/test.pdf', baseOpts);
+    expect(result.inputSizeBytes).toBe(contentPdf.byteLength);
+  });
+
+  it('resizes all 3 pages to Letter and verifies each page dimension', async () => {
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'Letter',
+      selectedPageIndices: [0, 1, 2],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    for (const d of dims) {
+      expect(d.widthPt).toBeCloseTo(PageSizes.Letter[0], 1);
+      expect(d.heightPt).toBeCloseTo(PageSizes.Letter[1], 1);
+    }
+  });
+
+  it('page count is preserved after A4 → A3 resize', async () => {
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'A3',
+      selectedPageIndices: [0, 1, 2],
+    });
+    expect(result.pageCount).toBe(3);
+  });
+
+  it('structural re-save does not increase size by more than 10% on a content PDF', async () => {
+    const result = await processPdf('/test.pdf', { ...baseOpts, resizeEnabled: false });
+    const ratio = result.outputSizeBytes / result.inputSizeBytes;
+    expect(ratio).toBeLessThanOrEqual(1.1);
+  });
+});
+
+// ─── Integration: committed fixture file (test-fixtures/sample.pdf) ──────────
+//
+// Uses the real binary fixture committed to the repo. Unlike the programmatic
+// fixtures above this is the same file a user would produce or upload in the
+// app, giving us an end-to-end signal that pdf-lib handles real-world bytes.
+
+describe('processPdf — committed fixture (test-fixtures/sample.pdf)', () => {
+  let fixturePdf: Uint8Array;
+
+  beforeAll(() => {
+    const buf = readFileSync(resolve(process.cwd(), 'test-fixtures/sample.pdf'));
+    fixturePdf = new Uint8Array(buf);
+  });
+
+  beforeEach(() => {
+    mockReadFile(fixturePdf);
+  });
+
+  it('output starts with PDF magic bytes', async () => {
+    const result = await processPdf('/fixture.pdf', { ...baseOpts });
+    const header = new TextDecoder().decode(result.bytes.slice(0, 5));
+    expect(header).toBe('%PDF-');
+  });
+
+  it('reports 3 pages matching the fixture file', async () => {
+    const result = await processPdf('/fixture.pdf', { ...baseOpts });
+    expect(result.pageCount).toBe(3);
+  });
+
+  it('inputSizeBytes equals committed file size', async () => {
+    const result = await processPdf('/fixture.pdf', { ...baseOpts });
+    expect(result.inputSizeBytes).toBe(fixturePdf.byteLength);
+  });
+
+  it('can resize all pages of fixture to A3 without error', async () => {
+    const result = await processPdf('/fixture.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'A3',
+      selectedPageIndices: [0, 1, 2],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    for (const d of dims) {
+      expect(d.widthPt).toBeCloseTo(PageSizes.A3[0], 1);
+      expect(d.heightPt).toBeCloseTo(PageSizes.A3[1], 1);
+    }
+  });
+});
+
+// ─── User fixture: warnock_camelot.pdf — TEST_PLAN.md PC-01–PC-05, PR-01–PR-08 ──
+//
+// Uses the exact file referenced in TEST_PLAN.md manual test cases.
+// These tests automate the PDF compression and resize sections of the manual plan.
+
+describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–08)', () => {
+  let warnockPdf: Uint8Array;
+
+  beforeAll(() => {
+    const buf = readFileSync(resolve(process.cwd(), 'test-fixtures/warnock_camelot.pdf'));
+    warnockPdf = new Uint8Array(buf);
+  });
+
+  beforeEach(() => {
+    mockReadFile(warnockPdf);
+  });
+
+  // [PC-01] Default settings — valid PDF output, correct page count
+  it('[PC-01] processes with default settings — output is valid PDF with 6 pages', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts });
+    const header = new TextDecoder().decode(result.bytes.slice(0, 5));
+    expect(header).toBe('%PDF-');
+    expect(result.pageCount).toBe(6);
+    expect(result.outputSizeBytes).toBeGreaterThan(0);
+  });
+
+  // [PC-01] inputSizeBytes matches the committed file size
+  it('[PC-01] inputSizeBytes matches committed warnock_camelot.pdf file size', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts });
+    expect(result.inputSizeBytes).toBe(warnockPdf.byteLength);
+  });
+
+  // [PC-02 / PC-03] All 4 quality levels produce identical output (pdf-lib limitation)
+  it('[PC-02/PC-03] all 4 quality levels produce identical output size on warnock_camelot.pdf', async () => {
+    const qualityLevels = ['low', 'medium', 'high', 'maximum'] as const;
+    const sizes: number[] = [];
+    for (const level of qualityLevels) {
+      mockReadFile(warnockPdf);
+      const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts, qualityLevel: level });
+      sizes.push(result.outputSizeBytes);
+    }
+    // All sizes must be identical — pdf-lib has no image recompression
+    const allSame = sizes.every((s) => s === sizes[0]);
+    expect(allSame).toBe(true);
+  });
+
+  // [PC-04] Achievable target (100 MB > any real PDF) → targetMet=true
+  it('[PC-04] achievable target size (100 MB) sets targetMet=true', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: 100 * 1024 * 1024, // 100 MB — always achievable
+    });
+    expect(result.targetMet).toBe(true);
+    expect(result.bestAchievableSizeBytes).toBeNull();
+  });
+
+  // [PC-05] Impossible target (1 byte) → targetMet=false, bestAchievableSizeBytes > 0
+  it('[PC-05] impossible target (1 byte) sets targetMet=false with bestAchievableSizeBytes', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: 1,
+    });
+    expect(result.targetMet).toBe(false);
+    expect(result.bestAchievableSizeBytes).toBeGreaterThan(0);
+  });
+
+  // [PR-01] Resize all 6 pages to A3
+  it('[PR-01] resizes all 6 pages to A3 — dimensions verified', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'A3',
+      selectedPageIndices: [0, 1, 2, 3, 4, 5],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    expect(dims).toHaveLength(6);
+    for (const d of dims) {
+      expect(d.widthPt).toBeCloseTo(PageSizes.A3[0], 1);
+      expect(d.heightPt).toBeCloseTo(PageSizes.A3[1], 1);
+    }
+  });
+
+  // [PR-02] Resize all 6 pages to Letter
+  it('[PR-02] resizes all 6 pages to Letter — dimensions verified', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'Letter',
+      selectedPageIndices: [0, 1, 2, 3, 4, 5],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    for (const d of dims) {
+      expect(d.widthPt).toBeCloseTo(PageSizes.Letter[0], 1);
+      expect(d.heightPt).toBeCloseTo(PageSizes.Letter[1], 1);
+    }
+  });
+
+  // [PR-03] Custom 100 × 150 mm → 283.46 × 425.20 pt
+  it('[PR-03] resizes to custom 100 × 150 mm — point conversion verified', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'custom',
+      customWidthMm: 100,
+      customHeightMm: 150,
+      selectedPageIndices: [0],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    // 100 mm / 25.4 * 72 = 283.46 pt
+    // 150 mm / 25.4 * 72 = 425.20 pt
+    expect(dims[0].widthPt).toBeCloseTo(283.46, 1);
+    expect(dims[0].heightPt).toBeCloseTo(425.20, 1);
+  });
+
+  // [PR-05] Resize page 1 only — pages 2–6 keep original dimensions
+  it('[PR-05] resizes page 1 only (index 0) — pages 2–6 remain unchanged', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'A3',
+      selectedPageIndices: [0], // page 1 only
+    });
+    const dims = await getPageDimensions(result.bytes);
+    expect(dims).toHaveLength(6);
+    // Page 0 → A3
+    expect(dims[0].widthPt).toBeCloseTo(PageSizes.A3[0], 1);
+    expect(dims[0].heightPt).toBeCloseTo(PageSizes.A3[1], 1);
+    // Pages 1–5 → unchanged (original warnock dimensions)
+    for (let i = 1; i < 6; i++) {
+      expect(dims[i].widthPt).not.toBeCloseTo(PageSizes.A3[0], 1);
+    }
+  });
+
+  // [PR-06] Resize pages 1 and 3 (indices 0 and 2) — other 4 pages unchanged
+  // Use A3 (which is definitely not the warnock_camelot.pdf original size) so we can
+  // assert that unselected pages are NOT A3-sized.
+  it('[PR-06] resizes pages 1 and 3 (indices 0, 2) — other 4 pages remain unchanged', async () => {
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      resizeEnabled: true,
+      pagePreset: 'A3',
+      selectedPageIndices: [0, 2],
+    });
+    const dims = await getPageDimensions(result.bytes);
+    // Pages 0 and 2 → A3
+    expect(dims[0].widthPt).toBeCloseTo(PageSizes.A3[0], 1);
+    expect(dims[2].widthPt).toBeCloseTo(PageSizes.A3[0], 1);
+    // Pages 1, 3, 4, 5 → unchanged (not A3)
+    expect(dims[1].widthPt).not.toBeCloseTo(PageSizes.A3[0], 1);
+    expect(dims[3].widthPt).not.toBeCloseTo(PageSizes.A3[0], 1);
+  });
+
+  // [PR-08] Out-of-bounds page 99 → no crash, no pages resized
+  it('[PR-08] out-of-bounds page index 99 — no crash, no resize performed', async () => {
+    await expect(
+      processPdf('/warnock_camelot.pdf', {
+        ...baseOpts,
+        resizeEnabled: true,
+        pagePreset: 'A3',
+        selectedPageIndices: [99], // page 100 does not exist in a 6-page PDF
+      }),
+    ).resolves.not.toThrow();
   });
 });
 

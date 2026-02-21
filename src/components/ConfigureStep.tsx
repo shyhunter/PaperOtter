@@ -175,7 +175,7 @@ export function ConfigureStep({
             <button
               type="button"
               role="switch"
-              aria-checked={resizeEnabled}
+              aria-checked={resizeEnabled ? 'true' : 'false'}
               aria-label="Enable page resize"
               onClick={() => setResizeEnabled((v) => !v)}
               disabled={isProcessing}
