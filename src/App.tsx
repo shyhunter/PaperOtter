@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingCard } from '@/components/LandingCard';
@@ -6,11 +6,35 @@ import { StepBar } from '@/components/StepBar';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
 import { SaveStep } from '@/components/SaveStep';
+import { ImageConfigureStep } from '@/components/ImageConfigureStep';
+import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName } from '@/lib/fileValidation';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
-import type { FileEntry, AppStep, PdfProcessingOptions } from '@/types/file';
+import { useImageProcessor } from '@/hooks/useImageProcessor';
+import type { FileEntry, AppStep, PdfProcessingOptions, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+
+function detectImageFormat(filePath: string): ImageOutputFormat {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'png') return 'png';
+  if (ext === 'webp') return 'webp';
+  return 'jpeg'; // jpg and jpeg both map to 'jpeg'
+}
+
+function buildImageSaveFileName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
+  const base = sourceFileName.replace(/\.(jpe?g|png|webp)$/i, '');
+  const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
+  return `${base}-processed.${ext}`;
+}
+
+function buildImageSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
+  switch (outputFormat) {
+    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
+    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+  }
+}
 
 // Lazily load pdf-lib only when needed (avoids parsing the full lib on startup)
 async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSizeBytes: number }> {
@@ -29,15 +53,22 @@ function App() {
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
 
   const pdfProcessor = usePdfProcessor();
+  const imageProcessor = useImageProcessor();
+
+  // Suppress auto-advance to Compare when navigating Back from Compare.
+  // Set to true when Back is clicked; cleared when processing starts again.
+  const suppressImageAdvance = useRef(false);
 
   // Reset everything and go back to landing
   const handleStartOver = useCallback(() => {
+    suppressImageAdvance.current = false;
     setFileEntry(null);
     setCurrentStep(0);
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
     pdfProcessor.reset();
-  }, [pdfProcessor]);
+    imageProcessor.reset();
+  }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback((filePath: string) => {
@@ -76,12 +107,25 @@ function App() {
     }
   }, [fileEntry]);
 
-  // Advance to Compare step when processing completes with a result
+  // Advance to Compare step when PDF processing completes with a result
   useEffect(() => {
     if (pdfProcessor.result && currentStep === 1) {
       setCurrentStep(2);
     }
   }, [pdfProcessor.result, currentStep]);
+
+  // Advance to Compare step when image processing completes (new result) or when
+  // re-processing starts with a previous result (stale overlay case).
+  // suppressImageAdvance ref prevents re-advancing immediately after clicking Back.
+  useEffect(() => {
+    if (currentStep !== 1) return;
+    if (suppressImageAdvance.current) return;
+    // Advance when a new result is ready, OR when re-processing starts with a stale result
+    // (isProcessing=true + result=old result → advance immediately for stale overlay).
+    if (imageProcessor.result) {
+      setCurrentStep(2);
+    }
+  }, [imageProcessor.result, imageProcessor.isProcessing, currentStep]);
 
   const dragState = useFileDrop(handleFileSelected);
 
@@ -107,21 +151,38 @@ function App() {
     [fileEntry, pdfProcessor],
   );
 
+  const handleGenerateImagePreview = useCallback(
+    (options: ImageProcessingOptions) => {
+      if (!fileEntry) return;
+      // Clear suppress flag so the advance effect triggers when isProcessing becomes true.
+      suppressImageAdvance.current = false;
+      imageProcessor.run(fileEntry.path, options);
+    },
+    [fileEntry, imageProcessor],
+  );
+
   const handleSave = useCallback(() => {
     // Advance to Save step — implemented in plan 02-03
     setCurrentStep(3);
   }, []);
 
   const handleBackFromCompare = useCallback(() => {
+    // Suppress auto-advance so the imageProcessor result being non-null
+    // doesn't immediately re-advance back to Compare.
+    suppressImageAdvance.current = true;
     setCurrentStep(1);
     pdfProcessor.reset();
+    // imageProcessor is NOT reset here — the stale result is preserved so
+    // when the user re-processes, ImageCompareStep shows the stale overlay.
   }, [pdfProcessor]);
 
   const handleBackFromConfigure = useCallback(() => {
+    suppressImageAdvance.current = false;
     setCurrentStep(0);
     setFileEntry(null);
     pdfProcessor.reset();
-  }, [pdfProcessor]);
+    imageProcessor.reset();
+  }, [pdfProcessor, imageProcessor]);
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -150,24 +211,32 @@ function App() {
         />
       )}
 
-      {/* Step 1: Configure — image (Phase 3 placeholder) */}
+      {/* Step 1: Configure — image */}
       {currentStep === 1 && fileEntry?.format === 'image' && (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">{fileEntry.name}</p>
-            <p className="text-xs text-muted-foreground mt-1">Image processing coming in Phase 3.</p>
-            <button
-              type="button"
-              onClick={handleBackFromConfigure}
-              className="mt-4 text-xs text-primary underline"
-            >
-              Back
-            </button>
-          </div>
-        </div>
+        <ImageConfigureStep
+          fileName={fileEntry.name}
+          fileSizeBytes={0}
+          sourceFormat={detectImageFormat(fileEntry.path)}
+          isProcessing={imageProcessor.isProcessing}
+          error={imageProcessor.error}
+          lastResult={imageProcessor.result}
+          onGeneratePreview={handleGenerateImagePreview}
+          onBack={handleBackFromConfigure}
+        />
       )}
 
-      {/* Step 2: Compare */}
+      {/* Step 2: Compare — image */}
+      {currentStep === 2 && imageProcessor.result && fileEntry?.format === 'image' && (
+        <ImageCompareStep
+          result={imageProcessor.result}
+          isProcessing={imageProcessor.isProcessing}
+          onSave={handleSave}
+          onBack={handleBackFromCompare}
+          onStartOver={handleStartOver}
+        />
+      )}
+
+      {/* Step 2: Compare — PDF */}
       {currentStep === 2 && pdfProcessor.result && (
         <CompareStep
           result={pdfProcessor.result}
@@ -177,8 +246,8 @@ function App() {
         />
       )}
 
-      {/* Step 3: Save */}
-      {currentStep === 3 && pdfProcessor.result && fileEntry && (
+      {/* Step 3: Save — PDF */}
+      {currentStep === 3 && pdfProcessor.result && fileEntry?.format === 'pdf' && (
         <SaveStep
           processedBytes={pdfProcessor.result.bytes}
           sourceFileName={fileEntry.name}
@@ -196,6 +265,22 @@ function App() {
           onBack={() => {
             setCurrentStep(2);
           }}
+        />
+      )}
+
+      {/* Step 3: Save — image */}
+      {currentStep === 3 && imageProcessor.result && fileEntry?.format === 'image' && (
+        <SaveStep
+          processedBytes={imageProcessor.result.bytes}
+          sourceFileName={fileEntry.name}
+          defaultSaveName={buildImageSaveFileName(fileEntry.name, imageProcessor.result.outputFormat)}
+          saveFilters={buildImageSaveFilters(imageProcessor.result.outputFormat)}
+          onSaveComplete={(savedPath) => {
+            toast.success('File saved', { description: savedPath });
+            setCurrentStep(2);
+          }}
+          onCancel={() => setCurrentStep(2)}
+          onBack={() => setCurrentStep(2)}
         />
       )}
 
