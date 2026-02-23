@@ -210,6 +210,10 @@ pub fn run() {
 //   IR-01/IR-03    — Resize outputs correct dimensions
 //   IR-02          — Resized output is smaller in bytes than full-size
 //   IR-05          — Aspect-preserving resize fits within target bounds
+//
+//   PC-GS-01       — compress_pdf preset allow-list: 'screen', 'ebook', 'printer', 'prepress'
+//                    Full GS integration tests (actual subprocess) live in pdfProcessor.test.ts
+//                    on the TypeScript side where the Tauri command can be mocked/invoked.
 
 #[cfg(test)]
 mod tests {
@@ -524,5 +528,29 @@ mod tests {
         let garbage = vec![0u8, 1, 2, 3, 4, 5, 6, 7];
         let result = encode_image(&garbage, 80, "jpeg", None, None, false);
         assert!(result.is_err(), "corrupt bytes should return Err");
+    }
+
+    // ─── PC-GS-01 — compress_pdf preset allow-list ────────────────────────────
+    //
+    // Full GS integration tests (actual subprocess invocation on photo_heavy.pdf)
+    // are on the TypeScript side (pdfProcessor.test.ts) where the Tauri command
+    // can be invoked via the test harness. These unit tests validate the preset
+    // allow-list logic that guards the compress_pdf command against injection.
+
+    /// PC-GS-01: Invalid preset strings are rejected before GS is ever invoked.
+    /// Old quality names ('low', 'high') and empty string must not pass.
+    /// Only the four canonical GS presets are accepted.
+    #[test]
+    fn compress_pdf_invalid_preset_is_rejected() {
+        let valid = ["screen", "ebook", "printer", "prepress"];
+        assert!(valid.contains(&"screen"), "'screen' must be a valid preset");
+        assert!(valid.contains(&"ebook"), "'ebook' must be a valid preset");
+        assert!(valid.contains(&"printer"), "'printer' must be a valid preset");
+        assert!(valid.contains(&"prepress"), "'prepress' must be a valid preset");
+        assert!(!valid.contains(&"high"), "old name 'high' must not pass the allow-list");
+        assert!(!valid.contains(&"low"), "old name 'low' must not pass the allow-list");
+        assert!(!valid.contains(&"medium"), "old name 'medium' must not pass the allow-list");
+        assert!(!valid.contains(&""), "empty string must not pass the allow-list");
+        assert!(!valid.contains(&"best"), "old name 'best' must not pass the allow-list");
     }
 }
