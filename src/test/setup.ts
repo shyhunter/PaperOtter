@@ -10,6 +10,14 @@ expect.extend(jestDomMatchers);
 vi.mock('@tauri-apps/plugin-fs', () => ({
   readFile: vi.fn(),
   writeFile: vi.fn(),
+  remove: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock @tauri-apps/api/path — Tauri path APIs are not available in Node.
+// tempDir returns a mock temp directory; join concatenates with '/' separator.
+vi.mock('@tauri-apps/api/path', () => ({
+  tempDir: vi.fn().mockResolvedValue('/tmp/'),
+  join: vi.fn().mockImplementation((...parts: string[]) => Promise.resolve(parts.join('/'))),
 }));
 
 // Mock @tauri-apps/api/core — Tauri IPC is not available in Node.
