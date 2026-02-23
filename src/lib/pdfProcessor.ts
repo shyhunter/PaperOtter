@@ -1,9 +1,19 @@
-// PDF processing engine — pdf-lib only.
-// CRITICAL: Never use useCompression: true (pdf-lib issue #1445 — corrupts output).
-// Structural packing only via useObjectStreams: true.
+// PDF processing engine — pdf-lib + Ghostscript sidecar for real image recompression.
+// CRITICAL: Never use useCompression: true with pdf-lib (issue #1445 — corrupts output).
+// For real compression, GS sidecar is invoked via invoke('compress_pdf').
 import { readFile } from '@tauri-apps/plugin-fs';
-import { PDFDocument, PageSizes } from 'pdf-lib';
-import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset } from '@/types/file';
+import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream } from 'pdf-lib';
+import { invoke } from '@tauri-apps/api/core';
+import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset, PdfQualityLevel } from '@/types/file';
+
+// Quality level → Ghostscript -dPDFSETTINGS preset mapping.
+// These are GS native preset names — must match the compress_pdf allow-list in Rust.
+const QUALITY_TO_GS_PRESET: Record<PdfQualityLevel, string> = {
+  web:     'screen',    // 72 dpi — smallest output
+  screen:  'ebook',     // 150 dpi — balanced
+  print:   'printer',   // 300 dpi — high quality
+  archive: 'prepress',  // lossless — archival
+};
 
 // PDF points per mm: 1 pt = 1/72 inch = 0.3528 mm
 function mmToPoints(mm: number): number {
@@ -24,6 +34,87 @@ function getTargetPageSize(preset: PdfPagePreset, widthMm: number | null, height
   }
 }
 
+// Count image XObjects in the PDF using pdf-lib metadata.
+// This is a best-effort scan — counts embedded XObject entries with Subtype=Image.
+// Uses pdf-lib's type-safe lookupMaybe API to traverse the page resource dictionary.
+async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number; compressibilityScore: number }> {
+  let imageCount = 0;
+  const pages = pdfDoc.getPages();
+
+  for (const page of pages) {
+    try {
+      // page.node is a PDFPageLeaf (extends PDFDict); Resources() resolves ref if needed
+      const resources = page.node.Resources();
+      if (!resources) continue;
+
+      // XObject dict may be a direct dict or a ref — lookupMaybe resolves either
+      const xObjectDict = resources.lookupMaybe(PDFName.of('XObject'), PDFDict);
+      if (!xObjectDict) continue;
+
+      for (const key of xObjectDict.keys()) {
+        // Each XObject entry is typically a PDFStream (possibly via a ref).
+        // lookupMaybe(key) resolves refs and returns the object without type checking.
+        // We get the Subtype from either PDFStream.dict or the PDFDict itself.
+        const xObj = xObjectDict.lookup(key);
+        if (!xObj) continue;
+
+        // Extract the dict — PDFStream has .dict, PDFDict is its own dict
+        let dict: PDFDict | undefined;
+        if (xObj instanceof PDFStream) {
+          dict = xObj.dict;
+        } else if (xObj instanceof PDFDict) {
+          dict = xObj;
+        }
+        if (!dict) continue;
+
+        const subtype = dict.lookupMaybe(PDFName.of('Subtype'), PDFName);
+        if (subtype?.toString() === '/Image') {
+          imageCount++;
+        }
+      }
+    } catch {
+      // Non-critical: if traversal fails, skip page
+    }
+  }
+
+  // compressibilityScore: images per page, saturating at 2 images/page → 1.0
+  const imagesPerPage = pages.length > 0 ? imageCount / pages.length : 0;
+  const compressibilityScore = Math.min(1.0, imagesPerPage / 2);
+
+  return { imageCount, compressibilityScore };
+}
+
+// Given a target size (bytes), input size (bytes), and estimated compressibility,
+// return the recommended quality level most likely to hit the target.
+// This recommendation is a hint only — user can always override.
+export function recommendQualityForTarget(
+  targetBytes: number,
+  inputBytes: number,
+  compressibilityScore: number,
+): PdfQualityLevel {
+  if (inputBytes <= 0 || compressibilityScore < 0.1) {
+    // Text-only PDF: not very compressible regardless of setting
+    return 'screen';
+  }
+  const ratio = targetBytes / inputBytes;
+  // Thresholds are conservative estimates based on GS preset typical ratios:
+  // screen (~72dpi):  ~0.1–0.25 of original for photo-heavy PDFs
+  // ebook (~150dpi):  ~0.25–0.5 of original
+  // printer (~300dpi): ~0.5–0.8 of original
+  // prepress (lossless): ~0.9–1.0 of original
+  if (ratio < 0.25) return 'web';
+  if (ratio < 0.5)  return 'screen';
+  if (ratio < 0.8)  return 'print';
+  return 'archive';
+}
+
+export async function getPdfImageCount(sourcePath: string): Promise<number> {
+  const bytes = await readFile(sourcePath);
+  const pdfDoc = await PDFDocument.load(bytes);
+  const { imageCount } = await scanPdfImages(pdfDoc);
+  return imageCount;
+}
+
 export async function processPdf(
   sourcePath: string,
   options: PdfProcessingOptions,
@@ -36,7 +127,10 @@ export async function processPdf(
   const pdfDoc = await PDFDocument.load(sourceBytes);
   const pageCount = pdfDoc.getPageCount();
 
-  // 3. Apply per-page resize if enabled
+  // 3. Pre-scan: count image XObjects to populate compressibility metadata
+  const { imageCount, compressibilityScore } = await scanPdfImages(pdfDoc);
+
+  // 4. Apply per-page resize if enabled
   if (options.resizeEnabled && options.selectedPageIndices.length > 0) {
     const [targetW, targetH] = getTargetPageSize(
       options.pagePreset,
@@ -71,12 +165,52 @@ export async function processPdf(
     }
   }
 
-  // 4. Structural re-save — the only viable "compression" in pdf-lib.
-  // useObjectStreams packs cross-reference tables. useCompression is NEVER used (bug #1445).
-  const processedBytes = await pdfDoc.save({ useObjectStreams: true });
+  // 5. Produce output bytes — GS for real compression, or structural re-save only
+  let processedBytes: Uint8Array;
+
+  if (options.compressionEnabled) {
+    // Use Ghostscript for real image recompression
+    const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
+
+    // Run pdf-lib resize first (if enabled) — GS must receive the post-resize bytes.
+    // IMPORTANT: passing sourceBytes to GS when resize is enabled would silently discard the resize.
+    const pdfLibBytes: Uint8Array = options.resizeEnabled
+      ? await pdfDoc.save({ useObjectStreams: false }) // save post-resize state
+      : sourceBytes; // no resize — pass original bytes to GS directly
+
+    // Build temp paths using @tauri-apps/api/path join() to avoid separator bugs.
+    const { tempDir } = await import('@tauri-apps/api/path');
+    const tmpBase = await tempDir(); // e.g. "/var/folders/.../T/"
+    const ts = Date.now();
+    const { join } = await import('@tauri-apps/api/path');
+    const tempInputPath = await join(tmpBase, `papercut_gs_input_${ts}.pdf`);
+
+    // Write post-resize bytes to temp path (NOT sourceBytes — resizeEnabled may have changed them)
+    // NOTE: fs:allow-write-file scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
+    await import('@tauri-apps/plugin-fs').then(m => m.writeFile(tempInputPath, pdfLibBytes));
+
+    // Invoke GS compression — returns compressed bytes directly (Rust reads output temp file internally)
+    const gsResult: ArrayBuffer = await invoke('compress_pdf', {
+      sourcePath: tempInputPath,
+      preset,
+    });
+
+    processedBytes = new Uint8Array(gsResult);
+
+    // Clean up temp input file (ignore errors — OS will clean eventually)
+    // NOTE: fs:allow-remove scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
+    await import('@tauri-apps/plugin-fs').then(m =>
+      m.remove(tempInputPath).catch(() => {})
+    );
+  } else {
+    // Structural re-save only (no GS) — pdf-lib useObjectStreams
+    // useCompression is NEVER used (pdf-lib bug #1445 — corrupts output)
+    processedBytes = await pdfDoc.save({ useObjectStreams: true });
+  }
+
   const outputSizeBytes = processedBytes.byteLength;
 
-  // 5. Evaluate target size constraint
+  // 6. Evaluate target size constraint
   let targetMet = true;
   let bestAchievableSizeBytes: number | null = null;
 
@@ -104,5 +238,7 @@ export async function processPdf(
       : null,
     targetMet,
     bestAchievableSizeBytes,
+    imageCount,
+    compressibilityScore,
   };
 }
