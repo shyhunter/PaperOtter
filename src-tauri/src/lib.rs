@@ -109,6 +109,81 @@ fn process_image(
     Ok(Response::new(output_buf))
 }
 
+/// Compress a PDF using Ghostscript.
+/// preset: one of "screen" | "ebook" | "printer" | "prepress"
+/// Writes GS output to a temp file, then returns () or a descriptive error string.
+async fn compress_pdf_with_gs(
+    app: &tauri::AppHandle,
+    source_path: &str,
+    output_path: &str,
+    preset: &str,
+) -> Result<(), String> {
+    let output = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-dPDFSETTINGS=/{}", preset),
+            &format!("-sOutputFile={}", output_path),
+            source_path,
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("Ghostscript execution failed: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        return Err(format!(
+            "Ghostscript returned non-zero exit code. stderr: {}",
+            stderr
+        ));
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn compress_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+    preset: String,
+) -> Result<tauri::ipc::Response, String> {
+    // Validate preset to prevent injection — only allow known GS presets
+    let valid_presets = ["screen", "ebook", "printer", "prepress"];
+    if !valid_presets.contains(&preset.as_str()) {
+        return Err(format!(
+            "Invalid Ghostscript preset '{}'. Must be one of: {}",
+            preset,
+            valid_presets.join(", ")
+        ));
+    }
+
+    // Write output to a temp file (GS requires a file output path)
+    let tmp_path = std::env::temp_dir().join(format!(
+        "papercut_compressed_{}.pdf",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+
+    compress_pdf_with_gs(&app, &source_path, &tmp_path_str, &preset).await?;
+
+    // Read the compressed output bytes
+    let bytes = std::fs::read(&tmp_path)
+        .map_err(|e| format!("Failed to read compressed output: {}", e))?;
+
+    // Clean up temp file (ignore errors — OS will clean eventually)
+    let _ = std::fs::remove_file(&tmp_path);
+
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -117,7 +192,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image])
+        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
