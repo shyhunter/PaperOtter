@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { readFile } from '@tauri-apps/plugin-fs';
@@ -6,17 +6,22 @@ import { invoke } from '@tauri-apps/api/core';
 import { processImage } from '@/lib/imageProcessor';
 import type { ImageProcessingOptions } from '@/types/file';
 
-// Path to capabilities file — resolved relative to this test file
-// src/lib/__tests__/ -> ../../../ -> project root -> src-tauri/capabilities/default.json
-const capPath = path.join(__dirname, '../../../src-tauri/capabilities/default.json');
-
 // ─── Static config assertion ──────────────────────────────────────────────────
 //
 // Reads the real capabilities/default.json from disk and asserts that no
 // permission identifier starts with "http:".  This is a structural guarantee
 // that the Tauri capability config cannot grant outbound HTTP access.
+//
+// Path: src/lib/__tests__/ -> ../../../ -> project root -> src-tauri/capabilities/default.json
 
 describe('Privacy — Tauri capability config', () => {
+  // capabilities/default.json — read once for the whole describe block
+  let capPath: string;
+
+  beforeAll(() => {
+    capPath = path.join(__dirname, '../../../src-tauri/capabilities/default.json');
+  });
+
   it('capabilities grant no HTTP access', () => {
     const raw = readFileSync(capPath, 'utf-8');
     const config = JSON.parse(raw) as {
@@ -52,13 +57,13 @@ describe('Privacy — runtime network isolation', () => {
   };
 
   afterAll(() => {
+    // Restore all globals to their original state after this suite
     vi.unstubAllGlobals();
   });
 
   it('processing never calls window.fetch', async () => {
     // Arrange: stub fetch so any accidental call is recorded
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
+    vi.stubGlobal('fetch', vi.fn());
 
     // Arrange: satisfy processImage's Tauri dependencies
     const fakeBytes = new Uint8Array([0xff, 0xd8, 0xff]); // minimal JPEG magic
