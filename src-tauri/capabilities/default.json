@@ -13,12 +13,20 @@
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$HOME/**" }]
+      "allow": [{ "path": "$HOME/**" }, { "path": "$TEMP/**" }]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [{ "path": "$TEMP/**" }]
     },
     "store:default",
     {
       "identifier": "fs:allow-exists",
       "allow": [{ "path": "$HOME/**" }]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [{ "name": "gs", "sidecar": true }]
     }
   ]
 }
