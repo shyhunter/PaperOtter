@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
 export interface SaveStepProps {
@@ -63,9 +64,10 @@ export function SaveStep({
       return;
     }
 
-    // User cancelled the dialog — return to Compare silently
+    // User cancelled the dialog — show toast and return to Compare
     if (!savePath) {
       setSaveState('idle');
+      toast('Save cancelled', { description: 'You can try again any time.' });
       onCancel();
       return;
     }

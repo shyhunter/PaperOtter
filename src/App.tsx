@@ -13,6 +13,8 @@ import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName } from '@/lib/fileValidation';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
+import { useRecentDirs } from '@/hooks/useRecentDirs';
+import { PrivacyFooter } from '@/components/PrivacyFooter';
 import type { FileEntry, AppStep, PdfProcessingOptions, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
@@ -54,6 +56,9 @@ function App() {
 
   const pdfProcessor = usePdfProcessor();
   const imageProcessor = useImageProcessor();
+  const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
+
+  const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
 
   // Suppress auto-advance to Compare when navigating Back from Compare.
   // Set to true when Back is clicked; cleared when processing starts again.
@@ -73,27 +78,26 @@ function App() {
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback((filePath: string) => {
     if (!filePath) {
-      toast.error('Unsupported file type', {
-        description: 'Please open a PDF, JPG, PNG, or WebP file.',
-      });
+      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setTimeout(() => setInvalidDropError(null), 2500);
       return;
     }
 
     const format = detectFormat(filePath);
     if (!format) {
-      toast.error('Unsupported file type', {
-        description: 'Please open a PDF, JPG, PNG, or WebP file.',
-      });
+      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setTimeout(() => setInvalidDropError(null), 2500);
       return;
     }
 
     setIsLoading(true);
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
+      addRecentDir(filePath); // persist directory for next session
       setIsLoading(false);
       setCurrentStep(1);
     }, 600);
-  }, []);
+  }, [addRecentDir]);
 
   // Load source PDF page count and file size when a PDF is selected
   useEffect(() => {
@@ -126,6 +130,28 @@ function App() {
       setCurrentStep(2);
     }
   }, [imageProcessor.result, imageProcessor.isProcessing, currentStep]);
+
+  // Navigate back to landing when PDF processing fails (corrupt file)
+  useEffect(() => {
+    if (pdfProcessor.error && currentStep === 1 && fileEntry?.format === 'pdf') {
+      toast.error('Could not read file — it may be corrupted', {
+        description: pdfProcessor.error,
+      });
+      handleStartOver();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfProcessor.error]);
+
+  // Navigate back to landing when image processing fails (corrupt file)
+  useEffect(() => {
+    if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
+      toast.error('Could not read file — it may be corrupted', {
+        description: imageProcessor.error,
+      });
+      handleStartOver();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageProcessor.error]);
 
   const dragState = useFileDrop(handleFileSelected);
 
@@ -194,6 +220,9 @@ function App() {
           dragState={dragState}
           isLoading={isLoading}
           onPickerClick={handlePickerClick}
+          recentDirs={recentDirs}
+          onRecentDirClick={handleFileSelected}
+          invalidDropError={invalidDropError}
         />
       )}
 
@@ -284,6 +313,7 @@ function App() {
         />
       )}
 
+      <PrivacyFooter />
       <Toaster position="bottom-center" />
     </div>
   );

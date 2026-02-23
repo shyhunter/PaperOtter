@@ -13,14 +13,18 @@ import { Upload, FolderOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { DragState } from '@/types/file';
+import { RecentDirsButton } from '@/components/RecentDirsButton';
 
 interface LandingCardProps {
   dragState: DragState;
   isLoading: boolean;
   onPickerClick: () => void;
+  recentDirs?: string[];
+  onRecentDirClick?: (filePath: string) => void;
+  invalidDropError?: string | null;
 }
 
-export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCardProps) {
+export function LandingCard({ dragState, isLoading, onPickerClick, recentDirs, onRecentDirClick, invalidDropError }: LandingCardProps) {
   const cardClass = cn(
     'relative w-full max-w-2xl mx-auto transition-all duration-200 select-none',
     dragState === 'over-valid' &&
@@ -125,6 +129,24 @@ export function LandingCard({ dragState, isLoading, onPickerClick }: LandingCard
             )}
           </CardContent>
         </Card>
+
+        {/* Recent dirs button — below the card, left-aligned */}
+        {(recentDirs?.length ?? 0) > 0 && (
+          <div className="w-full flex justify-start">
+            <RecentDirsButton
+              dirs={recentDirs ?? []}
+              onFileSelected={onRecentDirClick ?? (() => {})}
+              disabled={isLoading}
+            />
+          </div>
+        )}
+
+        {/* Inline invalid-drop error — appears briefly after unsupported file drop */}
+        {invalidDropError && (
+          <p className="text-sm text-destructive text-center animate-in fade-in">
+            {invalidDropError}
+          </p>
+        )}
       </div>
     </div>
   );
