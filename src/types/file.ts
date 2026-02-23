@@ -12,10 +12,12 @@ export type DragState = 'idle' | 'over-valid' | 'over-invalid';
 
 // PDF Processing types
 
-export type PdfQualityLevel = 'low' | 'medium' | 'high' | 'maximum';
-// Discretion decision: named levels (not %) because pdf-lib has no quality param.
-// Low = compress attempt only. Medium = compress + note limit (default). High = resize only if set.
-// Maximum = no compression attempt, resize only.
+export type PdfQualityLevel = 'web' | 'screen' | 'print' | 'archive';
+// Intent-based labels matching Ghostscript presets:
+// web     → gs preset: screen   (72 dpi  — smallest, web-optimised)
+// screen  → gs preset: ebook    (150 dpi — balanced, screen reading)
+// print   → gs preset: printer  (300 dpi — high quality for print)
+// archive → gs preset: prepress (lossless — archival quality)
 
 export type PdfPagePreset = 'A4' | 'A3' | 'Letter' | 'custom';
 
@@ -45,6 +47,9 @@ export interface PdfProcessingResult {
   outputPageDimensions: { widthPt: number; heightPt: number } | null; // first page dimensions in PDF points
   targetMet: boolean;           // false when compressionEnabled + target not achieved
   bestAchievableSizeBytes: number | null; // set when targetMet=false
+  // Pre-scan results (always populated, even for text-only PDFs)
+  imageCount: number;           // number of image XObjects found in the PDF
+  compressibilityScore: number; // 0.0–1.0: 0 = text-only (not very compressible), 1.0 = mostly images (highly compressible)
 }
 
 // Image Processing types
