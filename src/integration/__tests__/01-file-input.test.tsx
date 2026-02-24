@@ -2,7 +2,7 @@
 /**
  * Suite 01 — File Input
  *
- * Covers: FI-01 to FI-08
+ * Covers: FI-01 to FI-10
  * Tests the landing page, "Open file" picker, and format-based routing.
  * Renders the full App component and simulates user interactions.
  *
@@ -15,6 +15,7 @@ import { render, screen, act, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '@/App';
 import { openFilePicker } from '@/hooks/useFileOpen';
+import * as fileValidation from '@/lib/fileValidation';
 
 // ── Tauri webview (useFileDrop) ───────────────────────────────────────────────
 vi.mock('@tauri-apps/api/webview', () => ({
@@ -150,5 +151,40 @@ describe('Suite 01 — File Input', () => {
     expect(screen.getByText('Open file')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+  });
+
+  // FI-09 ────────────────────────────────────────────────────────────────────
+  it('FI-09 — opening a file > 100 MB shows the file-size-limit modal', async () => {
+    const { user } = setup();
+    // Mock getFileSizeBytes to return 105 MB
+    vi.spyOn(fileValidation, 'getFileSizeBytes').mockResolvedValue(105 * 1024 * 1024);
+
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/huge.pdf');
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    // The modal should be visible with the "Files over 100 MB are not supported" message
+    await screen.findByText(/Files over 100 MB are not supported/i, {}, { timeout: 2000 });
+    expect(screen.getByText(/File too large/i)).toBeInTheDocument();
+
+    // Should NOT have advanced to Configure
+    expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
+  });
+
+  // FI-10 ────────────────────────────────────────────────────────────────────
+  it('FI-10 — opening a zero-byte file shows inline empty-file error', async () => {
+    const { user } = setup();
+    // Mock getFileSizeBytes to return 0 (empty file)
+    vi.spyOn(fileValidation, 'getFileSizeBytes').mockResolvedValue(0);
+
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/empty.pdf');
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    // The inline error should appear
+    await screen.findByText(/This file is empty/i, {}, { timeout: 2000 });
+
+    // Should NOT have advanced to Configure
+    expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
   });
 });
