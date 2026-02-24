@@ -25,6 +25,8 @@ function makeResult(overrides: Partial<PdfProcessingResult> = {}): PdfProcessing
     outputPageDimensions: { widthPt: 595.28, heightPt: 841.89 },
     targetMet: true,
     bestAchievableSizeBytes: null,
+    imageCount: 0,
+    compressibilityScore: 0,
     ...overrides,
   };
 }
@@ -40,22 +42,25 @@ beforeEach(() => {
 });
 
 // Byte calculations for reference:
-//   100,000 - 80,000 = 20,000 bytes → formatBytes → "19.5 KB" (20000/1024 = 19.53)
-//   Math.round(20000/100000*100) = 20%  →  "−19.5 KB (20%)"
+//   inputSizeBytes = 100,000 → formatBytes → "97.7 KB"
+//   outputSizeBytes = 80,000 → formatBytes → "78.1 KB"
+//   New format: "97.7 KB → 78.1 KB (20% smaller)"
 
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 
 describe('CompareStep — stats bar', () => {
-  it('shows byte reduction and percentage when output is smaller', () => {
+  it('shows X → Y format with percentage when output is smaller', () => {
     render(<CompareStep result={makeResult()} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    // 100,000 - 80,000 = 20,000 bytes = 19.5 KB, 20%
-    expect(screen.getByText('−19.5 KB (20%)')).toBeInTheDocument();
+    // 100,000 bytes → 97.7 KB, 80,000 bytes → 78.1 KB, 20% smaller
+    expect(screen.getByText(/97\.7 KB → 78\.1 KB/)).toBeInTheDocument();
+    expect(screen.getByText(/20% smaller/)).toBeInTheDocument();
   });
 
-  it('shows + prefix and byte growth when output is larger', () => {
-    // 110,000 - 100,000 = 10,000 bytes = 9.8 KB, 10%
+  it('shows X → Y format with "larger" when output is bigger', () => {
+    // 110,000 bytes → 107.4 KB, 100,000 bytes → 97.7 KB
     render(<CompareStep result={makeResult({ outputSizeBytes: 110_000 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    expect(screen.getByText('+9.8 KB (10%)')).toBeInTheDocument();
+    expect(screen.getByText(/97\.7 KB → 107\.4 KB/)).toBeInTheDocument();
+    expect(screen.getByText(/10% larger/)).toBeInTheDocument();
   });
 
   it('shows page count', () => {
@@ -70,19 +75,19 @@ describe('CompareStep — stats bar', () => {
   });
 });
 
-// ─── Structural-only notice (Bug 3) ──────────────────────────────────────────
+// ─── Structural-only notice (removed — must NOT appear) ───────────────────────
+// The structural notice "image content is unchanged" has been removed from CompareStep.
+// These tests ensure it is never accidentally re-introduced.
 
-describe('CompareStep — structural-only notice', () => {
-  // The structural notice contains "image content is unchanged" which distinguishes
-  // it from the target-not-met warning which says "PDF optimisation is structural only".
-  it('appears when size delta is within 2% — quality level had no effect', () => {
+describe('CompareStep — structural-only notice must not appear', () => {
+  it('does NOT appear when size delta is within 2%', () => {
     render(<CompareStep result={makeResult({ outputSizeBytes: 101_000 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    expect(screen.getByText(/image content is unchanged/i)).toBeInTheDocument();
+    expect(screen.queryByText(/image content is unchanged/i)).not.toBeInTheDocument();
   });
 
-  it('appears when output is identical to input (0% change)', () => {
+  it('does NOT appear when output is identical to input (0% change)', () => {
     render(<CompareStep result={makeResult({ outputSizeBytes: 100_000 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    expect(screen.getByText(/image content is unchanged/i)).toBeInTheDocument();
+    expect(screen.queryByText(/image content is unchanged/i)).not.toBeInTheDocument();
   });
 
   it('does NOT appear when reduction is 20% (meaningful compression result)', () => {
