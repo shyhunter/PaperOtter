@@ -1,9 +1,18 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::ipc::Response;
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::{PngEncoder, CompressionType};
 use std::io::Cursor;
+use std::sync::Mutex;
+
+/// Managed cancellation state — holds the running GS child process.
+/// cancel_processing() takes the child out and kills it, which signals
+/// compress_pdf's event loop to exit with a CANCELLED error.
+struct ProcessState {
+    gs_child: Mutex<Option<CommandChild>>,
+}
 
 /// Core image processing logic — no Tauri dependency.
 /// Called by the `process_image` command and directly by unit tests.
@@ -109,46 +118,25 @@ fn process_image(
     Ok(Response::new(output_buf))
 }
 
-/// Compress a PDF using Ghostscript.
-/// preset: one of "screen" | "ebook" | "printer" | "prepress"
-/// Writes GS output to a temp file, then returns () or a descriptive error string.
-async fn compress_pdf_with_gs(
-    app: &tauri::AppHandle,
-    source_path: &str,
-    output_path: &str,
-    preset: &str,
-) -> Result<(), String> {
-    let output = app
-        .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-dPDFSETTINGS=/{}", preset),
-            &format!("-sOutputFile={}", output_path),
-            source_path,
-        ])
-        .output()
-        .await
-        .map_err(|e| format!("Ghostscript execution failed: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        return Err(format!(
-            "Ghostscript returned non-zero exit code. stderr: {}",
-            stderr
-        ));
+/// Cancel an in-progress compression by killing the GS child process.
+/// Fire-and-forget from the TypeScript side — no return value needed.
+#[tauri::command]
+fn cancel_processing(state: tauri::State<ProcessState>) {
+    let mut guard = state.gs_child.lock().unwrap();
+    if let Some(child) = guard.take() {
+        let _ = child.kill();
     }
-
-    Ok(())
 }
 
+/// Compress a PDF using Ghostscript.
+/// preset: one of "screen" | "ebook" | "printer" | "prepress"
+/// Spawns GS as a child process, stores the child in ProcessState so it can be
+/// killed by cancel_processing(). Waits for the Terminated event.
+/// Returns Err("CANCELLED") if killed before completion.
 #[tauri::command]
 async fn compress_pdf(
     app: tauri::AppHandle,
+    state: tauri::State<'_, ProcessState>,
     source_path: String,
     preset: String,
 ) -> Result<tauri::ipc::Response, String> {
@@ -172,7 +160,89 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    compress_pdf_with_gs(&app, &source_path, &tmp_path_str, &preset).await?;
+    // Build and spawn the GS sidecar process
+    let (mut rx, child) = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-dPDFSETTINGS=/{}", preset),
+            &format!("-sOutputFile={}", tmp_path_str),
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+
+    // Store the child so cancel_processing() can kill it
+    {
+        let mut guard = state.gs_child.lock().unwrap();
+        *guard = Some(child);
+    }
+
+    // Wait for GS to finish (or be killed)
+    let mut exit_code: Option<i32> = None;
+    let mut terminated = false;
+    let mut stderr_lines: Vec<String> = Vec::new();
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                exit_code = payload.code;
+                terminated = true;
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                // Channel error — treat as process failure
+                let _ = std::fs::remove_file(&tmp_path);
+                // Clear stored child reference
+                let mut guard = state.gs_child.lock().unwrap();
+                *guard = None;
+                return Err(format!("Ghostscript error: {}", e));
+            }
+            _ => {} // Stdout events ignored — GS writes to tmp_path file
+        }
+    }
+
+    // Clear stored child reference now that GS has exited
+    {
+        let mut guard = state.gs_child.lock().unwrap();
+        *guard = None;
+    }
+
+    // If the channel closed without a Terminated event, the child was killed
+    if !terminated {
+        let _ = std::fs::remove_file(&tmp_path);
+        return Err("CANCELLED".to_string());
+    }
+
+    // Non-zero exit code means GS was killed (signal) or failed
+    match exit_code {
+        None => {
+            // Signal termination (killed) — treat as cancellation
+            let _ = std::fs::remove_file(&tmp_path);
+            return Err("CANCELLED".to_string());
+        }
+        Some(0) => {} // success — continue
+        Some(_code) => {
+            // Check if tmp_path exists; if not, likely killed/cancelled
+            if !tmp_path.exists() {
+                return Err("CANCELLED".to_string());
+            }
+            let stderr = stderr_lines.join("\n");
+            let _ = std::fs::remove_file(&tmp_path);
+            return Err(format!(
+                "Ghostscript returned non-zero exit code. stderr: {}",
+                stderr
+            ));
+        }
+    }
 
     // Read the compressed output bytes
     let bytes = std::fs::read(&tmp_path)
@@ -187,12 +257,13 @@ async fn compress_pdf(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(ProcessState { gs_child: Mutex::new(None) })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf])
+        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf, cancel_processing])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
