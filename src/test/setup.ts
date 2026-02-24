@@ -32,3 +32,15 @@ vi.stubGlobal(
   'createImageBitmap',
   vi.fn(async () => ({ width: 100, height: 80, close: vi.fn() })),
 );
+
+// Stub window.matchMedia — jsdom does not implement this; required by sonner (toast library).
+vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+})));
