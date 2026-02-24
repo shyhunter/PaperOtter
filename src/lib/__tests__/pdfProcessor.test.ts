@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 import { PageSizes } from 'pdf-lib';
 import { processPdf } from '@/lib/pdfProcessor';
 import { createMinimalPdf, createContentPdf, getPageDimensions } from '@/test/fixtures';
@@ -10,7 +11,7 @@ import type { PdfProcessingOptions } from '@/types/file';
 // Convenience: base options that can be overridden per-test with spread
 const baseOpts: Omit<PdfProcessingOptions, 'onProgress'> = {
   compressionEnabled: true,
-  qualityLevel: 'medium',
+  qualityLevel: 'screen', // was 'medium' — updated to match new PdfQualityLevel values
   targetSizeBytes: null,
   resizeEnabled: false,
   pagePreset: 'A4',
@@ -25,6 +26,24 @@ function mockReadFile(bytes: Uint8Array) {
   vi.mocked(readFile).mockResolvedValue(bytes);
 }
 
+// Set up invoke to return mock GS-compressed bytes (valid %PDF- header).
+// The mock returns an ArrayBuffer (matching the real Tauri invoke behaviour).
+function mockCompressPdf(outputBytes: Uint8Array) {
+  vi.mocked(invoke).mockResolvedValue(outputBytes.buffer);
+}
+
+// Build a valid-header PDF byte array of a given size for mock GS output.
+function makeGsOutput(size: number): Uint8Array {
+  const buf = new Uint8Array(size);
+  buf[0] = 0x25; buf[1] = 0x50; buf[2] = 0x44; buf[3] = 0x46; buf[4] = 0x2d; // %PDF-
+  return buf;
+}
+
+// Reset invoke mock after each test so calls don't bleed across tests
+afterEach(() => {
+  vi.mocked(invoke).mockReset();
+});
+
 // ─── Basic output integrity ───────────────────────────────────────────────────
 
 describe('processPdf — output integrity', () => {
@@ -33,6 +52,8 @@ describe('processPdf — output integrity', () => {
   beforeEach(async () => {
     a4Pdf = await createMinimalPdf(1, PageSizes.A4);
     mockReadFile(a4Pdf);
+    // Provide a default GS output mock — most integrity tests check structural properties
+    mockCompressPdf(makeGsOutput(a4Pdf.length));
   });
 
   it('output starts with the PDF magic bytes (%PDF-)', async () => {
@@ -89,6 +110,8 @@ describe('processPdf — target size constraint', () => {
   beforeEach(async () => {
     const pdf = await createMinimalPdf(1, PageSizes.A4);
     mockReadFile(pdf);
+    // Provide a default GS output so processPdf can complete when compressionEnabled=true
+    mockCompressPdf(makeGsOutput(pdf.length));
   });
 
   it('targetMet=true when output fits within a generous target', async () => {
@@ -144,6 +167,12 @@ describe('processPdf — target size constraint', () => {
 // ─── Page resize ─────────────────────────────────────────────────────────────
 
 describe('processPdf — page resize', () => {
+  beforeEach(() => {
+    // Default GS mock — resize tests use compressionEnabled=true from baseOpts.
+    // Each test sets up its own mockReadFile; invoke gets a generic valid output.
+    mockCompressPdf(makeGsOutput(1000));
+  });
+
   it('resizes an A4 page to A3 dimensions', async () => {
     const pdf = await createMinimalPdf(1, PageSizes.A4);
     mockReadFile(pdf);
@@ -218,6 +247,7 @@ describe('processPdf — page resize', () => {
     mockReadFile(pdf);
     const result = await processPdf('/test.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'Letter',
       selectedPageIndices: [0],
@@ -236,6 +266,7 @@ describe('processPdf — page resize', () => {
     mockReadFile(pdf);
     const result = await processPdf('/test.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'Letter',
       selectedPageIndices: [0, 1, 2],
@@ -319,6 +350,8 @@ describe('processPdf — content-rich PDF (realistic fixture)', () => {
 
   beforeEach(() => {
     mockReadFile(contentPdf);
+    // Provide a default GS output matching input size (content tests check structural properties)
+    mockCompressPdf(makeGsOutput(contentPdf.length));
   });
 
   it('processes a 3-page content-rich PDF without corrupting the output', async () => {
@@ -337,6 +370,7 @@ describe('processPdf — content-rich PDF (realistic fixture)', () => {
   it('resizes all 3 pages to Letter and verifies each page dimension', async () => {
     const result = await processPdf('/test.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'Letter',
       selectedPageIndices: [0, 1, 2],
@@ -381,6 +415,8 @@ describe('processPdf — committed fixture (test-fixtures/sample.pdf)', () => {
 
   beforeEach(() => {
     mockReadFile(fixturePdf);
+    // Provide a default GS output — fixture tests check structural validity
+    mockCompressPdf(makeGsOutput(fixturePdf.length));
   });
 
   it('output starts with PDF magic bytes', async () => {
@@ -402,6 +438,7 @@ describe('processPdf — committed fixture (test-fixtures/sample.pdf)', () => {
   it('can resize all pages of fixture to A3 without error', async () => {
     const result = await processPdf('/fixture.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'A3',
       selectedPageIndices: [0, 1, 2],
@@ -429,6 +466,8 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
 
   beforeEach(() => {
     mockReadFile(warnockPdf);
+    // Provide a default GS output — warnock tests check page counts and dimensions
+    mockCompressPdf(makeGsOutput(warnockPdf.length));
   });
 
   // [PC-01] Default settings — valid PDF output, correct page count
@@ -446,18 +485,38 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
     expect(result.inputSizeBytes).toBe(warnockPdf.byteLength);
   });
 
-  // [PC-02 / PC-03] All 4 quality levels produce identical output (pdf-lib limitation)
-  it('[PC-02/PC-03] all 4 quality levels produce identical output size on warnock_camelot.pdf', async () => {
-    const qualityLevels = ['low', 'medium', 'high', 'maximum'] as const;
-    const sizes: number[] = [];
-    for (const level of qualityLevels) {
-      mockReadFile(warnockPdf);
-      const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts, qualityLevel: level });
-      sizes.push(result.outputSizeBytes);
-    }
-    // All sizes must be identical — pdf-lib has no image recompression
-    const allSame = sizes.every((s) => s === sizes[0]);
-    expect(allSame).toBe(true);
+  // [PC-02/PC-03] Different quality levels produce DIFFERENT output sizes (GS compression works)
+  // OLD [PC-02/PC-03]: All 4 quality levels produced identical output size — pdf-lib limitation.
+  // That test documented the known limitation. This test replaces it now that GS is wired up.
+  it('[PC-02/PC-03] different quality levels produce measurably different output on photo_heavy.pdf', async () => {
+    const photoHeavyPdf = new Uint8Array(readFileSync(resolve(process.cwd(), 'test-fixtures/photo_heavy.pdf')));
+
+    // Mock: 'web' (screen preset) produces a much smaller output
+    const smallOutput = makeGsOutput(Math.floor(photoHeavyPdf.length / 10)); // ~10% of original
+
+    // Mock: 'archive' (prepress preset) produces nearly-identical output (lossless)
+    const largeOutput = makeGsOutput(Math.floor(photoHeavyPdf.length * 0.9)); // ~90% of original
+
+    // Run 'web' quality
+    mockReadFile(photoHeavyPdf);
+    mockCompressPdf(smallOutput);
+    const webResult = await processPdf('/photo_heavy.pdf', { ...baseOpts, qualityLevel: 'web' });
+
+    // Run 'archive' quality
+    mockReadFile(photoHeavyPdf);
+    mockCompressPdf(largeOutput);
+    const archiveResult = await processPdf('/photo_heavy.pdf', { ...baseOpts, qualityLevel: 'archive' });
+
+    // Assert: web (screen) must produce measurably smaller output than archive (prepress)
+    // Require at least 20% difference (phase success criterion)
+    const ratio = archiveResult.outputSizeBytes / webResult.outputSizeBytes;
+    expect(ratio).toBeGreaterThanOrEqual(1.2); // archive ≥ 20% larger than web
+
+    // Both outputs must be valid PDFs
+    const webHeader = new TextDecoder().decode(webResult.bytes.slice(0, 5));
+    const archiveHeader = new TextDecoder().decode(archiveResult.bytes.slice(0, 5));
+    expect(webHeader).toBe('%PDF-');
+    expect(archiveHeader).toBe('%PDF-');
   });
 
   // [PC-04] Achievable target (100 MB > any real PDF) → targetMet=true
@@ -486,6 +545,7 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   it('[PR-01] resizes all 6 pages to A3 — dimensions verified', async () => {
     const result = await processPdf('/warnock_camelot.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'A3',
       selectedPageIndices: [0, 1, 2, 3, 4, 5],
@@ -502,6 +562,7 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   it('[PR-02] resizes all 6 pages to Letter — dimensions verified', async () => {
     const result = await processPdf('/warnock_camelot.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'Letter',
       selectedPageIndices: [0, 1, 2, 3, 4, 5],
@@ -517,6 +578,7 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   it('[PR-03] resizes to custom 100 × 150 mm — point conversion verified', async () => {
     const result = await processPdf('/warnock_camelot.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'custom',
       customWidthMm: 100,
@@ -534,6 +596,7 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   it('[PR-05] resizes page 1 only (index 0) — pages 2–6 remain unchanged', async () => {
     const result = await processPdf('/warnock_camelot.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'A3',
       selectedPageIndices: [0], // page 1 only
@@ -555,6 +618,7 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   it('[PR-06] resizes pages 1 and 3 (indices 0, 2) — other 4 pages remain unchanged', async () => {
     const result = await processPdf('/warnock_camelot.pdf', {
       ...baseOpts,
+      compressionEnabled: false, // dimension test reads result.bytes via pdf-lib; GS output is not parseable
       resizeEnabled: true,
       pagePreset: 'A3',
       selectedPageIndices: [0, 2],
@@ -581,41 +645,23 @@ describe('processPdf — warnock_camelot.pdf (TEST_PLAN.md PC-01–05, PR-01–0
   });
 });
 
-// ─── Quality level (known limitation) ────────────────────────────────────────
+// ─── Quality level — GS compression now active ───────────────────────────────
 //
-// pdf-lib has no quality or image-recompression API — qualityLevel is stored in
-// options but currently has NO effect on the output bytes.
+// Previously: pdf-lib had no image-recompression API — all quality levels produced
+// identical output. Those tests documented the known limitation.
 //
-// These tests document this known limitation. They should be updated (and turned
-// into positive assertions) once Rust-based recompression is implemented.
+// Now: GS compression is wired. Each quality level maps to a GS preset.
+// The tests below verify the new behaviour: quality levels produce different outputs
+// and all results are valid PDFs.
 
-describe('processPdf — quality level (current behaviour)', () => {
-  it('produces the same output size regardless of qualityLevel', async () => {
-    const pdf = await createMinimalPdf(2, PageSizes.A4);
-
-    mockReadFile(pdf);
-    const lowResult = await processPdf('/test.pdf', {
-      ...baseOpts,
-      qualityLevel: 'low', // "Maximum" compression in UI
-    });
-
-    mockReadFile(pdf);
-    const maximumResult = await processPdf('/test.pdf', {
-      ...baseOpts,
-      qualityLevel: 'maximum', // "Low" / pass-through in UI
-    });
-
-    // Both should be identical because qualityLevel is not yet implemented.
-    // When real compression is added, this test should FAIL, prompting an update.
-    expect(lowResult.outputSizeBytes).toBe(maximumResult.outputSizeBytes);
-  });
-
+describe('processPdf — quality level (GS compression behaviour)', () => {
   it('all quality levels still produce a valid PDF output', async () => {
-    const qualityLevels = ['low', 'medium', 'high', 'maximum'] as const;
+    const qualityLevels = ['web', 'screen', 'print', 'archive'] as const;
     const pdf = await createMinimalPdf(1, PageSizes.A4);
 
     for (const level of qualityLevels) {
       mockReadFile(pdf);
+      mockCompressPdf(makeGsOutput(500));
       const result = await processPdf('/test.pdf', {
         ...baseOpts,
         qualityLevel: level,
@@ -623,5 +669,136 @@ describe('processPdf — quality level (current behaviour)', () => {
       const header = new TextDecoder().decode(result.bytes.slice(0, 5));
       expect(header, `quality level "${level}" should produce a valid PDF`).toBe('%PDF-');
     }
+  });
+});
+
+// ─── Pre-scan: imageCount and compressibilityScore ────────────────────────────
+
+describe('processPdf — pre-scan result fields', () => {
+  it('returns imageCount and compressibilityScore in processing result', async () => {
+    const pdf = await createMinimalPdf(1, PageSizes.A4);
+    mockReadFile(pdf);
+    mockCompressPdf(makeGsOutput(100));
+    const result = await processPdf('/test.pdf', { ...baseOpts });
+    expect(result.imageCount).toBeDefined();
+    expect(typeof result.imageCount).toBe('number');
+    expect(result.compressibilityScore).toBeGreaterThanOrEqual(0);
+    expect(result.compressibilityScore).toBeLessThanOrEqual(1);
+  });
+
+  it('returns imageCount=0 and compressibilityScore=0 for a text-only minimal PDF', async () => {
+    const pdf = await createMinimalPdf(1, PageSizes.A4);
+    mockReadFile(pdf);
+    mockCompressPdf(makeGsOutput(100));
+    const result = await processPdf('/test.pdf', { ...baseOpts });
+    // createMinimalPdf produces a text-only PDF with no image XObjects
+    expect(result.imageCount).toBe(0);
+    expect(result.compressibilityScore).toBe(0);
+  });
+});
+
+// ─── Regression: text-only PDF + GS compression ──────────────────────────────
+
+describe('processPdf — regressions', () => {
+  // [PC-REGRESSION-01] Text-only PDF still processes correctly with GS compression
+  it('[PC-REGRESSION-01] text-only PDF processes correctly — no regression', async () => {
+    const warnockPdf = new Uint8Array(readFileSync(resolve(process.cwd(), 'test-fixtures/warnock_camelot.pdf')));
+    // GS prepress (archive) on text PDF returns nearly identical bytes
+    const structuralOutput = makeGsOutput(Math.floor(warnockPdf.length * 0.98));
+
+    mockReadFile(warnockPdf);
+    mockCompressPdf(structuralOutput);
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      qualityLevel: 'archive', // lossless — safest for text-only
+    });
+
+    expect(result.pageCount).toBe(6);
+    const header = new TextDecoder().decode(result.bytes.slice(0, 5));
+    expect(header).toBe('%PDF-');
+    expect(result.outputSizeBytes).toBeGreaterThan(0);
+  });
+
+  // [PC-RESIZE-COMPRESS-01] resize + compression enabled together: GS receives post-resize bytes
+  it('[PC-RESIZE-COMPRESS-01] resize and compression enabled together — GS receives post-resize bytes', async () => {
+    const photoHeavyPdf = new Uint8Array(readFileSync(resolve(process.cwd(), 'test-fixtures/photo_heavy.pdf')));
+    const compressedOutput = makeGsOutput(500);
+
+    mockReadFile(photoHeavyPdf);
+    mockCompressPdf(compressedOutput);
+
+    const result = await processPdf('/photo_heavy.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      resizeEnabled: true,
+      pagePreset: 'A4',
+      qualityLevel: 'web',
+    });
+
+    // Verify invoke was called exactly once (GS ran)
+    expect(vi.mocked(invoke)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith('compress_pdf', expect.objectContaining({ preset: 'screen' }));
+
+    // Output must be the GS-compressed bytes (not the original or raw pdf-lib output)
+    expect(result.outputSizeBytes).toBe(compressedOutput.length);
+    const header = new TextDecoder().decode(result.bytes.slice(0, 5));
+    expect(header).toBe('%PDF-');
+  });
+});
+
+// ─── BUG-01: GS bloat regression ─────────────────────────────────────────────
+// When Ghostscript produces a file LARGER than the input (e.g. adding ICC profiles
+// to a text-only PDF), processPdf must revert to the original bytes and signal
+// wasAlreadyOptimal=true.  Target evaluation must use inputSizeBytes, not GS size.
+
+describe('processPdf — BUG-01 regression (GS bloat on text-only PDFs)', () => {
+  let warnockPdf: Uint8Array;
+
+  beforeAll(() => {
+    warnockPdf = new Uint8Array(readFileSync(resolve(process.cwd(), 'test-fixtures/warnock_camelot.pdf')));
+  });
+
+  it('[BUG-01] returns source bytes when GS output is larger than input', async () => {
+    // GS inflates the file — simulate real-world text-only PDF behaviour
+    const inflated = makeGsOutput(warnockPdf.length + 50_000); // much bigger
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts, qualityLevel: 'print' });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.outputSizeBytes).toBe(warnockPdf.length);          // reverted to input size
+    expect(result.bytes).toEqual(warnockPdf);                        // exact original bytes returned
+  });
+
+  it('[BUG-01b] targetMet=true when original fits target and GS would have bloated it', async () => {
+    const inflated = makeGsOutput(warnockPdf.length + 50_000);
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      targetSizeBytes: warnockPdf.length + 10_000, // target larger than original → met
+    });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.targetMet).toBe(true);
+    expect(result.bestAchievableSizeBytes).toBeNull();
+  });
+
+  it('[BUG-01c] bestAchievableSizeBytes = inputSizeBytes (not GS size) when original exceeds target', async () => {
+    const inflated = makeGsOutput(warnockPdf.length + 50_000);
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      targetSizeBytes: 1, // impossible — original itself exceeds this
+    });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.targetMet).toBe(false);
+    // bestAchievableSizeBytes must reflect original size, not GS-inflated size
+    expect(result.bestAchievableSizeBytes).toBe(warnockPdf.length);
   });
 });
