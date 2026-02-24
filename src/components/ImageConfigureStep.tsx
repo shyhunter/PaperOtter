@@ -17,6 +17,7 @@ export interface ImageConfigureStepProps {
   lastResult: ImageProcessingResult | null;  // used to show estimated output size in slider label
   onGeneratePreview: (options: ImageProcessingOptions) => void;
   onBack: () => void;
+  onCancel?: () => void;    // fires immediately when Cancel clicked during processing
 }
 
 function formatBytes(bytes: number): string {
@@ -57,6 +58,7 @@ export function ImageConfigureStep({
   lastResult,
   onGeneratePreview,
   onBack,
+  onCancel,
 }: ImageConfigureStepProps) {
   const formId = useId();
 
@@ -437,6 +439,15 @@ export function ImageConfigureStep({
           >
             {isProcessing ? 'Processing…' : 'Generate Preview'}
           </Button>
+          {isProcessing && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
+            >
+              Cancel
+            </button>
+          )}
         </div>
 
       </div>

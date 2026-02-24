@@ -64,6 +64,9 @@ function App() {
   const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
   const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
 
+  // Stores the last PDF options so Retry can re-run with the same settings
+  const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
+
   // Suppress auto-advance to Compare when navigating Back from Compare.
   // Set to true when Back is clicked; cleared when processing starts again.
   const suppressImageAdvance = useRef(false);
@@ -71,6 +74,7 @@ function App() {
   // Reset everything and go back to landing
   const handleStartOver = useCallback(() => {
     suppressImageAdvance.current = false;
+    lastPdfOptionsRef.current = null;
     setFileEntry(null);
     setCurrentStep(0);
     setSourcePdfPageCount(1);
@@ -144,6 +148,13 @@ function App() {
     }
   }, [pdfProcessor.result, currentStep]);
 
+  // Advance to Compare step when PDF processing is cancelled (to show cancelled state)
+  useEffect(() => {
+    if (pdfProcessor.isCancelled && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [pdfProcessor.isCancelled, currentStep]);
+
   // Advance to Compare step when image processing completes (new result) or when
   // re-processing starts with a previous result (stale overlay case).
   // suppressImageAdvance ref prevents re-advancing immediately after clicking Back.
@@ -200,11 +211,22 @@ function App() {
   const handleGeneratePreview = useCallback(
     (options: Omit<PdfProcessingOptions, 'onProgress'>) => {
       if (!fileEntry) return;
+      lastPdfOptionsRef.current = options;
       setLastPdfQualityLevel(options.qualityLevel);
       pdfProcessor.run(fileEntry.path, options);
     },
     [fileEntry, pdfProcessor],
   );
+
+  // Retry PDF processing with the last options after cancellation
+  const handleRetryPdf = useCallback(() => {
+    if (!fileEntry || !lastPdfOptionsRef.current) return;
+    pdfProcessor.reset();
+    setCurrentStep(1);
+    // Re-run will be triggered by user going back to ConfigureStep and clicking Generate Preview,
+    // OR we can auto-trigger it here if options are stored
+    pdfProcessor.run(fileEntry.path, lastPdfOptionsRef.current);
+  }, [fileEntry, pdfProcessor]);
 
   const handleGenerateImagePreview = useCallback(
     (options: ImageProcessingOptions) => {
@@ -230,6 +252,14 @@ function App() {
     // imageProcessor is NOT reset here — the stale result is preserved so
     // when the user re-processes, ImageCompareStep shows the stale overlay.
   }, [pdfProcessor]);
+
+  // Called from CompareStep cancelled state — reset to Configure step
+  const handleBackFromCancelled = useCallback(() => {
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    suppressImageAdvance.current = false;
+    setCurrentStep(1);
+  }, [pdfProcessor, imageProcessor]);
 
   const handleBackFromConfigure = useCallback(() => {
     suppressImageAdvance.current = false;
@@ -270,6 +300,7 @@ function App() {
           error={pdfProcessor.error}
           onGeneratePreview={handleGeneratePreview}
           onBack={handleBackFromConfigure}
+          onCancel={pdfProcessor.cancel}
         />
       )}
 
@@ -284,6 +315,7 @@ function App() {
           lastResult={imageProcessor.result}
           onGeneratePreview={handleGenerateImagePreview}
           onBack={handleBackFromConfigure}
+          onCancel={imageProcessor.cancel}
         />
       )}
 
@@ -298,14 +330,16 @@ function App() {
         />
       )}
 
-      {/* Step 2: Compare — PDF */}
-      {currentStep === 2 && pdfProcessor.result && (
+      {/* Step 2: Compare — PDF (normal result or cancelled state) */}
+      {currentStep === 2 && (pdfProcessor.result || pdfProcessor.isCancelled) && fileEntry?.format === 'pdf' && (
         <CompareStep
-          result={pdfProcessor.result}
+          result={pdfProcessor.result ?? undefined}
           qualityLevel={lastPdfQualityLevel}
+          isCancelled={pdfProcessor.isCancelled}
           onSave={handleSave}
-          onBack={handleBackFromCompare}
+          onBack={pdfProcessor.isCancelled ? handleBackFromCancelled : handleBackFromCompare}
           onStartOver={handleStartOver}
+          onRetry={pdfProcessor.isCancelled ? handleRetryPdf : undefined}
         />
       )}
 

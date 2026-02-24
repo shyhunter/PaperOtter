@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
 
 export interface CompareStepProps {
-  result: PdfProcessingResult;
+  result?: PdfProcessingResult;    // optional — not present when isCancelled=true
   qualityLevel?: PdfQualityLevel;  // used to derive render scale for After panel
+  isCancelled?: boolean;           // when true, show cancelled state instead of previews
   onSave: () => void;
   onBack: () => void;
   onStartOver: () => void;
+  onRetry?: () => void;            // re-runs processing with same options; only shown when isCancelled=true
 }
 
 function formatBytes(bytes: number): string {
@@ -104,7 +106,7 @@ function PreviewPanel({
   );
 }
 
-export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver }: CompareStepProps) {
+export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack, onStartOver, onRetry }: CompareStepProps) {
   const [originalUrls, setOriginalUrls] = useState<string[]>([]);
   const [processedUrls, setProcessedUrls] = useState<string[]>([]);
   const [originalRendering, setOriginalRendering] = useState(true);
@@ -119,6 +121,7 @@ export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver 
   // cancelled flag prevents stale async completions from updating state when React
   // StrictMode unmounts+remounts the component or when deps change mid-render.
   useEffect(() => {
+    if (!result) return;
     let cancelled = false;
     setOriginalUrls([]);
     setOriginalRendering(true);
@@ -136,10 +139,11 @@ export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver 
         setOriginalRendering(false);
       });
     return () => { cancelled = true; };
-  }, [result.sourceBytes]);
+  }, [result]);
 
   // Render processed (After) — from result.bytes (in-memory processed output)
   useEffect(() => {
+    if (!result) return;
     let cancelled = false;
     setProcessedUrls([]);
     setProcessedRendering(true);
@@ -157,7 +161,36 @@ export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver 
         setProcessedRendering(false);
       });
     return () => { cancelled = true; };
-  }, [result.bytes, qualityLevel]);
+  }, [result, qualityLevel]);
+
+  // ── Cancelled state — shown instead of the normal preview ─────────────────
+  if (isCancelled) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+          <Ban className="h-10 w-10 text-muted-foreground" />
+          <div className="text-center space-y-1">
+            <p className="text-base font-medium text-foreground">Processing cancelled</p>
+            <p className="text-sm text-muted-foreground">The operation was stopped before completion.</p>
+          </div>
+          <div className="flex gap-3 mt-2">
+            {onRetry && (
+              <Button size="sm" onClick={onRetry}>
+                Retry
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={onBack}>
+              Back to Configure
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Guard: render nothing if result is absent and not cancelled
+  // (transitional state before result arrives)
+  if (!result) return null;
 
   const savingsBytes = result.inputSizeBytes - result.outputSizeBytes;
   const savingsPct = result.inputSizeBytes > 0

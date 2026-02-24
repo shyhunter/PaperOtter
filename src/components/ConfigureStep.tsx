@@ -16,6 +16,7 @@ export interface ConfigureStepProps {
   error: string | null;
   onGeneratePreview: (options: Omit<PdfProcessingOptions, 'onProgress'>) => void;
   onBack: () => void;
+  onCancel?: () => void;    // fires immediately when Cancel clicked during processing
 }
 
 // Intent-based quality labels matching Ghostscript presets
@@ -43,6 +44,7 @@ export function ConfigureStep({
   error,
   onGeneratePreview,
   onBack,
+  onCancel,
 }: ConfigureStepProps) {
   const formId = useId();
 
@@ -334,6 +336,15 @@ export function ConfigureStep({
           >
             {isProcessing ? 'Processing…' : 'Generate Preview'}
           </Button>
+          {isProcessing && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
+            >
+              Cancel
+            </button>
+          )}
         </div>
 
       </div>
