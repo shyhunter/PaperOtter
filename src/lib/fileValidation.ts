@@ -2,6 +2,20 @@ import type { SupportedFormat } from '@/types/file';
 
 const SUPPORTED_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp']);
 
+/** Hard limit: 100 MB in bytes */
+export const FILE_SIZE_LIMIT_BYTES = 100 * 1024 * 1024; // 104857600
+
+/**
+ * Returns the byte length of a file at the given path.
+ * Uses @tauri-apps/plugin-fs readFile — same permission already granted.
+ * Throws if the file cannot be read.
+ */
+export async function getFileSizeBytes(filePath: string): Promise<number> {
+  const { readFile } = await import('@tauri-apps/plugin-fs');
+  const bytes = await readFile(filePath);
+  return bytes.byteLength;
+}
+
 export function getExtension(filePath: string): string {
   return filePath.split('.').pop()?.toLowerCase() ?? '';
 }

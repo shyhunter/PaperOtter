@@ -10,7 +10,7 @@ import { ImageConfigureStep } from '@/components/ImageConfigureStep';
 import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName } from '@/lib/fileValidation';
+import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES } from '@/lib/fileValidation';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -60,6 +60,9 @@ function App() {
   const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
 
   const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
+  const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
+  const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
+  const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
 
   // Suppress auto-advance to Compare when navigating Back from Compare.
   // Set to true when Back is clicked; cleared when processing starts again.
@@ -77,7 +80,7 @@ function App() {
   }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
-  const handleFileSelected = useCallback((filePath: string) => {
+  const handleFileSelected = useCallback(async (filePath: string) => {
     if (!filePath) {
       setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
       setTimeout(() => setInvalidDropError(null), 2500);
@@ -88,6 +91,28 @@ function App() {
     if (!format) {
       setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
       setTimeout(() => setInvalidDropError(null), 2500);
+      return;
+    }
+
+    // Check file size before loading
+    let sizeBytes: number;
+    try {
+      sizeBytes = await getFileSizeBytes(filePath);
+    } catch {
+      // Could not read the file at all — treat as corrupt
+      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setTimeout(() => setCorruptFileError(null), 2500);
+      return;
+    }
+
+    if (sizeBytes === 0) {
+      setEmptyFileError('This file is empty. Please try a different file.');
+      setTimeout(() => setEmptyFileError(null), 2500);
+      return;
+    }
+
+    if (sizeBytes > FILE_SIZE_LIMIT_BYTES) {
+      setFileSizeLimitBytes(sizeBytes);
       return;
     }
 
@@ -135,10 +160,9 @@ function App() {
   // Navigate back to landing when PDF processing fails (corrupt file)
   useEffect(() => {
     if (pdfProcessor.error && currentStep === 1 && fileEntry?.format === 'pdf') {
-      toast.error('Could not read file — it may be corrupted', {
-        description: pdfProcessor.error,
-      });
       handleStartOver();
+      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfProcessor.error]);
@@ -146,13 +170,16 @@ function App() {
   // Navigate back to landing when image processing fails (corrupt file)
   useEffect(() => {
     if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
-      toast.error('Could not read file — it may be corrupted', {
-        description: imageProcessor.error,
-      });
       handleStartOver();
+      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageProcessor.error]);
+
+  const handleFileSizeLimitDismiss = useCallback(() => {
+    setFileSizeLimitBytes(null);
+  }, []);
 
   const dragState = useFileDrop(handleFileSelected);
 
@@ -225,6 +252,10 @@ function App() {
           recentDirs={recentDirs}
           onRecentDirClick={handleFileSelected}
           invalidDropError={invalidDropError}
+          emptyFileError={emptyFileError}
+          corruptFileError={corruptFileError}
+          fileSizeLimitBytes={fileSizeLimitBytes}
+          onFileSizeLimitDismiss={handleFileSizeLimitDismiss}
         />
       )}
 

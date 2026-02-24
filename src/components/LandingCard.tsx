@@ -11,6 +11,7 @@
 
 import { Upload, FolderOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { DragState } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
@@ -22,9 +23,30 @@ interface LandingCardProps {
   recentDirs?: string[];
   onRecentDirClick?: (filePath: string) => void;
   invalidDropError?: string | null;
+  emptyFileError?: string | null;
+  corruptFileError?: string | null;
+  /** Non-null when the selected file exceeds the 100 MB limit. Contains the actual file size in bytes. */
+  fileSizeLimitBytes?: number | null;
+  onFileSizeLimitDismiss?: () => void;
 }
 
-export function LandingCard({ dragState, isLoading, onPickerClick, recentDirs, onRecentDirClick, invalidDropError }: LandingCardProps) {
+/** Format bytes as a rounded MB string, e.g. "105 MB" */
+function formatMB(bytes: number): string {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
+
+export function LandingCard({
+  dragState,
+  isLoading,
+  onPickerClick,
+  recentDirs,
+  onRecentDirClick,
+  invalidDropError,
+  emptyFileError,
+  corruptFileError,
+  fileSizeLimitBytes,
+  onFileSizeLimitDismiss,
+}: LandingCardProps) {
   const cardClass = cn(
     'relative w-full max-w-2xl mx-auto transition-all duration-200 select-none',
     dragState === 'over-valid' &&
@@ -40,6 +62,9 @@ export function LandingCard({ dragState, isLoading, onPickerClick, recentDirs, o
     dragState === 'over-invalid' && 'opacity-100 ring-2 ring-destructive/30',
     dragState === 'idle' && 'opacity-0',
   );
+
+  // Single inline error slot — priority: emptyFileError > corruptFileError > invalidDropError
+  const inlineError = emptyFileError ?? corruptFileError ?? invalidDropError ?? null;
 
   return (
     <div className="flex flex-1 items-center justify-center p-8">
@@ -59,6 +84,7 @@ export function LandingCard({ dragState, isLoading, onPickerClick, recentDirs, o
 
               {/* File picker half */}
               <button
+                type="button"
                 onClick={onPickerClick}
                 disabled={isLoading}
                 className={cn(
@@ -141,13 +167,44 @@ export function LandingCard({ dragState, isLoading, onPickerClick, recentDirs, o
           </div>
         )}
 
-        {/* Inline invalid-drop error — appears briefly after unsupported file drop */}
-        {invalidDropError && (
+        {/* Inline error slot — emptyFileError > corruptFileError > invalidDropError */}
+        {inlineError && (
           <p className="text-sm text-destructive text-center animate-in fade-in">
-            {invalidDropError}
+            {inlineError}
           </p>
         )}
       </div>
+
+      {/* File size limit modal — blocking overlay, no "proceed anyway" */}
+      {fileSizeLimitBytes != null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="file-size-modal-title"
+        >
+          <div className="bg-background rounded-xl shadow-2xl border border-border w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
+            <div>
+              <h2 id="file-size-modal-title" className="text-lg font-semibold text-foreground">
+                File too large
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                This file is {formatMB(fileSizeLimitBytes)}.{' '}
+                Files over 100 MB are not supported. Please use a smaller file.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onFileSizeLimitDismiss}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

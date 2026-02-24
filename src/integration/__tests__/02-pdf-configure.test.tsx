@@ -109,9 +109,12 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-05 ────────────────────────────────────────────────────────────────────
   it('PC-05 — entering a target size shows a "Suggested" badge on one quality tile', async () => {
-    // Provide real PDF bytes so getPdfMeta can report a non-zero fileSizeBytes,
-    // which is required for recommendQualityForTarget to be called.
-    vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES);
+    // Two readFile calls occur during navigation:
+    // 1. getFileSizeBytes (in handleFileSelected) — needs any valid bytes
+    // 2. getPdfMeta (in App.tsx useEffect) — needs real PDF bytes so fileSizeBytes > 0
+    //    and recommendQualityForTarget is called with a valid file size
+    vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getFileSizeBytes
+    vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getPdfMeta
     const { user } = setup();
     await navigateToPdfConfigure(user);
     const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);

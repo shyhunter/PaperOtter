@@ -36,6 +36,16 @@ vi.mock('@tauri-apps/plugin-store', () => ({
 // ── File picker ───────────────────────────────────────────────────────────────
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
 
+// ── fileValidation — mock getFileSizeBytes to return a normal file size by default ──
+// Individual tests (FI-09, FI-10) override this via vi.spyOn.
+vi.mock('@/lib/fileValidation', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/lib/fileValidation')>();
+  return {
+    ...original,
+    getFileSizeBytes: vi.fn().mockResolvedValue(1 * 1024 * 1024), // default: 1 MB
+  };
+});
+
 // ── PDF thumbnail rendering ───────────────────────────────────────────────────
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
@@ -156,8 +166,8 @@ describe('Suite 01 — File Input', () => {
   // FI-09 ────────────────────────────────────────────────────────────────────
   it('FI-09 — opening a file > 100 MB shows the file-size-limit modal', async () => {
     const { user } = setup();
-    // Mock getFileSizeBytes to return 105 MB
-    vi.spyOn(fileValidation, 'getFileSizeBytes').mockResolvedValue(105 * 1024 * 1024);
+    // Override getFileSizeBytes to return 105 MB for this test
+    vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(105 * 1024 * 1024);
 
     vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/huge.pdf');
     await user.click(screen.getByText('Open file'));
@@ -174,8 +184,8 @@ describe('Suite 01 — File Input', () => {
   // FI-10 ────────────────────────────────────────────────────────────────────
   it('FI-10 — opening a zero-byte file shows inline empty-file error', async () => {
     const { user } = setup();
-    // Mock getFileSizeBytes to return 0 (empty file)
-    vi.spyOn(fileValidation, 'getFileSizeBytes').mockResolvedValue(0);
+    // Override getFileSizeBytes to return 0 (empty file) for this test
+    vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(0);
 
     vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/empty.pdf');
     await user.click(screen.getByText('Open file'));
