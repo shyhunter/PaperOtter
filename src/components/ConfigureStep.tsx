@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { parseSizeInput, parsePageRange, formatBytes } from '@/lib/pdfUtils';
+import { recommendQualityForTarget } from '@/lib/pdfProcessor';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 
 export interface ConfigureStepProps {
@@ -17,12 +18,12 @@ export interface ConfigureStepProps {
   onBack: () => void;
 }
 
-// Ordered from most compression → least compression (matching user expectations)
+// Intent-based quality labels matching Ghostscript presets
 const QUALITY_LEVELS: { value: PdfQualityLevel; label: string; description: string }[] = [
-  { value: 'low',     label: 'Maximum', description: 'Strongest structural compression' },
-  { value: 'medium',  label: 'High',    description: 'Balanced — structural packing (default)' },
-  { value: 'high',    label: 'Medium',  description: 'Moderate — prioritise quality' },
-  { value: 'maximum', label: 'Low',     description: 'Minimal processing — pass-through re-save' },
+  { value: 'web',     label: 'Web',     description: 'Smallest file — 72 dpi, web-optimised' },
+  { value: 'screen',  label: 'Screen',  description: 'Balanced — 150 dpi, screen reading (default)' },
+  { value: 'print',   label: 'Print',   description: 'High quality — 300 dpi, for printing' },
+  { value: 'archive', label: 'Archive', description: 'Lossless — archival quality, no image recompression' },
 ];
 
 const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
@@ -46,9 +47,10 @@ export function ConfigureStep({
   const formId = useId();
 
   // Compression is always active — no enable toggle
-  const [qualityLevel, setQualityLevel] = useState<PdfQualityLevel>('medium');
+  const [qualityLevel, setQualityLevel] = useState<PdfQualityLevel>('screen');
   const [targetSizeInput, setTargetSizeInput] = useState('');
   const [sizeInputError, setSizeInputError] = useState<string | null>(null);
+  const [recommendedQuality, setRecommendedQuality] = useState<PdfQualityLevel | null>(null);
 
   // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
@@ -119,7 +121,7 @@ export function ConfigureStep({
                   key={value}
                   title={description}
                   className={cn(
-                    'flex flex-col items-center gap-1 rounded-md border px-2 py-2 cursor-pointer text-xs transition-colors select-none',
+                    'relative flex flex-col items-center gap-1 rounded-md border px-2 py-2 cursor-pointer text-xs transition-colors select-none',
                     qualityLevel === value
                       ? 'border-primary bg-primary/5 text-foreground'
                       : 'border-border text-muted-foreground hover:border-primary/50',
@@ -130,10 +132,18 @@ export function ConfigureStep({
                     name={`${formId}-quality`}
                     value={value}
                     checked={qualityLevel === value}
-                    onChange={() => setQualityLevel(value)}
+                    onChange={() => {
+                      setQualityLevel(value);
+                      // User manually overrides — clear the auto-recommend highlight but don't block
+                    }}
                     className="sr-only"
                   />
                   {label}
+                  {recommendedQuality === value && (
+                    <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-0.5 text-[9px] text-primary-foreground leading-none whitespace-nowrap">
+                      Suggested
+                    </span>
+                  )}
                 </label>
               ))}
             </div>
@@ -148,7 +158,25 @@ export function ConfigureStep({
               id={`${formId}-target-size`}
               type="text"
               value={targetSizeInput}
-              onChange={(e) => { setTargetSizeInput(e.target.value); setSizeInputError(null); }}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTargetSizeInput(val);
+                setSizeInputError(null);
+
+                // Auto-recommend quality when target changes
+                if (val.trim() === '') {
+                  setRecommendedQuality(null);
+                  return;
+                }
+                const targetBytes = parseSizeInput(val);
+                if (targetBytes !== null && fileSizeBytes > 0) {
+                  // Use a neutral compressibilityScore of 0.5 until result is available
+                  // (pre-scan result is only available after processing; this is a pre-processing hint)
+                  const recommended = recommendQualityForTarget(targetBytes, fileSizeBytes, 0.5);
+                  setRecommendedQuality(recommended);
+                  setQualityLevel(recommended); // auto-select recommended level
+                }
+              }}
               placeholder="e.g. 2 MB"
               disabled={isProcessing}
               className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
@@ -159,10 +187,7 @@ export function ConfigureStep({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Structural optimisation only — image quality is preserved.
-            {fileSizeBytes > 0
-              ? ` To reduce size, set a target below ${formatBytes(fileSizeBytes)}.`
-              : ' Set a target smaller than your current file for meaningful reduction.'}
+            Set a target size — quality level auto-suggests the best preset to get there.
           </p>
         </div>
 
