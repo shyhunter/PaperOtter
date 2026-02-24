@@ -15,7 +15,7 @@ import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { PrivacyFooter } from '@/components/PrivacyFooter';
-import type { FileEntry, AppStep, PdfProcessingOptions, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -53,6 +53,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
+  const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
 
   const pdfProcessor = usePdfProcessor();
   const imageProcessor = useImageProcessor();
@@ -172,6 +173,7 @@ function App() {
   const handleGeneratePreview = useCallback(
     (options: Omit<PdfProcessingOptions, 'onProgress'>) => {
       if (!fileEntry) return;
+      setLastPdfQualityLevel(options.qualityLevel);
       pdfProcessor.run(fileEntry.path, options);
     },
     [fileEntry, pdfProcessor],
@@ -269,6 +271,7 @@ function App() {
       {currentStep === 2 && pdfProcessor.result && (
         <CompareStep
           result={pdfProcessor.result}
+          qualityLevel={lastPdfQualityLevel}
           onSave={handleSave}
           onBack={handleBackFromCompare}
           onStartOver={handleStartOver}

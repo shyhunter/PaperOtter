@@ -3,10 +3,11 @@ import { ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
-import type { PdfProcessingResult } from '@/types/file';
+import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
 
 export interface CompareStepProps {
   result: PdfProcessingResult;
+  qualityLevel?: PdfQualityLevel;  // used to derive render scale for After panel
   onSave: () => void;
   onBack: () => void;
   onStartOver: () => void;
@@ -31,9 +32,24 @@ const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
 ];
 const DEFAULT_ZOOM_INDEX = 2; // 100%
 
-// Render scale: high enough for crisp display at 150% zoom.
+// Render scale for Before panel: high enough for crisp display at 150% zoom.
 // 2.0 = 2× pixel density — sharp on Retina displays at 100% view.
 const RENDER_SCALE = 2.0;
+
+// Map quality preset to a render scale reflecting its DPI
+// GS presets: screen=72dpi, ebook=150dpi, printer=300dpi, prepress=lossless
+// Render scales: lower DPI → smaller render scale (matches the actual output resolution)
+const QUALITY_RENDER_SCALE: Record<string, number> = {
+  web:     0.75,  // 72 dpi — render at lower scale
+  screen:  1.0,   // 150 dpi — standard
+  print:   1.5,   // 300 dpi — crisp
+  archive: 2.0,   // prepress/lossless — highest fidelity
+};
+
+function getAfterRenderScale(qualityLevel?: PdfQualityLevel): number {
+  if (!qualityLevel) return 2.0; // default if not provided
+  return QUALITY_RENDER_SCALE[qualityLevel] ?? 2.0;
+}
 
 interface PreviewPanelProps {
   label: string;
@@ -88,7 +104,7 @@ function PreviewPanel({
   );
 }
 
-export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStepProps) {
+export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver }: CompareStepProps) {
   const [originalUrls, setOriginalUrls] = useState<string[]>([]);
   const [processedUrls, setProcessedUrls] = useState<string[]>([]);
   const [originalRendering, setOriginalRendering] = useState(true);
@@ -129,7 +145,7 @@ export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStep
     setProcessedRendering(true);
     setProcessedError(false);
 
-    renderAllPdfPages(result.bytes, RENDER_SCALE)
+    renderAllPdfPages(result.bytes, getAfterRenderScale(qualityLevel))
       .then((urls) => {
         if (cancelled) return;
         setProcessedUrls(urls);
@@ -141,7 +157,7 @@ export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStep
         setProcessedRendering(false);
       });
     return () => { cancelled = true; };
-  }, [result.bytes]);
+  }, [result.bytes, qualityLevel]);
 
   const savingsBytes = result.inputSizeBytes - result.outputSizeBytes;
   const savingsPct = result.inputSizeBytes > 0
@@ -164,17 +180,6 @@ export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStep
             <span className="font-normal">
               best result: {formatBytes(result.bestAchievableSizeBytes)}. PDF optimisation is structural only.
             </span>
-          </p>
-        </div>
-      )}
-
-      {/* Structural-only notice — shown when size barely changed (quality level has no effect) */}
-      {result.targetMet && result.inputSizeBytes > 0 &&
-        Math.abs(result.inputSizeBytes - result.outputSizeBytes) / result.inputSizeBytes < 0.02 && (
-        <div className="mx-4 mt-3 rounded-md border border-border bg-muted/40 px-4 py-2 flex-none">
-          <p className="text-xs text-muted-foreground">
-            PDF compression is structural only — image content is unchanged. The quality level setting has no effect yet.
-            Full compression is planned for a future update.
           </p>
         </div>
       )}
@@ -212,7 +217,12 @@ export function CompareStep({ result, onSave, onBack, onStartOver }: CompareStep
             'font-medium tabular-nums whitespace-nowrap',
             grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
           )}>
-            {grew ? '+' : '−'}{formatBytes(Math.abs(savingsBytes))} ({Math.abs(savingsPct)}%)
+            {formatBytes(result.inputSizeBytes)} → {formatBytes(result.outputSizeBytes)}
+            {result.inputSizeBytes > 0 && (
+              <span className="text-muted-foreground font-normal ml-1">
+                ({Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'})
+              </span>
+            )}
           </span>
           <span className="text-muted-foreground whitespace-nowrap">
             {result.pageCount} page{result.pageCount !== 1 ? 's' : ''}
