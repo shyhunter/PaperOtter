@@ -25,6 +25,7 @@ function makeResult(overrides: Partial<PdfProcessingResult> = {}): PdfProcessing
     outputPageDimensions: { widthPt: 595.28, heightPt: 841.89 },
     targetMet: true,
     bestAchievableSizeBytes: null,
+    wasAlreadyOptimal: false,
     imageCount: 0,
     compressibilityScore: 0,
     ...overrides,
@@ -181,5 +182,30 @@ describe('CompareStep — zoom controls', () => {
     await userEvent.click(zoomIn);
     await userEvent.click(zoomIn);
     expect(zoomIn).toBeDisabled();
+  });
+});
+
+// ─── BUG-01 regression: wasAlreadyOptimal ────────────────────────────────────
+// When GS inflated a text-only PDF and processPdf reverted to source bytes,
+// CompareStep must show the "already optimal" notice — not a "205% larger" label.
+
+describe('CompareStep — BUG-01 regression (wasAlreadyOptimal messaging)', () => {
+  it('[BUG-01-UI] shows already-optimal notice when wasAlreadyOptimal=true', () => {
+    render(<CompareStep
+      result={makeResult({ wasAlreadyOptimal: true, outputSizeBytes: 100_000 })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    // "already optimal" notice must appear
+    expect(screen.getByText(/already optim/i)).toBeInTheDocument();
+    // No "larger" label — the file was NOT made larger from the user's perspective
+    expect(screen.queryByText(/larger/i)).not.toBeInTheDocument();
+  });
+
+  it('[BUG-01-UI-b] target-not-met banner says "fully optimised" when wasAlreadyOptimal=true', () => {
+    render(<CompareStep
+      result={makeResult({ wasAlreadyOptimal: true, targetMet: false, bestAchievableSizeBytes: 100_000 })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    expect(screen.getByText(/fully optimis/i)).toBeInTheDocument();
   });
 });

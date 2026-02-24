@@ -17,6 +17,7 @@ export const FAKE_PDF_RESULT: PdfProcessingResult = {
   outputPageDimensions: { widthPt: 595.28, heightPt: 841.89 }, // A4
   targetMet: true,
   bestAchievableSizeBytes: null,
+  wasAlreadyOptimal: false,
   imageCount: 2,
   compressibilityScore: 0.5,
 };

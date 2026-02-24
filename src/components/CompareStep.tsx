@@ -178,7 +178,10 @@ export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver 
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
             Target size not achievable —{' '}
             <span className="font-normal">
-              best result: {formatBytes(result.bestAchievableSizeBytes)}. PDF optimisation is structural only.
+              best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
+              {result.wasAlreadyOptimal
+                ? 'This file is already fully optimised.'
+                : 'PDF optimisation is structural only.'}
             </span>
           </p>
         </div>
@@ -230,8 +233,8 @@ export function CompareStep({ result, qualityLevel, onSave, onBack, onStartOver 
           {dimensionsLabel && (
             <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>
           )}
-          {grew && (
-            <span className="text-muted-foreground hidden sm:inline">File was already optimised</span>
+          {result.wasAlreadyOptimal && (
+            <span className="text-muted-foreground hidden sm:inline">File already optimal — no compression savings possible</span>
           )}
         </div>
 

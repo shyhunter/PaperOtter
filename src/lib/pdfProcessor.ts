@@ -167,6 +167,7 @@ export async function processPdf(
 
   // 5. Produce output bytes — GS for real compression, or structural re-save only
   let processedBytes: Uint8Array;
+  let wasAlreadyOptimal = false;
 
   if (options.compressionEnabled) {
     // Use Ghostscript for real image recompression
@@ -202,6 +203,13 @@ export async function processPdf(
     await import('@tauri-apps/plugin-fs').then(m =>
       m.remove(tempInputPath).catch(() => {})
     );
+
+    // GS bloat guard: if GS produced a larger file than the bytes it received, revert.
+    // This happens for text-only PDFs — GS adds ICC profiles and overhead with no image data to compress.
+    if (processedBytes.byteLength > pdfLibBytes.byteLength) {
+      processedBytes = pdfLibBytes; // pdfLibBytes = post-resize bytes (or sourceBytes when no resize)
+      wasAlreadyOptimal = true;
+    }
   } else {
     // Structural re-save only (no GS) — pdf-lib useObjectStreams
     // useCompression is NEVER used (pdf-lib bug #1445 — corrupts output)
@@ -210,14 +218,15 @@ export async function processPdf(
 
   const outputSizeBytes = processedBytes.byteLength;
 
-  // 6. Evaluate target size constraint
+  // 7. Evaluate target size constraint
   let targetMet = true;
   let bestAchievableSizeBytes: number | null = null;
 
   if (options.compressionEnabled && options.targetSizeBytes != null) {
+    // When already optimal, compare against the actual output (= original size), not GS inflation
     if (outputSizeBytes > options.targetSizeBytes) {
       targetMet = false;
-      bestAchievableSizeBytes = outputSizeBytes;
+      bestAchievableSizeBytes = outputSizeBytes; // = inputSizeBytes when wasAlreadyOptimal
     }
   }
 
@@ -238,6 +247,7 @@ export async function processPdf(
       : null,
     targetMet,
     bestAchievableSizeBytes,
+    wasAlreadyOptimal,
     imageCount,
     compressibilityScore,
   };

@@ -47,6 +47,7 @@ export interface PdfProcessingResult {
   outputPageDimensions: { widthPt: number; heightPt: number } | null; // first page dimensions in PDF points
   targetMet: boolean;           // false when compressionEnabled + target not achieved
   bestAchievableSizeBytes: number | null; // set when targetMet=false
+  wasAlreadyOptimal: boolean;   // true when GS output was larger than input; bytes reverted to source
   // Pre-scan results (always populated, even for text-only PDFs)
   imageCount: number;           // number of image XObjects found in the PDF
   compressibilityScore: number; // 0.0–1.0: 0 = text-only (not very compressible), 1.0 = mostly images (highly compressible)

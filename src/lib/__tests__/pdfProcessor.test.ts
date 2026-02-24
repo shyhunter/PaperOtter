@@ -745,3 +745,60 @@ describe('processPdf — regressions', () => {
     expect(header).toBe('%PDF-');
   });
 });
+
+// ─── BUG-01: GS bloat regression ─────────────────────────────────────────────
+// When Ghostscript produces a file LARGER than the input (e.g. adding ICC profiles
+// to a text-only PDF), processPdf must revert to the original bytes and signal
+// wasAlreadyOptimal=true.  Target evaluation must use inputSizeBytes, not GS size.
+
+describe('processPdf — BUG-01 regression (GS bloat on text-only PDFs)', () => {
+  let warnockPdf: Uint8Array;
+
+  beforeAll(() => {
+    warnockPdf = new Uint8Array(readFileSync(resolve(process.cwd(), 'test-fixtures/warnock_camelot.pdf')));
+  });
+
+  it('[BUG-01] returns source bytes when GS output is larger than input', async () => {
+    // GS inflates the file — simulate real-world text-only PDF behaviour
+    const inflated = makeGsOutput(warnockPdf.length + 50_000); // much bigger
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', { ...baseOpts, qualityLevel: 'print' });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.outputSizeBytes).toBe(warnockPdf.length);          // reverted to input size
+    expect(result.bytes).toEqual(warnockPdf);                        // exact original bytes returned
+  });
+
+  it('[BUG-01b] targetMet=true when original fits target and GS would have bloated it', async () => {
+    const inflated = makeGsOutput(warnockPdf.length + 50_000);
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      targetSizeBytes: warnockPdf.length + 10_000, // target larger than original → met
+    });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.targetMet).toBe(true);
+    expect(result.bestAchievableSizeBytes).toBeNull();
+  });
+
+  it('[BUG-01c] bestAchievableSizeBytes = inputSizeBytes (not GS size) when original exceeds target', async () => {
+    const inflated = makeGsOutput(warnockPdf.length + 50_000);
+    mockReadFile(warnockPdf);
+    mockCompressPdf(inflated);
+
+    const result = await processPdf('/warnock_camelot.pdf', {
+      ...baseOpts,
+      targetSizeBytes: 1, // impossible — original itself exceeds this
+    });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.targetMet).toBe(false);
+    // bestAchievableSizeBytes must reflect original size, not GS-inflated size
+    expect(result.bestAchievableSizeBytes).toBe(warnockPdf.length);
+  });
+});
