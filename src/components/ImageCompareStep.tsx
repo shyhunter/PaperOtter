@@ -206,6 +206,7 @@ export function ImageCompareStep({
 
         <button
           type="button"
+          data-testid="process-another-btn"
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
