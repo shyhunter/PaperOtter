@@ -23,3 +23,9 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# E2E test artifacts
+e2e-output/
+test-fixtures-e2e/large-sparse.pdf
+test-fixtures-e2e/large-sparse.jpg
+.e2e-artifacts/

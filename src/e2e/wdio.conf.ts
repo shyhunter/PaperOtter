@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { spawn, type ChildProcess } from 'child_process';
-import type { Options } from '@wdio/types';
 import { waitTauriDriverReady } from '@crabnebula/tauri-driver';
 
 // Resolve the Tauri binary path for the current platform
@@ -15,7 +14,7 @@ function getTauriBinaryPath(): string {
   return join(__dirname, '../../src-tauri/target/release/papercut');
 }
 
-// keep track of the tauri-driver child process
+// Keep track of the tauri-driver child process
 let tauriDriver: ChildProcess | undefined;
 let killedTauriDriver = false;
 
@@ -24,23 +23,23 @@ function closeTauriDriver(): void {
   tauriDriver?.kill();
 }
 
-export const config: Options.Testrunner = {
+/**
+ * `tauri:options` is a vendor capability not yet declared in @wdio/types.
+ * Use an extension interface to satisfy TypeScript without losing type safety
+ * on the rest of the config object.
+ */
+interface TauriCapability {
+  'tauri:options': { application: string };
+}
+
+export const config: WebdriverIO.Config = {
   runner: 'local',
-  autoCompileOpts: {
-    autoCompile: true,
-    tsNodeOpts: { project: join(__dirname, '../../tsconfig.json') },
-  },
 
   specs: ['src/e2e/tests/**/*.test.ts'],
   exclude: [],
   maxInstances: 1, // Tauri apps are single-instance; never run in parallel
 
-  capabilities: [{
-    maxInstances: 1,
-    'tauri:options': {
-      application: getTauriBinaryPath(),
-    },
-  }],
+  capabilities: [{ 'tauri:options': { application: getTauriBinaryPath() } } as unknown as TauriCapability & WebdriverIO.Capabilities],
 
   logLevel: 'warn',
   bail: 0,
@@ -56,8 +55,8 @@ export const config: Options.Testrunner = {
     timeout: 120000, // full E2E flows including GS can take 30-60 s
   },
 
-  // Artifact directory for screenshots captured in screenshotOnFailure()
-  screenshotPath: '.e2e-artifacts/screenshots',
+  // Screenshots on failure are saved to .e2e-artifacts/screenshots/ by screenshotOnFailure()
+  // in src/e2e/helpers/driver.ts
 
   // Linux headless support: set DISPLAY=:99 when running under Xvfb and no DISPLAY is set.
   // On macOS/Windows this block is a no-op.
