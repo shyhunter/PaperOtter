@@ -203,11 +203,11 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     : null;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div data-testid="compare-step" className="flex flex-1 flex-col overflow-hidden">
 
       {/* Target not met warning */}
       {!result.targetMet && result.bestAchievableSizeBytes != null && (
-        <div className="mx-4 mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 flex-none">
+        <div data-testid="target-not-met-banner" className="mx-4 mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 flex-none">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
             Target size not achievable —{' '}
             <span className="font-normal">
@@ -243,12 +243,12 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {/* Bottom strip */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
 
-        <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
           Back
         </Button>
 
         {/* Stats */}
-        <div className="flex flex-1 items-center gap-4 text-xs overflow-hidden">
+        <div data-testid="stats-bar" className="flex flex-1 items-center gap-4 text-xs overflow-hidden">
           <span className={cn(
             'font-medium tabular-nums whitespace-nowrap',
             grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
@@ -305,7 +305,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           Process another
         </button>
 
-        <Button size="sm" onClick={onSave} className="flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
           Save…
         </Button>
       </div>

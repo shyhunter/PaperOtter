@@ -96,7 +96,7 @@ export function ConfigureStep({
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+    <div data-testid="configure-step" className="flex flex-1 flex-col items-center overflow-y-auto p-6">
       <div className="w-full max-w-lg space-y-4 my-auto">
 
         {/* File name header */}
@@ -115,7 +115,7 @@ export function ConfigureStep({
           <h2 className="text-sm font-semibold text-foreground">Optimise file size</h2>
 
           {/* Compression level selector */}
-          <fieldset>
+          <fieldset data-testid="quality-select">
             <legend className="text-xs text-muted-foreground mb-2">Compression level</legend>
             <div className="grid grid-cols-4 gap-1">
               {QUALITY_LEVELS.map(({ value, label, description }) => (
@@ -138,6 +138,7 @@ export function ConfigureStep({
                       setQualityLevel(value);
                       // User manually overrides — clear the auto-recommend highlight but don't block
                     }}
+                    data-testid={`quality-option-${value}`}
                     className="sr-only"
                   />
                   {label}
@@ -202,6 +203,7 @@ export function ConfigureStep({
             <button
               type="button"
               role="switch"
+              data-testid="resize-toggle"
               aria-checked={resizeEnabled ? 'true' : 'false'}
               aria-label="Enable page resize"
               onClick={() => setResizeEnabled((v) => !v)}
@@ -231,6 +233,7 @@ export function ConfigureStep({
                 </label>
                 <select
                   id={`${formId}-preset`}
+                  data-testid="page-preset-select"
                   value={pagePreset}
                   onChange={(e) => setPagePreset(e.target.value as PdfPagePreset)}
                   disabled={isProcessing}
@@ -249,6 +252,7 @@ export function ConfigureStep({
                     <label htmlFor={`${formId}-width`} className="text-xs text-muted-foreground">Width (mm)</label>
                     <input
                       id={`${formId}-width`}
+                      data-testid="custom-width-input"
                       type="number"
                       min="10"
                       max="5000"
@@ -262,6 +266,7 @@ export function ConfigureStep({
                     <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground">Height (mm)</label>
                     <input
                       id={`${formId}-height`}
+                      data-testid="custom-height-input"
                       type="number"
                       min="10"
                       max="5000"
@@ -325,11 +330,12 @@ export function ConfigureStep({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={onBack} disabled={isProcessing} className="flex-none">
+          <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
             Back
           </Button>
           <Button
             size="sm"
+            data-testid="generate-preview-btn"
             onClick={handleSubmit}
             disabled={isProcessing}
             className="flex-1"
@@ -339,6 +345,7 @@ export function ConfigureStep({
           {isProcessing && onCancel && (
             <button
               type="button"
+              data-testid="cancel-btn"
               onClick={onCancel}
               className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
             >
