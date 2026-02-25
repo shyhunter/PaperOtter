@@ -214,7 +214,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
               best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
               {result.wasAlreadyOptimal
                 ? 'This file is already fully optimised.'
-                : 'PDF optimisation is structural only.'}
+                : 'Try a lower quality level to reduce further.'}
             </span>
           </p>
         </div>
