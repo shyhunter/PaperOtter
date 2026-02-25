@@ -6,9 +6,12 @@ import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
 expect.extend(jestDomMatchers);
 
 // Mock @tauri-apps/plugin-fs — the native plugin is not available in a Node test environment.
-// Individual tests control what readFile returns via vi.mocked(readFile).mockResolvedValue(...)
+// Default: readFile returns a 1 MB Uint8Array so that getFileSizeBytes produces a valid,
+// under-limit size for integration tests that navigate through file selection.
+// Individual tests override via vi.mocked(readFile).mockResolvedValue(...) or
+// vi.mocked(getFileSizeBytes).mockResolvedValueOnce(...) as needed.
 vi.mock('@tauri-apps/plugin-fs', () => ({
-  readFile: vi.fn(),
+  readFile: vi.fn().mockResolvedValue(new Uint8Array(1024 * 1024)), // 1 MB default
   writeFile: vi.fn(),
   remove: vi.fn().mockResolvedValue(undefined),
 }));

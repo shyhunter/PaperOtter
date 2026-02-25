@@ -12,7 +12,7 @@
  * fake timers are active. Real timers + findBy* handle navigation.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '@/App';
 import { openFilePicker } from '@/hooks/useFileOpen';

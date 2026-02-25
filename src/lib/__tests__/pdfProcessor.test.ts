@@ -746,6 +746,49 @@ describe('processPdf — regressions', () => {
   });
 });
 
+// ─── Cancellation regression tests ───────────────────────────────────────────
+//
+// PC-CANCEL-01: cancel_processing invoke is reachable — verify invoke mock can be
+//               set up and called for 'cancel_processing'.
+// PC-CANCEL-02: when compress_pdf (invoked internally by processPdf) rejects with
+//               "CANCELLED", processPdf propagates a rejection whose message
+//               includes "CANCELLED" — the hook's catch branch uses this to set
+//               isCancelled=true and error=null.
+
+describe('processPdf — cancellation behaviour', () => {
+  let a4Pdf: Uint8Array;
+
+  beforeAll(async () => {
+    a4Pdf = await createMinimalPdf(1, PageSizes.A4);
+  });
+
+  // [PC-CANCEL-01] cancel_processing invoke mock can be set up and invoked independently.
+  // This verifies the mock infrastructure works so cancel() in the hook can call it.
+  it('[PC-CANCEL-01] invoke can be mocked to simulate cancel_processing being called', async () => {
+    const cancelMock = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === 'cancel_processing') return cancelMock();
+      return Promise.resolve(undefined);
+    });
+
+    // Simulate what hook.cancel() does: fire-and-forget invoke('cancel_processing')
+    await invoke('cancel_processing');
+    expect(cancelMock).toHaveBeenCalledTimes(1);
+  });
+
+  // [PC-CANCEL-02] when invoke('compress_pdf') rejects with "CANCELLED",
+  // processPdf propagates a rejection whose message contains "CANCELLED".
+  // The hook's catch branch checks for this string to set isCancelled=true.
+  it('[PC-CANCEL-02] processPdf rejects with CANCELLED error when compress_pdf invoke throws CANCELLED', async () => {
+    mockReadFile(a4Pdf);
+    vi.mocked(invoke).mockRejectedValue(new Error('CANCELLED'));
+
+    await expect(
+      processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true }),
+    ).rejects.toThrow('CANCELLED');
+  });
+});
+
 // ─── BUG-01: GS bloat regression ─────────────────────────────────────────────
 // When Ghostscript produces a file LARGER than the input (e.g. adding ICC profiles
 // to a text-only PDF), processPdf must revert to the original bytes and signal

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { getExtension, isSupportedFile, detectFormat, getFileName } from '@/lib/fileValidation';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes } from '@/lib/fileValidation';
 
 // ─── getExtension ────────────────────────────────────────────────────────────
 
@@ -123,5 +123,62 @@ describe('getFileName', () => {
   it('handles trailing slash gracefully (returns empty string, not a crash)', () => {
     // /path/to/dir/ → last segment is '' after split
     expect(getFileName('/some/dir/')).toBe('');
+  });
+});
+
+// ─── FILE_SIZE_LIMIT_BYTES ────────────────────────────────────────────────────
+
+describe('FILE_SIZE_LIMIT_BYTES', () => {
+  it('equals exactly 100 MB (104857600 bytes)', () => {
+    expect(FILE_SIZE_LIMIT_BYTES).toBe(100 * 1024 * 1024);
+    expect(FILE_SIZE_LIMIT_BYTES).toBe(104857600);
+  });
+});
+
+// ─── getFileSizeBytes ─────────────────────────────────────────────────────────
+
+// Mock @tauri-apps/plugin-fs for getFileSizeBytes tests
+vi.mock('@tauri-apps/plugin-fs', () => ({
+  readFile: vi.fn(),
+}));
+
+afterEach(() => {
+  vi.resetAllMocks();
+});
+
+describe('getFileSizeBytes', () => {
+  it('returns the byteLength of the file read via readFile', async () => {
+    const { readFile } = await import('@tauri-apps/plugin-fs');
+    const fakeBytes = new Uint8Array(12345);
+    vi.mocked(readFile).mockResolvedValue(fakeBytes);
+
+    const size = await getFileSizeBytes('/some/file.pdf');
+    expect(size).toBe(12345);
+    expect(readFile).toHaveBeenCalledWith('/some/file.pdf');
+  });
+
+  it('returns 0 for an empty file', async () => {
+    const { readFile } = await import('@tauri-apps/plugin-fs');
+    vi.mocked(readFile).mockResolvedValue(new Uint8Array(0));
+
+    const size = await getFileSizeBytes('/empty.pdf');
+    expect(size).toBe(0);
+  });
+
+  it('returns FILE_SIZE_LIMIT_BYTES + 1 for a file that is just over the limit', async () => {
+    const { readFile } = await import('@tauri-apps/plugin-fs');
+    const overLimitBytes = new Uint8Array(FILE_SIZE_LIMIT_BYTES + 1);
+    vi.mocked(readFile).mockResolvedValue(overLimitBytes);
+
+    const size = await getFileSizeBytes('/huge.pdf');
+    expect(size).toBe(FILE_SIZE_LIMIT_BYTES + 1);
+    expect(size).toBeGreaterThan(FILE_SIZE_LIMIT_BYTES);
+  });
+
+  it('propagates readFile errors', async () => {
+    const { readFile } = await import('@tauri-apps/plugin-fs');
+    vi.mocked(readFile).mockRejectedValue(new Error('Permission denied'));
+
+    await expect(getFileSizeBytes('/restricted.pdf')).rejects.toThrow('Permission denied');
   });
 });
