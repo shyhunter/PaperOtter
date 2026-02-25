@@ -188,7 +188,7 @@ export function ImageConfigureStep({
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+    <div data-testid="image-configure-step" className="flex flex-1 flex-col items-center overflow-y-auto p-6">
       <div className="w-full max-w-lg space-y-4 my-auto">
 
         {/* File name header */}
@@ -208,11 +208,12 @@ export function ImageConfigureStep({
           {/* Format selector */}
           <div className="space-y-1.5">
             <p className="text-xs text-muted-foreground">Output format</p>
-            <div className="grid grid-cols-3 gap-1">
+            <div data-testid="format-select" className="grid grid-cols-3 gap-1">
               {FORMATS.map((fmt) => (
                 <button
                   key={fmt}
                   type="button"
+                  data-testid={`format-option-${fmt}`}
                   onClick={() => setOutputFormat(fmt)}
                   disabled={isProcessing}
                   className={cn(
@@ -244,6 +245,7 @@ export function ImageConfigureStep({
             </div>
             <input
               id={`${formId}-quality`}
+              data-testid="quality-slider"
               type="range"
               min="1"
               max="100"
@@ -265,6 +267,7 @@ export function ImageConfigureStep({
             {/* Prominent pill toggle switch */}
             <button
               type="button"
+              data-testid="resize-toggle"
               role="switch"
               aria-checked={resizeEnabled ? 'true' : 'false'}
               aria-label="Enable resize"
@@ -322,6 +325,7 @@ export function ImageConfigureStep({
                     <button
                       key={preset.label}
                       type="button"
+                      data-testid={`preset-btn-${preset.label.toLowerCase()}`}
                       onClick={() => applyPreset(preset)}
                       disabled={isProcessing}
                       title={`${preset.width} × ${preset.height} px`}
@@ -349,6 +353,7 @@ export function ImageConfigureStep({
                     </label>
                     <input
                       id={`${formId}-width`}
+                      data-testid="resize-width-input"
                       type="number"
                       min="1"
                       value={widthInput}
@@ -369,6 +374,8 @@ export function ImageConfigureStep({
                       {/* Aspect ratio lock toggle */}
                       <button
                         type="button"
+                        data-testid="aspect-ratio-lock"
+                        data-locked={aspectLocked ? 'true' : 'false'}
                         onClick={() => setAspectLocked((v) => !v)}
                         disabled={isProcessing}
                         aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
@@ -390,6 +397,7 @@ export function ImageConfigureStep({
                     </div>
                     <input
                       id={`${formId}-height`}
+                      data-testid="resize-height-input"
                       type="number"
                       min="1"
                       value={heightInput}
@@ -425,6 +433,7 @@ export function ImageConfigureStep({
           <Button
             variant="outline"
             size="sm"
+            data-testid="back-btn"
             onClick={onBack}
             disabled={isProcessing}
             className="flex-none"
@@ -433,6 +442,7 @@ export function ImageConfigureStep({
           </Button>
           <Button
             size="sm"
+            data-testid="generate-preview-btn"
             onClick={handleSubmit}
             disabled={isProcessing}
             className="flex-1"
