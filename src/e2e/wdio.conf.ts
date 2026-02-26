@@ -1,6 +1,9 @@
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { spawn, type ChildProcess } from 'child_process';
 import { waitTauriDriverReady } from '@crabnebula/tauri-driver';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Resolve the Tauri binary path for the current platform
 function getTauriBinaryPath(): string {
