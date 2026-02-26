@@ -38,7 +38,7 @@ interface TauriCapability {
 export const config: WebdriverIO.Config = {
   runner: 'local',
 
-  specs: ['src/e2e/tests/**/*.test.ts'],
+  specs: [join(__dirname, 'tests/**/*.test.ts')],
   exclude: [],
   maxInstances: 1, // Tauri apps are single-instance; never run in parallel
 
