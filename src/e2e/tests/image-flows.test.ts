@@ -80,7 +80,7 @@ describe('Image — quality only', () => {
     const outSize = statSync(outPath).size;
     const inSize  = statSync(PHOTO_JPG).size;
     expect(outSize).toBeGreaterThan(0);
-    expect(outSize, `50% JPEG should be smaller than input (out=${outSize}, in=${inSize})`).toBeLessThan(inSize);
+    expect(outSize).toBeLessThan(inSize); // 50% JPEG should be smaller than input
   });
 
   it('[IMG-Q-100] JPEG at 100% quality: output exists and is JPEG', async () => {
@@ -257,7 +257,7 @@ describe('Image error paths', () => {
     const oneVisible =
       (await emptyErr.isDisplayed().catch(() => false)) ||
       (await corruptErr.isDisplayed().catch(() => false));
-    expect(oneVisible, 'Expected inline error for zero-byte image').toBe(true);
+    expect(oneVisible).toBe(true); // Expected inline error for zero-byte image
     const configStep = await browser.$('[data-testid="image-configure-step"]');
     expect(await configStep.isDisplayed().catch(() => false)).toBe(false);
   });
@@ -298,8 +298,8 @@ describe('Image save dialog filter', () => {
       );
 
       const filtersJson = JSON.stringify(captured).toLowerCase();
-      expect(filtersJson, `Save options must contain "${expectedExt}"`).toContain(expectedExt);
-      expect(filtersJson, 'Save options must NOT contain "pdf"').not.toContain('pdf');
+      expect(filtersJson).toContain(expectedExt); // Save options must contain format extension
+      expect(filtersJson).not.toContain('pdf'); // Save options must NOT contain "pdf"
     });
   }
 });

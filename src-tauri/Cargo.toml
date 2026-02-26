@@ -30,3 +30,7 @@ tauri-plugin-shell = "2"
 image = "0.25"
 webp = "0.3"
 
+# E2E testing — debug builds only (never ships to end users)
+[target.'cfg(debug_assertions)'.dependencies]
+tauri-plugin-automation = "0.1"
+

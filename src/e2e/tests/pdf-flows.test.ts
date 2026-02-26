@@ -69,18 +69,15 @@ describe('PDF compression — quality levels', () => {
       await saveBtn.click();
       await waitForStep(browser, 3);
 
-      expect(existsSync(outPath), `Output PDF not found at ${outPath}`).toBe(true);
+      expect(existsSync(outPath)).toBe(true);
       const outSize = statSync(outPath).size;
-      expect(outSize, 'Output PDF must be > 0 bytes').toBeGreaterThan(0);
+      expect(outSize).toBeGreaterThan(0);
 
       // archive is lossless (prepress preset) — only assert existence, not size reduction.
       // web/screen/print are lossy and should compress photo_heavy.pdf.
       if (quality !== 'archive') {
         const inSize = statSync(PHOTO_PDF).size;
-        expect(
-          outSize,
-          `${quality} quality should compress photo PDF (out=${outSize}, in=${inSize})`
-        ).toBeLessThan(inSize);
+        expect(outSize).toBeLessThan(inSize);
       }
     });
   }
@@ -196,7 +193,7 @@ describe('PDF error paths', () => {
     const oneVisible =
       (await emptyErr.isDisplayed().catch(() => false)) ||
       (await corruptErr.isDisplayed().catch(() => false));
-    expect(oneVisible, 'Expected an inline error for zero-byte file').toBe(true);
+    expect(oneVisible).toBe(true); // Expected an inline error for zero-byte file
     const configureStep = await browser.$('[data-testid="configure-step"]');
     expect(await configureStep.isDisplayed().catch(() => false)).toBe(false);
   });
@@ -217,10 +214,8 @@ describe('PDF error paths', () => {
 
     const configureVisible = await browser.$('[data-testid="configure-step"]').isDisplayed().catch(() => false);
     const compareVisible   = await browser.$('[data-testid="compare-step"]').isDisplayed().catch(() => false);
-    expect(
-      configureVisible || compareVisible,
-      'After cancel, app must show either Configure or Compare step (not blank)'
-    ).toBe(true);
+    // After cancel, app must show either Configure or Compare step (not blank)
+    expect(configureVisible || compareVisible).toBe(true);
   });
 });
 
@@ -252,7 +247,7 @@ describe('PDF save dialog filter', () => {
     );
 
     const filters = JSON.stringify(capturedFilters).toLowerCase();
-    expect(filters, 'Save dialog filters must mention "pdf"').toContain('pdf');
-    expect(filters, 'Save dialog filters must NOT mention "jpeg", "png", or "webp"').not.toMatch(/jpeg|png|webp/);
+    expect(filters).toContain('pdf'); // Save dialog filters must mention "pdf"
+    expect(filters).not.toMatch(/jpeg|png|webp/); // must NOT mention image formats
   });
 });

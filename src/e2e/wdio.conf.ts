@@ -2,28 +2,34 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, type ChildProcess } from 'child_process';
 import { waitTauriDriverReady } from '@crabnebula/tauri-driver';
+import { waitTestRunnerBackendReady } from '@crabnebula/test-runner-backend';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Resolve the Tauri binary path for the current platform
+// Resolve the Tauri binary path for the current platform.
+// E2E tests run against a debug build so tauri-plugin-automation is compiled in.
 function getTauriBinaryPath(): string {
   if (process.platform === 'darwin') {
-    return join(__dirname, '../../src-tauri/target/release/bundle/macos/Papercut.app/Contents/MacOS/Papercut');
+    return join(__dirname, '../../src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/Papercut');
   }
   if (process.platform === 'win32') {
-    return join(__dirname, '../../src-tauri/target/release/Papercut.exe');
+    return join(__dirname, '../../src-tauri/target/debug/Papercut.exe');
   }
   // Linux
-  return join(__dirname, '../../src-tauri/target/release/papercut');
+  return join(__dirname, '../../src-tauri/target/debug/papercut');
 }
 
-// Keep track of the tauri-driver child process
+// Keep track of child processes
 let tauriDriver: ChildProcess | undefined;
+let testRunnerBackend: ChildProcess | undefined;
 let killedTauriDriver = false;
+let killedTestRunnerBackend = false;
 
-function closeTauriDriver(): void {
+function closeAll(): void {
   killedTauriDriver = true;
+  killedTestRunnerBackend = true;
   tauriDriver?.kill();
+  testRunnerBackend?.kill();
 }
 
 /**
@@ -71,6 +77,31 @@ export const config: WebdriverIO.Config = {
     }
   },
 
+  // macOS: start test-runner-backend which bridges WebDriver requests to the
+  // tauri-plugin-automation instance running inside the debug app build.
+  // tauri-driver is then told to proxy to it via REMOTE_WEBDRIVER_URL.
+  onPrepare: async (): Promise<void> => {
+    if (process.platform === 'darwin') {
+      testRunnerBackend = spawn('npx', ['test-runner-backend'], {
+        stdio: [null, process.stdout, process.stderr],
+        shell: true,
+      });
+      testRunnerBackend.on('error', (error: Error) => {
+        console.error('test-runner-backend error:', error);
+        process.exit(1);
+      });
+      testRunnerBackend.on('exit', (code: number | null) => {
+        if (!killedTestRunnerBackend) {
+          console.error('test-runner-backend exited unexpectedly with code:', code);
+          process.exit(1);
+        }
+      });
+      await waitTestRunnerBackendReady();
+      // Tell tauri-driver to forward WebDriver requests to the local backend
+      process.env.REMOTE_WEBDRIVER_URL = 'http://127.0.0.1:3000';
+    }
+  },
+
   // Start tauri-driver before each WebDriverIO session so it can proxy requests.
   beforeSession: async (): Promise<void> => {
     tauriDriver = spawn('npx', ['tauri-driver'], {
@@ -92,8 +123,14 @@ export const config: WebdriverIO.Config = {
     await waitTauriDriverReady();
   },
 
-  // Clean up tauri-driver after each session
+  // Clean up after each session
   afterSession: (): void => {
-    closeTauriDriver();
+    killedTauriDriver = true;
+    tauriDriver?.kill();
+  },
+
+  // Clean up test-runner-backend when the full run is done
+  onComplete: (): void => {
+    closeAll();
   },
 };

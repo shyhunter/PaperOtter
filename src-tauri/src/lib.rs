@@ -256,14 +256,20 @@ async fn compress_pdf(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .manage(ProcessState { gs_child: Mutex::new(None) })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf, cancel_processing])
+        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf, cancel_processing]);
+
+    // E2E automation plugin — debug builds only, never ships in release
+    #[cfg(debug_assertions)]
+    let builder = builder.plugin(tauri_plugin_automation::init());
+
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
