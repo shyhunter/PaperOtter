@@ -89,13 +89,13 @@ export function ImageCompareStep({
     : `${result.quality}%`;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div data-testid="image-compare-step" className="flex flex-1 flex-col overflow-hidden">
 
       {/* Side-by-side preview panels */}
       <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
 
         {/* Before panel */}
-        <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
+        <div data-testid="before-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
           <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
             <span className="text-sm font-semibold text-foreground">Before</span>
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -116,7 +116,7 @@ export function ImageCompareStep({
         </div>
 
         {/* After panel */}
-        <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
+        <div data-testid="after-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
           <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
             <span className="text-sm font-semibold text-foreground">After</span>
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -150,9 +150,9 @@ export function ImageCompareStep({
       </div>
 
       {/* Bottom strip */}
-      <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+      <div data-testid="stats-bar" className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
 
-        <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
           Back
         </Button>
 
@@ -206,13 +206,14 @@ export function ImageCompareStep({
 
         <button
           type="button"
+          data-testid="process-another-btn"
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
           Process another
         </button>
 
-        <Button size="sm" onClick={onSave} className="flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
           Save…
         </Button>
       </div>

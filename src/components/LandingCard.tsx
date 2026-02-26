@@ -85,6 +85,7 @@ export function LandingCard({
               {/* File picker half */}
               <button
                 type="button"
+                data-testid="open-file-btn"
                 onClick={onPickerClick}
                 disabled={isLoading}
                 className={cn(
@@ -109,6 +110,7 @@ export function LandingCard({
 
               {/* Drop zone half */}
               <div
+                data-testid="drop-zone"
                 className={cn(
                   'flex flex-col items-center justify-center gap-5 p-14 rounded-r-xl',
                   dragState === 'over-valid' && 'bg-primary/10',
@@ -146,7 +148,7 @@ export function LandingCard({
 
             {/* Loading bar — visible briefly after valid drop before advancing */}
             {isLoading && (
-              <div className="px-8 pb-6 pt-3">
+              <div data-testid="loading-spinner" className="px-8 pb-6 pt-3">
                 <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                   <div className="h-full bg-primary animate-pulse rounded-full" />
                 </div>
@@ -169,7 +171,16 @@ export function LandingCard({
 
         {/* Inline error slot — emptyFileError > corruptFileError > invalidDropError */}
         {inlineError && (
-          <p className="text-sm text-destructive text-center animate-in fade-in">
+          <p
+            data-testid={
+              emptyFileError
+                ? 'empty-file-error'
+                : corruptFileError
+                ? 'corrupt-file-error'
+                : 'invalid-drop-error'
+            }
+            className="text-sm text-destructive text-center animate-in fade-in"
+          >
             {inlineError}
           </p>
         )}
@@ -178,6 +189,7 @@ export function LandingCard({
       {/* File size limit modal — blocking overlay, no "proceed anyway" */}
       {fileSizeLimitBytes != null && (
         <div
+          data-testid="file-size-limit-modal"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           role="dialog"
           aria-modal="true"
@@ -196,6 +208,7 @@ export function LandingCard({
             <div className="flex justify-end">
               <Button
                 type="button"
+                data-testid="file-size-limit-dismiss"
                 variant="outline"
                 onClick={onFileSizeLimitDismiss}
               >

@@ -11,6 +11,7 @@ export default defineConfig({
       ['src/integration/**/*.test.tsx', 'jsdom'], // integration tests need DOM
     ],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    exclude: ['src/e2e/**'], // E2E tests run via wdio, not vitest
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',

@@ -26,6 +26,9 @@ export function StepBar({ current }: StepBarProps) {
 
               {/* Step item */}
               <div
+                data-testid="step-bar-item"
+                data-step-index={String(i)}
+                data-active={isActive ? 'true' : 'false'}
                 className={cn(
                   'flex items-center gap-2 px-3 py-2 rounded-md',
                   isActive && 'text-foreground',
