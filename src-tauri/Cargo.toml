@@ -32,5 +32,5 @@ webp = "0.3"
 
 # E2E testing — debug builds only (never ships to end users)
 [target.'cfg(debug_assertions)'.dependencies]
-tauri-plugin-automation = "0.1"
+tauri-plugin-webdriver-automation = "0.1"
 

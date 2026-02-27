@@ -1,29 +1,31 @@
 import type { Browser } from 'webdriverio';
 
 /**
- * Patches window.__TAURI__.dialog.save (Tauri v2 API) to resolve immediately
- * with the provided filePath instead of showing the OS dialog.
+ * Sets window.__E2E_OPEN_FILE__ so that the next call to handlePickerClick()
+ * in App.tsx uses filePath instead of opening the OS file picker.
  *
- * Call BEFORE the user action that triggers the save dialog.
+ * Tauri v2 freezes __TAURI_INTERNALS__.invoke (non-writable, non-configurable),
+ * so IPC patching is impossible from JS. Instead, we use plain window globals
+ * that the app code reads before calling Tauri APIs.
+ *
+ * Must be called BEFORE the UI action that triggers the open dialog.
  */
-export async function mockSaveDialog(browser: Browser, outputPath: string): Promise<void> {
+export async function mockOpenDialog(browser: Browser, filePath: string): Promise<void> {
   await browser.execute((path: string) => {
-    const tauri = (window as unknown as { __TAURI__?: { dialog?: { save?: unknown } } }).__TAURI__;
-    if (tauri?.dialog) {
-      (tauri.dialog as Record<string, unknown>).save = async () => path;
-    }
-  }, outputPath);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__E2E_OPEN_FILE__ = path;
+  }, filePath);
 }
 
 /**
- * Removes the mock so subsequent calls use the real OS dialog.
- * Not required in tests (each test gets a fresh WebView), but available for cleanup.
+ * Sets window.__E2E_SAVE_PATH__ so that SaveStep.handleSave() writes directly
+ * to outputPath instead of opening the OS save dialog.
+ *
+ * Must be called BEFORE the UI action that triggers the save dialog.
  */
-export async function clearSaveDialogMock(browser: Browser): Promise<void> {
-  await browser.execute(() => {
-    const tauri = (window as unknown as { __TAURI__?: { dialog?: Record<string, unknown> } }).__TAURI__;
-    if (tauri?.dialog) {
-      delete tauri.dialog.save;
-    }
-  });
+export async function mockSaveDialog(browser: Browser, outputPath: string): Promise<void> {
+  await browser.execute((path: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__E2E_SAVE_PATH__ = path;
+  }, outputPath);
 }

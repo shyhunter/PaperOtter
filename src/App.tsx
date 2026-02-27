@@ -197,6 +197,15 @@ function App() {
 
   const handlePickerClick = useCallback(async () => {
     try {
+      // E2E test hook: tests set window.__E2E_OPEN_FILE__ to bypass the frozen Tauri IPC.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e2eFile = (window as any).__E2E_OPEN_FILE__ as string | undefined;
+      if (e2eFile) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (window as any).__E2E_OPEN_FILE__;
+        handleFileSelected(e2eFile);
+        return;
+      }
       const filePath = await openFilePicker();
       if (filePath) {
         handleFileSelected(filePath);

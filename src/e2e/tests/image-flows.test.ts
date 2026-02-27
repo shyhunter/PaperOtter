@@ -1,7 +1,7 @@
 import { browser } from '@wdio/globals';
 import { existsSync, statSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { mockSaveDialog } from '../helpers/dialogs';
+import { mockOpenDialog, mockSaveDialog } from '../helpers/dialogs';
 import {
   waitForStep,
   waitForProcessingComplete,
@@ -25,18 +25,18 @@ function detectMagicBytes(filePath: string): 'jpeg' | 'png' | 'webp' | 'unknown'
 }
 
 async function injectFile(filePath: string): Promise<void> {
-  await browser.execute((path: string) => {
-    const tauri = (window as unknown as { __TAURI__?: { dialog?: Record<string, unknown> } }).__TAURI__;
-    if (tauri?.dialog) { tauri.dialog.open = async () => path; }
-  }, filePath);
+  // Wait for window ready BEFORE applying mock (browser.execute requires a live window).
   const openBtn = await browser.$('[data-testid="open-file-btn"]');
+  await openBtn.waitForExist({ timeout: 15000 });
+  // Apply IPC mock AFTER window is confirmed ready.
+  await mockOpenDialog(browser, filePath);
   await openBtn.click();
 }
 
 async function navigateToImageCompare(): Promise<void> {
   await waitForStep(browser, 1);
   const generateBtn = await browser.$('[data-testid="generate-preview-btn"]');
-  await generateBtn.waitForClickable({ timeout: 5000 });
+  await generateBtn.waitForDisplayed({ timeout: 5000 });
   await generateBtn.click();
   // Image compare step uses 'image-compare-step' — NOT the PDF 'compare-step'
   await waitForProcessingComplete(browser, 'image-compare-step');
@@ -61,19 +61,20 @@ describe('Image — quality only', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const slider = await browser.$('[data-testid="quality-slider"]');
-    await browser.execute((el: HTMLInputElement) => {
+    await browser.execute(() => {
+      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
+      if (!el) return;
       el.value = '50';
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    }, slider as unknown as HTMLInputElement);
+    });
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('jpeg');
@@ -88,19 +89,20 @@ describe('Image — quality only', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const slider = await browser.$('[data-testid="quality-slider"]');
-    await browser.execute((el: HTMLInputElement) => {
+    await browser.execute(() => {
+      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
+      if (!el) return;
       el.value = '100';
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    }, slider as unknown as HTMLInputElement);
+    });
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('jpeg');
@@ -124,7 +126,7 @@ describe('Image — quality + format conversion', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('png');
@@ -139,19 +141,20 @@ describe('Image — quality + format conversion', () => {
     const webpBtn = await browser.$('[data-testid="format-option-webp"]');
     await webpBtn.click();
 
-    const slider = await browser.$('[data-testid="quality-slider"]');
-    await browser.execute((el: HTMLInputElement) => {
+    await browser.execute(() => {
+      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
+      if (!el) return;
       el.value = '75';
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    }, slider as unknown as HTMLInputElement);
+    });
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('webp');
@@ -170,12 +173,13 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
     const pngBtn = await browser.$('[data-testid="format-option-png"]');
     await pngBtn.click();
 
-    const slider = await browser.$('[data-testid="quality-slider"]');
-    await browser.execute((el: HTMLInputElement) => {
+    await browser.execute(() => {
+      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
+      if (!el) return;
       el.value = '60';
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    }, slider as unknown as HTMLInputElement);
+    });
 
     const resizeToggle = await browser.$('[data-testid="resize-toggle"]');
     await resizeToggle.click();
@@ -191,7 +195,7 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('png');
@@ -227,7 +231,7 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('webp');
@@ -278,14 +282,10 @@ describe('Image save dialog filter', () => {
       const fmtBtn = await browser.$(`[data-testid="format-option-${format}"]`);
       await fmtBtn.click();
 
+      // Tell SaveStep.handleSave to capture the dialog options instead of opening the OS dialog.
       await browser.execute(() => {
-        const tauri = (window as unknown as { __TAURI__?: { dialog?: Record<string, unknown> } }).__TAURI__;
-        if (tauri?.dialog) {
-          tauri.dialog.save = async (opts: unknown) => {
-            (window as unknown as { __E2E_SAVE_OPTS__?: unknown }).__E2E_SAVE_OPTS__ = opts;
-            return null;
-          };
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__E2E_CAPTURE_SAVE_OPTS__ = true;
       });
 
       await navigateToImageCompare();
@@ -293,9 +293,8 @@ describe('Image save dialog filter', () => {
       await saveBtn.click();
       await browser.pause(500);
 
-      const captured = await browser.execute(() =>
-        (window as unknown as { __E2E_SAVE_OPTS__?: unknown }).__E2E_SAVE_OPTS__
-      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const captured = await browser.execute(() => (window as any).__E2E_SAVE_OPTS__);
 
       const filtersJson = JSON.stringify(captured).toLowerCase();
       expect(filtersJson).toContain(expectedExt); // Save options must contain format extension

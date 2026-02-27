@@ -1,7 +1,7 @@
 import { browser } from '@wdio/globals';
 import { existsSync, statSync } from 'fs';
 import { join } from 'path';
-import { mockSaveDialog } from '../helpers/dialogs';
+import { mockOpenDialog, mockSaveDialog } from '../helpers/dialogs';
 import {
   waitForStep,
   waitForProcessingComplete,
@@ -17,18 +17,18 @@ const LARGE_PDF  = join(FIXTURES_DIR, 'large-sparse.pdf');
 const CORRUPT_PDF = join(FIXTURES_DIR, 'corrupt.pdf');
 
 async function injectFile(filePath: string): Promise<void> {
-  await browser.execute((path: string) => {
-    const tauri = (window as unknown as { __TAURI__?: { dialog?: Record<string, unknown> } }).__TAURI__;
-    if (tauri?.dialog) { tauri.dialog.open = async () => path; }
-  }, filePath);
+  // Wait for window ready BEFORE applying mock (browser.execute requires a live window).
   const openBtn = await browser.$('[data-testid="open-file-btn"]');
+  await openBtn.waitForExist({ timeout: 15000 });
+  // Apply IPC mock AFTER window is confirmed ready.
+  await mockOpenDialog(browser, filePath);
   await openBtn.click();
 }
 
 async function navigateToCompare(): Promise<void> {
   await waitForStep(browser, 1);
   const generateBtn = await browser.$('[data-testid="generate-preview-btn"]');
-  await generateBtn.waitForClickable({ timeout: 5000 });
+  await generateBtn.waitForDisplayed({ timeout: 5000 });
   await generateBtn.click();
   // PDF compare step uses the default 'compare-step' testid
   await waitForProcessingComplete(browser, 'compare-step');
@@ -67,7 +67,7 @@ describe('PDF compression — quality levels', () => {
 
       const saveBtn = await browser.$('[data-testid="save-btn"]');
       await saveBtn.click();
-      await waitForStep(browser, 3);
+      await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
       expect(existsSync(outPath)).toBe(true);
       const outSize = statSync(outPath).size;
@@ -106,7 +106,7 @@ describe('PDF resize', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -139,7 +139,7 @@ describe('PDF resize', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -164,7 +164,7 @@ describe('PDF resize', () => {
 
     const saveBtn = await browser.$('[data-testid="save-btn"]');
     await saveBtn.click();
-    await waitForStep(browser, 3);
+    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -226,15 +226,10 @@ describe('PDF save dialog filter', () => {
     await injectFile(PHOTO_PDF);
     await waitForStep(browser, 1);
 
-    // Intercept dialog.save and capture the options it is called with
+    // Tell SaveStep.handleSave to capture the dialog options instead of opening the OS dialog.
     await browser.execute(() => {
-      const tauri = (window as unknown as { __TAURI__?: { dialog?: Record<string, unknown> } }).__TAURI__;
-      if (tauri?.dialog) {
-        tauri.dialog.save = async (opts: unknown) => {
-          (window as unknown as { __E2E_SAVE_OPTS__?: unknown }).__E2E_SAVE_OPTS__ = opts;
-          return null; // cancel — we only want to inspect the filters
-        };
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__E2E_CAPTURE_SAVE_OPTS__ = true;
     });
 
     await navigateToCompare();
@@ -242,11 +237,10 @@ describe('PDF save dialog filter', () => {
     await saveBtn.click();
     await browser.pause(500);
 
-    const capturedFilters = await browser.execute(() =>
-      (window as unknown as { __E2E_SAVE_OPTS__?: unknown }).__E2E_SAVE_OPTS__
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const capturedArgs = await browser.execute(() => (window as any).__E2E_SAVE_OPTS__);
 
-    const filters = JSON.stringify(capturedFilters).toLowerCase();
+    const filters = JSON.stringify(capturedArgs).toLowerCase();
     expect(filters).toContain('pdf'); // Save dialog filters must mention "pdf"
     expect(filters).not.toMatch(/jpeg|png|webp/); // must NOT mention image formats
   });

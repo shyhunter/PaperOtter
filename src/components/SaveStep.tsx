@@ -50,6 +50,44 @@ export function SaveStep({
     setSaveState('dialog-open');
     setError(null);
 
+    // E2E test hook: capture save options without opening the OS dialog.
+    // Tests set window.__E2E_CAPTURE_SAVE_OPTS__ = true to inspect dialog filters.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).__E2E_CAPTURE_SAVE_OPTS__) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).__E2E_CAPTURE_SAVE_OPTS__;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__E2E_SAVE_OPTS__ = {
+        options: {
+          filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+          defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
+        },
+      };
+      setSaveState('idle');
+      onCancel();
+      return;
+    }
+
+    // E2E test hook: use a pre-set path to bypass the OS save dialog.
+    // Tests set window.__E2E_SAVE_PATH__ = '/path/to/output' before clicking save.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const e2eSavePath = (window as any).__E2E_SAVE_PATH__ as string | undefined;
+    if (e2eSavePath) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).__E2E_SAVE_PATH__;
+      setSaveState('writing');
+      try {
+        await writeFile(e2eSavePath, processedBytes);
+        setSaveState('idle');
+        onSaveComplete(e2eSavePath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not write file.';
+        setError(message);
+        setSaveState('error');
+      }
+      return;
+    }
+
     let savePath: string | null = null;
     try {
       savePath = await save({

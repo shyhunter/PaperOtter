@@ -267,7 +267,7 @@ pub fn run() {
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]
-    let builder = builder.plugin(tauri_plugin_automation::init());
+    let builder = builder.plugin(tauri_plugin_webdriver_automation::init());
 
     builder
         .run(tauri::generate_context!())
