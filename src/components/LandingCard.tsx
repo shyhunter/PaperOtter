@@ -48,7 +48,7 @@ export function LandingCard({
   onFileSizeLimitDismiss,
 }: LandingCardProps) {
   const cardClass = cn(
-    'relative w-full max-w-2xl mx-auto transition-all duration-200 select-none',
+    'relative w-full max-w-[clamp(20rem,55vw,42rem)] mx-auto transition-all duration-200 select-none',
     dragState === 'over-valid' &&
       'border-primary/70 bg-primary/5 shadow-primary/20 shadow-xl scale-[1.015]',
     dragState === 'over-invalid' &&
@@ -71,7 +71,7 @@ export function LandingCard({
       <div className="flex flex-col items-center gap-6 w-full max-w-2xl">
 
         {/* Tagline — prominent, above the card */}
-        <p className="text-xl font-medium text-foreground text-center">
+        <p className="text-[clamp(1rem,1.5vw,1.25rem)] font-medium text-foreground text-center">
           Compress, resize, convert — stays on your device
         </p>
 
@@ -89,18 +89,18 @@ export function LandingCard({
                 onClick={onPickerClick}
                 disabled={isLoading}
                 className={cn(
-                  'group flex flex-col items-center justify-center gap-5 p-14 rounded-l-xl',
+                  'group flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-l-xl',
                   'hover:bg-accent/50 transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
               >
                 <div className={cn(
-                  'flex h-20 w-20 items-center justify-center rounded-full',
+                  'flex h-[clamp(3rem,5vw,5rem)] w-[clamp(3rem,5vw,5rem)] items-center justify-center rounded-full',
                   'bg-primary/10 text-primary transition-transform duration-150',
                   'group-hover:scale-105 group-hover:bg-primary/20',
                 )}>
-                  <FolderOpen className="h-10 w-10" />
+                  <FolderOpen className="h-[clamp(2rem,3vw,3rem)] w-[clamp(2rem,3vw,3rem)]" />
                 </div>
                 <div className="text-center">
                   <p className="text-base font-medium text-foreground">Open file</p>
@@ -112,13 +112,13 @@ export function LandingCard({
               <div
                 data-testid="drop-zone"
                 className={cn(
-                  'flex flex-col items-center justify-center gap-5 p-14 rounded-r-xl',
+                  'flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-r-xl',
                   dragState === 'over-valid' && 'bg-primary/10',
                   dragState === 'over-invalid' && 'bg-destructive/10',
                 )}
               >
                 <div className={cn(
-                  'flex h-20 w-20 items-center justify-center rounded-full',
+                  'flex h-[clamp(3rem,5vw,5rem)] w-[clamp(3rem,5vw,5rem)] items-center justify-center rounded-full',
                   'transition-all duration-150',
                   dragState === 'over-valid'
                     ? 'bg-primary/20 text-primary scale-110'
@@ -126,7 +126,7 @@ export function LandingCard({
                       ? 'bg-destructive/20 text-destructive'
                       : 'bg-muted text-muted-foreground',
                 )}>
-                  <Upload className="h-10 w-10" />
+                  <Upload className="h-[clamp(2rem,3vw,3rem)] w-[clamp(2rem,3vw,3rem)]" />
                 </div>
                 <div className="text-center">
                   <p className={cn(

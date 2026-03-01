@@ -189,7 +189,7 @@ export function ImageConfigureStep({
 
   return (
     <div data-testid="image-configure-step" className="flex flex-1 flex-col items-center overflow-y-auto p-6">
-      <div className="w-full max-w-lg space-y-4 my-auto">
+      <div className="w-full max-w-[clamp(24rem,45vw,36rem)] space-y-4 my-auto">
 
         {/* File name header */}
         <div className="text-center">
@@ -203,7 +203,7 @@ export function ImageConfigureStep({
 
         {/* Image quality card */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-foreground">Image quality</h2>
+          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Image quality</h2>
 
           {/* Format selector */}
           <div className="space-y-1.5">
@@ -262,7 +262,7 @@ export function ImageConfigureStep({
         {/* Resize section */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Resize</h2>
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Resize</h2>
 
             {/* Prominent pill toggle switch */}
             <button

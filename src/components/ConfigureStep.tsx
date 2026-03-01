@@ -1,4 +1,5 @@
 import { useState, useId } from 'react';
+import { Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -11,6 +12,8 @@ export interface ConfigureStepProps {
   fileName: string;
   pageCount: number;        // total pages in source PDF (for range validation)
   fileSizeBytes: number;    // original file size — shown in header so users know what target to set
+  compressibilityScore: number;  // 0.0–1.0 from pre-scan (0 = text-only, 1 = image-heavy)
+  imageCount: number;            // number of image XObjects found
   isProcessing: boolean;
   progress: { current: number; total: number } | null;
   error: string | null;
@@ -39,6 +42,8 @@ export function ConfigureStep({
   fileName,
   pageCount,
   fileSizeBytes,
+  compressibilityScore,
+  imageCount,
   isProcessing,
   progress,
   error,
@@ -93,11 +98,14 @@ export function ConfigureStep({
     onGeneratePreview(options);
   }
 
+  // Block progression for text-only PDFs unless resize is enabled
+  const isNonCompressible = compressibilityScore < 0.1 && !resizeEnabled;
+
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
     <div data-testid="configure-step" className="flex flex-1 flex-col items-center overflow-y-auto p-6">
-      <div className="w-full max-w-lg space-y-4 my-auto">
+      <div className="w-full max-w-[clamp(24rem,45vw,36rem)] space-y-4 my-auto">
 
         {/* File name header */}
         <div className="text-center">
@@ -112,7 +120,7 @@ export function ConfigureStep({
 
         {/* Compression section — always visible, no toggle */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-foreground">Optimise file size</h2>
+          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Optimise file size</h2>
 
           {/* Compression level selector */}
           <fieldset data-testid="quality-select">
@@ -192,12 +200,34 @@ export function ConfigureStep({
           <p className="text-xs text-muted-foreground">
             Set a target size — quality level auto-suggests the best preset to get there.
           </p>
+
+          {/* Compressibility guidance — always visible */}
+          <div className="flex items-start gap-1.5 mt-2">
+            <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              {compressibilityScore >= 0.5
+                ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — compression will reduce file size significantly.`
+                : compressibilityScore >= 0.1
+                  ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — moderate compression savings expected.`
+                  : 'This PDF is mostly text — compression savings will be minimal.'}
+            </p>
+          </div>
+
+          {/* Non-compressible warning */}
+          {compressibilityScore < 0.1 && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 flex-none mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                This file is mostly text with no embedded images. Compression presets have minimal effect on text-only PDFs.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Resize pages section — always visible, toggled via switch */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Resize pages</h2>
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Resize pages</h2>
 
             {/* Prominent pill toggle switch */}
             <button
@@ -337,10 +367,10 @@ export function ConfigureStep({
             size="sm"
             data-testid="generate-preview-btn"
             onClick={handleSubmit}
-            disabled={isProcessing}
+            disabled={isProcessing || isNonCompressible}
             className="flex-1"
           >
-            {isProcessing ? 'Processing…' : 'Generate Preview'}
+            {isProcessing ? 'Processing…' : isNonCompressible ? 'Compression not available' : 'Generate Preview'}
           </Button>
           {isProcessing && onCancel && (
             <button

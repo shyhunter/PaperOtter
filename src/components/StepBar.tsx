@@ -40,7 +40,7 @@ export function StepBar({ current }: StepBarProps) {
                 {/* Step number indicator */}
                 <span
                   className={cn(
-                    'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors',
+                    'flex h-[clamp(1.5rem,2.5vw,2.5rem)] w-[clamp(1.5rem,2.5vw,2.5rem)] items-center justify-center rounded-full text-[clamp(0.7rem,1vw,1rem)] font-semibold transition-colors',
                     isActive && 'bg-primary text-primary-foreground',
                     isComplete && 'bg-primary/20 text-primary',
                     isLocked && 'bg-muted/60 text-muted-foreground/40',
@@ -67,7 +67,7 @@ export function StepBar({ current }: StepBarProps) {
                 {/* Step label */}
                 <span
                   className={cn(
-                    'text-sm hidden sm:inline',
+                    'text-[clamp(0.6rem,0.8vw,0.85rem)] hidden sm:inline',
                     isActive && 'font-medium',
                     isComplete && 'font-normal',
                     isLocked && 'font-normal',
