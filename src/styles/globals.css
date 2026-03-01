@@ -42,6 +42,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: clamp(14px, 1.2vw + 0.4vh, 20px);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
