@@ -115,6 +115,12 @@ export async function getPdfImageCount(sourcePath: string): Promise<number> {
   return imageCount;
 }
 
+export async function getPdfCompressibility(sourcePath: string): Promise<{ imageCount: number; compressibilityScore: number }> {
+  const bytes = await readFile(sourcePath);
+  const pdfDoc = await PDFDocument.load(bytes);
+  return scanPdfImages(pdfDoc);
+}
+
 export async function processPdf(
   sourcePath: string,
   options: PdfProcessingOptions,

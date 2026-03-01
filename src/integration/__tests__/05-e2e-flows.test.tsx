@@ -41,6 +41,7 @@ vi.mock('@/lib/pdfProcessor', () => ({
   processPdf: vi.fn(),
   recommendQualityForTarget: vi.fn().mockReturnValue('screen'),
   getPdfImageCount: vi.fn().mockResolvedValue(0),
+  getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 5, compressibilityScore: 0.5 }),
 }));
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));

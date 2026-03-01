@@ -16,6 +16,7 @@ import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { PrivacyFooter } from '@/components/PrivacyFooter';
+import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
@@ -55,6 +56,7 @@ function App() {
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
   const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
+  const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number }>({ imageCount: 0, compressibilityScore: 0 });
 
   const pdfProcessor = usePdfProcessor();
   const imageProcessor = useImageProcessor();
@@ -64,7 +66,7 @@ function App() {
   const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
   const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
   const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
-
+  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   // Stores the last PDF options so Retry can re-run with the same settings
   const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
 
@@ -76,10 +78,12 @@ function App() {
   const handleStartOver = useCallback(() => {
     suppressImageAdvance.current = false;
     lastPdfOptionsRef.current = null;
+    setSavedFilePath(null);
     setFileEntry(null);
     setCurrentStep(0);
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
   }, [pdfProcessor, imageProcessor]);
@@ -130,7 +134,7 @@ function App() {
     }, 600);
   }, [addRecentDir]);
 
-  // Load source PDF page count and file size when a PDF is selected
+  // Load source PDF page count, file size, and compressibility when a PDF is selected
   useEffect(() => {
     if (fileEntry?.format === 'pdf') {
       getPdfMeta(fileEntry.path)
@@ -139,6 +143,10 @@ function App() {
           setSourcePdfFileSizeBytes(fileSizeBytes);
         })
         .catch(() => setSourcePdfPageCount(1)); // fallback; will validate on processing
+
+      getPdfCompressibility(fileEntry.path)
+        .then((result) => setPdfCompressibility(result))
+        .catch(() => setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 }));
     }
   }, [fileEntry]);
 
@@ -307,6 +315,8 @@ function App() {
               fileName={fileEntry.name}
               pageCount={sourcePdfPageCount}
               fileSizeBytes={sourcePdfFileSizeBytes}
+              compressibilityScore={pdfCompressibility.compressibilityScore}
+              imageCount={pdfCompressibility.imageCount}
               isProcessing={pdfProcessor.isProcessing}
               progress={pdfProcessor.progress}
               error={pdfProcessor.error}
@@ -364,18 +374,16 @@ function App() {
             <SaveStep
               processedBytes={pdfProcessor.result.bytes}
               sourceFileName={fileEntry.name}
+              savedFilePath={savedFilePath}
+              onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(savedPath) => {
-                // Stay on Compare — user may inspect stats again or save to a second location
-                toast.success('File saved', {
-                  description: savedPath,
-                });
-                setCurrentStep(2);
+                setSavedFilePath(savedPath);
               }}
               onCancel={() => {
-                // User cancelled the dialog — go back to Compare silently
                 setCurrentStep(2);
               }}
               onBack={() => {
+                setSavedFilePath(null);
                 setCurrentStep(2);
               }}
             />
@@ -388,12 +396,16 @@ function App() {
               sourceFileName={fileEntry.name}
               defaultSaveName={buildImageSaveFileName(fileEntry.name, imageProcessor.result.outputFormat)}
               saveFilters={buildImageSaveFilters(imageProcessor.result.outputFormat)}
+              savedFilePath={savedFilePath}
+              onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(savedPath) => {
-                toast.success('File saved', { description: savedPath });
-                setCurrentStep(2);
+                setSavedFilePath(savedPath);
               }}
               onCancel={() => setCurrentStep(2)}
-              onBack={() => setCurrentStep(2)}
+              onBack={() => {
+                setSavedFilePath(null);
+                setCurrentStep(2);
+              }}
             />
           )}
         </StepErrorBoundary>
