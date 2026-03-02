@@ -1,12 +1,15 @@
 // Save step: opens native OS Save As dialog, writes processed PDF bytes to chosen path.
-// Permissions required (already added in 02-01):
+// Permissions required:
 //   - dialog:allow-save in capabilities/default.json
 //   - fs:allow-write-file in capabilities/default.json
+//   - shell:allow-open in capabilities/default.json (for opening saved files)
 //   - tauri-plugin-fs registered in lib.rs
 import { useEffect, useState, useCallback } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export interface SaveStepProps {
@@ -18,6 +21,10 @@ export interface SaveStepProps {
   defaultSaveName?: string;
   /** Optional override for the OS file-type filter (replaces PDF Document filter) */
   saveFilters?: Array<{ name: string; extensions: string[] }>;
+  /** Path of the saved file — when set, shows the confirmation card */
+  savedFilePath?: string | null;
+  /** Called to dismiss the save confirmation card */
+  onDismissSaveConfirmation?: () => void;
   /** Called with the saved path on success */
   onSaveComplete: (savedPath: string) => void;
   /** Called when user cancels the save dialog */
@@ -29,16 +36,119 @@ export interface SaveStepProps {
 type SaveState = 'idle' | 'dialog-open' | 'writing' | 'error';
 
 function buildDefaultSaveName(sourceFileName: string): string {
-  // Insert '-optimised' before the .pdf extension
   const baseName = sourceFileName.replace(/\.pdf$/i, '');
   return `${baseName}-optimised.pdf`;
 }
+
+// ── Animated Checkmark ────────────────────────────────────────────────────────
+
+const checkmarkStyles = `
+@keyframes checkmark-circle {
+  0% { stroke-dashoffset: 166; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes checkmark-check {
+  0% { stroke-dashoffset: 48; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes checkmark-glow {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  100% { box-shadow: 0 0 20px 10px rgba(34, 197, 94, 0); }
+}
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: checkmark-circle 0.4s ease-in-out forwards;
+}
+.checkmark-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-check 0.3s ease-in-out 0.3s forwards;
+}
+.checkmark-glow {
+  animation: checkmark-glow 0.6s ease-out 0.5s forwards;
+}
+`;
+
+function AnimatedCheckmark() {
+  return (
+    <>
+      <style>{checkmarkStyles}</style>
+      <div className="w-10 h-10 flex-none rounded-full checkmark-glow">
+        <svg viewBox="0 0 52 52" className="w-full h-full">
+          <circle
+            className="checkmark-circle"
+            cx="26"
+            cy="26"
+            r="25"
+            fill="none"
+            stroke="#22c55e"
+            strokeWidth="2"
+          />
+          <path
+            className="checkmark-check"
+            fill="none"
+            stroke="#22c55e"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14.1 27.2l7.1 7.2 16.7-16.8"
+          />
+        </svg>
+      </div>
+    </>
+  );
+}
+
+// ── Save Confirmation Card ────────────────────────────────────────────────────
+
+function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismiss: () => void }) {
+  const handleOpenFile = async () => {
+    try {
+      await open(savedPath);
+    } catch {
+      // Silently ignore — file may have been moved/deleted
+    }
+  };
+
+  return (
+    <div className="relative rounded-lg border border-border bg-card shadow-sm p-4 mx-4 mt-3">
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="absolute top-2 right-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="flex items-center gap-3 pr-6">
+        <AnimatedCheckmark />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">File saved successfully</p>
+          <button
+            type="button"
+            onClick={handleOpenFile}
+            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-left"
+            title={savedPath}
+          >
+            {savedPath}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SaveStep Component ────────────────────────────────────────────────────────
 
 export function SaveStep({
   processedBytes,
   sourceFileName,
   defaultSaveName,
   saveFilters,
+  savedFilePath,
+  onDismissSaveConfirmation,
   onSaveComplete,
   onCancel,
   onBack,
@@ -51,7 +161,6 @@ export function SaveStep({
     setError(null);
 
     // E2E test hook: capture save options without opening the OS dialog.
-    // Tests set window.__E2E_CAPTURE_SAVE_OPTS__ = true to inspect dialog filters.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).__E2E_CAPTURE_SAVE_OPTS__) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +178,6 @@ export function SaveStep({
     }
 
     // E2E test hook: use a pre-set path to bypass the OS save dialog.
-    // Tests set window.__E2E_SAVE_PATH__ = '/path/to/output' before clicking save.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const e2eSavePath = (window as any).__E2E_SAVE_PATH__ as string | undefined;
     if (e2eSavePath) {
@@ -95,14 +203,12 @@ export function SaveStep({
         defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
       });
     } catch (err) {
-      // Dialog open error (unlikely but handle gracefully)
       const message = err instanceof Error ? err.message : 'Could not open save dialog.';
       setError(message);
       setSaveState('error');
       return;
     }
 
-    // User cancelled the dialog — show toast and return to Compare
     if (!savePath) {
       setSaveState('idle');
       toast('Save cancelled', { description: 'You can try again any time.' });
@@ -110,7 +216,6 @@ export function SaveStep({
       return;
     }
 
-    // Write the file
     setSaveState('writing');
     try {
       await writeFile(savePath, processedBytes);
@@ -126,11 +231,35 @@ export function SaveStep({
     }
   }, [processedBytes, sourceFileName, defaultSaveName, saveFilters, onSaveComplete, onCancel]);
 
-  // Auto-trigger the save dialog as soon as this step mounts
+  // Auto-trigger the save dialog on mount (only if no savedFilePath yet)
   useEffect(() => {
-    handleSave();
+    if (!savedFilePath) {
+      handleSave();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount only
+  }, []);
+
+  // Show confirmation card when savedFilePath is set
+  if (savedFilePath && onDismissSaveConfirmation) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <SaveConfirmation
+          savedPath={savedFilePath}
+          onDismiss={onDismissSaveConfirmation}
+        />
+        <div className="flex-1" />
+        <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+          <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+            Back
+          </Button>
+          <div className="flex-1" />
+          <Button size="sm" onClick={handleSave}>
+            Save Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (saveState === 'dialog-open' || saveState === 'writing') {
     return (
@@ -168,6 +297,5 @@ export function SaveStep({
     );
   }
 
-  // idle — should not normally be visible (auto-triggers dialog on mount)
   return null;
 }

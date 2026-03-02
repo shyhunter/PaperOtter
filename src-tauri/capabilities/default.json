@@ -27,6 +27,7 @@
     {
       "identifier": "shell:allow-execute",
       "allow": [{ "name": "gs", "sidecar": true }]
-    }
+    },
+    "shell:allow-open"
   ]
 }
