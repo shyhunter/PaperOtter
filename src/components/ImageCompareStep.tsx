@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { ZoomIn, ZoomOut, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ImageProcessingResult } from '@/types/file';
@@ -51,6 +51,23 @@ export function ImageCompareStep({
 
   const { label: zoomLabel, wrapperClass: zoomWrapperClass } = ZOOM_STEPS[zoomIndex];
 
+  // ── Synced scrolling ────────────────────────────────────────────────────────
+  const isSyncing = useRef(false);
+  const beforeScrollRef = useRef<HTMLDivElement>(null);
+  const afterScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = useCallback((source: 'before' | 'after') => {
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    const src = source === 'before' ? beforeScrollRef.current : afterScrollRef.current;
+    const tgt = source === 'before' ? afterScrollRef.current : beforeScrollRef.current;
+    if (src && tgt) {
+      tgt.scrollTop = src.scrollTop;
+      tgt.scrollLeft = src.scrollLeft;
+    }
+    requestAnimationFrame(() => { isSyncing.current = false; });
+  }, []);
+
   // Before panel — source bytes never change per session
   useEffect(() => {
     const mime = detectMimeFromBytes(result.sourceBytes);
@@ -91,18 +108,59 @@ export function ImageCompareStep({
   return (
     <div data-testid="image-compare-step" className="flex flex-1 flex-col overflow-hidden">
 
-      {/* Side-by-side preview panels */}
-      <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
+      {/* Stats row above panels */}
+      <div data-testid="stats-bar" className="flex items-center gap-4 px-4 py-2 text-xs border-b border-border bg-muted/30 flex-none">
+        <span className={cn(
+          'font-medium tabular-nums whitespace-nowrap',
+          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
+        )}>
+          {formatBytes(result.inputSizeBytes)}
+        </span>
+        <ArrowRight className="h-3 w-3 text-muted-foreground flex-none" />
+        <span className={cn(
+          'font-medium tabular-nums whitespace-nowrap',
+          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
+        )}>
+          {formatBytes(result.outputSizeBytes)}
+        </span>
+        {result.inputSizeBytes > 0 && (
+          <span className={cn(
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+            grew
+              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+          )}>
+            {Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'}
+          </span>
+        )}
+        {dimensionsChanged && (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {result.sourceWidth} x {result.sourceHeight} px → {result.outputWidth} x {result.outputHeight} px
+          </span>
+        )}
+        {formatChanged && (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {sourceFormatLabel} → {outputFormatLabel}
+          </span>
+        )}
+        <span className="text-muted-foreground whitespace-nowrap">
+          Quality: {qualityLabel}
+        </span>
+      </div>
+
+      {/* Side-by-side preview panels with floating zoom toolbar */}
+      <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
 
         {/* Before panel */}
         <div data-testid="before-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
-          <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
+          <div className="flex items-center justify-center rounded-md bg-muted/50 px-3 py-2 flex-none">
             <span className="text-sm font-semibold text-foreground">Before</span>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {formatBytes(result.inputSizeBytes)}
-            </span>
           </div>
-          <div className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0">
+          <div
+            ref={beforeScrollRef}
+            onScroll={() => handleScroll('before')}
+            className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0"
+          >
             {originalUrl ? (
               <div className={zoomWrapperClass}>
                 <img src={originalUrl} alt="Original" className="w-full h-auto block" />
@@ -117,13 +175,14 @@ export function ImageCompareStep({
 
         {/* After panel */}
         <div data-testid="after-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
-          <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
+          <div className="flex items-center justify-center rounded-md bg-muted/50 px-3 py-2 flex-none">
             <span className="text-sm font-semibold text-foreground">After</span>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {formatBytes(result.outputSizeBytes)}
-            </span>
           </div>
-          <div className="relative flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0">
+          <div
+            ref={afterScrollRef}
+            onScroll={() => handleScroll('after')}
+            className="relative flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0"
+          >
             {processedUrl ? (
               <>
                 <div className={cn('transition-opacity', isProcessing ? 'opacity-40' : 'opacity-100')}>
@@ -147,45 +206,13 @@ export function ImageCompareStep({
           </div>
         </div>
 
-      </div>
-
-      {/* Bottom strip */}
-      <div data-testid="stats-bar" className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
-
-        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
-          Back
-        </Button>
-
-        {/* Stats */}
-        <div className="flex flex-1 items-center gap-4 text-xs overflow-hidden">
-          <span className={cn(
-            'font-medium tabular-nums whitespace-nowrap',
-            grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
-          )}>
-            {grew ? '+' : '−'}{formatBytes(Math.abs(savingsBytes))} ({Math.abs(savingsPct)}%)
-          </span>
-          {dimensionsChanged && (
-            <span className="text-muted-foreground whitespace-nowrap">
-              {result.sourceWidth} × {result.sourceHeight} px → {result.outputWidth} × {result.outputHeight} px
-            </span>
-          )}
-          {formatChanged && (
-            <span className="text-muted-foreground whitespace-nowrap">
-              {sourceFormatLabel} → {outputFormatLabel}
-            </span>
-          )}
-          <span className="text-muted-foreground whitespace-nowrap">
-            Quality: {qualityLabel}
-          </span>
-        </div>
-
-        {/* Zoom controls */}
-        <div className="flex items-center gap-1 flex-none">
+        {/* Floating zoom toolbar */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
           <button
             type="button"
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Zoom out"
           >
             <ZoomOut className="h-3.5 w-3.5" />
@@ -197,12 +224,23 @@ export function ImageCompareStep({
             type="button"
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Zoom in"
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
         </div>
+
+      </div>
+
+      {/* Bottom strip — simplified: Back | spacer | Start Over | Save */}
+      <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
+          Back
+        </Button>
+
+        <div className="flex-1" />
 
         <button
           type="button"
@@ -210,7 +248,7 @@ export function ImageCompareStep({
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Process another
+          Start Over
         </button>
 
         <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">

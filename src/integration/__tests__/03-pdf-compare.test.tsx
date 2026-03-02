@@ -93,7 +93,9 @@ describe('Suite 03 — PDF Compare Step', () => {
     const { user } = setup();
     await navigateToPdfCompare(user);
     // FAKE_PDF_RESULT: 2_400_000 B → 2.29 MB, 1_200_000 B → 1.14 MB, 50% smaller
-    expect(screen.getByText(/2\.29 MB.*1\.14 MB/)).toBeInTheDocument();
+    const statsBar = screen.getByTestId('stats-bar');
+    expect(statsBar).toHaveTextContent('2.29 MB');
+    expect(statsBar).toHaveTextContent('1.14 MB');
     expect(screen.getByText(/50% smaller/)).toBeInTheDocument();
   });
 

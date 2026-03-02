@@ -53,14 +53,18 @@ describe('CompareStep — stats bar', () => {
   it('shows X → Y format with percentage when output is smaller', () => {
     render(<CompareStep result={makeResult()} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
     // 100,000 bytes → 97.7 KB, 80,000 bytes → 78.1 KB, 20% smaller
-    expect(screen.getByText(/97\.7 KB → 78\.1 KB/)).toBeInTheDocument();
+    const statsBar = screen.getByTestId('stats-bar');
+    expect(statsBar).toHaveTextContent('97.7 KB');
+    expect(statsBar).toHaveTextContent('78.1 KB');
     expect(screen.getByText(/20% smaller/)).toBeInTheDocument();
   });
 
   it('shows X → Y format with "larger" when output is bigger', () => {
     // 110,000 bytes → 107.4 KB, 100,000 bytes → 97.7 KB
     render(<CompareStep result={makeResult({ outputSizeBytes: 110_000 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    expect(screen.getByText(/97\.7 KB → 107\.4 KB/)).toBeInTheDocument();
+    const statsBar = screen.getByTestId('stats-bar');
+    expect(statsBar).toHaveTextContent('97.7 KB');
+    expect(statsBar).toHaveTextContent('107.4 KB');
     expect(screen.getByText(/10% larger/)).toBeInTheDocument();
   });
 
@@ -139,9 +143,9 @@ describe('CompareStep — action buttons', () => {
     expect(onSave).toHaveBeenCalledOnce();
   });
 
-  it('calls onStartOver when Process another is clicked', async () => {
+  it('calls onStartOver when Start Over is clicked', async () => {
     render(<CompareStep result={makeResult()} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
-    await userEvent.click(screen.getByRole('button', { name: /process another/i }));
+    await userEvent.click(screen.getByRole('button', { name: /start over/i }));
     expect(onStartOver).toHaveBeenCalledOnce();
   });
 });

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ZoomIn, ZoomOut, Ban } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { ZoomIn, ZoomOut, Ban, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
@@ -23,8 +23,6 @@ function formatBytes(bytes: number): string {
 }
 
 // Zoom steps: 50% → 75% → 100% → 150% → 200%
-// Tailwind classes for the zoom wrapper inside the scroll container.
-// min-w-[N%] forces the wrapper wider than the panel, enabling horizontal scroll.
 const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
   { label: '50%',  wrapperClass: 'w-1/2 mx-auto' },
   { label: '75%',  wrapperClass: 'w-3/4 mx-auto' },
@@ -34,22 +32,17 @@ const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
 ];
 const DEFAULT_ZOOM_INDEX = 2; // 100%
 
-// Render scale for Before panel: high enough for crisp display at 150% zoom.
-// 2.0 = 2× pixel density — sharp on Retina displays at 100% view.
 const RENDER_SCALE = 2.0;
 
-// Map quality preset to a render scale reflecting its DPI
-// GS presets: screen=72dpi, ebook=150dpi, printer=300dpi, prepress=lossless
-// Render scales: lower DPI → smaller render scale (matches the actual output resolution)
 const QUALITY_RENDER_SCALE: Record<string, number> = {
-  web:     0.75,  // 72 dpi — render at lower scale
-  screen:  1.0,   // 150 dpi — standard
-  print:   1.5,   // 300 dpi — crisp
-  archive: 2.0,   // prepress/lossless — highest fidelity
+  web:     0.75,
+  screen:  1.0,
+  print:   1.5,
+  archive: 2.0,
 };
 
 function getAfterRenderScale(qualityLevel?: PdfQualityLevel): number {
-  if (!qualityLevel) return 2.0; // default if not provided
+  if (!qualityLevel) return 2.0;
   return QUALITY_RENDER_SCALE[qualityLevel] ?? 2.0;
 }
 
@@ -60,6 +53,8 @@ interface PreviewPanelProps {
   isRendering: boolean;
   hasError: boolean;
   zoomWrapperClass: string;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  onScroll?: () => void;
 }
 
 function PreviewPanel({
@@ -69,6 +64,8 @@ function PreviewPanel({
   isRendering,
   hasError,
   zoomWrapperClass,
+  scrollRef,
+  onScroll,
 }: PreviewPanelProps) {
   return (
     <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
@@ -79,7 +76,11 @@ function PreviewPanel({
       </div>
 
       {/* Scrollable area */}
-      <div className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0"
+      >
         {hasError ? (
           <div className="flex h-full min-h-[300px] items-center justify-center">
             <span className="text-sm text-muted-foreground">Preview unavailable</span>
@@ -89,7 +90,6 @@ function PreviewPanel({
             <span className="text-sm text-muted-foreground animate-pulse">Rendering…</span>
           </div>
         ) : (
-          /* Zoom wrapper — controls effective display width of pages */
           <div className={zoomWrapperClass}>
             {pageUrls.map((url, i) => (
               <img
@@ -117,9 +117,24 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
 
   const { label: zoomLabel, wrapperClass: zoomWrapperClass } = ZOOM_STEPS[zoomIndex];
 
-  // Render original (Before) — from sourceBytes stored in result (no disk read needed).
-  // cancelled flag prevents stale async completions from updating state when React
-  // StrictMode unmounts+remounts the component or when deps change mid-render.
+  // ── Synced scrolling ────────────────────────────────────────────────────────
+  const isSyncing = useRef(false);
+  const beforeScrollRef = useRef<HTMLDivElement>(null);
+  const afterScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = useCallback((source: 'before' | 'after') => {
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    const src = source === 'before' ? beforeScrollRef.current : afterScrollRef.current;
+    const tgt = source === 'before' ? afterScrollRef.current : beforeScrollRef.current;
+    if (src && tgt) {
+      tgt.scrollTop = src.scrollTop;
+      tgt.scrollLeft = src.scrollLeft;
+    }
+    requestAnimationFrame(() => { isSyncing.current = false; });
+  }, []);
+
+  // Render original (Before)
   useEffect(() => {
     if (!result) return;
     let cancelled = false;
@@ -141,7 +156,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     return () => { cancelled = true; };
   }, [result]);
 
-  // Render processed (After) — from result.bytes (in-memory processed output)
+  // Render processed (After)
   useEffect(() => {
     if (!result) return;
     let cancelled = false;
@@ -163,7 +178,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     return () => { cancelled = true; };
   }, [result, qualityLevel]);
 
-  // ── Cancelled state — shown instead of the normal preview ─────────────────
+  // ── Cancelled state ─────────────────────────────────────────────────────────
   if (isCancelled) {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -188,8 +203,6 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     );
   }
 
-  // Guard: render nothing if result is absent and not cancelled
-  // (transitional state before result arrives)
   if (!result) return null;
 
   const savingsBytes = result.inputSizeBytes - result.outputSizeBytes;
@@ -220,8 +233,44 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         </div>
       )}
 
-      {/* Side-by-side preview panels */}
-      <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
+      {/* Stats row above panels */}
+      <div data-testid="stats-bar" className="flex items-center gap-4 px-4 py-2 text-xs border-b border-border bg-muted/30 flex-none">
+        <span className={cn(
+          'font-medium tabular-nums whitespace-nowrap',
+          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
+        )}>
+          {formatBytes(result.inputSizeBytes)}
+        </span>
+        <ArrowRight className="h-3 w-3 text-muted-foreground flex-none" />
+        <span className={cn(
+          'font-medium tabular-nums whitespace-nowrap',
+          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
+        )}>
+          {formatBytes(result.outputSizeBytes)}
+        </span>
+        {result.inputSizeBytes > 0 && (
+          <span className={cn(
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+            grew
+              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+          )}>
+            {Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'}
+          </span>
+        )}
+        <span className="text-muted-foreground whitespace-nowrap">
+          {result.pageCount} page{result.pageCount !== 1 ? 's' : ''}
+        </span>
+        {dimensionsLabel && (
+          <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>
+        )}
+        {result.wasAlreadyOptimal && (
+          <span className="text-muted-foreground hidden sm:inline">File already optimal</span>
+        )}
+      </div>
+
+      {/* Side-by-side preview panels with floating zoom toolbar */}
+      <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
         <PreviewPanel
           label="Before"
           sizeLabel={formatBytes(result.inputSizeBytes)}
@@ -229,6 +278,8 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           isRendering={originalRendering}
           hasError={originalError}
           zoomWrapperClass={zoomWrapperClass}
+          scrollRef={beforeScrollRef}
+          onScroll={() => handleScroll('before')}
         />
         <PreviewPanel
           label="After"
@@ -237,47 +288,17 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           isRendering={processedRendering}
           hasError={processedError}
           zoomWrapperClass={zoomWrapperClass}
+          scrollRef={afterScrollRef}
+          onScroll={() => handleScroll('after')}
         />
-      </div>
 
-      {/* Bottom strip */}
-      <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
-
-        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
-          Back
-        </Button>
-
-        {/* Stats */}
-        <div data-testid="stats-bar" className="flex flex-1 items-center gap-4 text-xs overflow-hidden">
-          <span className={cn(
-            'font-medium tabular-nums whitespace-nowrap',
-            grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
-          )}>
-            {formatBytes(result.inputSizeBytes)} → {formatBytes(result.outputSizeBytes)}
-            {result.inputSizeBytes > 0 && (
-              <span className="text-muted-foreground font-normal ml-1">
-                ({Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'})
-              </span>
-            )}
-          </span>
-          <span className="text-muted-foreground whitespace-nowrap">
-            {result.pageCount} page{result.pageCount !== 1 ? 's' : ''}
-          </span>
-          {dimensionsLabel && (
-            <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>
-          )}
-          {result.wasAlreadyOptimal && (
-            <span className="text-muted-foreground hidden sm:inline">File already optimal — no compression savings possible</span>
-          )}
-        </div>
-
-        {/* Zoom controls */}
-        <div className="flex items-center gap-1 flex-none">
+        {/* Floating zoom toolbar */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
           <button
             type="button"
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Zoom out"
           >
             <ZoomOut className="h-3.5 w-3.5" />
@@ -289,12 +310,21 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             type="button"
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Zoom in"
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
         </div>
+      </div>
+
+      {/* Bottom strip — simplified: Back | spacer | Start Over | Save */}
+      <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
+          Back
+        </Button>
+
+        <div className="flex-1" />
 
         <button
           type="button"
@@ -302,7 +332,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Process another
+          Start Over
         </button>
 
         <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">

@@ -135,7 +135,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
     await generatePdfPreview(user);
 
     // Click "Process another" button on Compare step
-    await user.click(screen.getByRole('button', { name: /process another/i }));
+    await user.click(screen.getByRole('button', { name: /start over/i }));
 
     // Should be back at landing
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
     await screen.findByRole('slider', {}, { timeout: 2000 });
     await generateImagePreview(user);
 
-    await user.click(screen.getByRole('button', { name: /process another/i }));
+    await user.click(screen.getByRole('button', { name: /start over/i }));
 
     expect(screen.getByText('Open file')).toBeInTheDocument();
     expect(screen.queryByText('Before')).not.toBeInTheDocument();
