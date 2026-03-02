@@ -52,7 +52,7 @@ async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSi
 }
 
 function ToolFlow() {
-  const { activeTool, goToDashboard } = useToolContext();
+  const { activeTool, goToDashboard, pendingFile, setPendingFile } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -172,6 +172,14 @@ function ToolFlow() {
       setCurrentStep(1);
     }, 600);
   }, [addRecentDir]);
+
+  // Auto-load file dropped on dashboard (pendingFile from ToolContext)
+  useEffect(() => {
+    if (pendingFile && currentStep === 0 && !fileEntry) {
+      setPendingFile(null); // clear so it doesn't re-trigger
+      handleFileSelected(pendingFile);
+    }
+  }, [pendingFile, currentStep, fileEntry, handleFileSelected, setPendingFile]);
 
   // Load source PDF page count, file size, and compressibility when a PDF is selected
   useEffect(() => {
