@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { LandingCard } from '@/components/LandingCard';
-import { StepBar } from '@/components/StepBar';
+import { ToolHeader } from '@/components/ToolHeader';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
 import { SaveStep } from '@/components/SaveStep';
@@ -52,7 +52,7 @@ async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSi
 }
 
 function ToolFlow() {
-  const { activeTool, activeToolDef, goToDashboard } = useToolContext();
+  const { activeTool, goToDashboard } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -328,7 +328,7 @@ function ToolFlow() {
 
   return (
     <>
-      <StepBar steps={activeToolDef?.steps ?? []} current={currentStep} />
+      <ToolHeader currentStep={currentStep} onBackToDashboard={handleBackToDashboard} />
 
       {/* Step 0: Landing / Pick */}
       {currentStep === 0 && (
