@@ -12,7 +12,7 @@ export type DragState = 'idle' | 'over-valid' | 'over-invalid';
 
 // PDF Processing types
 
-export type PdfQualityLevel = 'web' | 'screen' | 'print' | 'archive';
+export type PdfQualityLevel = 'web' | 'screen' | 'print' | 'archive' | 'custom';
 // Intent-based labels matching Ghostscript presets:
 // web     → gs preset: screen   (72 dpi  — smallest, web-optimised)
 // screen  → gs preset: ebook    (150 dpi — balanced, screen reading)
