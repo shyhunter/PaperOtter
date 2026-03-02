@@ -1,22 +1,16 @@
 import { cn } from '@/lib/utils';
-import type { AppStep } from '@/types/file';
-
-const STEPS = [
-  { label: 'Pick', description: 'Open a file' },
-  { label: 'Configure', description: 'Set options' },
-  { label: 'Compare', description: 'Review output' },
-  { label: 'Save', description: 'Save to disk' },
-] as const;
+import type { ToolStep } from '@/types/tools';
 
 interface StepBarProps {
-  current: AppStep; // 0 = Pick, 1 = Configure, 2 = Compare, 3 = Save
+  steps: ToolStep[];
+  current: number; // 0-based index into the steps array
 }
 
-export function StepBar({ current }: StepBarProps) {
+export function StepBar({ steps, current }: StepBarProps) {
   return (
     <header className="flex items-center justify-center gap-0 border-b border-border bg-background/95 backdrop-blur-sm px-6 py-0 h-14">
       <div className="flex items-center gap-0">
-        {STEPS.map((step, i) => {
+        {steps.map((step, i) => {
           const isActive = i === current;
           const isComplete = i < current;
           const isLocked = i > current;
@@ -78,7 +72,7 @@ export function StepBar({ current }: StepBarProps) {
               </div>
 
               {/* Connector line between steps (not after last) */}
-              {i < STEPS.length - 1 && (
+              {i < steps.length - 1 && (
                 <div
                   className={cn(
                     'w-8 h-px mx-1 transition-colors',

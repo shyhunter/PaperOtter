@@ -52,7 +52,7 @@ async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSi
 }
 
 function ToolFlow() {
-  const { activeTool, goToDashboard } = useToolContext();
+  const { activeTool, activeToolDef, goToDashboard } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -328,7 +328,7 @@ function ToolFlow() {
 
   return (
     <>
-      <StepBar current={currentStep} />
+      <StepBar steps={activeToolDef?.steps ?? []} current={currentStep} />
 
       {/* Step 0: Landing / Pick */}
       {currentStep === 0 && (
