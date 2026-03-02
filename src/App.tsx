@@ -9,6 +9,8 @@ import { SaveStep } from '@/components/SaveStep';
 import { ImageConfigureStep } from '@/components/ImageConfigureStep';
 import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary';
+import { Dashboard } from '@/components/Dashboard';
+import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES } from '@/lib/fileValidation';
@@ -49,7 +51,8 @@ async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSi
   return { pageCount: doc.getPageCount(), fileSizeBytes: bytes.byteLength };
 }
 
-function App() {
+function ToolFlow() {
+  const { activeTool, goToDashboard } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +77,22 @@ function App() {
   // Set to true when Back is clicked; cleared when processing starts again.
   const suppressImageAdvance = useRef(false);
 
-  // Reset everything and go back to landing
+  // Reset all state and return to the dashboard
+  const handleBackToDashboard = useCallback(() => {
+    suppressImageAdvance.current = false;
+    lastPdfOptionsRef.current = null;
+    setSavedFilePath(null);
+    setFileEntry(null);
+    setCurrentStep(0);
+    setSourcePdfPageCount(1);
+    setSourcePdfFileSizeBytes(0);
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    goToDashboard();
+  }, [pdfProcessor, imageProcessor, goToDashboard]);
+
+  // Reset everything and go back to landing (step 0 within current tool)
   const handleStartOver = useCallback(() => {
     suppressImageAdvance.current = false;
     lastPdfOptionsRef.current = null;
@@ -87,6 +105,27 @@ function App() {
     pdfProcessor.reset();
     imageProcessor.reset();
   }, [pdfProcessor, imageProcessor]);
+
+  // Placeholder tools (merge, split, rotate) — built in subsequent plans
+  if (activeTool === 'merge-pdf' || activeTool === 'split-pdf' || activeTool === 'rotate-pdf') {
+    return (
+      <>
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="text-center space-y-4">
+            <p className="text-lg font-medium text-foreground">Coming soon</p>
+            <p className="text-sm text-muted-foreground">This tool is under development.</p>
+            <button
+              type="button"
+              onClick={handleBackToDashboard}
+              className="text-sm text-primary hover:text-primary/80 underline"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
@@ -288,131 +327,148 @@ function App() {
   }, [pdfProcessor, imageProcessor]);
 
   return (
-    <AppErrorBoundary>
-      <div className="flex h-screen flex-col bg-background text-foreground">
-        <StepBar current={currentStep} />
+    <>
+      <StepBar current={currentStep} />
 
-        {/* Step 0: Landing / Pick */}
-        {currentStep === 0 && (
-          <LandingCard
-            dragState={dragState}
-            isLoading={isLoading}
-            onPickerClick={handlePickerClick}
-            recentDirs={recentDirs}
-            onRecentDirClick={handleFileSelected}
-            invalidDropError={invalidDropError}
-            emptyFileError={emptyFileError}
-            corruptFileError={corruptFileError}
-            fileSizeLimitBytes={fileSizeLimitBytes}
-            onFileSizeLimitDismiss={handleFileSizeLimitDismiss}
+      {/* Step 0: Landing / Pick */}
+      {currentStep === 0 && (
+        <LandingCard
+          dragState={dragState}
+          isLoading={isLoading}
+          onPickerClick={handlePickerClick}
+          recentDirs={recentDirs}
+          onRecentDirClick={handleFileSelected}
+          invalidDropError={invalidDropError}
+          emptyFileError={emptyFileError}
+          corruptFileError={corruptFileError}
+          fileSizeLimitBytes={fileSizeLimitBytes}
+          onFileSizeLimitDismiss={handleFileSizeLimitDismiss}
+        />
+      )}
+
+      {/* Step 1: Configure — PDF */}
+      <StepErrorBoundary stepName="Configure">
+        {currentStep === 1 && fileEntry?.format === 'pdf' && (
+          <ConfigureStep
+            fileName={fileEntry.name}
+            pageCount={sourcePdfPageCount}
+            fileSizeBytes={sourcePdfFileSizeBytes}
+            compressibilityScore={pdfCompressibility.compressibilityScore}
+            imageCount={pdfCompressibility.imageCount}
+            isProcessing={pdfProcessor.isProcessing}
+            progress={pdfProcessor.progress}
+            error={pdfProcessor.error}
+            onGeneratePreview={handleGeneratePreview}
+            onBack={handleBackFromConfigure}
+            onCancel={pdfProcessor.cancel}
           />
         )}
 
-        {/* Step 1: Configure — PDF */}
-        <StepErrorBoundary stepName="Configure">
-          {currentStep === 1 && fileEntry?.format === 'pdf' && (
-            <ConfigureStep
-              fileName={fileEntry.name}
-              pageCount={sourcePdfPageCount}
-              fileSizeBytes={sourcePdfFileSizeBytes}
-              compressibilityScore={pdfCompressibility.compressibilityScore}
-              imageCount={pdfCompressibility.imageCount}
-              isProcessing={pdfProcessor.isProcessing}
-              progress={pdfProcessor.progress}
-              error={pdfProcessor.error}
-              onGeneratePreview={handleGeneratePreview}
-              onBack={handleBackFromConfigure}
-              onCancel={pdfProcessor.cancel}
-            />
-          )}
+        {/* Step 1: Configure — image */}
+        {currentStep === 1 && fileEntry?.format === 'image' && (
+          <ImageConfigureStep
+            fileName={fileEntry.name}
+            fileSizeBytes={0}
+            sourceFormat={detectImageFormat(fileEntry.path)}
+            isProcessing={imageProcessor.isProcessing}
+            error={imageProcessor.error}
+            lastResult={imageProcessor.result}
+            onGeneratePreview={handleGenerateImagePreview}
+            onBack={handleBackFromConfigure}
+            onCancel={imageProcessor.cancel}
+          />
+        )}
+      </StepErrorBoundary>
 
-          {/* Step 1: Configure — image */}
-          {currentStep === 1 && fileEntry?.format === 'image' && (
-            <ImageConfigureStep
-              fileName={fileEntry.name}
-              fileSizeBytes={0}
-              sourceFormat={detectImageFormat(fileEntry.path)}
-              isProcessing={imageProcessor.isProcessing}
-              error={imageProcessor.error}
-              lastResult={imageProcessor.result}
-              onGeneratePreview={handleGenerateImagePreview}
-              onBack={handleBackFromConfigure}
-              onCancel={imageProcessor.cancel}
-            />
-          )}
-        </StepErrorBoundary>
+      {/* Step 2: Compare — image */}
+      <StepErrorBoundary stepName="Compare">
+        {currentStep === 2 && imageProcessor.result && fileEntry?.format === 'image' && (
+          <ImageCompareStep
+            result={imageProcessor.result}
+            isProcessing={imageProcessor.isProcessing}
+            onSave={handleSave}
+            onBack={handleBackFromCompare}
+            onStartOver={handleStartOver}
+          />
+        )}
 
-        {/* Step 2: Compare — image */}
-        <StepErrorBoundary stepName="Compare">
-          {currentStep === 2 && imageProcessor.result && fileEntry?.format === 'image' && (
-            <ImageCompareStep
-              result={imageProcessor.result}
-              isProcessing={imageProcessor.isProcessing}
-              onSave={handleSave}
-              onBack={handleBackFromCompare}
-              onStartOver={handleStartOver}
-            />
-          )}
+        {/* Step 2: Compare — PDF (normal result or cancelled state) */}
+        {currentStep === 2 && (pdfProcessor.result || pdfProcessor.isCancelled) && fileEntry?.format === 'pdf' && (
+          <CompareStep
+            result={pdfProcessor.result ?? undefined}
+            qualityLevel={lastPdfQualityLevel}
+            isCancelled={pdfProcessor.isCancelled}
+            onSave={handleSave}
+            onBack={pdfProcessor.isCancelled ? handleBackFromCancelled : handleBackFromCompare}
+            onStartOver={handleStartOver}
+            onRetry={pdfProcessor.isCancelled ? handleRetryPdf : undefined}
+          />
+        )}
+      </StepErrorBoundary>
 
-          {/* Step 2: Compare — PDF (normal result or cancelled state) */}
-          {currentStep === 2 && (pdfProcessor.result || pdfProcessor.isCancelled) && fileEntry?.format === 'pdf' && (
-            <CompareStep
-              result={pdfProcessor.result ?? undefined}
-              qualityLevel={lastPdfQualityLevel}
-              isCancelled={pdfProcessor.isCancelled}
-              onSave={handleSave}
-              onBack={pdfProcessor.isCancelled ? handleBackFromCancelled : handleBackFromCompare}
-              onStartOver={handleStartOver}
-              onRetry={pdfProcessor.isCancelled ? handleRetryPdf : undefined}
-            />
-          )}
-        </StepErrorBoundary>
+      {/* Step 3: Save — PDF */}
+      <StepErrorBoundary stepName="Save">
+        {currentStep === 3 && pdfProcessor.result && fileEntry?.format === 'pdf' && (
+          <SaveStep
+            processedBytes={pdfProcessor.result.bytes}
+            sourceFileName={fileEntry.name}
+            savedFilePath={savedFilePath}
+            onDismissSaveConfirmation={() => setSavedFilePath(null)}
+            onSaveComplete={(savedPath) => {
+              setSavedFilePath(savedPath);
+            }}
+            onCancel={() => {
+              setCurrentStep(2);
+            }}
+            onBack={() => {
+              setSavedFilePath(null);
+              setCurrentStep(2);
+            }}
+          />
+        )}
 
-        {/* Step 3: Save — PDF */}
-        <StepErrorBoundary stepName="Save">
-          {currentStep === 3 && pdfProcessor.result && fileEntry?.format === 'pdf' && (
-            <SaveStep
-              processedBytes={pdfProcessor.result.bytes}
-              sourceFileName={fileEntry.name}
-              savedFilePath={savedFilePath}
-              onDismissSaveConfirmation={() => setSavedFilePath(null)}
-              onSaveComplete={(savedPath) => {
-                setSavedFilePath(savedPath);
-              }}
-              onCancel={() => {
-                setCurrentStep(2);
-              }}
-              onBack={() => {
-                setSavedFilePath(null);
-                setCurrentStep(2);
-              }}
-            />
-          )}
+        {/* Step 3: Save — image */}
+        {currentStep === 3 && imageProcessor.result && fileEntry?.format === 'image' && (
+          <SaveStep
+            processedBytes={imageProcessor.result.bytes}
+            sourceFileName={fileEntry.name}
+            defaultSaveName={buildImageSaveFileName(fileEntry.name, imageProcessor.result.outputFormat)}
+            saveFilters={buildImageSaveFilters(imageProcessor.result.outputFormat)}
+            savedFilePath={savedFilePath}
+            onDismissSaveConfirmation={() => setSavedFilePath(null)}
+            onSaveComplete={(savedPath) => {
+              setSavedFilePath(savedPath);
+            }}
+            onCancel={() => setCurrentStep(2)}
+            onBack={() => {
+              setSavedFilePath(null);
+              setCurrentStep(2);
+            }}
+          />
+        )}
+      </StepErrorBoundary>
+    </>
+  );
+}
 
-          {/* Step 3: Save — image */}
-          {currentStep === 3 && imageProcessor.result && fileEntry?.format === 'image' && (
-            <SaveStep
-              processedBytes={imageProcessor.result.bytes}
-              sourceFileName={fileEntry.name}
-              defaultSaveName={buildImageSaveFileName(fileEntry.name, imageProcessor.result.outputFormat)}
-              saveFilters={buildImageSaveFilters(imageProcessor.result.outputFormat)}
-              savedFilePath={savedFilePath}
-              onDismissSaveConfirmation={() => setSavedFilePath(null)}
-              onSaveComplete={(savedPath) => {
-                setSavedFilePath(savedPath);
-              }}
-              onCancel={() => setCurrentStep(2)}
-              onBack={() => {
-                setSavedFilePath(null);
-                setCurrentStep(2);
-              }}
-            />
-          )}
-        </StepErrorBoundary>
+function AppContent() {
+  const { activeTool } = useToolContext();
 
-        <PrivacyFooter />
-        <Toaster position="bottom-center" />
-      </div>
+  return (
+    <div className="flex h-screen flex-col bg-background text-foreground">
+      {activeTool === null ? <Dashboard /> : <ToolFlow />}
+      <PrivacyFooter />
+      <Toaster position="bottom-center" />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AppErrorBoundary>
+      <ToolProvider>
+        <AppContent />
+      </ToolProvider>
     </AppErrorBoundary>
   );
 }

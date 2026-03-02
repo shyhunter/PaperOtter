@@ -71,9 +71,11 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function setup() {
+async function setup() {
   const user = userEvent.setup();
   render(<App />);
+  // Select Compress PDF from the dashboard to enter the tool flow
+  await user.click(screen.getByRole('button', { name: /compress pdf/i }));
   return { user };
 }
 
@@ -98,22 +100,22 @@ async function pickFile(user: ReturnType<typeof userEvent.setup>, filePath: stri
 
 describe('Suite 01 — File Input', () => {
   // FI-01 ────────────────────────────────────────────────────────────────────
-  it('FI-01 — landing page renders "Open file" button and drop zone', () => {
-    setup();
+  it('FI-01 — landing page renders "Open file" button and drop zone', async () => {
+    await setup();
     expect(screen.getByText('Open file')).toBeInTheDocument();
     expect(screen.getByText('Drop file here')).toBeInTheDocument();
     expect(screen.getByText('PDF, JPG, PNG, WebP')).toBeInTheDocument();
   });
 
   // FI-02 ────────────────────────────────────────────────────────────────────
-  it('FI-02 — privacy footer is visible on the landing page', () => {
-    setup();
+  it('FI-02 — privacy footer is visible on the landing page', async () => {
+    await setup();
     expect(screen.getByText(/processed locally/i)).toBeInTheDocument();
   });
 
   // FI-03 ────────────────────────────────────────────────────────────────────
   it('FI-03 — clicking "Open file" invokes the native file picker', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     vi.mocked(openFilePicker).mockResolvedValueOnce(null); // simulate cancel
     await user.click(screen.getByText('Open file'));
     await act(async () => {}); // flush openFilePicker promise
@@ -122,7 +124,7 @@ describe('Suite 01 — File Input', () => {
 
   // FI-04 ────────────────────────────────────────────────────────────────────
   it('FI-04 — selecting a PDF file navigates to the PDF Configure step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/Users/test/document.pdf');
     expect(screen.getByRole('button', { name: /generate preview/i })).toBeInTheDocument();
     // The quality radio group must show the four new labels
@@ -134,7 +136,7 @@ describe('Suite 01 — File Input', () => {
 
   // FI-05 ────────────────────────────────────────────────────────────────────
   it('FI-05 — selecting a JPEG file navigates to the Image Configure step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/Users/test/photo.jpg');
     // Image Configure shows a quality slider, not a radio group
     expect(screen.getByRole('slider')).toBeInTheDocument();
@@ -142,21 +144,21 @@ describe('Suite 01 — File Input', () => {
 
   // FI-06 ────────────────────────────────────────────────────────────────────
   it('FI-06 — selecting a PNG file navigates to the Image Configure step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/Users/test/image.png');
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 
   // FI-07 ────────────────────────────────────────────────────────────────────
   it('FI-07 — selecting a WebP file navigates to the Image Configure step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/Users/test/animation.webp');
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 
   // FI-08 ────────────────────────────────────────────────────────────────────
   it('FI-08 — canceling the file picker stays on the landing page', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, null); // null = user cancelled the dialog
     // Should still be on landing
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -166,7 +168,7 @@ describe('Suite 01 — File Input', () => {
 
   // FI-09 ────────────────────────────────────────────────────────────────────
   it('FI-09 — opening a file > 100 MB shows the file-size-limit modal', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     // Override getFileSizeBytes to return 105 MB for this test
     vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(105 * 1024 * 1024);
 
@@ -184,7 +186,7 @@ describe('Suite 01 — File Input', () => {
 
   // FI-10 ────────────────────────────────────────────────────────────────────
   it('FI-10 — opening a zero-byte file shows inline empty-file error', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     // Override getFileSizeBytes to return 0 (empty file) for this test
     vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(0);
 

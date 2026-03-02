@@ -48,9 +48,11 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function setup() {
+async function setup() {
   const user = userEvent.setup();
   render(<App />);
+  // Select Compress Image from the dashboard to enter the tool flow
+  await user.click(screen.getByRole('button', { name: /compress image/i }));
   return { user };
 }
 
@@ -74,7 +76,7 @@ async function navigateToImageCompare(user: ReturnType<typeof userEvent.setup>, 
 describe('Suite 04 — Image Configure Step', () => {
   // IC-01 ────────────────────────────────────────────────────────────────────
   it('IC-01 — quality slider defaults to 80% for JPEG', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     expect(screen.getByText('80%')).toBeInTheDocument();
     expect(screen.getByRole('slider')).toHaveValue('80');
@@ -82,7 +84,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-02 ────────────────────────────────────────────────────────────────────
   it('IC-02 — PNG shows "Compression: N/9" not a percentage', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'png');
     // quality=80 → PNG compression = round((100-80)*9/100) = 2
     expect(screen.getByText('Compression: 2/9')).toBeInTheDocument();
@@ -91,7 +93,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-03 ────────────────────────────────────────────────────────────────────
   it('IC-03 — dragging the slider updates the label but does NOT trigger processing', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     fireEvent.change(screen.getByRole('slider'), { target: { value: '42' } });
     expect(screen.getByText('42%')).toBeInTheDocument();
@@ -100,7 +102,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-04 ────────────────────────────────────────────────────────────────────
   it('IC-04 — switching to WebP keeps the percentage quality label', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     await user.click(screen.getByRole('button', { name: /^webp$/i }));
     expect(screen.getByText('80%')).toBeInTheDocument();
@@ -108,7 +110,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-05 ────────────────────────────────────────────────────────────────────
   it('IC-05 — switching format to PNG changes quality label to Compression display', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     await user.click(screen.getByRole('button', { name: /^png$/i }));
     expect(screen.getByText(/Compression: \d\/9/)).toBeInTheDocument();
@@ -116,7 +118,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-06 ────────────────────────────────────────────────────────────────────
   it('IC-06 — resize toggle is OFF by default', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     const toggle = screen.getByRole('switch', { name: /enable resize/i });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
@@ -124,7 +126,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-07 ────────────────────────────────────────────────────────────────────
   it('IC-07 — enabling resize shows width and height inputs', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     await user.click(screen.getByRole('switch', { name: /enable resize/i }));
     expect(screen.getByLabelText(/width/i)).toBeInTheDocument();
@@ -133,7 +135,7 @@ describe('Suite 04 — Image Configure Step', () => {
 
   // IC-08 ────────────────────────────────────────────────────────────────────
   it('IC-08 — Back button from Image Configure returns to the landing page', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageConfigure(user, 'jpg');
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -143,7 +145,7 @@ describe('Suite 04 — Image Configure Step', () => {
 describe('Suite 04 — Image Compare Step', () => {
   // ICo-01 ───────────────────────────────────────────────────────────────────
   it('ICo-01 — Image Compare shows Before / After panels after processing', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageCompare(user);
     expect(screen.getByText('Before')).toBeInTheDocument();
     expect(screen.getByText('After')).toBeInTheDocument();
@@ -151,7 +153,7 @@ describe('Suite 04 — Image Compare Step', () => {
 
   // ICo-02 ───────────────────────────────────────────────────────────────────
   it('ICo-02 — stats bar shows size delta and quality', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageCompare(user);
     // FAKE_IMAGE_RESULT: savings 1_120_000 B → 47% → "−1.07 MB (47%)"
     expect(screen.getByText(/47%/)).toBeInTheDocument();
@@ -160,7 +162,7 @@ describe('Suite 04 — Image Compare Step', () => {
 
   // ICo-03 ───────────────────────────────────────────────────────────────────
   it('ICo-03 — when resize was applied, dimensions change is shown in stats', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageCompare(user, FAKE_IMAGE_RESULT_RESIZED);
     // source 300×200 → output 1920×1080
     expect(screen.getByText(/300.*200.*1920.*1080/)).toBeInTheDocument();
@@ -168,7 +170,7 @@ describe('Suite 04 — Image Compare Step', () => {
 
   // ICo-04 ───────────────────────────────────────────────────────────────────
   it('ICo-04 — Back from Image Compare returns to Image Configure', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageCompare(user);
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('slider')).toBeInTheDocument(); // quality slider
@@ -176,7 +178,7 @@ describe('Suite 04 — Image Compare Step', () => {
 
   // ICo-05 ───────────────────────────────────────────────────────────────────
   it('ICo-05 — Save… button in Image Compare advances to the Save step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToImageCompare(user);
     await user.click(screen.getByRole('button', { name: /save/i }));
     await screen.findByText(/choose a save location/i, {}, { timeout: 2000 });

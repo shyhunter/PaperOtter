@@ -55,9 +55,12 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function setup() {
+async function setup(tool: 'compress-pdf' | 'compress-image' = 'compress-pdf') {
   const user = userEvent.setup();
   render(<App />);
+  // Select the appropriate tool from the dashboard to enter the tool flow
+  const toolName = tool === 'compress-pdf' ? /compress pdf/i : /compress image/i;
+  await user.click(screen.getByRole('button', { name: toolName }));
   return { user };
 }
 
@@ -84,7 +87,7 @@ async function generateImagePreview(user: ReturnType<typeof userEvent.setup>, re
 describe('Suite 05 — End-to-End User Flows', () => {
   // E2E-01 ───────────────────────────────────────────────────────────────────
   it('E2E-01 — full PDF flow: landing → configure → compare → save step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
 
     // Step 0: landing
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -106,7 +109,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-02 ───────────────────────────────────────────────────────────────────
   it('E2E-02 — full image flow: landing → configure → compare → save step', async () => {
-    const { user } = setup();
+    const { user } = await setup('compress-image');
 
     // Step 0: landing
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -130,7 +133,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-03 ───────────────────────────────────────────────────────────────────
   it('E2E-03 — "Process another" from PDF Compare resets app to the landing page', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/test/report.pdf');
     await generatePdfPreview(user);
 
@@ -144,7 +147,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-04 ───────────────────────────────────────────────────────────────────
   it('E2E-04 — "Process another" from Image Compare resets app to the landing page', async () => {
-    const { user } = setup();
+    const { user } = await setup('compress-image');
     vi.mocked(openFilePicker).mockResolvedValueOnce('/test/photo.jpg');
     await user.click(screen.getByText('Open file'));
     await screen.findByRole('slider', {}, { timeout: 2000 });
@@ -158,7 +161,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-05 ───────────────────────────────────────────────────────────────────
   it('E2E-05 — full PDF back-chain: compare → configure → landing', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/test/report.pdf');
     await generatePdfPreview(user);
     expect(screen.getByText('Before')).toBeInTheDocument(); // at Compare
@@ -174,7 +177,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-06 ───────────────────────────────────────────────────────────────────
   it('E2E-06 — full image back-chain: compare → configure → landing', async () => {
-    const { user } = setup();
+    const { user } = await setup('compress-image');
     vi.mocked(openFilePicker).mockResolvedValueOnce('/test/photo.jpg');
     await user.click(screen.getByText('Open file'));
     await screen.findByRole('slider', {}, { timeout: 2000 });
@@ -192,7 +195,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-07 ───────────────────────────────────────────────────────────────────
   it('E2E-07 — quality level selected in Configure is passed to Compare (render scale)', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/test/report.pdf');
 
     // Choose "Archive" quality before processing
@@ -207,7 +210,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
   // E2E-08 ───────────────────────────────────────────────────────────────────
   it('E2E-08 — target-not-met warning is shown when processPdf returns targetMet=false', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await pickFile(user, '/test/report.pdf');
 
     // Enter a target size that will not be met

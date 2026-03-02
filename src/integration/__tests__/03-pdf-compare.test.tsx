@@ -51,9 +51,11 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function setup() {
+async function setup() {
   const user = userEvent.setup();
   render(<App />);
+  // Select Compress PDF from the dashboard to enter the tool flow
+  await user.click(screen.getByRole('button', { name: /compress pdf/i }));
   return { user };
 }
 
@@ -81,7 +83,7 @@ async function navigateToPdfCompare(
 describe('Suite 03 — PDF Compare Step', () => {
   // PCo-01 ───────────────────────────────────────────────────────────────────
   it('PCo-01 — Compare step appears after processing completes', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     // Before / After panel headers
     expect(screen.getByText('Before')).toBeInTheDocument();
@@ -90,7 +92,7 @@ describe('Suite 03 — PDF Compare Step', () => {
 
   // PCo-02 ───────────────────────────────────────────────────────────────────
   it('PCo-02 — stats bar shows "X MB → Y MB (Z% smaller)" format', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     // FAKE_PDF_RESULT: 2_400_000 B → 2.29 MB, 1_200_000 B → 1.14 MB, 50% smaller
     const statsBar = screen.getByTestId('stats-bar');
@@ -101,14 +103,14 @@ describe('Suite 03 — PDF Compare Step', () => {
 
   // PCo-03 ───────────────────────────────────────────────────────────────────
   it('PCo-03 — stats bar shows page count', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     expect(screen.getByText('3 pages')).toBeInTheDocument();
   });
 
   // PCo-04 ───────────────────────────────────────────────────────────────────
   it('PCo-04 — no "structural only" or "image content unchanged" notice is shown', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     expect(screen.queryByText(/structural/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/image content is unchanged/i)).not.toBeInTheDocument();
@@ -116,7 +118,7 @@ describe('Suite 03 — PDF Compare Step', () => {
 
   // PCo-05 ───────────────────────────────────────────────────────────────────
   it('PCo-05 — target-not-met warning appears when targetMet=false', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user, FAKE_PDF_RESULT_TARGET_UNMET);
     expect(screen.getByText(/target size not achievable/i)).toBeInTheDocument();
     expect(screen.getByText(/best result/i)).toBeInTheDocument();
@@ -124,7 +126,7 @@ describe('Suite 03 — PDF Compare Step', () => {
 
   // PCo-06 ───────────────────────────────────────────────────────────────────
   it('PCo-06 — Back button returns to the PDF Configure step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     // Configure step has the quality selector heading
@@ -133,7 +135,7 @@ describe('Suite 03 — PDF Compare Step', () => {
 
   // PCo-07 ───────────────────────────────────────────────────────────────────
   it('PCo-07 — Save… button advances to the Save step', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfCompare(user);
     await user.click(screen.getByRole('button', { name: /save/i }));
     // Save step auto-triggers the dialog (which never resolves per mock).

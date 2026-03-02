@@ -56,9 +56,11 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function setup() {
+async function setup() {
   const user = userEvent.setup();
   render(<App />);
+  // Select Compress PDF from the dashboard to enter the tool flow
+  await user.click(screen.getByRole('button', { name: /compress pdf/i }));
   return { user };
 }
 
@@ -74,14 +76,14 @@ async function navigateToPdfConfigure(user: ReturnType<typeof userEvent.setup>) 
 describe('Suite 02 — PDF Configure Step', () => {
   // PC-01 ────────────────────────────────────────────────────────────────────
   it('PC-01 — shows the file name in the configure header', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     expect(screen.getByText('document.pdf')).toBeInTheDocument();
   });
 
   // PC-02 ────────────────────────────────────────────────────────────────────
   it('PC-02 — default quality level is "screen"', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     // The "Screen" radio must be checked by default
     const screenRadio = screen.getByRole('radio', { hidden: true, name: /screen/i });
@@ -90,7 +92,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-03 ────────────────────────────────────────────────────────────────────
   it('PC-03 — all four quality options are visible (Web / Screen / Print / Archive)', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     expect(screen.getByText('Web')).toBeInTheDocument();
     expect(screen.getByText('Screen')).toBeInTheDocument();
@@ -100,7 +102,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-04 ────────────────────────────────────────────────────────────────────
   it('PC-04 — clicking a quality tile selects it', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     // Click the "Archive" label (visible text), then assert its radio is checked
     await user.click(screen.getByText('Archive'));
@@ -116,7 +118,7 @@ describe('Suite 02 — PDF Configure Step', () => {
     //    and recommendQualityForTarget is called with a valid file size
     vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getFileSizeBytes
     vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getPdfMeta
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);
     await user.type(targetInput, '500 KB');
@@ -126,7 +128,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-06 ────────────────────────────────────────────────────────────────────
   it('PC-06 — an invalid target size shows a validation error', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     // Type something invalid, then click Generate Preview to trigger validation
     const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);
@@ -137,7 +139,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-07 ────────────────────────────────────────────────────────────────────
   it('PC-07 — clicking Generate Preview triggers processing and shows progress', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     // processPdf never resolves in this test — we just verify the processing state
     vi.mocked(processPdf).mockReturnValue(new Promise(() => {}));
@@ -148,7 +150,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-08 ────────────────────────────────────────────────────────────────────
   it('PC-08 — Back button from PDF Configure returns to the landing page', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByText('Open file')).toBeInTheDocument();
@@ -158,7 +160,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PR-01 ────────────────────────────────────────────────────────────────────
   it('PR-01 — resize toggle is OFF by default and its controls are hidden', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     const toggle = screen.getByRole('switch', { name: /enable page resize/i });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
@@ -168,7 +170,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PR-02 ────────────────────────────────────────────────────────────────────
   it('PR-02 — enabling resize reveals the page size preset dropdown', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('switch', { name: /enable page resize/i }));
     expect(screen.getByRole('switch', { name: /enable page resize/i })).toHaveAttribute('aria-checked', 'true');
@@ -177,7 +179,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PR-03 ────────────────────────────────────────────────────────────────────
   it('PR-03 — selecting the Custom preset reveals width and height inputs', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('switch', { name: /enable page resize/i }));
     const select = screen.getByRole('combobox');
@@ -188,7 +190,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PR-04 ────────────────────────────────────────────────────────────────────
   it('PR-04 — page range input accepts a valid range string', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('switch', { name: /enable page resize/i }));
     const rangeInput = screen.getByPlaceholderText(/e\.g\. 1-3, 5/i);
@@ -198,7 +200,7 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PR-05 ────────────────────────────────────────────────────────────────────
   it('PR-05 — Generate Preview is disabled while a processing job is running', async () => {
-    const { user } = setup();
+    const { user } = await setup();
     await navigateToPdfConfigure(user);
     vi.mocked(processPdf).mockReturnValue(new Promise(() => {})); // hangs indefinitely
     await user.click(screen.getByRole('button', { name: /generate preview/i }));
