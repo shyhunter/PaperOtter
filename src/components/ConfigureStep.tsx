@@ -28,6 +28,7 @@ const QUALITY_LEVELS: { value: PdfQualityLevel; label: string; description: stri
   { value: 'screen',  label: 'Screen',  description: 'Balanced — 150 dpi, screen reading (default)' },
   { value: 'print',   label: 'Print',   description: 'High quality — 300 dpi, for printing' },
   { value: 'archive', label: 'Archive', description: 'Lossless — archival quality, no image recompression' },
+  { value: 'custom',  label: 'Custom',  description: 'Set your own target file size' },
 ];
 
 const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
@@ -59,6 +60,11 @@ export function ConfigureStep({
   const [sizeInputError, setSizeInputError] = useState<string | null>(null);
   const [recommendedQuality, setRecommendedQuality] = useState<PdfQualityLevel | null>(null);
 
+  // Custom target size state
+  const [customSizeValue, setCustomSizeValue] = useState<string>('');
+  const [customUnit, setCustomUnit] = useState<'MB' | 'KB'>(fileSizeBytes >= 1024 * 1024 ? 'MB' : 'KB');
+  const [customError, setCustomError] = useState<string | null>(null);
+
   // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
   const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
@@ -74,9 +80,27 @@ export function ConfigureStep({
 
   function handleSubmit() {
     setSizeInputError(null);
+    setCustomError(null);
 
+    let resolvedQuality = qualityLevel;
     let targetSizeBytes: number | null = null;
-    if (targetSizeInput.trim() !== '') {
+
+    if (qualityLevel === 'custom') {
+      // Validate custom target size
+      const parsed = parseInt(customSizeValue, 10);
+      if (!customSizeValue.trim() || isNaN(parsed) || parsed < 1) {
+        setCustomError('Enter a valid target size');
+        return;
+      }
+      const customBytes = parsed * (customUnit === 'MB' ? 1024 * 1024 : 1024);
+      if (customBytes >= fileSizeBytes) {
+        setCustomError(`Target must be smaller than original (${formatBytes(fileSizeBytes)})`);
+        return;
+      }
+      // Resolve custom to a real quality preset
+      resolvedQuality = recommendQualityForTarget(customBytes, fileSizeBytes, compressibilityScore);
+      targetSizeBytes = customBytes;
+    } else if (targetSizeInput.trim() !== '') {
       targetSizeBytes = parseSizeInput(targetSizeInput);
       if (targetSizeBytes === null) {
         setSizeInputError('Enter a valid size like "2 MB", "500 KB", or "1.5 GB"');
@@ -86,7 +110,7 @@ export function ConfigureStep({
 
     const options: Omit<PdfProcessingOptions, 'onProgress'> = {
       compressionEnabled: true, // always on
-      qualityLevel,
+      qualityLevel: resolvedQuality,
       targetSizeBytes,
       resizeEnabled,
       pagePreset,
@@ -125,7 +149,7 @@ export function ConfigureStep({
           {/* Compression level selector */}
           <fieldset data-testid="quality-select">
             <legend className="text-xs text-muted-foreground mb-2">Compression level</legend>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-5 gap-1">
               {QUALITY_LEVELS.map(({ value, label, description }) => (
                 <label
                   key={value}
@@ -160,46 +184,82 @@ export function ConfigureStep({
             </div>
           </fieldset>
 
-          {/* Target size input */}
-          <div className="space-y-1">
-            <label htmlFor={`${formId}-target-size`} className="text-xs text-muted-foreground">
-              Target size (optional, e.g. 2 MB)
-            </label>
-            <input
-              id={`${formId}-target-size`}
-              type="text"
-              value={targetSizeInput}
-              onChange={(e) => {
-                const val = e.target.value;
-                setTargetSizeInput(val);
-                setSizeInputError(null);
+          {/* Custom target size input — shown when Custom quality selected */}
+          {qualityLevel === 'custom' ? (
+            <div className="space-y-1">
+              <label htmlFor={`${formId}-custom-size`} className="text-xs text-muted-foreground">
+                Target file size
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id={`${formId}-custom-size`}
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={customSizeValue}
+                  onChange={(e) => { setCustomSizeValue(e.target.value); setCustomError(null); }}
+                  placeholder="e.g. 2"
+                  disabled={isProcessing}
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCustomUnit((u) => u === 'MB' ? 'KB' : 'MB')}
+                  disabled={isProcessing}
+                  className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-50 min-w-[3.5rem]"
+                >
+                  {customUnit}
+                </button>
+              </div>
+              {customError && (
+                <p className="text-xs text-destructive">{customError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Set a maximum file size — the best compression preset will be chosen automatically.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Target size input — for preset qualities */}
+              <div className="space-y-1">
+                <label htmlFor={`${formId}-target-size`} className="text-xs text-muted-foreground">
+                  Target size (optional, e.g. 2 MB)
+                </label>
+                <input
+                  id={`${formId}-target-size`}
+                  type="text"
+                  value={targetSizeInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTargetSizeInput(val);
+                    setSizeInputError(null);
 
-                // Auto-recommend quality when target changes
-                if (val.trim() === '') {
-                  setRecommendedQuality(null);
-                  return;
-                }
-                const targetBytes = parseSizeInput(val);
-                if (targetBytes !== null && fileSizeBytes > 0) {
-                  // Use a neutral compressibilityScore of 0.5 until result is available
-                  // (pre-scan result is only available after processing; this is a pre-processing hint)
-                  const recommended = recommendQualityForTarget(targetBytes, fileSizeBytes, 0.5);
-                  setRecommendedQuality(recommended);
-                  setQualityLevel(recommended); // auto-select recommended level
-                }
-              }}
-              placeholder="e.g. 2 MB"
-              disabled={isProcessing}
-              className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-            />
-            {sizeInputError && (
-              <p className="text-xs text-destructive">{sizeInputError}</p>
-            )}
-          </div>
+                    // Auto-recommend quality when target changes
+                    if (val.trim() === '') {
+                      setRecommendedQuality(null);
+                      return;
+                    }
+                    const targetBytes = parseSizeInput(val);
+                    if (targetBytes !== null && fileSizeBytes > 0) {
+                      const recommended = recommendQualityForTarget(targetBytes, fileSizeBytes, 0.5);
+                      setRecommendedQuality(recommended);
+                      setQualityLevel(recommended);
+                    }
+                  }}
+                  placeholder="e.g. 2 MB"
+                  disabled={isProcessing}
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                />
+                {sizeInputError && (
+                  <p className="text-xs text-destructive">{sizeInputError}</p>
+                )}
+              </div>
 
-          <p className="text-xs text-muted-foreground">
-            Set a target size — quality level auto-suggests the best preset to get there.
-          </p>
+              <p className="text-xs text-muted-foreground">
+                Set a target size — quality level auto-suggests the best preset to get there.
+              </p>
+            </>
+          )}
 
           {/* Compressibility guidance — always visible */}
           <div className="flex items-start gap-1.5 mt-2">

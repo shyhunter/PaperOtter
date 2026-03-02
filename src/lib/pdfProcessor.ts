@@ -13,6 +13,7 @@ const QUALITY_TO_GS_PRESET: Record<PdfQualityLevel, string> = {
   screen:  'ebook',     // 150 dpi — balanced
   print:   'printer',   // 300 dpi — high quality
   archive: 'prepress',  // lossless — archival
+  custom:  'screen',    // placeholder — custom must be resolved to a real preset before processing
 };
 
 // PDF points per mm: 1 pt = 1/72 inch = 0.3528 mm
@@ -176,6 +177,10 @@ export async function processPdf(
   let wasAlreadyOptimal = false;
 
   if (options.compressionEnabled) {
+    // Custom must be resolved to a real preset by the UI before reaching the processor
+    if (options.qualityLevel === 'custom') {
+      throw new Error('Custom quality must be resolved to a preset before processing');
+    }
     // Use Ghostscript for real image recompression
     const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
 
