@@ -19,6 +19,7 @@ export interface ToolDefinition {
   category: ToolCategory;
   icon: string; // Lucide icon name (e.g., 'FileDown', 'Merge')
   acceptsFormats: Array<'pdf' | 'image'>;
+  acceptsMultipleFiles?: boolean;
   steps: ToolStep[];
 }
 
@@ -58,6 +59,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Merge',
     acceptsFormats: ['pdf'],
+    acceptsMultipleFiles: true,
     steps: [
       { label: 'Pick Files', description: 'Select PDFs to merge' },
       { label: 'Order', description: 'Arrange page order' },
