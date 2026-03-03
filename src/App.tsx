@@ -19,6 +19,7 @@ import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { PrivacyFooter } from '@/components/PrivacyFooter';
 import { MergeFlow } from '@/components/merge/MergeFlow';
+import { SplitFlow } from '@/components/split/SplitFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -117,8 +118,18 @@ function ToolFlow() {
     );
   }
 
-  // Placeholder tools (split, rotate) — built in subsequent plans
-  if (activeTool === 'split-pdf' || activeTool === 'rotate-pdf') {
+  // Split PDF — dedicated flow
+  if (activeTool === 'split-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <SplitFlow />
+      </>
+    );
+  }
+
+  // Placeholder tool (rotate) — built in subsequent plan
+  if (activeTool === 'rotate-pdf') {
     return (
       <>
         <div className="flex flex-1 items-center justify-center p-8">

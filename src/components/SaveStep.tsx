@@ -5,15 +5,20 @@
 //   - shell:allow-open in capabilities/default.json (for opening saved files)
 //   - tauri-plugin-fs registered in lib.rs
 import { useEffect, useState, useCallback } from 'react';
-import { save } from '@tauri-apps/plugin-dialog';
+import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+export interface MultiFileOutput {
+  fileName: string;
+  bytes: Uint8Array;
+}
+
 export interface SaveStepProps {
-  /** Processed PDF bytes to write */
+  /** Processed PDF bytes to write (single-file mode) */
   processedBytes: Uint8Array;
   /** Source file name — used as default name in the save dialog (with suffix) */
   sourceFileName: string;
@@ -31,6 +36,8 @@ export interface SaveStepProps {
   onCancel: () => void;
   /** Called to go back to Compare step without saving */
   onBack: () => void;
+  /** Multi-file output (e.g., split PDF). If set, enables folder/ZIP save mode. */
+  multiFileOutputs?: MultiFileOutput[];
 }
 
 type SaveState = 'idle' | 'dialog-open' | 'writing' | 'error';
@@ -152,10 +159,212 @@ export function SaveStep({
   onSaveComplete,
   onCancel,
   onBack,
+  multiFileOutputs,
 }: SaveStepProps) {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [multiSaveMode, setMultiSaveMode] = useState<'folder' | 'zip'>('folder');
+  const [multiProgress, setMultiProgress] = useState<string | null>(null);
 
+  // ── Multi-file save (folder or ZIP) ──────────────────────────────────────
+  const handleMultiFileSave = useCallback(async () => {
+    if (!multiFileOutputs || multiFileOutputs.length === 0) return;
+
+    setSaveState('dialog-open');
+    setError(null);
+
+    if (multiSaveMode === 'folder') {
+      // Folder save — pick a directory, write each file
+      let folderPath: string | null = null;
+      try {
+        folderPath = await openDialog({ directory: true, multiple: false }) as string | null;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not open folder picker.';
+        setError(message);
+        setSaveState('error');
+        return;
+      }
+
+      if (!folderPath) {
+        setSaveState('idle');
+        toast('Save cancelled', { description: 'You can try again any time.' });
+        onCancel();
+        return;
+      }
+
+      setSaveState('writing');
+      try {
+        for (let i = 0; i < multiFileOutputs.length; i++) {
+          const output = multiFileOutputs[i];
+          setMultiProgress(`Saving ${i + 1}/${multiFileOutputs.length}…`);
+          const filePath = `${folderPath}/${output.fileName}`;
+          await writeFile(filePath, output.bytes);
+        }
+        setMultiProgress(null);
+        setSaveState('idle');
+        onSaveComplete(folderPath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not write files.';
+        setError(message);
+        setMultiProgress(null);
+        setSaveState('error');
+      }
+    } else {
+      // ZIP save — create ZIP in memory, then save as file
+      setSaveState('writing');
+      setMultiProgress('Creating ZIP…');
+
+      try {
+        const { zipSync } = await import('fflate');
+        const zipData: Record<string, Uint8Array> = {};
+        for (const output of multiFileOutputs) {
+          zipData[output.fileName] = output.bytes;
+        }
+        const zipped = zipSync(zipData);
+        setMultiProgress(null);
+
+        // Open save dialog for the ZIP file
+        const zipName = defaultSaveName ?? `${sourceFileName.replace(/\.pdf$/i, '')}-split.zip`;
+        let savePath: string | null = null;
+        try {
+          savePath = await save({
+            filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+            defaultPath: zipName,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Could not open save dialog.';
+          setError(message);
+          setSaveState('error');
+          return;
+        }
+
+        if (!savePath) {
+          setSaveState('idle');
+          toast('Save cancelled', { description: 'You can try again any time.' });
+          onCancel();
+          return;
+        }
+
+        await writeFile(savePath, zipped);
+        setSaveState('idle');
+        onSaveComplete(savePath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not create ZIP.';
+        setError(message);
+        setMultiProgress(null);
+        setSaveState('error');
+      }
+    }
+  }, [multiFileOutputs, multiSaveMode, defaultSaveName, sourceFileName, onSaveComplete, onCancel]);
+
+  // ── Multi-file mode: show save mode selector instead of auto-triggering ──
+  if (multiFileOutputs && multiFileOutputs.length > 0) {
+    // Show confirmation card when done
+    if (savedFilePath && onDismissSaveConfirmation) {
+      return (
+        <div className="flex flex-1 flex-col">
+          <SaveConfirmation savedPath={savedFilePath} onDismiss={onDismissSaveConfirmation} />
+          <div className="flex-1" />
+          <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+            <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+              Back
+            </Button>
+            <div className="flex-1" />
+            <Button size="sm" onClick={handleMultiFileSave}>
+              Save Again
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (saveState === 'writing' || saveState === 'dialog-open') {
+      return (
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              {saveState === 'dialog-open' ? 'Choose a save location…' : multiProgress ?? 'Saving…'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (saveState === 'error' && error) {
+      return (
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="w-full max-w-sm space-y-4">
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
+              <p className="text-xs font-medium text-destructive">Save failed</p>
+              <p className="text-xs text-destructive/80 mt-1">{error}</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+                Back
+              </Button>
+              <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default: show save mode picker
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-4">
+          <div className="text-center space-y-1">
+            <p className="text-sm font-semibold text-foreground">
+              Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
+            </p>
+            <p className="text-xs text-muted-foreground">Choose how to save the split files.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+              <input
+                type="radio"
+                name="multi-save-mode"
+                checked={multiSaveMode === 'folder'}
+                onChange={() => setMultiSaveMode('folder')}
+                className="accent-primary"
+              />
+              <div>
+                <p className="text-sm font-medium text-foreground">Save to Folder</p>
+                <p className="text-xs text-muted-foreground">Each file saved individually with auto-naming</p>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+              <input
+                type="radio"
+                name="multi-save-mode"
+                checked={multiSaveMode === 'zip'}
+                onChange={() => setMultiSaveMode('zip')}
+                className="accent-primary"
+              />
+              <div>
+                <p className="text-sm font-medium text-foreground">Save as ZIP</p>
+                <p className="text-xs text-muted-foreground">All files bundled into a single ZIP archive</p>
+              </div>
+            </label>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+              Back
+            </Button>
+            <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
+              Save
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Single-file save (original behavior) ─────────────────────────────────
   const handleSave = useCallback(async () => {
     setSaveState('dialog-open');
     setError(null);
