@@ -20,6 +20,7 @@ import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { PrivacyFooter } from '@/components/PrivacyFooter';
 import { MergeFlow } from '@/components/merge/MergeFlow';
 import { SplitFlow } from '@/components/split/SplitFlow';
+import { RotateFlow } from '@/components/rotate/RotateFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -128,23 +129,12 @@ function ToolFlow() {
     );
   }
 
-  // Placeholder tool (rotate) — built in subsequent plan
+  // Rotate PDF — dedicated flow
   if (activeTool === 'rotate-pdf') {
     return (
       <>
-        <div className="flex flex-1 items-center justify-center p-8">
-          <div className="text-center space-y-4">
-            <p className="text-lg font-medium text-foreground">Coming soon</p>
-            <p className="text-sm text-muted-foreground">This tool is under development.</p>
-            <button
-              type="button"
-              onClick={handleBackToDashboard}
-              className="text-sm text-primary hover:text-primary/80 underline"
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <RotateFlow />
       </>
     );
   }
