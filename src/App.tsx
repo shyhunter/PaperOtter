@@ -21,6 +21,7 @@ import { PrivacyFooter } from '@/components/PrivacyFooter';
 import { MergeFlow } from '@/components/merge/MergeFlow';
 import { SplitFlow } from '@/components/split/SplitFlow';
 import { RotateFlow } from '@/components/rotate/RotateFlow';
+import { RotateImageFlow } from '@/components/rotate-image/RotateImageFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -179,12 +180,12 @@ function ToolFlow() {
     );
   }
 
-  // Rotate Image — dedicated flow (stub)
+  // Rotate Image — dedicated flow
   if (activeTool === 'rotate-image') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Rotate Image — coming soon</div>
+        <RotateImageFlow />
       </>
     );
   }
