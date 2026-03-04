@@ -5,6 +5,11 @@ import {
   Merge,
   Scissors,
   RotateCw,
+  FileImage,
+  FilePlus2,
+  Lock,
+  Unlock,
+  ArrowLeftRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -20,6 +25,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Merge,
   Scissors,
   RotateCw,
+  FileImage,
+  FilePlus2,
+  Lock,
+  Unlock,
+  ArrowLeftRight,
 };
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {

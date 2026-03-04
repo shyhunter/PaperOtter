@@ -139,6 +139,66 @@ function ToolFlow() {
     );
   }
 
+  // PDF to JPG — dedicated flow (stub)
+  if (activeTool === 'pdf-to-jpg') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">PDF to JPG — coming soon</div>
+      </>
+    );
+  }
+
+  // JPG to PDF — dedicated flow (stub)
+  if (activeTool === 'jpg-to-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">JPG to PDF — coming soon</div>
+      </>
+    );
+  }
+
+  // Protect PDF — dedicated flow (stub)
+  if (activeTool === 'protect-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Protect PDF — coming soon</div>
+      </>
+    );
+  }
+
+  // Unlock PDF — dedicated flow (stub)
+  if (activeTool === 'unlock-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Unlock PDF — coming soon</div>
+      </>
+    );
+  }
+
+  // Rotate Image — dedicated flow (stub)
+  if (activeTool === 'rotate-image') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Rotate Image — coming soon</div>
+      </>
+    );
+  }
+
+  // Convert Image — dedicated flow (stub)
+  if (activeTool === 'convert-image') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Convert Image — coming soon</div>
+      </>
+    );
+  }
+
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
     if (!filePath) {
