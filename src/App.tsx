@@ -22,6 +22,11 @@ import { MergeFlow } from '@/components/merge/MergeFlow';
 import { SplitFlow } from '@/components/split/SplitFlow';
 import { RotateFlow } from '@/components/rotate/RotateFlow';
 import { RotateImageFlow } from '@/components/rotate-image/RotateImageFlow';
+import { ConvertImageFlow } from '@/components/convert-image/ConvertImageFlow';
+import { PdfToJpgFlow } from '@/components/pdf-to-jpg/PdfToJpgFlow';
+import { JpgToPdfFlow } from '@/components/jpg-to-pdf/JpgToPdfFlow';
+import { ProtectPdfFlow } from '@/components/protect-pdf/ProtectPdfFlow';
+import { UnlockPdfFlow } from '@/components/unlock-pdf/UnlockPdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -140,42 +145,42 @@ function ToolFlow() {
     );
   }
 
-  // PDF to JPG — dedicated flow (stub)
+  // PDF to JPG — dedicated flow
   if (activeTool === 'pdf-to-jpg') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">PDF to JPG — coming soon</div>
+        <PdfToJpgFlow />
       </>
     );
   }
 
-  // JPG to PDF — dedicated flow (stub)
+  // JPG to PDF — dedicated flow
   if (activeTool === 'jpg-to-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">JPG to PDF — coming soon</div>
+        <JpgToPdfFlow />
       </>
     );
   }
 
-  // Protect PDF — dedicated flow (stub)
+  // Protect PDF — dedicated flow
   if (activeTool === 'protect-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Protect PDF — coming soon</div>
+        <ProtectPdfFlow />
       </>
     );
   }
 
-  // Unlock PDF — dedicated flow (stub)
+  // Unlock PDF — dedicated flow
   if (activeTool === 'unlock-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Unlock PDF — coming soon</div>
+        <UnlockPdfFlow />
       </>
     );
   }
@@ -190,12 +195,12 @@ function ToolFlow() {
     );
   }
 
-  // Convert Image — dedicated flow (stub)
+  // Convert Image — dedicated flow
   if (activeTool === 'convert-image') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Convert Image — coming soon</div>
+        <ConvertImageFlow />
       </>
     );
   }
