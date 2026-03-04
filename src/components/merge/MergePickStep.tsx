@@ -1,5 +1,5 @@
 // MergePickStep: Multi-file PDF selector with thumbnails, page counts, and "Add More".
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FilePlus, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,9 +43,12 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
   }, []);
 
   // Load initial files on first render if provided
+  // Ref guard prevents StrictMode double-effect from duplicating files
+  const initialFilesLoaded = useRef(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (initialFiles && initialFiles.length > 0) {
+    if (!initialFilesLoaded.current && initialFiles && initialFiles.length > 0) {
+      initialFilesLoaded.current = true;
       addFiles(initialFiles);
     }
   }, []);
