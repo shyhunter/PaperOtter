@@ -1,5 +1,5 @@
 // RotateFlow: Orchestrates the rotate tool flow — Pick → Select & Rotate → Save.
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -17,7 +17,7 @@ interface RotateFlowProps {
 }
 
 export function RotateFlow({ onStepChange }: RotateFlowProps) {
-  const { pendingFile, setPendingFile } = useToolContext();
+  const { pendingFiles, setPendingFiles } = useToolContext();
   const rotateProcessor = useRotatePdfProcessor();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -33,9 +33,9 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
   }, [onStepChange]);
 
   // Consume pending file
-  const initialFile = pendingFile;
-  if (pendingFile) {
-    setPendingFile(null);
+  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
+  if (pendingFiles.length > 0) {
+    setPendingFiles([]);
   }
 
   const loadFile = useCallback(async (filePath: string) => {
@@ -58,12 +58,13 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
     }
   }, [goToStep]);
 
-  // Auto-load initial file
-  useState(() => {
+  // Auto-load initial file on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
     if (initialFile) {
       loadFile(initialFile);
     }
-  });
+  }, []);
 
   const handleSelectFile = useCallback(async () => {
     try {

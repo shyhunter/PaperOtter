@@ -1,4 +1,4 @@
-// MergeFlow: Orchestrates the merge tool flow — Pick Files → Order → Save.
+// MergeFlow: Orchestrates the merge tool flow — Pick Files -> Order -> Save.
 import { useState, useCallback } from 'react';
 import { MergePickStep } from './MergePickStep';
 import { MergeOrderStep } from './MergeOrderStep';
@@ -12,7 +12,7 @@ interface MergeFlowProps {
 }
 
 export function MergeFlow({ onStepChange }: MergeFlowProps) {
-  const { pendingFile, setPendingFile } = useToolContext();
+  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
   const [files, setFiles] = useState<MergeInput[]>([]);
   const [mergedBytes, setMergedBytes] = useState<Uint8Array | null>(null);
@@ -23,10 +23,10 @@ export function MergeFlow({ onStepChange }: MergeFlowProps) {
     onStepChange?.(s);
   }, [onStepChange]);
 
-  // Consume pending file on first render
-  const initialFile = pendingFile;
-  if (pendingFile) {
-    setPendingFile(null);
+  // Consume pending files on first render
+  const initialFiles = pendingFiles.length > 0 ? [...pendingFiles] : [];
+  if (pendingFiles.length > 0) {
+    setPendingFiles([]);
   }
 
   const handleFilesSelected = useCallback((selected: MergeInput[]) => {
@@ -49,7 +49,7 @@ export function MergeFlow({ onStepChange }: MergeFlowProps) {
         {step === 0 && (
           <MergePickStep
             onFilesSelected={handleFilesSelected}
-            initialFile={initialFile}
+            initialFiles={initialFiles}
           />
         )}
 

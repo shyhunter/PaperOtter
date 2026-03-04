@@ -1,5 +1,5 @@
 // MergePickStep: Multi-file PDF selector with thumbnails, page counts, and "Add More".
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FilePlus, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,11 @@ interface FileWithThumb extends MergeInput {
 
 interface MergePickStepProps {
   onFilesSelected: (files: MergeInput[]) => void;
-  /** Optional initial file path (from dashboard drop) */
-  initialFile?: string | null;
+  /** Optional initial file paths (from dashboard drop) */
+  initialFiles?: string[];
 }
 
-export function MergePickStep({ onFilesSelected, initialFile }: MergePickStepProps) {
+export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepProps) {
   const [files, setFiles] = useState<FileWithThumb[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -42,12 +42,13 @@ export function MergePickStep({ onFilesSelected, initialFile }: MergePickStepPro
     }
   }, []);
 
-  // Load initial file on first render if provided
-  useState(() => {
-    if (initialFile) {
-      addFiles([initialFile]);
+  // Load initial files on first render if provided
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      addFiles(initialFiles);
     }
-  });
+  }, []);
 
   const handleSelectFiles = useCallback(async () => {
     try {

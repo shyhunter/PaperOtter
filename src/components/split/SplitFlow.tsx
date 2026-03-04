@@ -13,7 +13,7 @@ interface SplitFlowProps {
 }
 
 export function SplitFlow({ onStepChange }: SplitFlowProps) {
-  const { pendingFile, setPendingFile } = useToolContext();
+  const { pendingFiles, setPendingFiles } = useToolContext();
   const splitProcessor = useSplitPdfProcessor();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -27,9 +27,9 @@ export function SplitFlow({ onStepChange }: SplitFlowProps) {
   }, [onStepChange]);
 
   // Consume pending file
-  const initialFile = pendingFile;
-  if (pendingFile) {
-    setPendingFile(null);
+  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
+  if (pendingFiles.length > 0) {
+    setPendingFiles([]);
   }
 
   const handleFileLoaded = useCallback((bytes: Uint8Array, pages: number, name: string) => {

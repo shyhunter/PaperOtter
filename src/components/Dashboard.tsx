@@ -47,11 +47,11 @@ function getCompatibleTools(filePath: string): ToolDefinition[] {
 }
 
 export function Dashboard() {
-  const { selectTool, setPendingFile } = useToolContext();
+  const { selectTool, setPendingFiles } = useToolContext();
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
-  const [droppedFile, setDroppedFile] = useState<string | null>(null);
+  const [droppedFiles, setDroppedFiles] = useState<string[]>([]);
   const [compatibleTools, setCompatibleTools] = useState<ToolDefinition[]>([]);
 
   // Listen for drag-drop events on the dashboard
@@ -67,12 +67,16 @@ export function Dashboard() {
         } else if (type === 'drop') {
           setIsDragOver(false);
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
-          if (paths.length === 1 && isSupportedFile(paths[0])) {
-            const tools = getCompatibleTools(paths[0]);
-            if (tools.length > 0) {
-              setDroppedFile(paths[0]);
-              setCompatibleTools(tools);
-            }
+          const validPaths = paths.filter((p) => isSupportedFile(p));
+          if (validPaths.length === 0) return;
+
+          let tools = getCompatibleTools(validPaths[0]);
+          if (validPaths.length > 1) {
+            tools = tools.filter((t) => t.acceptsMultipleFiles);
+          }
+          if (tools.length > 0) {
+            setDroppedFiles(validPaths);
+            setCompatibleTools(tools);
           }
         } else {
           // leave or cancelled
@@ -86,30 +90,30 @@ export function Dashboard() {
 
   // Dismiss tool picker on Escape
   useEffect(() => {
-    if (!droppedFile) return;
+    if (droppedFiles.length === 0) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setDroppedFile(null);
+        setDroppedFiles([]);
         setCompatibleTools([]);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [droppedFile]);
+  }, [droppedFiles]);
 
   const handleToolSelect = useCallback((toolId: ToolId) => {
-    if (droppedFile) {
-      setPendingFile(droppedFile);
+    if (droppedFiles.length > 0) {
+      setPendingFiles(droppedFiles);
     }
-    setDroppedFile(null);
+    setDroppedFiles([]);
     setCompatibleTools([]);
     selectTool(toolId);
-  }, [droppedFile, selectTool, setPendingFile]);
+  }, [droppedFiles, selectTool, setPendingFiles]);
 
   const handleDismissPicker = useCallback(() => {
-    setDroppedFile(null);
+    setDroppedFiles([]);
     setCompatibleTools([]);
   }, []);
 
@@ -172,7 +176,7 @@ export function Dashboard() {
       )}
 
       {/* Tool picker overlay */}
-      {droppedFile && compatibleTools.length > 0 && (
+      {droppedFiles.length > 0 && compatibleTools.length > 0 && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={handleDismissPicker}
@@ -189,7 +193,9 @@ export function Dashboard() {
             <div className="text-center space-y-1">
               <h2 className="text-lg font-semibold text-foreground">What do you want to do?</h2>
               <p className="text-sm text-muted-foreground truncate">
-                {droppedFile.split('/').pop() ?? droppedFile}
+                {droppedFiles.length === 1
+                  ? (droppedFiles[0].split('/').pop() ?? droppedFiles[0])
+                  : `${droppedFiles.length} files selected`}
               </p>
             </div>
 
