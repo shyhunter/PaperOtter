@@ -27,6 +27,10 @@ import { PdfToJpgFlow } from '@/components/pdf-to-jpg/PdfToJpgFlow';
 import { JpgToPdfFlow } from '@/components/jpg-to-pdf/JpgToPdfFlow';
 import { ProtectPdfFlow } from '@/components/protect-pdf/ProtectPdfFlow';
 import { UnlockPdfFlow } from '@/components/unlock-pdf/UnlockPdfFlow';
+import { PageNumbersFlow } from '@/components/page-numbers/PageNumbersFlow';
+import { WatermarkFlow } from '@/components/watermark/WatermarkFlow';
+import { CropPdfFlow } from '@/components/crop-pdf/CropPdfFlow';
+import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -205,42 +209,42 @@ function ToolFlow() {
     );
   }
 
-  // Page Numbers — dedicated flow (stub)
+  // Page Numbers — dedicated flow
   if (activeTool === 'page-numbers') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Page Numbers — coming soon</div>
+        <PageNumbersFlow />
       </>
     );
   }
 
-  // Watermark — dedicated flow (stub)
+  // Watermark — dedicated flow
   if (activeTool === 'watermark') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Watermark — coming soon</div>
+        <WatermarkFlow />
       </>
     );
   }
 
-  // Crop PDF — dedicated flow (stub)
+  // Crop PDF — dedicated flow
   if (activeTool === 'crop-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Crop PDF — coming soon</div>
+        <CropPdfFlow />
       </>
     );
   }
 
-  // Organize PDF — dedicated flow (stub)
+  // Organize PDF — dedicated flow
   if (activeTool === 'organize-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">Organize PDF — coming soon</div>
+        <OrganizePdfFlow />
       </>
     );
   }
