@@ -92,6 +92,74 @@ fn encode_image(
 }
 
 #[tauri::command]
+fn rotate_image(
+    source_path: String,
+    rotation: u32,
+    output_format: String,
+    quality: u8,
+) -> Result<Response, String> {
+    let source_bytes = std::fs::read(&source_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let img = image::load_from_memory(&source_bytes)
+        .map_err(|e| format!("Failed to decode image: {}", e))?;
+
+    let rotated = match rotation {
+        90 => img.rotate90(),
+        180 => img.rotate180(),
+        270 => img.rotate270(),
+        _ => return Err(format!("Invalid rotation: {}. Must be 90, 180, or 270.", rotation)),
+    };
+
+    // Re-encode using encode_image (pass None for resize to skip resizing)
+    let mut output_buf: Vec<u8> = Vec::new();
+    match output_format.as_str() {
+        "jpeg" => {
+            let rgba = rotated.to_rgba8();
+            let (w, h) = (rgba.width(), rgba.height());
+            let mut white_bg = image::RgbImage::from_pixel(w, h, image::Rgb([255u8, 255, 255]));
+            for (x, y, pixel) in rgba.enumerate_pixels() {
+                let alpha = pixel[3] as f32 / 255.0;
+                let r = (pixel[0] as f32 * alpha + 255.0 * (1.0 - alpha)) as u8;
+                let g = (pixel[1] as f32 * alpha + 255.0 * (1.0 - alpha)) as u8;
+                let b = (pixel[2] as f32 * alpha + 255.0 * (1.0 - alpha)) as u8;
+                white_bg.put_pixel(x, y, image::Rgb([r, g, b]));
+            }
+            let img_rgb = image::DynamicImage::ImageRgb8(white_bg);
+            let mut encoder = JpegEncoder::new_with_quality(&mut output_buf, quality);
+            encoder.encode_image(&img_rgb)
+                .map_err(|e| format!("JPEG encoding failed: {}", e))?;
+        }
+        "png" => {
+            let level = ((100u32 - quality as u32) * 9 / 100) as u8;
+            let compression = match level {
+                0 => CompressionType::Fast,
+                9 => CompressionType::Best,
+                _ => CompressionType::Default,
+            };
+            let encoder = PngEncoder::new_with_quality(
+                Cursor::new(&mut output_buf),
+                compression,
+                image::codecs::png::FilterType::Adaptive,
+            );
+            rotated.write_with_encoder(encoder)
+                .map_err(|e| format!("PNG encoding failed: {}", e))?;
+        }
+        "webp" => {
+            let webp_data = webp::Encoder::from_image(&rotated)
+                .map_err(|e| e.to_string())?
+                .encode(quality as f32);
+            output_buf = webp_data.to_vec();
+        }
+        _ => {
+            return Err(format!("Unsupported format: {}", output_format));
+        }
+    }
+
+    Ok(Response::new(output_buf))
+}
+
+#[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
@@ -263,7 +331,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, compress_pdf, cancel_processing]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]

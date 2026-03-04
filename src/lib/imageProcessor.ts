@@ -21,6 +21,9 @@ function detectMimeFromPath(sourcePath: string): string {
   if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
   if (ext === 'png') return 'image/png';
   if (ext === 'webp') return 'image/webp';
+  if (ext === 'tiff' || ext === 'tif') return 'image/tiff';
+  if (ext === 'bmp') return 'image/bmp';
+  if (ext === 'gif') return 'image/gif';
   return 'image/jpeg'; // fallback
 }
 
