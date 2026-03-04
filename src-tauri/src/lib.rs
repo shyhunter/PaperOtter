@@ -322,6 +322,146 @@ async fn compress_pdf(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+#[tauri::command]
+async fn protect_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+    owner_password: String,
+    user_password: String,
+) -> Result<tauri::ipc::Response, String> {
+    if owner_password.is_empty() || user_password.is_empty() {
+        return Err("Password cannot be empty".to_string());
+    }
+
+    let tmp_path = std::env::temp_dir().join(format!(
+        "papercut_protected_{}.pdf",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-sOwnerPassword={}", owner_password),
+            &format!("-sUserPassword={}", user_password),
+            "-dEncryptionR=3",
+            "-dKeyLength=128",
+            &format!("-sOutputFile={}", tmp_path_str),
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+
+    // Wait for completion
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    let _ = std::fs::remove_file(&tmp_path);
+                    let stderr = stderr_lines.join("\n");
+                    return Err(format!(
+                        "Ghostscript failed (exit {}): {}",
+                        payload.code.unwrap_or(-1),
+                        stderr
+                    ));
+                }
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_file(&tmp_path);
+                return Err(format!("Ghostscript error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    let bytes = std::fs::read(&tmp_path)
+        .map_err(|e| format!("Failed to read output: {}", e))?;
+    let _ = std::fs::remove_file(&tmp_path);
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+#[tauri::command]
+async fn unlock_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+    password: String,
+) -> Result<tauri::ipc::Response, String> {
+    if password.is_empty() {
+        return Err("Password cannot be empty".to_string());
+    }
+
+    let tmp_path = std::env::temp_dir().join(format!(
+        "papercut_unlocked_{}.pdf",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-sPDFPassword={}", password),
+            &format!("-sOutputFile={}", tmp_path_str),
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+
+    // Wait for completion
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    let _ = std::fs::remove_file(&tmp_path);
+                    let stderr = stderr_lines.join("\n");
+                    return Err(format!(
+                        "Ghostscript failed (exit {}). Wrong password or corrupted PDF. {}",
+                        payload.code.unwrap_or(-1),
+                        stderr
+                    ));
+                }
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_file(&tmp_path);
+                return Err(format!("Ghostscript error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    let bytes = std::fs::read(&tmp_path)
+        .map_err(|e| format!("Failed to read output: {}", e))?;
+    let _ = std::fs::remove_file(&tmp_path);
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -331,7 +471,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]
