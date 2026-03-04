@@ -10,6 +10,10 @@ import {
   Lock,
   Unlock,
   ArrowLeftRight,
+  Hash,
+  Stamp,
+  Crop,
+  LayoutGrid,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -30,6 +34,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Lock,
   Unlock,
   ArrowLeftRight,
+  Hash,
+  Stamp,
+  Crop,
+  LayoutGrid,
 };
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {

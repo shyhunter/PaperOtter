@@ -205,6 +205,46 @@ function ToolFlow() {
     );
   }
 
+  // Page Numbers — dedicated flow (stub)
+  if (activeTool === 'page-numbers') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Page Numbers — coming soon</div>
+      </>
+    );
+  }
+
+  // Watermark — dedicated flow (stub)
+  if (activeTool === 'watermark') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Watermark — coming soon</div>
+      </>
+    );
+  }
+
+  // Crop PDF — dedicated flow (stub)
+  if (activeTool === 'crop-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Crop PDF — coming soon</div>
+      </>
+    );
+  }
+
+  // Organize PDF — dedicated flow (stub)
+  if (activeTool === 'organize-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Organize PDF — coming soon</div>
+      </>
+    );
+  }
+
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
     if (!filePath) {

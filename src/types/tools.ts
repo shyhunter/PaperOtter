@@ -9,7 +9,11 @@ export type ToolId =
   | 'protect-pdf'
   | 'unlock-pdf'
   | 'rotate-image'
-  | 'convert-image';
+  | 'convert-image'
+  | 'page-numbers'
+  | 'watermark'
+  | 'crop-pdf'
+  | 'organize-pdf';
 
 export type ToolCategory = 'pdf' | 'image';
 
@@ -175,6 +179,58 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'Pick', description: 'Open an image file' },
       { label: 'Configure', description: 'Choose output format' },
       { label: 'Save', description: 'Save converted image' },
+    ],
+  },
+  'page-numbers': {
+    id: 'page-numbers',
+    name: 'Page Numbers',
+    description: 'Add page numbers to PDF pages',
+    category: 'pdf',
+    icon: 'Hash',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set numbering options' },
+      { label: 'Save', description: 'Save numbered PDF' },
+    ],
+  },
+  'watermark': {
+    id: 'watermark',
+    name: 'Watermark',
+    description: 'Add text or image watermark to PDF pages',
+    category: 'pdf',
+    icon: 'Stamp',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set watermark options' },
+      { label: 'Save', description: 'Save watermarked PDF' },
+    ],
+  },
+  'crop-pdf': {
+    id: 'crop-pdf',
+    name: 'Crop PDF',
+    description: 'Crop margins or select a region on pages',
+    category: 'pdf',
+    icon: 'Crop',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Crop', description: 'Select crop area' },
+      { label: 'Save', description: 'Save cropped PDF' },
+    ],
+  },
+  'organize-pdf': {
+    id: 'organize-pdf',
+    name: 'Organize PDF',
+    description: 'Reorder, delete, or duplicate pages',
+    category: 'pdf',
+    icon: 'LayoutGrid',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Organize', description: 'Arrange pages' },
+      { label: 'Save', description: 'Save organized PDF' },
     ],
   },
 };
