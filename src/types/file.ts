@@ -34,6 +34,9 @@ export interface PdfProcessingOptions {
   customHeightMm: number | null;  // only used when pagePreset === 'custom'
   selectedPageIndices: number[];  // empty = apply to all pages
 
+  // Metadata stripping — removes title, author, subject, keywords, creator, producer
+  stripMetadata?: boolean;
+
   // Progress callback (called per page during resize)
   onProgress?: (current: number, total: number) => void;
 }
