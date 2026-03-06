@@ -32,6 +32,8 @@ import { WatermarkFlow } from '@/components/watermark/WatermarkFlow';
 import { CropPdfFlow } from '@/components/crop-pdf/CropPdfFlow';
 import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
 import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
+import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
+import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -265,17 +267,12 @@ function ToolFlow() {
     );
   }
 
-  // Redact PDF — placeholder
+  // Redact PDF — dedicated flow
   if (activeTool === 'redact-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Redact PDF</h2>
-            <p className="mt-2 text-muted-foreground">Coming soon</p>
-          </div>
-        </div>
+        <RedactPdfFlow />
       </>
     );
   }
