@@ -462,6 +462,196 @@ async fn unlock_pdf(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+#[tauri::command]
+async fn convert_pdfa(
+    app: tauri::AppHandle,
+    source_path: String,
+    pdfa_level: String,
+) -> Result<tauri::ipc::Response, String> {
+    // Validate pdfa_level — only allow known conformance levels
+    let valid_levels = ["1", "2", "3"];
+    if !valid_levels.contains(&pdfa_level.as_str()) {
+        return Err(format!(
+            "Invalid PDF/A level '{}'. Must be one of: {}",
+            pdfa_level,
+            valid_levels.join(", ")
+        ));
+    }
+
+    let tmp_path = std::env::temp_dir().join(format!(
+        "papercut_pdfa_{}.pdf",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+
+    // Generate a minimal PDFA_def.ps file with required pdfmark metadata
+    let pdfa_def_path = std::env::temp_dir().join(format!(
+        "papercut_PDFA_def_{}.ps",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let pdfa_def_content = format!(
+        r#"%!PS
+% Required PDF/A pdfmark metadata
+[ /Title (PDF/A Document)
+  /DOCINFO pdfmark
+[ /ICCProfile (sRGB)
+  /OutputCondition (sRGB IEC61966-2.1)
+  /OutputConditionIdentifier (sRGB IEC61966-2.1)
+  /RegistryName (http://www.color.org)
+  /Info (sRGB IEC61966-2.1)
+  /OutputIntents pdfmark
+"#
+    );
+    std::fs::write(&pdfa_def_path, &pdfa_def_content)
+        .map_err(|e| format!("Failed to write PDFA_def.ps: {}", e))?;
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-dPDFA={}", pdfa_level),
+            "-dPDFACompatibilityPolicy=1",
+            "-sColorConversionStrategy=RGB",
+            &format!("-sOutputFile={}", tmp_path_str),
+            &pdfa_def_path.to_string_lossy(),
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+
+    // Wait for completion
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    let _ = std::fs::remove_file(&tmp_path);
+                    let _ = std::fs::remove_file(&pdfa_def_path);
+                    let stderr = stderr_lines.join("\n");
+                    return Err(format!(
+                        "Ghostscript failed (exit {}): {}",
+                        payload.code.unwrap_or(-1),
+                        stderr
+                    ));
+                }
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_file(&tmp_path);
+                let _ = std::fs::remove_file(&pdfa_def_path);
+                return Err(format!("Ghostscript error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    let bytes = std::fs::read(&tmp_path)
+        .map_err(|e| format!("Failed to read output: {}", e))?;
+    let _ = std::fs::remove_file(&tmp_path);
+    let _ = std::fs::remove_file(&pdfa_def_path);
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+#[tauri::command]
+async fn repair_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+) -> Result<tauri::ipc::Response, String> {
+    let tmp_path = std::env::temp_dir().join(format!(
+        "papercut_repaired_{}.pdf",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .subsec_nanos()
+    ));
+    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+
+    let (mut rx, _child) = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .args([
+            "-sDEVICE=pdfwrite",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-dQUIET",
+            &format!("-sOutputFile={}", tmp_path_str),
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+
+    // Wait for completion — handle partial success per user decision
+    let mut exit_code: Option<i32> = None;
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                exit_code = payload.code;
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_file(&tmp_path);
+                return Err(format!("Ghostscript error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    // CRITICAL: handle partial success — if GS exits non-zero BUT output file
+    // exists with non-zero size, return the bytes as success (not error).
+    // The TS side will show a "repaired with potential issues" message.
+    match exit_code {
+        Some(0) => {
+            // Clean exit — read and return
+            let bytes = std::fs::read(&tmp_path)
+                .map_err(|e| format!("Failed to read output: {}", e))?;
+            let _ = std::fs::remove_file(&tmp_path);
+            Ok(tauri::ipc::Response::new(bytes))
+        }
+        _ => {
+            // Non-zero exit or signal — check if partial output exists
+            if tmp_path.exists() {
+                let metadata = std::fs::metadata(&tmp_path);
+                if let Ok(meta) = metadata {
+                    if meta.len() > 0 {
+                        // Partial success — return bytes despite non-zero exit
+                        let bytes = std::fs::read(&tmp_path)
+                            .map_err(|e| format!("Failed to read output: {}", e))?;
+                        let _ = std::fs::remove_file(&tmp_path);
+                        return Ok(tauri::ipc::Response::new(bytes));
+                    }
+                }
+            }
+            // No output or empty — real failure
+            let _ = std::fs::remove_file(&tmp_path);
+            let stderr = stderr_lines.join("\n");
+            Err(format!(
+                "Ghostscript repair failed (exit {}): {}",
+                exit_code.unwrap_or(-1),
+                stderr
+            ))
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -471,7 +661,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]
