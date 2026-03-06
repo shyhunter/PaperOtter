@@ -31,6 +31,7 @@ import { PageNumbersFlow } from '@/components/page-numbers/PageNumbersFlow';
 import { WatermarkFlow } from '@/components/watermark/WatermarkFlow';
 import { CropPdfFlow } from '@/components/crop-pdf/CropPdfFlow';
 import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
+import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -279,17 +280,12 @@ function ToolFlow() {
     );
   }
 
-  // PDF/A Convert — placeholder
+  // PDF/A Convert — dedicated flow
   if (activeTool === 'pdfa-convert') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">PDF/A Convert</h2>
-            <p className="mt-2 text-muted-foreground">Coming soon</p>
-          </div>
-        </div>
+        <PdfaConvertFlow />
       </>
     );
   }
