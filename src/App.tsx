@@ -34,6 +34,7 @@ import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
 import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
 import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
 import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
+import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -252,17 +253,12 @@ function ToolFlow() {
     );
   }
 
-  // Sign PDF — placeholder
+  // Sign PDF — dedicated flow
   if (activeTool === 'sign-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Sign PDF</h2>
-            <p className="mt-2 text-muted-foreground">Coming soon</p>
-          </div>
-        </div>
+        <SignPdfFlow />
       </>
     );
   }
@@ -287,17 +283,12 @@ function ToolFlow() {
     );
   }
 
-  // Repair PDF — placeholder
+  // Repair PDF — dedicated flow
   if (activeTool === 'repair-pdf') {
     return (
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Repair PDF</h2>
-            <p className="mt-2 text-muted-foreground">Coming soon</p>
-          </div>
-        </div>
+        <RepairPdfFlow />
       </>
     );
   }
