@@ -172,6 +172,16 @@ export async function processPdf(
     }
   }
 
+  // 4b. Strip metadata if requested
+  if (options.stripMetadata) {
+    pdfDoc.setTitle('');
+    pdfDoc.setAuthor('');
+    pdfDoc.setSubject('');
+    pdfDoc.setKeywords([]);
+    pdfDoc.setCreator('');
+    pdfDoc.setProducer('');
+  }
+
   // 5. Produce output bytes — GS for real compression, or structural re-save only
   let processedBytes: Uint8Array;
   let wasAlreadyOptimal = false;

@@ -1,6 +1,6 @@
 import type { SupportedFormat } from '@/types/file';
 
-const SUPPORTED_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp']);
+const SUPPORTED_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif']);
 
 /** Hard limit: 100 MB in bytes */
 export const FILE_SIZE_LIMIT_BYTES = 100 * 1024 * 1024; // 104857600
@@ -31,7 +31,7 @@ export function isSupportedFile(filePath: string): boolean {
 export function detectFormat(filePath: string): SupportedFormat | null {
   const ext = getExtension(filePath);
   if (ext === 'pdf') return 'pdf';
-  if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'image';
+  if (['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif'].includes(ext)) return 'image';
   return null;
 }
 

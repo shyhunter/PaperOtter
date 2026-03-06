@@ -5,6 +5,19 @@ import {
   Merge,
   Scissors,
   RotateCw,
+  FileImage,
+  FilePlus2,
+  Lock,
+  Unlock,
+  ArrowLeftRight,
+  Hash,
+  Stamp,
+  Crop,
+  LayoutGrid,
+  PenTool,
+  EyeOff,
+  Archive,
+  Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -20,6 +33,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Merge,
   Scissors,
   RotateCw,
+  FileImage,
+  FilePlus2,
+  Lock,
+  Unlock,
+  ArrowLeftRight,
+  Hash,
+  Stamp,
+  Crop,
+  LayoutGrid,
+  PenTool,
+  EyeOff,
+  Archive,
+  Wrench,
 };
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {

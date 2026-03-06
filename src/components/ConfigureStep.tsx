@@ -65,6 +65,9 @@ export function ConfigureStep({
   const [customUnit, setCustomUnit] = useState<'MB' | 'KB'>(fileSizeBytes >= 1024 * 1024 ? 'MB' : 'KB');
   const [customError, setCustomError] = useState<string | null>(null);
 
+  // Metadata stripping — off by default
+  const [stripMetadata, setStripMetadata] = useState(false);
+
   // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
   const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
@@ -117,6 +120,7 @@ export function ConfigureStep({
       customWidthMm: pagePreset === 'custom' ? parseFloat(customWidthMm) : null,
       customHeightMm: pagePreset === 'custom' ? parseFloat(customHeightMm) : null,
       selectedPageIndices,
+      stripMetadata,
     };
 
     onGeneratePreview(options);
@@ -397,6 +401,41 @@ export function ConfigureStep({
               Enable to change page dimensions — A4, A3, Letter, or custom size.
             </p>
           )}
+        </div>
+
+        {/* Strip metadata toggle */}
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Strip metadata</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Remove title, author, subject, keywords, creator, and producer fields.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              data-testid="strip-metadata-toggle"
+              aria-checked={stripMetadata ? 'true' : 'false'}
+              aria-label="Strip PDF metadata"
+              onClick={() => setStripMetadata((v) => !v)}
+              disabled={isProcessing}
+              className={cn(
+                'relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+                stripMetadata ? 'bg-primary' : 'bg-muted-foreground/30',
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                  stripMetadata ? 'translate-x-6' : 'translate-x-1',
+                )}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Processing progress */}

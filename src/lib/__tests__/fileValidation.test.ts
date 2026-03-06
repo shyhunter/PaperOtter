@@ -38,7 +38,7 @@ describe('getExtension', () => {
 // ─── isSupportedFile ─────────────────────────────────────────────────────────
 
 describe('isSupportedFile', () => {
-  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp'])(
+  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp', 'scan.tiff', 'scan.tif', 'diagram.bmp', 'animation.gif'])(
     'accepts supported file: %s',
     (path) => {
       expect(isSupportedFile(path)).toBe(true);
@@ -93,6 +93,19 @@ describe('detectFormat', () => {
     expect(detectFormat('icon.webp')).toBe('image');
   });
 
+  it('detects image format for tiff', () => {
+    expect(detectFormat('scan.tiff')).toBe('image');
+    expect(detectFormat('scan.tif')).toBe('image');
+  });
+
+  it('detects image format for bmp', () => {
+    expect(detectFormat('diagram.bmp')).toBe('image');
+  });
+
+  it('detects image format for gif', () => {
+    expect(detectFormat('animation.gif')).toBe('image');
+  });
+
   it('returns null for unsupported extensions', () => {
     expect(detectFormat('document.docx')).toBeNull();
     expect(detectFormat('archive.zip')).toBeNull();
@@ -102,6 +115,9 @@ describe('detectFormat', () => {
   it('is case-insensitive', () => {
     expect(detectFormat('PHOTO.PDF')).toBe('pdf');
     expect(detectFormat('img.JPEG')).toBe('image');
+    expect(detectFormat('SCAN.TIFF')).toBe('image');
+    expect(detectFormat('IMAGE.BMP')).toBe('image');
+    expect(detectFormat('ANIM.GIF')).toBe('image');
   });
 });
 

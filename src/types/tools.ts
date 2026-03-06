@@ -3,7 +3,21 @@ export type ToolId =
   | 'compress-image'
   | 'merge-pdf'
   | 'split-pdf'
-  | 'rotate-pdf';
+  | 'rotate-pdf'
+  | 'pdf-to-jpg'
+  | 'jpg-to-pdf'
+  | 'protect-pdf'
+  | 'unlock-pdf'
+  | 'rotate-image'
+  | 'convert-image'
+  | 'page-numbers'
+  | 'watermark'
+  | 'crop-pdf'
+  | 'organize-pdf'
+  | 'sign-pdf'
+  | 'redact-pdf'
+  | 'pdfa-convert'
+  | 'repair-pdf';
 
 export type ToolCategory = 'pdf' | 'image';
 
@@ -90,6 +104,190 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'Pick', description: 'Open a PDF file' },
       { label: 'Select & Rotate', description: 'Choose pages and rotation' },
       { label: 'Save', description: 'Save rotated PDF' },
+    ],
+  },
+  'pdf-to-jpg': {
+    id: 'pdf-to-jpg',
+    name: 'PDF to JPG',
+    description: 'Export PDF pages as JPEG or PNG images',
+    category: 'pdf',
+    icon: 'FileImage',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set format and quality' },
+      { label: 'Save', description: 'Save images' },
+    ],
+  },
+  'jpg-to-pdf': {
+    id: 'jpg-to-pdf',
+    name: 'JPG to PDF',
+    description: 'Convert images into a single PDF document',
+    category: 'pdf',
+    icon: 'FilePlus2',
+    acceptsFormats: ['image'],
+    acceptsMultipleFiles: true,
+    steps: [
+      { label: 'Pick Images', description: 'Select images to convert' },
+      { label: 'Configure', description: 'Set page size and layout' },
+      { label: 'Save', description: 'Save PDF' },
+    ],
+  },
+  'protect-pdf': {
+    id: 'protect-pdf',
+    name: 'Protect PDF',
+    description: 'Add password encryption to a PDF',
+    category: 'pdf',
+    icon: 'Lock',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Password', description: 'Set a password' },
+      { label: 'Save', description: 'Save protected PDF' },
+    ],
+  },
+  'unlock-pdf': {
+    id: 'unlock-pdf',
+    name: 'Unlock PDF',
+    description: 'Remove password protection from a PDF',
+    category: 'pdf',
+    icon: 'Unlock',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Password', description: 'Enter the password' },
+      { label: 'Save', description: 'Save unlocked PDF' },
+    ],
+  },
+  'rotate-image': {
+    id: 'rotate-image',
+    name: 'Rotate Image',
+    description: 'Rotate images 90°, 180°, or 270°',
+    category: 'image',
+    icon: 'RotateCw',
+    acceptsFormats: ['image'],
+    steps: [
+      { label: 'Pick', description: 'Open an image file' },
+      { label: 'Rotate', description: 'Choose rotation angle' },
+      { label: 'Save', description: 'Save rotated image' },
+    ],
+  },
+  'convert-image': {
+    id: 'convert-image',
+    name: 'Convert Image',
+    description: 'Convert between JPG, PNG, and WebP formats',
+    category: 'image',
+    icon: 'ArrowLeftRight',
+    acceptsFormats: ['image'],
+    steps: [
+      { label: 'Pick', description: 'Open an image file' },
+      { label: 'Configure', description: 'Choose output format' },
+      { label: 'Save', description: 'Save converted image' },
+    ],
+  },
+  'page-numbers': {
+    id: 'page-numbers',
+    name: 'Page Numbers',
+    description: 'Add page numbers to PDF pages',
+    category: 'pdf',
+    icon: 'Hash',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set numbering options' },
+      { label: 'Save', description: 'Save numbered PDF' },
+    ],
+  },
+  'watermark': {
+    id: 'watermark',
+    name: 'Watermark',
+    description: 'Add text or image watermark to PDF pages',
+    category: 'pdf',
+    icon: 'Stamp',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set watermark options' },
+      { label: 'Save', description: 'Save watermarked PDF' },
+    ],
+  },
+  'crop-pdf': {
+    id: 'crop-pdf',
+    name: 'Crop PDF',
+    description: 'Crop margins or select a region on pages',
+    category: 'pdf',
+    icon: 'Crop',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Crop', description: 'Select crop area' },
+      { label: 'Save', description: 'Save cropped PDF' },
+    ],
+  },
+  'organize-pdf': {
+    id: 'organize-pdf',
+    name: 'Organize PDF',
+    description: 'Reorder, delete, or duplicate pages',
+    category: 'pdf',
+    icon: 'LayoutGrid',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Organize', description: 'Arrange pages' },
+      { label: 'Save', description: 'Save organized PDF' },
+    ],
+  },
+  'sign-pdf': {
+    id: 'sign-pdf',
+    name: 'Sign PDF',
+    description: 'Add a visual signature stamp to PDF pages',
+    category: 'pdf',
+    icon: 'PenTool',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Signature', description: 'Create or choose a signature' },
+      { label: 'Place', description: 'Position signature on page' },
+      { label: 'Save', description: 'Save signed PDF' },
+    ],
+  },
+  'redact-pdf': {
+    id: 'redact-pdf',
+    name: 'Redact PDF',
+    description: 'Permanently remove text or areas from a PDF',
+    category: 'pdf',
+    icon: 'EyeOff',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Redact', description: 'Mark areas to redact' },
+      { label: 'Save', description: 'Save redacted PDF' },
+    ],
+  },
+  'pdfa-convert': {
+    id: 'pdfa-convert',
+    name: 'PDF/A Convert',
+    description: 'Convert PDF to archival PDF/A format',
+    category: 'pdf',
+    icon: 'Archive',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set PDF/A options' },
+      { label: 'Save', description: 'Save PDF/A file' },
+    ],
+  },
+  'repair-pdf': {
+    id: 'repair-pdf',
+    name: 'Repair PDF',
+    description: 'Fix corrupted or malformed PDFs',
+    category: 'pdf',
+    icon: 'Wrench',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Repair', description: 'Fix PDF issues' },
+      { label: 'Save', description: 'Save repaired PDF' },
     ],
   },
 };

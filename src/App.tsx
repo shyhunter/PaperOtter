@@ -21,6 +21,20 @@ import { PrivacyFooter } from '@/components/PrivacyFooter';
 import { MergeFlow } from '@/components/merge/MergeFlow';
 import { SplitFlow } from '@/components/split/SplitFlow';
 import { RotateFlow } from '@/components/rotate/RotateFlow';
+import { RotateImageFlow } from '@/components/rotate-image/RotateImageFlow';
+import { ConvertImageFlow } from '@/components/convert-image/ConvertImageFlow';
+import { PdfToJpgFlow } from '@/components/pdf-to-jpg/PdfToJpgFlow';
+import { JpgToPdfFlow } from '@/components/jpg-to-pdf/JpgToPdfFlow';
+import { ProtectPdfFlow } from '@/components/protect-pdf/ProtectPdfFlow';
+import { UnlockPdfFlow } from '@/components/unlock-pdf/UnlockPdfFlow';
+import { PageNumbersFlow } from '@/components/page-numbers/PageNumbersFlow';
+import { WatermarkFlow } from '@/components/watermark/WatermarkFlow';
+import { CropPdfFlow } from '@/components/crop-pdf/CropPdfFlow';
+import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
+import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
+import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
+import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
+import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -135,6 +149,146 @@ function ToolFlow() {
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
         <RotateFlow />
+      </>
+    );
+  }
+
+  // PDF to JPG — dedicated flow
+  if (activeTool === 'pdf-to-jpg') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <PdfToJpgFlow />
+      </>
+    );
+  }
+
+  // JPG to PDF — dedicated flow
+  if (activeTool === 'jpg-to-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <JpgToPdfFlow />
+      </>
+    );
+  }
+
+  // Protect PDF — dedicated flow
+  if (activeTool === 'protect-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <ProtectPdfFlow />
+      </>
+    );
+  }
+
+  // Unlock PDF — dedicated flow
+  if (activeTool === 'unlock-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <UnlockPdfFlow />
+      </>
+    );
+  }
+
+  // Rotate Image — dedicated flow
+  if (activeTool === 'rotate-image') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <RotateImageFlow />
+      </>
+    );
+  }
+
+  // Convert Image — dedicated flow
+  if (activeTool === 'convert-image') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <ConvertImageFlow />
+      </>
+    );
+  }
+
+  // Page Numbers — dedicated flow
+  if (activeTool === 'page-numbers') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <PageNumbersFlow />
+      </>
+    );
+  }
+
+  // Watermark — dedicated flow
+  if (activeTool === 'watermark') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <WatermarkFlow />
+      </>
+    );
+  }
+
+  // Crop PDF — dedicated flow
+  if (activeTool === 'crop-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <CropPdfFlow />
+      </>
+    );
+  }
+
+  // Organize PDF — dedicated flow
+  if (activeTool === 'organize-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <OrganizePdfFlow />
+      </>
+    );
+  }
+
+  // Sign PDF — dedicated flow
+  if (activeTool === 'sign-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <SignPdfFlow />
+      </>
+    );
+  }
+
+  // Redact PDF — dedicated flow
+  if (activeTool === 'redact-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <RedactPdfFlow />
+      </>
+    );
+  }
+
+  // PDF/A Convert — dedicated flow
+  if (activeTool === 'pdfa-convert') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <PdfaConvertFlow />
+      </>
+    );
+  }
+
+  // Repair PDF — dedicated flow
+  if (activeTool === 'repair-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <RepairPdfFlow />
       </>
     );
   }
