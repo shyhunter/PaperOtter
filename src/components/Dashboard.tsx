@@ -14,6 +14,10 @@ import {
   Stamp,
   Crop,
   LayoutGrid,
+  PenTool,
+  EyeOff,
+  Archive,
+  Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -38,6 +42,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Stamp,
   Crop,
   LayoutGrid,
+  PenTool,
+  EyeOff,
+  Archive,
+  Wrench,
 };
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {

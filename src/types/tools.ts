@@ -13,7 +13,11 @@ export type ToolId =
   | 'page-numbers'
   | 'watermark'
   | 'crop-pdf'
-  | 'organize-pdf';
+  | 'organize-pdf'
+  | 'sign-pdf'
+  | 'redact-pdf'
+  | 'pdfa-convert'
+  | 'repair-pdf';
 
 export type ToolCategory = 'pdf' | 'image';
 
@@ -231,6 +235,59 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'Pick', description: 'Open a PDF file' },
       { label: 'Organize', description: 'Arrange pages' },
       { label: 'Save', description: 'Save organized PDF' },
+    ],
+  },
+  'sign-pdf': {
+    id: 'sign-pdf',
+    name: 'Sign PDF',
+    description: 'Add a visual signature stamp to PDF pages',
+    category: 'pdf',
+    icon: 'PenTool',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Signature', description: 'Create or choose a signature' },
+      { label: 'Place', description: 'Position signature on page' },
+      { label: 'Save', description: 'Save signed PDF' },
+    ],
+  },
+  'redact-pdf': {
+    id: 'redact-pdf',
+    name: 'Redact PDF',
+    description: 'Permanently remove text or areas from a PDF',
+    category: 'pdf',
+    icon: 'EyeOff',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Redact', description: 'Mark areas to redact' },
+      { label: 'Save', description: 'Save redacted PDF' },
+    ],
+  },
+  'pdfa-convert': {
+    id: 'pdfa-convert',
+    name: 'PDF/A Convert',
+    description: 'Convert PDF to archival PDF/A format',
+    category: 'pdf',
+    icon: 'Archive',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Configure', description: 'Set PDF/A options' },
+      { label: 'Save', description: 'Save PDF/A file' },
+    ],
+  },
+  'repair-pdf': {
+    id: 'repair-pdf',
+    name: 'Repair PDF',
+    description: 'Fix corrupted or malformed PDFs',
+    category: 'pdf',
+    icon: 'Wrench',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Select PDF', description: 'Open a PDF file' },
+      { label: 'Repair', description: 'Fix PDF issues' },
+      { label: 'Save', description: 'Save repaired PDF' },
     ],
   },
 };

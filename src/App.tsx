@@ -249,6 +249,66 @@ function ToolFlow() {
     );
   }
 
+  // Sign PDF — placeholder
+  if (activeTool === 'sign-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">Sign PDF</h2>
+            <p className="mt-2 text-muted-foreground">Coming soon</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Redact PDF — placeholder
+  if (activeTool === 'redact-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">Redact PDF</h2>
+            <p className="mt-2 text-muted-foreground">Coming soon</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // PDF/A Convert — placeholder
+  if (activeTool === 'pdfa-convert') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">PDF/A Convert</h2>
+            <p className="mt-2 text-muted-foreground">Coming soon</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Repair PDF — placeholder
+  if (activeTool === 'repair-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold">Repair PDF</h2>
+            <p className="mt-2 text-muted-foreground">Coming soon</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
     if (!filePath) {
