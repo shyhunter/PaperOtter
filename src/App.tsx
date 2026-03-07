@@ -35,6 +35,7 @@ import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
 import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
 import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
+import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -269,6 +270,16 @@ function ToolFlow() {
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
         <RedactPdfFlow />
+      </>
+    );
+  }
+
+  // Edit PDF — dedicated flow
+  if (activeTool === 'edit-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <EditPdfFlow />
       </>
     );
   }
