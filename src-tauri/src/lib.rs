@@ -652,6 +652,190 @@ async fn repair_pdf(
     }
 }
 
+/// Convert a document using LibreOffice (system-installed, not bundled).
+/// Uses `soffice --headless --convert-to` for format conversion.
+/// On macOS, falls back to the full application path if `soffice` is not in PATH.
+#[tauri::command]
+async fn convert_with_libreoffice(
+    app: tauri::AppHandle,
+    source_path: String,
+    output_format: String,
+) -> Result<tauri::ipc::Response, String> {
+    // Validate output_format against allow-list
+    let valid_formats = ["docx", "doc", "odt", "pdf", "txt", "rtf"];
+    if !valid_formats.contains(&output_format.as_str()) {
+        return Err(format!(
+            "Invalid output format '{}'. Must be one of: {}",
+            output_format,
+            valid_formats.join(", ")
+        ));
+    }
+
+    let tmp_dir = std::env::temp_dir().join("papercut_convert");
+    std::fs::create_dir_all(&tmp_dir)
+        .map_err(|e| format!("Failed to create temp dir: {}", e))?;
+    let tmp_dir_str = tmp_dir.to_string_lossy().to_string();
+
+    // Try "soffice" first; on macOS it may not be in PATH
+    let soffice_cmd = if cfg!(target_os = "macos") {
+        let macos_path = "/Applications/LibreOffice.app/Contents/MacOS/soffice";
+        if std::path::Path::new(macos_path).exists() {
+            macos_path.to_string()
+        } else {
+            "soffice".to_string()
+        }
+    } else {
+        "soffice".to_string()
+    };
+
+    let (mut rx, _child) = app
+        .shell()
+        .command(&soffice_cmd)
+        .args([
+            "--headless",
+            "--convert-to",
+            &output_format,
+            "--outdir",
+            &tmp_dir_str,
+            &source_path,
+        ])
+        .spawn()
+        .map_err(|e| format!("LibreOffice not found or failed to start. Install LibreOffice and ensure 'soffice' is in your PATH. Error: {}", e))?;
+
+    // Wait for completion using spawn + event loop pattern
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    // Clean up temp dir
+                    let _ = std::fs::remove_dir_all(&tmp_dir);
+                    let stderr = stderr_lines.join("\n");
+                    return Err(format!(
+                        "LibreOffice conversion failed (exit {}): {}",
+                        payload.code.unwrap_or(-1),
+                        stderr
+                    ));
+                }
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_dir_all(&tmp_dir);
+                return Err(format!("LibreOffice error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    // Construct output filename: same stem as source + new extension
+    let source_stem = std::path::Path::new(&source_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Failed to extract source filename stem")?;
+    let output_path = tmp_dir.join(format!("{}.{}", source_stem, output_format));
+
+    let bytes = std::fs::read(&output_path)
+        .map_err(|e| format!("Failed to read converted output at {}: {}", output_path.display(), e))?;
+
+    // Clean up temp files
+    let _ = std::fs::remove_dir_all(&tmp_dir);
+
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Convert a document/ebook using Calibre's ebook-convert (system-installed).
+/// Supports epub, mobi, azw3, pdf output via the `ebook-convert` CLI.
+#[tauri::command]
+async fn convert_with_calibre(
+    app: tauri::AppHandle,
+    source_path: String,
+    output_format: String,
+    extra_args: Vec<String>,
+) -> Result<tauri::ipc::Response, String> {
+    // Validate output_format against allow-list
+    let valid_formats = ["epub", "mobi", "azw3", "pdf"];
+    if !valid_formats.contains(&output_format.as_str()) {
+        return Err(format!(
+            "Invalid output format '{}'. Must be one of: {}",
+            output_format,
+            valid_formats.join(", ")
+        ));
+    }
+
+    // Construct temp output path: temp_dir + source stem + new extension
+    let source_stem = std::path::Path::new(&source_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Failed to extract source filename stem")?;
+    let output_path = std::env::temp_dir().join(format!(
+        "papercut_calibre_{}.{}",
+        source_stem, output_format
+    ));
+    let output_path_str = output_path.to_string_lossy().to_string();
+
+    // Try ebook-convert; on macOS check Calibre app bundle path
+    let ebook_convert_cmd = if cfg!(target_os = "macos") {
+        let macos_path = "/Applications/calibre.app/Contents/MacOS/ebook-convert";
+        if std::path::Path::new(macos_path).exists() {
+            macos_path.to_string()
+        } else {
+            "ebook-convert".to_string()
+        }
+    } else {
+        "ebook-convert".to_string()
+    };
+
+    let mut args = vec![source_path.clone(), output_path_str.clone()];
+    args.extend(extra_args);
+
+    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
+    let (mut rx, _child) = app
+        .shell()
+        .command(&ebook_convert_cmd)
+        .args(&arg_refs)
+        .spawn()
+        .map_err(|e| format!("Calibre ebook-convert not found or failed to start. Install Calibre and ensure 'ebook-convert' is in your PATH. Error: {}", e))?;
+
+    // Wait for completion using spawn + event loop pattern
+    let mut stderr_lines: Vec<String> = Vec::new();
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    let _ = std::fs::remove_file(&output_path);
+                    let stderr = stderr_lines.join("\n");
+                    return Err(format!(
+                        "Calibre conversion failed (exit {}): {}",
+                        payload.code.unwrap_or(-1),
+                        stderr
+                    ));
+                }
+                break;
+            }
+            CommandEvent::Stderr(line) => {
+                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Error(e) => {
+                let _ = std::fs::remove_file(&output_path);
+                return Err(format!("Calibre error: {}", e));
+            }
+            _ => {}
+        }
+    }
+
+    let bytes = std::fs::read(&output_path)
+        .map_err(|e| format!("Failed to read converted output: {}", e))?;
+
+    // Clean up temp file
+    let _ = std::fs::remove_file(&output_path);
+
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -661,7 +845,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]

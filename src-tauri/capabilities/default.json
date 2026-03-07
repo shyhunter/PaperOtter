@@ -26,7 +26,13 @@
     },
     {
       "identifier": "shell:allow-execute",
-      "allow": [{ "name": "gs", "sidecar": true }]
+      "allow": [
+        { "name": "gs", "sidecar": true },
+        { "name": "soffice", "sidecar": false },
+        { "name": "/Applications/LibreOffice.app/Contents/MacOS/soffice", "sidecar": false },
+        { "name": "ebook-convert", "sidecar": false },
+        { "name": "/Applications/calibre.app/Contents/MacOS/ebook-convert", "sidecar": false }
+      ]
     },
     "shell:allow-open"
   ]
