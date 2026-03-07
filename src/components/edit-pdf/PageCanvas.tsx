@@ -27,13 +27,15 @@ interface PageCanvasProps {
   scale?: number;
   /** Overlay elements (text blocks, image blocks) */
   children?: ReactNode;
+  /** Called when canvas dimensions are known/updated */
+  onDimensions?: (dims: CanvasDimensions) => void;
 }
 
 /**
  * Renders a PDF page at high quality to a canvas with an overlay container.
  * When scale is not provided, fits page width to the container width automatically.
  */
-export function PageCanvas({ pdfBytes, pageIndex, scale, children }: PageCanvasProps) {
+export function PageCanvas({ pdfBytes, pageIndex, scale, children, onDimensions }: PageCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState<CanvasDimensions | null>(null);
@@ -93,6 +95,7 @@ export function PageCanvas({ pdfBytes, pageIndex, scale, children }: PageCanvasP
         };
 
         setDimensions(dims);
+        onDimensions?.(dims);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to render page');
