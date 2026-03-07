@@ -36,6 +36,7 @@ import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
 import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
+import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -280,6 +281,16 @@ function ToolFlow() {
       <>
         <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
         <EditPdfFlow />
+      </>
+    );
+  }
+
+  // Convert Document — dedicated flow
+  if (activeTool === 'convert-doc') {
+    return (
+      <>
+        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
+        <ConvertDocFlow />
       </>
     );
   }
