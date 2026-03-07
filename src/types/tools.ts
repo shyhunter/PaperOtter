@@ -17,9 +17,11 @@ export type ToolId =
   | 'sign-pdf'
   | 'redact-pdf'
   | 'pdfa-convert'
-  | 'repair-pdf';
+  | 'repair-pdf'
+  | 'edit-pdf'
+  | 'convert-doc';
 
-export type ToolCategory = 'pdf' | 'image';
+export type ToolCategory = 'pdf' | 'image' | 'document';
 
 export interface ToolStep {
   label: string;
@@ -32,7 +34,7 @@ export interface ToolDefinition {
   description: string;
   category: ToolCategory;
   icon: string; // Lucide icon name (e.g., 'FileDown', 'Merge')
-  acceptsFormats: Array<'pdf' | 'image'>;
+  acceptsFormats: Array<'pdf' | 'image' | 'document'>;
   acceptsMultipleFiles?: boolean;
   steps: ToolStep[];
 }
@@ -288,6 +290,33 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'Select PDF', description: 'Open a PDF file' },
       { label: 'Repair', description: 'Fix PDF issues' },
       { label: 'Save', description: 'Save repaired PDF' },
+    ],
+  },
+  'edit-pdf': {
+    id: 'edit-pdf',
+    name: 'Edit PDF',
+    description: 'Edit text and images in a PDF document',
+    category: 'pdf',
+    icon: 'FileEdit',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'Pick', description: 'Open a PDF file' },
+      { label: 'Edit', description: 'Edit text and images' },
+      { label: 'Save', description: 'Save edited PDF' },
+    ],
+  },
+  'convert-doc': {
+    id: 'convert-doc',
+    name: 'Convert Document',
+    description: 'Convert between PDF, DOC, EPUB, and ebook formats',
+    category: 'document',
+    icon: 'ArrowLeftRight',
+    acceptsFormats: ['pdf', 'document'],
+    steps: [
+      { label: 'Pick', description: 'Open a document file' },
+      { label: 'Configure', description: 'Set conversion options' },
+      { label: 'Compare', description: 'Review output' },
+      { label: 'Save', description: 'Save converted document' },
     ],
   },
 };

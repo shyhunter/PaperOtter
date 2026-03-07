@@ -18,6 +18,7 @@ import {
   EyeOff,
   Archive,
   Wrench,
+  FileEdit,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -46,17 +47,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
   EyeOff,
   Archive,
   Wrench,
+  FileEdit,
 };
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {
   pdf: 'PDF Tools',
   image: 'Image Tools',
+  document: 'Document Tools',
 };
 
-const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image'];
+const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
-  const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [] };
+  const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
   for (const tool of Object.values(TOOL_REGISTRY)) {
     groups[tool.category].push(tool);
   }

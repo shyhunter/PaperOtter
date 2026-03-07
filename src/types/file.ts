@@ -1,4 +1,4 @@
-export type SupportedFormat = 'pdf' | 'image';
+export type SupportedFormat = 'pdf' | 'image' | 'document';
 
 export interface FileEntry {
   path: string;
