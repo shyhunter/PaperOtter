@@ -7,6 +7,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Bold,
+  Italic,
+  Underline,
   Plus,
   Trash2,
   Type,
@@ -18,6 +21,7 @@ import {
   FlipVertical,
   Replace,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { TextBlock, ImageBlock, EditorMode } from '@/types/editor';
 
@@ -356,6 +360,42 @@ export function EditorToolbar({
                 placeholder="#000000"
                 className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm font-mono"
               />
+            </div>
+          </div>
+
+          {/* Style toggles: Bold / Italic / Underline */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
+              Style
+            </label>
+            <div className="flex gap-1">
+              <Button
+                variant={selectedBlock.bold ? 'default' : 'outline'}
+                size="sm"
+                className={cn('h-8 w-8 p-0', selectedBlock.bold && 'font-bold')}
+                onClick={() => onBlockUpdate(selectedBlock.id, { bold: !selectedBlock.bold })}
+                title="Bold"
+              >
+                <Bold className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={selectedBlock.italic ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => onBlockUpdate(selectedBlock.id, { italic: !selectedBlock.italic })}
+                title="Italic"
+              >
+                <Italic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={selectedBlock.underline ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => onBlockUpdate(selectedBlock.id, { underline: !selectedBlock.underline })}
+                title="Underline"
+              >
+                <Underline className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 

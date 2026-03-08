@@ -11,9 +11,18 @@ import { useToolContext } from '@/context/ToolContext';
 
 const PDF_EXTENSIONS = ['pdf'];
 
-export function SignPdfFlow() {
+interface SignPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -43,7 +52,7 @@ export function SignPdfFlow() {
     readFile(file)
       .then((bytes) => {
         setPdfBytes(new Uint8Array(bytes));
-        setStep(1);
+        goToStep(1);
       })
       .catch(() => {
         setLoadError('Could not read the PDF file.');
@@ -70,7 +79,7 @@ export function SignPdfFlow() {
       setFilePath(result);
       setFileName(name);
       setPdfBytes(new Uint8Array(bytes));
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not open file picker.';
       setLoadError(message);
@@ -81,13 +90,13 @@ export function SignPdfFlow() {
 
   const handleSignatureSelected = useCallback((dataUrl: string) => {
     setSignatureDataUrl(dataUrl);
-    setStep(2);
-  }, []);
+    goToStep(2);
+  }, [goToStep]);
 
   const handlePlacementComplete = useCallback((bytes: Uint8Array) => {
     setResultBytes(bytes);
-    setStep(3);
-  }, []);
+    goToStep(3);
+  }, [goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');
@@ -132,7 +141,7 @@ export function SignPdfFlow() {
           <SignatureCreateStep
             onSignatureSelected={handleSignatureSelected}
             onBack={() => {
-              setStep(0);
+              goToStep(0);
               setFilePath(null);
               setFileName('');
               setPdfBytes(null);
@@ -149,7 +158,7 @@ export function SignPdfFlow() {
             onComplete={handlePlacementComplete}
             onBack={() => {
               setResultBytes(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}
@@ -164,10 +173,10 @@ export function SignPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(2)}
+            onCancel={() => goToStep(2)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(2);
+              goToStep(2);
             }}
           />
         )}

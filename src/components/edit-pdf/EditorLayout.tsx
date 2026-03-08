@@ -44,6 +44,9 @@ function textItemToBlock(item: ExtractedTextItem, pageIndex: number): TextBlock 
     fontName: item.fontName,
     color: '#000000',
     alignment: 'left',
+    bold: false,
+    italic: false,
+    underline: false,
     isNew: false,
   };
 }

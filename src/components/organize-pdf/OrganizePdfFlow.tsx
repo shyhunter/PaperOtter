@@ -22,9 +22,18 @@ function nextId(): string {
   return String(++entryCounter);
 }
 
-export function OrganizePdfFlow() {
+interface OrganizePdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [originalPageCount, setOriginalPageCount] = useState(0);
   const [fileName, setFileName] = useState('');
@@ -58,7 +67,7 @@ export function OrganizePdfFlow() {
       setOriginalPageCount(count);
       setFileName(name);
       setPages(Array.from({ length: count }, (_, i) => ({ sourceIndex: i, id: nextId() })));
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -144,7 +153,7 @@ export function OrganizePdfFlow() {
       const pageOrder = pages.map((p) => p.sourceIndex);
       const result = await organizePdf(pdfBytes, pageOrder);
       setProcessedBytes(result);
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to organize PDF.';
       setProcessError(message);
@@ -297,7 +306,7 @@ export function OrganizePdfFlow() {
 
             {/* Bottom bar */}
             <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
-              <Button variant="outline" size="sm" onClick={() => setStep(0)} className="flex-none">
+              <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 Back
               </Button>
               <div className="flex-1" />
@@ -321,8 +330,8 @@ export function OrganizePdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
-            onBack={() => { setSavedFilePath(null); setStep(1); }}
+            onCancel={() => goToStep(1)}
+            onBack={() => { setSavedFilePath(null); goToStep(1); }}
           />
         )}
       </StepErrorBoundary>

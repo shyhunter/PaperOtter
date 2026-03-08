@@ -1,13 +1,18 @@
 import { ArrowLeft } from 'lucide-react';
 import { StepBar } from '@/components/StepBar';
+import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useToolContext } from '@/context/ToolContext';
 
 interface ToolHeaderProps {
   currentStep: number;
   onBackToDashboard: () => void;
+  /** Recent directories for the global Recent Folder button */
+  recentDirs?: string[];
+  /** Called when a file is selected from a recent folder */
+  onRecentFileSelected?: (filePath: string) => void;
 }
 
-export function ToolHeader({ currentStep, onBackToDashboard }: ToolHeaderProps) {
+export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecentFileSelected }: ToolHeaderProps) {
   const { activeToolDef } = useToolContext();
 
   if (!activeToolDef) return null;
@@ -29,6 +34,12 @@ export function ToolHeader({ currentStep, onBackToDashboard }: ToolHeaderProps) 
         <span className="text-[clamp(0.75rem,0.9vw,0.9rem)] text-foreground font-medium">
           {activeToolDef.name}
         </span>
+        {/* Recent Folder — right-aligned, always visible */}
+        {recentDirs && onRecentFileSelected && (
+          <div className="ml-auto">
+            <RecentDirsButton dirs={recentDirs} onFileSelected={onRecentFileSelected} />
+          </div>
+        )}
       </div>
 
       {/* Adaptive StepBar */}

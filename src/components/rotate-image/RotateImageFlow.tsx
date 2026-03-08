@@ -42,9 +42,18 @@ function buildSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string
   }
 }
 
-export function RotateImageFlow() {
+interface RotateImageFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -89,7 +98,7 @@ export function RotateImageFlow() {
       setFileName(name);
       setPreviewUrl(url);
       setOutputFormat(detectFormatFromPath(path));
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load image.';
       setLoadError(message);
@@ -143,7 +152,7 @@ export function RotateImageFlow() {
     try {
       const bytes = await rotateImage(filePath, rotation, outputFormat, quality);
       setResultBytes(new Uint8Array(bytes));
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Rotation failed.';
       setProcessError(message);
@@ -289,7 +298,7 @@ export function RotateImageFlow() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setStep(0);
+                    goToStep(0);
                     setPreviewUrl(null);
                     setFilePath(null);
                     setFileName('');
@@ -329,10 +338,10 @@ export function RotateImageFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}

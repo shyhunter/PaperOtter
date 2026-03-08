@@ -19,9 +19,18 @@ const MARGIN_PRESETS: { label: string; mm: number }[] = [
   { label: 'Large', mm: 20 },
 ];
 
-export function CropPdfFlow() {
+interface CropPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState('');
   const [pageWidth, setPageWidth] = useState(0); // in points
@@ -67,7 +76,7 @@ export function CropPdfFlow() {
       setFileName(name);
       setPageWidth(width);
       setPageHeight(height);
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -141,7 +150,7 @@ export function CropPdfFlow() {
       };
       const result = await cropPdf(pdfBytes, margins);
       setProcessedBytes(result);
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Crop failed.';
       setProcessError(message);
@@ -289,7 +298,7 @@ export function CropPdfFlow() {
 
             {/* Bottom bar */}
             <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
-              <Button variant="outline" size="sm" onClick={() => setStep(0)} className="flex-none">
+              <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 Back
               </Button>
               <div className="flex-1" />
@@ -313,8 +322,8 @@ export function CropPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
-            onBack={() => { setSavedFilePath(null); setStep(1); }}
+            onCancel={() => goToStep(1)}
+            onBack={() => { setSavedFilePath(null); goToStep(1); }}
           />
         )}
       </StepErrorBoundary>

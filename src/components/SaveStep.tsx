@@ -113,8 +113,8 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
   const handleOpenFile = async () => {
     try {
       await open(savedPath);
-    } catch {
-      // Silently ignore — file may have been moved/deleted
+    } catch (err) {
+      console.error('Failed to open saved file:', err);
     }
   };
 

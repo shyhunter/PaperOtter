@@ -31,9 +31,18 @@ function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): Edito
   };
 }
 
-export function EditPdfFlow() {
+interface EditPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [filePath, setFilePath] = useState('');
   const [fileName, setFileName] = useState('');
@@ -70,7 +79,7 @@ export function EditPdfFlow() {
       setPageCount(count);
       setCurrentPage(0);
       setEditorState(buildInitialEditorState(pdfBytesArray, count));
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -108,10 +117,29 @@ export function EditPdfFlow() {
     setEditorState(newState);
   }, []);
 
-  const handleSave = useCallback(() => {
-    // For now, save the original bytes (editing functionality added in Plans 04/05)
-    setStep(2);
-  }, []);
+  // Warn before leaving with unsaved changes
+  const isDirty = editorState?.isDirty ?? false;
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const handleSave = useCallback(async () => {
+    if (!pdfBytes || !editorState) return;
+
+    if (editorState.isDirty) {
+      // Apply all text and image edits before saving
+      const { applyAllEdits } = await import('@/lib/pdfEditor');
+      const editedPdf = await applyAllEdits(pdfBytes, editorState.pages);
+      setPdfBytes(new Uint8Array(editedPdf));
+    }
+
+    goToStep(2);
+  }, [pdfBytes, editorState, goToStep]);
 
   return (
     <>
@@ -179,10 +207,10 @@ export function EditPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}

@@ -11,9 +11,18 @@ import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
 
-export function RedactPdfFlow() {
+interface RedactPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -41,7 +50,7 @@ export function RedactPdfFlow() {
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       setPdfBytes(bytes);
       setFileName(name);
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -85,7 +94,7 @@ export function RedactPdfFlow() {
         const uniquePages = new Set(redactions.map((r) => r.pageIndex));
         setRedactedPageCount(uniquePages.size);
 
-        setStep(2);
+        goToStep(2);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Redaction failed.';
         setProcessError(message);
@@ -144,7 +153,7 @@ export function RedactPdfFlow() {
               <RedactStep
                 pdfBytes={pdfBytes}
                 onComplete={handleRedactComplete}
-                onBack={() => setStep(0)}
+                onBack={() => goToStep(0)}
               />
             )}
             {processError && (
@@ -178,10 +187,10 @@ export function RedactPdfFlow() {
               savedFilePath={savedFilePath}
               onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(path) => setSavedFilePath(path)}
-              onCancel={() => setStep(1)}
+              onCancel={() => goToStep(1)}
               onBack={() => {
                 setSavedFilePath(null);
-                setStep(1);
+                goToStep(1);
               }}
             />
           </div>

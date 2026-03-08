@@ -9,9 +9,18 @@ import { useToolContext } from '@/context/ToolContext';
 
 const PDF_EXTENSIONS = ['pdf'];
 
-export function UnlockPdfFlow() {
+interface UnlockPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -38,7 +47,7 @@ export function UnlockPdfFlow() {
     const name = file.split('/').pop() ?? file.split('\\').pop() ?? file;
     setFilePath(file);
     setFileName(name);
-    setStep(1);
+    goToStep(1);
   }
 
   const handleSelectFile = useCallback(async () => {
@@ -56,7 +65,7 @@ export function UnlockPdfFlow() {
       const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
       setFilePath(result);
       setFileName(name);
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not open file picker.';
       setLoadError(message);
@@ -75,7 +84,7 @@ export function UnlockPdfFlow() {
         password,
       });
       setResultBytes(new Uint8Array(bytes));
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Make the error more user-friendly for wrong password
@@ -188,7 +197,7 @@ export function UnlockPdfFlow() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setStep(0);
+                    goToStep(0);
                     setFilePath(null);
                     setFileName('');
                     setPassword('');
@@ -229,10 +238,10 @@ export function UnlockPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}

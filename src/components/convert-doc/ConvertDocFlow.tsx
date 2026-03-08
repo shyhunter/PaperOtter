@@ -28,9 +28,18 @@ function buildSaveFilters(outputFormat: ConvertFormat): Array<{ name: string; ex
   return [{ name: labels[outputFormat] ?? outputFormat.toUpperCase(), extensions: [outputFormat] }];
 }
 
-export function ConvertDocFlow() {
+interface ConvertDocFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [sourceFormat, setSourceFormat] = useState<ConvertFormat>('pdf');
@@ -58,7 +67,7 @@ export function ConvertDocFlow() {
         setFilePath(initialFile);
         setFileName(getFileName(initialFile));
         setSourceFormat(fmt);
-        setStep(1);
+        goToStep(1);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,32 +79,32 @@ export function ConvertDocFlow() {
     setSourceFormat(format);
     setConvertResult(null);
     setSavedFilePath(null);
-    setStep(1);
-  }, []);
+    goToStep(1);
+  }, [goToStep]);
 
   const handleConvertComplete = useCallback((result: ConvertResult) => {
     setConvertResult(result);
-    setStep(2);
-  }, []);
+    goToStep(2);
+  }, [goToStep]);
 
   const handleSave = useCallback(() => {
-    setStep(3);
-  }, []);
+    goToStep(3);
+  }, [goToStep]);
 
   const handleStartOver = useCallback(() => {
     setFilePath(null);
     setFileName('');
     setConvertResult(null);
     setSavedFilePath(null);
-    setStep(0);
-  }, []);
+    goToStep(0);
+  }, [goToStep]);
 
   const handleBackFromConfig = useCallback(() => {
     setFilePath(null);
     setFileName('');
     setConvertResult(null);
-    setStep(0);
-  }, []);
+    goToStep(0);
+  }, [goToStep]);
 
   return (
     <StepErrorBoundary stepName="Convert Document">
@@ -136,10 +145,10 @@ export function ConvertDocFlow() {
           savedFilePath={savedFilePath}
           onDismissSaveConfirmation={() => setSavedFilePath(null)}
           onSaveComplete={(path) => setSavedFilePath(path)}
-          onCancel={() => setStep(2)}
+          onCancel={() => goToStep(2)}
           onBack={() => {
             setSavedFilePath(null);
-            setStep(2);
+            goToStep(2);
           }}
         />
       )}
