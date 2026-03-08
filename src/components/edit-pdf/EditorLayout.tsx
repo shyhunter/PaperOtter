@@ -6,13 +6,18 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { ThumbnailSidebar } from './ThumbnailSidebar';
 import { PageCanvas, type CanvasDimensions } from './PageCanvas';
 import { TextOverlay } from './TextOverlay';
+import { ImageOverlay } from './ImageOverlay';
 import { EditorToolbar } from './EditorToolbar';
+import { ExportPanel } from './ExportPanel';
 import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
-import type { EditorState, TextBlock, EditorMode } from '@/types/editor';
+import { extractPageImages } from '@/lib/pdfImageExtract';
+import type { EditorState, TextBlock, ImageBlock, EditorMode } from '@/types/editor';
 
 interface EditorLayoutProps {
   /** PDF file bytes */
   pdfBytes: Uint8Array;
+  /** Original file path */
+  filePath: string;
   /** Total number of pages */
   pageCount: number;
   /** Current page (zero-based) */
@@ -45,6 +50,7 @@ function textItemToBlock(item: ExtractedTextItem, pageIndex: number): TextBlock 
 
 export function EditorLayout({
   pdfBytes,
+  filePath,
   pageCount,
   currentPage,
   onPageChange,
@@ -54,21 +60,21 @@ export function EditorLayout({
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<EditorMode>('select');
   const [canvasDims, setCanvasDims] = useState<CanvasDimensions | null>(null);
+  const [rightPanelTab, setRightPanelTab] = useState<'edit' | 'export'>('edit');
 
-  // Track which pages have been text-extracted to avoid re-extracting
-  const extractedPagesRef = useRef<Set<number>>(new Set());
+  // Track which pages have been extracted to avoid re-extracting
+  const extractedTextPagesRef = useRef<Set<number>>(new Set());
+  const extractedImagePagesRef = useRef<Set<number>>(new Set());
 
   // Extract text for the current page when it changes
   useEffect(() => {
     let cancelled = false;
 
     async function loadTextForPage() {
-      // Skip if already extracted for this page
-      if (extractedPagesRef.current.has(currentPage)) return;
-      // Also skip if page already has text blocks (populated from prior extraction)
+      if (extractedTextPagesRef.current.has(currentPage)) return;
       const existingPage = editorState.pages[currentPage];
       if (existingPage && existingPage.textBlocks.length > 0) {
-        extractedPagesRef.current.add(currentPage);
+        extractedTextPagesRef.current.add(currentPage);
         return;
       }
 
@@ -77,7 +83,7 @@ export function EditorLayout({
         if (cancelled) return;
 
         const blocks = items.map((item) => textItemToBlock(item, currentPage));
-        extractedPagesRef.current.add(currentPage);
+        extractedTextPagesRef.current.add(currentPage);
 
         onEditorStateChange({
           ...editorState,
@@ -95,8 +101,44 @@ export function EditorLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, pdfBytes]);
 
+  // Extract images for the current page when it changes
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadImagesForPage() {
+      if (extractedImagePagesRef.current.has(currentPage)) return;
+      const existingPage = editorState.pages[currentPage];
+      if (existingPage && existingPage.imageBlocks.length > 0) {
+        extractedImagePagesRef.current.add(currentPage);
+        return;
+      }
+
+      try {
+        const images = await extractPageImages(pdfBytes, currentPage);
+        if (cancelled) return;
+
+        extractedImagePagesRef.current.add(currentPage);
+
+        onEditorStateChange({
+          ...editorState,
+          pages: editorState.pages.map((page, i) =>
+            i === currentPage ? { ...page, imageBlocks: images } : page,
+          ),
+        });
+      } catch (err) {
+        console.error('Image extraction failed for page', currentPage, err);
+      }
+    }
+
+    loadImagesForPage();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, pdfBytes]);
+
   const currentPageBlocks = editorState.pages[currentPage]?.textBlocks ?? [];
+  const currentPageImages = editorState.pages[currentPage]?.imageBlocks ?? [];
   const selectedBlock = currentPageBlocks.find((b) => b.id === selectedBlockId) ?? null;
+  const selectedImageBlock = currentPageImages.find((b) => b.id === selectedBlockId) ?? null;
 
   // Deselect when changing pages
   useEffect(() => {
@@ -187,6 +229,57 @@ export function EditorLayout({
     setCanvasDims(dims);
   }, []);
 
+  // ── Image event handlers ─────────────────────────────────────────────
+
+  const handleImageChange = useCallback(
+    (id: string, updates: Partial<ImageBlock>) => {
+      const updatedPages = editorState.pages.map((page, i) => {
+        if (i !== currentPage) return page;
+        return {
+          ...page,
+          imageBlocks: page.imageBlocks.map((b) =>
+            b.id === id ? { ...b, ...updates } : b,
+          ),
+        };
+      });
+      onEditorStateChange({ ...editorState, pages: updatedPages, isDirty: true });
+    },
+    [editorState, currentPage, onEditorStateChange],
+  );
+
+  const handleImageDelete = useCallback(
+    (id: string) => {
+      const block = currentPageImages.find((b) => b.id === id);
+      const updatedPages = editorState.pages.map((page, i) => {
+        if (i !== currentPage) return page;
+        return {
+          ...page,
+          imageBlocks: page.imageBlocks.filter((b) => b.id !== id),
+          deletedImageIds: block && !block.isNew
+            ? [...page.deletedImageIds, id]
+            : page.deletedImageIds,
+        };
+      });
+      setSelectedBlockId(null);
+      onEditorStateChange({ ...editorState, pages: updatedPages, isDirty: true });
+    },
+    [editorState, currentPage, currentPageImages, onEditorStateChange],
+  );
+
+  const handleImageInsert = useCallback(
+    (block: ImageBlock) => {
+      const blockWithPage = { ...block, pageIndex: currentPage };
+      const updatedPages = editorState.pages.map((page, i) => {
+        if (i !== currentPage) return page;
+        return { ...page, imageBlocks: [...page.imageBlocks, blockWithPage] };
+      });
+      onEditorStateChange({ ...editorState, pages: updatedPages, isDirty: true });
+      setSelectedBlockId(blockWithPage.id);
+      setEditorMode('select');
+    },
+    [editorState, currentPage, onEditorStateChange],
+  );
+
   return (
     <div className="flex h-full overflow-hidden">
       {/* Left: Thumbnail sidebar */}
@@ -206,17 +299,28 @@ export function EditorLayout({
             onDimensions={handleDimensions}
           >
             {canvasDims && (
-              <TextOverlay
-                textBlocks={currentPageBlocks}
-                scale={canvasDims.scale}
-                pageHeight={canvasDims.pdfHeight}
-                selectedId={selectedBlockId}
-                editorMode={editorMode}
-                onSelect={handleSelect}
-                onTextChange={handleTextChange}
-                onTextDelete={handleTextDelete}
-                onTextAdd={handleTextAdd}
-              />
+              <>
+                <TextOverlay
+                  textBlocks={currentPageBlocks}
+                  scale={canvasDims.scale}
+                  pageHeight={canvasDims.pdfHeight}
+                  selectedId={selectedBlockId}
+                  editorMode={editorMode}
+                  onSelect={handleSelect}
+                  onTextChange={handleTextChange}
+                  onTextDelete={handleTextDelete}
+                  onTextAdd={handleTextAdd}
+                />
+                <ImageOverlay
+                  imageBlocks={currentPageImages}
+                  scale={canvasDims.scale}
+                  pageHeight={canvasDims.pdfHeight}
+                  selectedId={selectedBlockId}
+                  onSelect={handleSelect}
+                  onImageChange={handleImageChange}
+                  onImageDelete={handleImageDelete}
+                />
+              </>
             )}
           </PageCanvas>
         </div>
@@ -227,18 +331,56 @@ export function EditorLayout({
         className="border-l border-border bg-muted/20 flex flex-col overflow-y-auto"
         style={{ width: 280 }}
       >
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Properties
-          </h3>
+        {/* Tab toggle: Edit | Export */}
+        <div className="flex border-b border-border">
+          <button
+            onClick={() => setRightPanelTab('edit')}
+            className={[
+              'flex-1 px-4 py-2.5 text-xs font-medium uppercase tracking-wider transition-colors',
+              rightPanelTab === 'edit'
+                ? 'text-foreground border-b-2 border-primary'
+                : 'text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setRightPanelTab('export')}
+            className={[
+              'flex-1 px-4 py-2.5 text-xs font-medium uppercase tracking-wider transition-colors',
+              rightPanelTab === 'export'
+                ? 'text-foreground border-b-2 border-primary'
+                : 'text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            Export
+          </button>
         </div>
-        <EditorToolbar
-          selectedBlock={selectedBlock}
-          editorMode={editorMode}
-          onBlockUpdate={handleBlockUpdate}
-          onBlockDelete={handleBlockDelete}
-          onModeChange={setEditorMode}
-        />
+
+        {rightPanelTab === 'edit' && (
+          <EditorToolbar
+            selectedBlock={selectedBlock}
+            selectedImageBlock={selectedImageBlock}
+            editorMode={editorMode}
+            onBlockUpdate={handleBlockUpdate}
+            onBlockDelete={handleBlockDelete}
+            onImageUpdate={handleImageChange}
+            onImageDelete={handleImageDelete}
+            onImageInsert={handleImageInsert}
+            onModeChange={setEditorMode}
+            pageWidth={canvasDims?.pdfWidth ?? 612}
+            pageHeight={canvasDims?.pdfHeight ?? 792}
+          />
+        )}
+
+        {rightPanelTab === 'export' && (
+          <ExportPanel
+            pdfBytes={pdfBytes}
+            filePath={filePath}
+            pageEdits={editorState.pages}
+            isDirty={editorState.isDirty}
+          />
+        )}
       </div>
     </div>
   );

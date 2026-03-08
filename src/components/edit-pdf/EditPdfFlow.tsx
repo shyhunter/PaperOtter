@@ -35,6 +35,7 @@ export function EditPdfFlow() {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  const [filePath, setFilePath] = useState('');
   const [fileName, setFileName] = useState('');
   const [pageCount, setPageCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
@@ -64,6 +65,7 @@ export function EditPdfFlow() {
 
       const pdfBytesArray = new Uint8Array(bytes);
       setPdfBytes(pdfBytesArray);
+      setFilePath(filePath);
       setFileName(name);
       setPageCount(count);
       setCurrentPage(0);
@@ -158,6 +160,7 @@ export function EditPdfFlow() {
             </div>
             <EditorLayout
               pdfBytes={pdfBytes}
+              filePath={filePath}
               pageCount={pageCount}
               currentPage={currentPage}
               onPageChange={handlePageChange}
