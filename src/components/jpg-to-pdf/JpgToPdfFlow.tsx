@@ -119,9 +119,18 @@ async function createThumbnail(bytes: Uint8Array): Promise<{ url: string; width:
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export function JpgToPdfFlow() {
+interface JpgToPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -225,8 +234,8 @@ export function JpgToPdfFlow() {
   }, []);
 
   const handleContinue = useCallback(() => {
-    setStep(1);
-  }, []);
+    goToStep(1);
+  }, [goToStep]);
 
   // ── Create PDF ────────────────────────────────────────────────────────────
 
@@ -313,7 +322,7 @@ export function JpgToPdfFlow() {
 
       const pdfBytes = await pdfDoc.save();
       setResultBytes(new Uint8Array(pdfBytes));
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create PDF.';
       setProcessError(message);
@@ -528,7 +537,7 @@ export function JpgToPdfFlow() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setStep(0)}
+                  onClick={() => goToStep(0)}
                   disabled={isProcessing}
                   className="flex-none"
                 >
@@ -564,10 +573,10 @@ export function JpgToPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}

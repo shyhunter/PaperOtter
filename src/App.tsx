@@ -74,6 +74,7 @@ function ToolFlow() {
   const { activeTool, goToDashboard, pendingFiles, setPendingFiles } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
+  const [dedicatedFlowStep, setDedicatedFlowStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
@@ -103,6 +104,7 @@ function ToolFlow() {
     setSavedFilePath(null);
     setFileEntry(null);
     setCurrentStep(0);
+    setDedicatedFlowStep(0);
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
     setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
@@ -129,8 +131,8 @@ function ToolFlow() {
   if (activeTool === 'merge-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <MergeFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <MergeFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -139,8 +141,8 @@ function ToolFlow() {
   if (activeTool === 'split-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <SplitFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <SplitFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -149,8 +151,8 @@ function ToolFlow() {
   if (activeTool === 'rotate-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <RotateFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <RotateFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -159,8 +161,8 @@ function ToolFlow() {
   if (activeTool === 'pdf-to-jpg') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <PdfToJpgFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <PdfToJpgFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -169,8 +171,8 @@ function ToolFlow() {
   if (activeTool === 'jpg-to-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <JpgToPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <JpgToPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -179,8 +181,8 @@ function ToolFlow() {
   if (activeTool === 'protect-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <ProtectPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ProtectPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -189,8 +191,8 @@ function ToolFlow() {
   if (activeTool === 'unlock-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <UnlockPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <UnlockPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -199,8 +201,8 @@ function ToolFlow() {
   if (activeTool === 'rotate-image') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <RotateImageFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <RotateImageFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -209,8 +211,8 @@ function ToolFlow() {
   if (activeTool === 'convert-image') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <ConvertImageFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ConvertImageFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -219,8 +221,8 @@ function ToolFlow() {
   if (activeTool === 'page-numbers') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <PageNumbersFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <PageNumbersFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -229,8 +231,8 @@ function ToolFlow() {
   if (activeTool === 'watermark') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <WatermarkFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <WatermarkFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -239,8 +241,8 @@ function ToolFlow() {
   if (activeTool === 'crop-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <CropPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <CropPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -249,8 +251,8 @@ function ToolFlow() {
   if (activeTool === 'organize-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <OrganizePdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <OrganizePdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -259,8 +261,8 @@ function ToolFlow() {
   if (activeTool === 'sign-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <SignPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <SignPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -269,8 +271,8 @@ function ToolFlow() {
   if (activeTool === 'redact-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <RedactPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <RedactPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -279,8 +281,8 @@ function ToolFlow() {
   if (activeTool === 'edit-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <EditPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <EditPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -289,8 +291,8 @@ function ToolFlow() {
   if (activeTool === 'convert-doc') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <ConvertDocFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ConvertDocFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -299,8 +301,8 @@ function ToolFlow() {
   if (activeTool === 'pdfa-convert') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <PdfaConvertFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <PdfaConvertFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -309,8 +311,8 @@ function ToolFlow() {
   if (activeTool === 'repair-pdf') {
     return (
       <>
-        <ToolHeader currentStep={0} onBackToDashboard={handleBackToDashboard} />
-        <RepairPdfFlow />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <RepairPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }

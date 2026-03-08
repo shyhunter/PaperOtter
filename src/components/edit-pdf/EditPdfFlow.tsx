@@ -31,9 +31,18 @@ function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): Edito
   };
 }
 
-export function EditPdfFlow() {
+interface EditPdfFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [filePath, setFilePath] = useState('');
   const [fileName, setFileName] = useState('');
@@ -70,7 +79,7 @@ export function EditPdfFlow() {
       setPageCount(count);
       setCurrentPage(0);
       setEditorState(buildInitialEditorState(pdfBytesArray, count));
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -110,8 +119,8 @@ export function EditPdfFlow() {
 
   const handleSave = useCallback(() => {
     // For now, save the original bytes (editing functionality added in Plans 04/05)
-    setStep(2);
-  }, []);
+    goToStep(2);
+  }, [goToStep]);
 
   return (
     <>
@@ -179,10 +188,10 @@ export function EditPdfFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}

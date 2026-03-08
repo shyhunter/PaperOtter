@@ -88,9 +88,18 @@ function buildOutputFileName(
   return `${base}-page-${padPageNumber(pageNum, totalPages)}.${ext}`;
 }
 
-export function PdfToJpgFlow() {
+interface PdfToJpgFlowProps {
+  onStepChange?: (step: number) => void;
+}
+
+export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
+
+  const goToStep = useCallback((s: number) => {
+    setStep(s);
+    onStepChange?.(s);
+  }, [onStepChange]);
   const [_filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -129,7 +138,7 @@ export function PdfToJpgFlow() {
       setFileName(name);
       setPdfBytes(new Uint8Array(bytes));
       setPageCount(pages);
-      setStep(1);
+      goToStep(1);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load PDF.';
       setLoadError(message);
@@ -185,7 +194,7 @@ export function PdfToJpgFlow() {
       }));
 
       setMultiOutputs(outputs);
-      setStep(2);
+      goToStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Conversion failed.';
       setProcessError(message);
@@ -325,7 +334,7 @@ export function PdfToJpgFlow() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setStep(0);
+                    goToStep(0);
                     setFilePath(null);
                     setFileName('');
                     setPdfBytes(null);
@@ -366,10 +375,10 @@ export function PdfToJpgFlow() {
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}
-            onCancel={() => setStep(1)}
+            onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
-              setStep(1);
+              goToStep(1);
             }}
           />
         )}
