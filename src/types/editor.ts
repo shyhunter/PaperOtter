@@ -12,6 +12,9 @@ export interface TextBlock {
   fontName: string;
   color: string;
   alignment: 'left' | 'center' | 'right';
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
   isNew: boolean;
 }
 

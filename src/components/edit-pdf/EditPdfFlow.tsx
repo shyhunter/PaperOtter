@@ -117,10 +117,29 @@ export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
     setEditorState(newState);
   }, []);
 
-  const handleSave = useCallback(() => {
-    // For now, save the original bytes (editing functionality added in Plans 04/05)
+  // Warn before leaving with unsaved changes
+  const isDirty = editorState?.isDirty ?? false;
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const handleSave = useCallback(async () => {
+    if (!pdfBytes || !editorState) return;
+
+    if (editorState.isDirty) {
+      // Apply all text and image edits before saving
+      const { applyAllEdits } = await import('@/lib/pdfEditor');
+      const editedPdf = await applyAllEdits(pdfBytes, editorState.pages);
+      setPdfBytes(new Uint8Array(editedPdf));
+    }
+
     goToStep(2);
-  }, [goToStep]);
+  }, [pdfBytes, editorState, goToStep]);
 
   return (
     <>

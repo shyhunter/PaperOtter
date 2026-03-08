@@ -18,23 +18,51 @@ import {
 } from 'pdf-lib';
 import type { PageEditState, TextBlock, ImageBlock } from '@/types/editor';
 
-/** Standard font name -> pdf-lib StandardFonts key mapping */
-const FONT_MAP: Record<string, keyof typeof StandardFonts> = {
-  Helvetica: 'Helvetica',
-  TimesRoman: 'TimesRoman',
-  Courier: 'Courier',
+/** Base font -> variant mapping for pdf-lib StandardFonts */
+const FONT_VARIANTS: Record<string, Record<string, keyof typeof StandardFonts>> = {
+  Helvetica: {
+    regular: 'Helvetica',
+    bold: 'HelveticaBold',
+    italic: 'HelveticaOblique',
+    bolditalic: 'HelveticaBoldOblique',
+  },
+  TimesRoman: {
+    regular: 'TimesRoman',
+    bold: 'TimesRomanBold',
+    italic: 'TimesRomanItalic',
+    bolditalic: 'TimesRomanBoldItalic',
+  },
+  Courier: {
+    regular: 'Courier',
+    bold: 'CourierBold',
+    italic: 'CourierOblique',
+    bolditalic: 'CourierBoldOblique',
+  },
 };
 
 /**
- * Map a PDF font name to the closest pdf-lib StandardFonts enum value.
- * Falls back to Helvetica for unknown fonts (per research recommendation).
+ * Map a PDF font name to the closest pdf-lib StandardFonts base family.
+ * Falls back to Helvetica for unknown fonts.
  */
-export function mapFontName(pdfFontName: string): keyof typeof StandardFonts {
+export function mapFontName(pdfFontName: string): string {
   const lower = pdfFontName.toLowerCase();
   if (lower.includes('courier')) return 'Courier';
   if (lower.includes('times')) return 'TimesRoman';
-  // Helvetica and everything else
   return 'Helvetica';
+}
+
+/**
+ * Resolve font name + bold/italic flags to a StandardFonts key.
+ */
+export function resolveFontKey(
+  fontName: string,
+  bold: boolean,
+  italic: boolean,
+): keyof typeof StandardFonts {
+  const base = mapFontName(fontName);
+  const variants = FONT_VARIANTS[base] ?? FONT_VARIANTS['Helvetica'];
+  const variant = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'regular';
+  return variants[variant];
 }
 
 /**
@@ -103,21 +131,34 @@ export async function applyAllEdits(
         });
       }
 
-      // Get or embed font
-      const fontKey = FONT_MAP[block.fontName] ?? 'Helvetica';
+      // Get or embed font (with bold/italic variant)
+      const fontKey = resolveFontKey(block.fontName, block.bold ?? false, block.italic ?? false);
       let font = fontCache.get(fontKey);
       if (!font) {
         font = await doc.embedFont(StandardFonts[fontKey]);
         fontCache.set(fontKey, font);
       }
 
+      const textColor = parseColor(block.color);
       page.drawText(block.text, {
         x: block.x,
         y: block.y,
         size: block.fontSize,
         font,
-        color: parseColor(block.color),
+        color: textColor,
       });
+
+      // Draw underline if enabled
+      if (block.underline) {
+        const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
+        const underlineY = block.y - block.fontSize * 0.15;
+        page.drawLine({
+          start: { x: block.x, y: underlineY },
+          end: { x: block.x + textWidth, y: underlineY },
+          thickness: Math.max(0.5, block.fontSize * 0.05),
+          color: textColor,
+        });
+      }
     }
 
     // ── Image edits ─────────────────────────────────────────────────────
@@ -301,8 +342,8 @@ export async function applyTextEdits(
         });
       }
 
-      // Get or embed font
-      const fontKey = mapFontName(block.fontName);
+      // Get or embed font (with bold/italic variant)
+      const fontKey = resolveFontKey(block.fontName, block.bold ?? false, block.italic ?? false);
       let font = fontCache.get(fontKey);
       if (!font) {
         font = await doc.embedFont(StandardFonts[fontKey]);
@@ -319,13 +360,26 @@ export async function applyTextEdits(
         drawX = block.x + block.width - textWidth;
       }
 
+      const textColor = parseColor(block.color);
       page.drawText(block.text, {
         x: drawX,
         y: block.y,
         size: block.fontSize,
         font,
-        color: parseColor(block.color),
+        color: textColor,
       });
+
+      // Draw underline if enabled
+      if (block.underline) {
+        const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
+        const underlineY = block.y - block.fontSize * 0.15;
+        page.drawLine({
+          start: { x: drawX, y: underlineY },
+          end: { x: drawX + textWidth, y: underlineY },
+          thickness: Math.max(0.5, block.fontSize * 0.05),
+          color: textColor,
+        });
+      }
     }
   }
 

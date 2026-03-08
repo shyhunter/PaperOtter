@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   FileDown,
   ImageDown,
@@ -19,14 +19,16 @@ import {
   Archive,
   Wrench,
   FileEdit,
+  Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
 import type { ToolDefinition, ToolCategory, ToolId } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { detectFormat } from '@/lib/fileValidation';
-import { isSupportedFile } from '@/lib/fileValidation';
+import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
+import { RecentDirsButton } from '@/components/RecentDirsButton';
+import { useRecentDirs } from '@/hooks/useRecentDirs';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -58,6 +60,14 @@ const CATEGORY_LABELS: Record<ToolCategory, string> = {
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
+/** Quick Action tool IDs — most commonly used tools */
+const QUICK_ACTION_IDS: ToolId[] = [
+  'compress-pdf',
+  'merge-pdf',
+  'split-pdf',
+  'pdf-to-jpg',
+];
+
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
   const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
   for (const tool of Object.values(TOOL_REGISTRY)) {
@@ -69,19 +79,61 @@ function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
 function getCompatibleTools(filePath: string): ToolDefinition[] {
   const format = detectFormat(filePath);
   if (!format) return [];
-  // format is 'pdf' or 'image' — match against acceptsFormats
   return Object.values(TOOL_REGISTRY).filter((tool) =>
     tool.acceptsFormats.includes(format),
   );
 }
 
+function ToolCard({ tool, onClick }: { tool: ToolDefinition; onClick: () => void }) {
+  const Icon = ICON_MAP[tool.icon];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      {Icon && <Icon className="h-7 w-7 text-primary" />}
+      <div className="text-center">
+        <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+      </div>
+    </button>
+  );
+}
+
 export function Dashboard() {
   const { selectTool, setPendingFiles } = useToolContext();
+  const { dirs: recentDirs } = useRecentDirs();
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<string[]>([]);
   const [compatibleTools, setCompatibleTools] = useState<ToolDefinition[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter tools by search query
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return groups;
+
+    const q = searchQuery.toLowerCase();
+    const result: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
+    for (const category of CATEGORY_ORDER) {
+      result[category] = groups[category].filter(
+        (tool) =>
+          tool.name.toLowerCase().includes(q) ||
+          tool.description.toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [groups, searchQuery]);
+
+  const hasSearchResults = CATEGORY_ORDER.some((c) => filteredGroups[c].length > 0);
+
+  // Quick action tools
+  const quickActions = useMemo(
+    () => QUICK_ACTION_IDS.map((id) => TOOL_REGISTRY[id]).filter(Boolean),
+    [],
+  );
 
   // Listen for drag-drop events on the dashboard
   useEffect(() => {
@@ -108,7 +160,6 @@ export function Dashboard() {
             setCompatibleTools(tools);
           }
         } else {
-          // leave or cancelled
           setIsDragOver(false);
         }
       })
@@ -147,52 +198,94 @@ export function Dashboard() {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8 relative">
-      <div className="max-w-4xl mx-auto w-full space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-foreground tracking-tight">
-            Papercut
-          </h1>
-          <p className="text-[clamp(0.85rem,1.2vw,1.1rem)] text-muted-foreground">
-            Your local document toolkit — private, fast, offline.
-          </p>
+    <div className="flex-1 overflow-y-auto px-6 py-6 relative">
+      <div className="max-w-5xl mx-auto w-full space-y-6">
+        {/* Header with search */}
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-[clamp(1.3rem,2.5vw,2rem)] font-bold text-foreground tracking-tight">
+                Papercut
+              </h1>
+              <p className="text-[clamp(0.8rem,1vw,0.95rem)] text-muted-foreground">
+                Your local document toolkit — private, fast, offline.
+              </p>
+            </div>
+            {/* Recent Folder */}
+            {recentDirs.length > 0 && (
+              <RecentDirsButton
+                dirs={recentDirs}
+                onFileSelected={(filePath) => {
+                  const tools = getCompatibleTools(filePath);
+                  if (tools.length === 1) {
+                    setPendingFiles([filePath]);
+                    selectTool(tools[0].id);
+                  } else if (tools.length > 1) {
+                    setDroppedFiles([filePath]);
+                    setCompatibleTools(tools);
+                  }
+                }}
+              />
+            )}
+          </div>
+
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tools..."
+              className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+            />
+          </div>
         </div>
+
+        {/* Quick Actions — hidden when searching */}
+        {!searchQuery.trim() && (
+          <section className="space-y-2">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Quick Actions
+            </h2>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              {quickActions.map((tool) => (
+                <ToolCard key={tool.id} tool={tool} onClick={() => selectTool(tool.id)} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Tool sections by category */}
         {CATEGORY_ORDER.map((category) => {
-          const tools = groups[category];
+          const tools = filteredGroups[category];
           if (tools.length === 0) return null;
 
           return (
-            <section key={category} className="space-y-3">
-              <h2 className="text-[clamp(0.9rem,1.1vw,1.15rem)] font-semibold text-foreground">
+            <section key={category} className="space-y-2">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {CATEGORY_LABELS[category]}
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {tools.map((tool) => {
-                  const Icon = ICON_MAP[tool.icon];
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => selectTool(tool.id)}
-                      className="flex flex-col items-center gap-3 border rounded-xl p-6 bg-card text-card-foreground hover:border-primary/50 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      {Icon && (
-                        <Icon className="h-8 w-8 text-primary" />
-                      )}
-                      <div className="text-center">
-                        <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div
+                className="grid gap-3"
+                style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+              >
+                {tools.map((tool) => (
+                  <ToolCard key={tool.id} tool={tool} onClick={() => selectTool(tool.id)} />
+                ))}
               </div>
             </section>
           );
         })}
+
+        {/* No search results */}
+        {searchQuery.trim() && !hasSearchResults && (
+          <div className="text-center py-12">
+            <p className="text-sm text-muted-foreground">
+              No tools match &ldquo;{searchQuery}&rdquo;
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Drag overlay */}

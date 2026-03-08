@@ -81,6 +81,9 @@ export function TextOverlay({
         fontName: 'Helvetica',
         color: '#000000',
         alignment: 'left',
+        bold: false,
+        italic: false,
+        underline: false,
         isNew: true,
       };
 
@@ -190,10 +193,10 @@ function TextBlockDiv({
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       className={[
-        'absolute whitespace-pre-wrap outline-none transition-shadow',
+        'absolute whitespace-pre-wrap outline-none transition-all duration-150',
         isSelected
-          ? 'ring-2 ring-blue-500 bg-blue-50/20'
-          : 'hover:bg-yellow-100/30 cursor-text',
+          ? 'ring-2 ring-blue-500 bg-blue-50/20 shadow-sm'
+          : 'hover:ring-1 hover:ring-blue-300 hover:bg-blue-50/10 cursor-text',
       ].join(' ')}
       style={{
         top,
@@ -201,6 +204,9 @@ function TextBlockDiv({
         minHeight,
         fontSize,
         fontFamily: mapFontToCSS(block.fontName),
+        fontWeight: block.bold ? 'bold' : 'normal',
+        fontStyle: block.italic ? 'italic' : 'normal',
+        textDecoration: block.underline ? 'underline' : 'none',
         color: block.color,
         textAlign: alignmentMap[block.alignment] as React.CSSProperties['textAlign'],
         lineHeight: 1.2,

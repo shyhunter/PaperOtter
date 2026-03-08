@@ -85,6 +85,19 @@ function ToolFlow() {
   const imageProcessor = useImageProcessor();
   const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
 
+  // When a file is picked from the global Recent Folder button, load it into the current tool
+  const handleRecentFileSelected = useCallback((filePath: string) => {
+    setPendingFiles([filePath]);
+    // Reset to step 0 so the flow restarts and picks up pendingFiles
+    setCurrentStep(0);
+    setDedicatedFlowStep(0);
+    setFileEntry(null);
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    setSavedFilePath(null);
+    addRecentDir(filePath);
+  }, [setPendingFiles, pdfProcessor, imageProcessor, addRecentDir]);
+
   const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
   const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
   const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
@@ -131,7 +144,7 @@ function ToolFlow() {
   if (activeTool === 'merge-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <MergeFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -141,7 +154,7 @@ function ToolFlow() {
   if (activeTool === 'split-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <SplitFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -151,7 +164,7 @@ function ToolFlow() {
   if (activeTool === 'rotate-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <RotateFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -161,7 +174,7 @@ function ToolFlow() {
   if (activeTool === 'pdf-to-jpg') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <PdfToJpgFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -171,7 +184,7 @@ function ToolFlow() {
   if (activeTool === 'jpg-to-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <JpgToPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -181,7 +194,7 @@ function ToolFlow() {
   if (activeTool === 'protect-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <ProtectPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -191,7 +204,7 @@ function ToolFlow() {
   if (activeTool === 'unlock-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <UnlockPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -201,7 +214,7 @@ function ToolFlow() {
   if (activeTool === 'rotate-image') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <RotateImageFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -211,7 +224,7 @@ function ToolFlow() {
   if (activeTool === 'convert-image') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <ConvertImageFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -221,7 +234,7 @@ function ToolFlow() {
   if (activeTool === 'page-numbers') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <PageNumbersFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -231,7 +244,7 @@ function ToolFlow() {
   if (activeTool === 'watermark') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <WatermarkFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -241,7 +254,7 @@ function ToolFlow() {
   if (activeTool === 'crop-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <CropPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -251,7 +264,7 @@ function ToolFlow() {
   if (activeTool === 'organize-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <OrganizePdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -261,7 +274,7 @@ function ToolFlow() {
   if (activeTool === 'sign-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <SignPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -271,7 +284,7 @@ function ToolFlow() {
   if (activeTool === 'redact-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <RedactPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -281,7 +294,7 @@ function ToolFlow() {
   if (activeTool === 'edit-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <EditPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -291,7 +304,7 @@ function ToolFlow() {
   if (activeTool === 'convert-doc') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <ConvertDocFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -301,7 +314,7 @@ function ToolFlow() {
   if (activeTool === 'pdfa-convert') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <PdfaConvertFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -311,7 +324,7 @@ function ToolFlow() {
   if (activeTool === 'repair-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <RepairPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
@@ -527,7 +540,7 @@ function ToolFlow() {
 
   return (
     <>
-      <ToolHeader currentStep={currentStep} onBackToDashboard={handleBackToDashboard} />
+      <ToolHeader currentStep={currentStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
 
       {/* Step 0: Landing / Pick */}
       {currentStep === 0 && (
