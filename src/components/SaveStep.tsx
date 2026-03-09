@@ -113,8 +113,29 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
   const handleOpenFile = async () => {
     try {
       await open(savedPath);
-    } catch (err) {
-      console.error('Failed to open saved file:', err);
+    } catch {
+      // If open fails (no associated app), reveal in Finder instead
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('reveal_in_finder', { path: savedPath });
+      } catch (err2) {
+        console.error('Failed to open or reveal saved file:', err2);
+      }
+    }
+  };
+
+  const handleRevealInFinder = async () => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('reveal_in_finder', { path: savedPath });
+    } catch {
+      // Fallback: open the parent folder
+      try {
+        const parentDir = savedPath.substring(0, savedPath.lastIndexOf('/'));
+        await open(parentDir);
+      } catch (err) {
+        console.error('Failed to reveal in Finder:', err);
+      }
     }
   };
 
@@ -137,9 +158,16 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
             type="button"
             onClick={handleOpenFile}
             className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-left"
-            title={savedPath}
+            title={`Open: ${savedPath}`}
           >
             {savedPath}
+          </button>
+          <button
+            type="button"
+            onClick={handleRevealInFinder}
+            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer mt-0.5"
+          >
+            Show in Finder
           </button>
         </div>
       </div>

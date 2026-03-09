@@ -188,7 +188,8 @@ export function ImageConfigureStep({
   }
 
   return (
-    <div data-testid="image-configure-step" className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+    <div data-testid="image-configure-step" className="flex flex-1 flex-col">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
       <div className="w-full max-w-[clamp(24rem,45vw,36rem)] space-y-4 my-auto">
 
         {/* File name header */}
@@ -428,38 +429,33 @@ export function ImageConfigureStep({
           </p>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            data-testid="back-btn"
-            onClick={onBack}
-            disabled={isProcessing}
-            className="flex-none"
-          >
-            Back
-          </Button>
-          <Button
-            size="sm"
-            data-testid="generate-preview-btn"
-            onClick={handleSubmit}
-            disabled={isProcessing}
-            className="flex-1"
-          >
-            {isProcessing ? 'Processing…' : 'Generate Preview'}
-          </Button>
-          {isProcessing && onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
 
+      </div>
+      </div>
+
+      {/* Sticky bottom action bar */}
+      <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
+          Back
+        </Button>
+        <div className="flex-1" />
+        {isProcessing && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
+          >
+            Cancel
+          </button>
+        )}
+        <Button
+          size="sm"
+          data-testid="generate-preview-btn"
+          onClick={handleSubmit}
+          disabled={isProcessing}
+        >
+          {isProcessing ? 'Processing…' : 'Generate Preview'}
+        </Button>
       </div>
     </div>
   );
