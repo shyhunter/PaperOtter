@@ -89,8 +89,18 @@ export function buildCalibreArgs(options: ConvertOptions): string[] {
   }
 
   if (options.lineSpacing != null) {
-    args.push('--line-height', String(options.lineSpacing));
+    // Calibre --line-height expects an integer (pt). UI sends a multiplier (e.g. 1.15).
+    // Convert: multiply by base font size (or default 12pt), then round.
+    const baseFontSize = options.fontSize ?? 12;
+    const lineHeightPt = Math.round(options.lineSpacing * baseFontSize);
+    args.push('--line-height', String(lineHeightPt));
   }
+
+  // Enable heuristic text processing to fix common PDF extraction issues
+  // (character-level spacing, broken paragraphs, etc.)
+  args.push('--enable-heuristics');
+  // Unwrap lines that PDF extraction splits at character boundaries
+  args.push('--unsmarten-punctuation');
 
   // EPUB layout: fixed layout uses tablet output profile
   if (options.epubLayout === 'fixed') {

@@ -119,7 +119,8 @@ export function ConvertConfigStep({
   const showTypographyControls = engine === 'calibre';
 
   return (
-    <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+    <div className="flex flex-1 flex-col">
+      <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
       <div className="w-full max-w-md space-y-4 my-auto">
         {/* File info */}
         <div className="text-center">
@@ -320,38 +321,41 @@ export function ConvertConfigStep({
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onBack}
-            disabled={isProcessing}
-            className="flex-none"
-          >
-            Back
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleConvert}
-            disabled={isProcessing || sidecarChecking || !engineAvailable}
-            className="flex-1"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Converting...
-              </>
-            ) : sidecarChecking ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Checking tools...
-              </>
-            ) : (
-              `Convert to ${FORMAT_LABELS[outputFormat]}`
-            )}
-          </Button>
-        </div>
+
+      </div>
+      </div>
+
+      {/* Sticky bottom action bar */}
+      <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          disabled={isProcessing}
+          className="flex-none"
+        >
+          Back
+        </Button>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          onClick={handleConvert}
+          disabled={isProcessing || sidecarChecking || !engineAvailable}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Converting...
+            </>
+          ) : sidecarChecking ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Checking tools...
+            </>
+          ) : (
+            `Convert to ${FORMAT_LABELS[outputFormat]}`
+          )}
+        </Button>
       </div>
     </div>
   );

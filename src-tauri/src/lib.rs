@@ -671,10 +671,20 @@ async fn convert_with_libreoffice(
         ));
     }
 
-    let tmp_dir = std::env::temp_dir().join("papercut_convert");
+    // Use a unique temp directory per conversion to avoid stale file conflicts
+    let convert_id = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    let tmp_dir = std::env::temp_dir().join(format!("papercut_convert_{}", convert_id));
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Failed to create temp dir: {}", e))?;
     let tmp_dir_str = tmp_dir.to_string_lossy().to_string();
+
+    // Isolated user profile so LibreOffice doesn't conflict with running instances
+    let lo_profile_dir = std::env::temp_dir().join("papercut_lo_profile");
+    std::fs::create_dir_all(&lo_profile_dir).ok();
+    let lo_profile_url = format!("file://{}", lo_profile_dir.to_string_lossy());
 
     // Try "soffice" first; on macOS it may not be in PATH
     let soffice_cmd = if cfg!(target_os = "macos") {
@@ -688,39 +698,82 @@ async fn convert_with_libreoffice(
         "soffice".to_string()
     };
 
+    // Build args for LibreOffice conversion
+    // PDF input requires --infilter=writer_pdf_import to route through Writer (not Draw)
+    // and explicit export filter names for each output format.
+    let source_ext = std::path::Path::new(&source_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let is_pdf_input = source_ext == "pdf";
+
+    // Map output format to LibreOffice export filter name (needed for PDF input)
+    let convert_to_arg = if is_pdf_input {
+        match output_format.as_str() {
+            "docx" => "docx:MS Word 2007 XML".to_string(),
+            "doc" => "doc:MS Word 97".to_string(),
+            "odt" => "odt:writer8".to_string(),
+            "txt" => "txt:Text".to_string(),
+            "rtf" => "rtf:Rich Text Format".to_string(),
+            "pdf" => "pdf:writer_pdf_Export".to_string(),
+            _ => output_format.clone(),
+        }
+    } else {
+        output_format.clone()
+    };
+
+    let mut args: Vec<String> = vec![
+        "--headless".to_string(),
+        "--norestore".to_string(),
+        format!("-env:UserInstallation={}", lo_profile_url),
+    ];
+    if is_pdf_input {
+        args.push("--infilter=writer_pdf_import".to_string());
+    }
+    args.extend([
+        "--convert-to".to_string(),
+        convert_to_arg,
+        "--outdir".to_string(),
+        tmp_dir_str.clone(),
+        source_path.clone(),
+    ]);
+
+    let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
     let (mut rx, _child) = app
         .shell()
         .command(&soffice_cmd)
-        .args([
-            "--headless",
-            "--convert-to",
-            &output_format,
-            "--outdir",
-            &tmp_dir_str,
-            &source_path,
-        ])
+        .args(&args_refs)
         .spawn()
         .map_err(|e| format!("LibreOffice not found or failed to start. Install LibreOffice and ensure 'soffice' is in your PATH. Error: {}", e))?;
 
     // Wait for completion using spawn + event loop pattern
     let mut stderr_lines: Vec<String> = Vec::new();
+    let mut stdout_lines: Vec<String> = Vec::new();
     while let Some(event) = rx.recv().await {
         match event {
             CommandEvent::Terminated(payload) => {
                 if payload.code != Some(0) {
                     // Clean up temp dir
                     let _ = std::fs::remove_dir_all(&tmp_dir);
-                    let stderr = stderr_lines.join("\n");
+                    let all_output = [
+                        stderr_lines.join("\n"),
+                        stdout_lines.join("\n"),
+                    ].join("\n").trim().to_string();
                     return Err(format!(
                         "LibreOffice conversion failed (exit {}): {}",
                         payload.code.unwrap_or(-1),
-                        stderr
+                        if all_output.is_empty() { "(no output)".to_string() } else { all_output }
                     ));
                 }
                 break;
             }
             CommandEvent::Stderr(line) => {
                 stderr_lines.push(String::from_utf8_lossy(&line).to_string());
+            }
+            CommandEvent::Stdout(line) => {
+                stdout_lines.push(String::from_utf8_lossy(&line).to_string());
             }
             CommandEvent::Error(e) => {
                 let _ = std::fs::remove_dir_all(&tmp_dir);
@@ -737,8 +790,38 @@ async fn convert_with_libreoffice(
         .ok_or("Failed to extract source filename stem")?;
     let output_path = tmp_dir.join(format!("{}.{}", source_stem, output_format));
 
-    let bytes = std::fs::read(&output_path)
-        .map_err(|e| format!("Failed to read converted output at {}: {}", output_path.display(), e))?;
+    // LibreOffice may produce a file with a slightly different name (e.g. spaces/hyphens).
+    // If the expected path doesn't exist, scan the tmp dir for any file with the right extension.
+    let actual_path = if output_path.exists() {
+        output_path.clone()
+    } else {
+        let ext = format!(".{}", output_format);
+        let found = std::fs::read_dir(&tmp_dir)
+            .map_err(|e| format!("Failed to read temp dir: {}", e))?
+            .filter_map(|entry| entry.ok())
+            .find(|entry| {
+                entry.file_name().to_string_lossy().ends_with(&ext)
+            })
+            .map(|entry| entry.path());
+        found.ok_or_else(|| {
+            let files_in_dir: Vec<String> = std::fs::read_dir(&tmp_dir)
+                .ok()
+                .map(|rd| rd.filter_map(|e| e.ok())
+                    .map(|e| e.file_name().to_string_lossy().to_string())
+                    .collect())
+                .unwrap_or_default();
+            format!(
+                "LibreOffice conversion produced no output file. Expected: {}. Files in tmp dir: [{}]. Stdout: {}. Stderr: {}",
+                output_path.display(),
+                files_in_dir.join(", "),
+                stdout_lines.join(" | "),
+                stderr_lines.join(" | "),
+            )
+        })?
+    };
+
+    let bytes = std::fs::read(&actual_path)
+        .map_err(|e| format!("Failed to read converted output at {}: {}", actual_path.display(), e))?;
 
     // Clean up temp files
     let _ = std::fs::remove_dir_all(&tmp_dir);
@@ -836,6 +919,38 @@ async fn convert_with_calibre(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+/// Reveal a file in Finder (macOS) or the system file manager.
+#[tauri::command]
+async fn reveal_in_finder(path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map_err(|e| format!("Failed to reveal in Finder: {}", e))?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .args(["/select,", &path])
+            .spawn()
+            .map_err(|e| format!("Failed to reveal in Explorer: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        // Try xdg-open on parent directory
+        let parent = std::path::Path::new(&path)
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.clone());
+        std::process::Command::new("xdg-open")
+            .arg(&parent)
+            .spawn()
+            .map_err(|e| format!("Failed to open file manager: {}", e))?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -845,7 +960,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, reveal_in_finder]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]

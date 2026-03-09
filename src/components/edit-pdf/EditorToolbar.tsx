@@ -2,11 +2,12 @@
 // Shows mode toggle (Select / Text / Image), context-sensitive controls for the
 // selected text or image block, and always-visible Insert Image button.
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignJustify,
   Bold,
   Italic,
   Underline,
@@ -20,16 +21,20 @@ import {
   FlipHorizontal,
   FlipVertical,
   Replace,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { TextBlock, ImageBlock, EditorMode } from '@/types/editor';
 
-/** Standard PDF fonts available in pdf-lib */
+/** Standard PDF fonts available in pdf-lib.
+ *  pdf-lib only supports the 14 standard fonts grouped into 3 families.
+ *  We show familiar aliases so users pick recognizable names. */
 const FONT_OPTIONS = [
-  { value: 'Helvetica', label: 'Helvetica' },
-  { value: 'TimesRoman', label: 'Times Roman' },
-  { value: 'Courier', label: 'Courier' },
+  { value: 'Helvetica', label: 'Helvetica / Arial (Sans-serif)' },
+  { value: 'TimesRoman', label: 'Times New Roman (Serif)' },
+  { value: 'Courier', label: 'Courier New (Monospace)' },
 ];
 
 /** Preset colors for text */
@@ -40,6 +45,9 @@ const COLOR_PRESETS = [
   { value: '#16A34A', label: 'Green' },
   { value: '#FFFFFF', label: 'White' },
 ];
+
+/** Local-storage key for custom colors */
+const CUSTOM_COLORS_KEY = 'papercut-custom-colors';
 
 interface EditorToolbarProps {
   /** Currently selected text block (null if none) */
@@ -63,6 +71,11 @@ interface EditorToolbarProps {
   /** Page dimensions in PDF points for sizing new images */
   pageWidth: number;
   pageHeight: number;
+  /** Undo/redo */
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export function EditorToolbar({
@@ -77,9 +90,38 @@ export function EditorToolbar({
   onModeChange,
   pageWidth,
   pageHeight,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }: EditorToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  // Custom colors persisted in localStorage
+  const [customColors, setCustomColors] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(CUSTOM_COLORS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  const addCustomColor = useCallback((color: string) => {
+    setCustomColors((prev) => {
+      if (prev.includes(color)) return prev;
+      const next = [...prev, color].slice(-12); // max 12 custom colors
+      localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const removeCustomColor = useCallback((color: string) => {
+    setCustomColors((prev) => {
+      const next = prev.filter((c) => c !== color);
+      localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const handleFontSizeChange = useCallback(
     (newSize: number) => {
       if (!selectedBlock) return;
@@ -98,7 +140,7 @@ export function EditorToolbar({
   );
 
   const handleAlignmentChange = useCallback(
-    (alignment: 'left' | 'center' | 'right') => {
+    (alignment: 'left' | 'center' | 'right' | 'justify') => {
       if (!selectedBlock) return;
       onBlockUpdate(selectedBlock.id, { alignment });
     },
@@ -325,30 +367,12 @@ export function EditorToolbar({
           {/* Color */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Color
+              Current Color
             </label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {COLOR_PRESETS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => handleColorChange(c.value)}
-                  title={c.label}
-                  className={[
-                    'w-7 h-7 rounded-md border-2 transition-all',
-                    selectedBlock.color === c.value
-                      ? 'border-blue-500 ring-1 ring-blue-300'
-                      : 'border-border hover:border-muted-foreground',
-                  ].join(' ')}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={selectedBlock.color}
-                onChange={(e) => handleColorChange(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border border-input"
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className="w-8 h-8 rounded-md border-2 border-border"
+                style={{ backgroundColor: selectedBlock.color }}
               />
               <input
                 type="text"
@@ -360,6 +384,58 @@ export function EditorToolbar({
                 placeholder="#000000"
                 className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm font-mono"
               />
+              <input
+                type="color"
+                value={selectedBlock.color}
+                onChange={(e) => handleColorChange(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer border border-input"
+                title="Pick color"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {COLOR_PRESETS.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => handleColorChange(c.value)}
+                  title={c.label}
+                  className={cn(
+                    'w-7 h-7 rounded-md border-2 transition-all',
+                    selectedBlock.color === c.value
+                      ? 'border-blue-500 ring-1 ring-blue-300'
+                      : 'border-border hover:border-muted-foreground',
+                  )}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
+
+            {/* Custom Colors */}
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
+              Custom Colors
+            </label>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {customColors.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => handleColorChange(c)}
+                  onContextMenu={(e) => { e.preventDefault(); removeCustomColor(c); }}
+                  title={`${c} — right-click to remove`}
+                  className={cn(
+                    'w-7 h-7 rounded-md border-2 transition-all',
+                    selectedBlock.color === c
+                      ? 'border-blue-500 ring-1 ring-blue-300'
+                      : 'border-border hover:border-muted-foreground',
+                  )}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+              <button
+                onClick={() => addCustomColor(selectedBlock.color)}
+                title="Save current color"
+                className="w-7 h-7 rounded-md border-2 border-dashed border-border hover:border-muted-foreground flex items-center justify-center text-muted-foreground"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
@@ -409,6 +485,7 @@ export function EditorToolbar({
                 { value: 'left' as const, icon: AlignLeft },
                 { value: 'center' as const, icon: AlignCenter },
                 { value: 'right' as const, icon: AlignRight },
+                { value: 'justify' as const, icon: AlignJustify },
               ]).map(({ value, icon: Icon }) => (
                 <Button
                   key={value}
@@ -561,6 +638,32 @@ export function EditorToolbar({
           Click "Insert Image" to add an image, or select an existing image to edit it.
         </p>
       )}
+
+      {/* Undo / Redo */}
+      <div className="mt-auto pt-3 border-t border-border flex gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={!canUndo}
+          onClick={onUndo}
+          title="Undo"
+        >
+          <Undo2 className="w-4 h-4 mr-1" />
+          Undo
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={!canRedo}
+          onClick={onRedo}
+          title="Redo"
+        >
+          <Redo2 className="w-4 h-4 mr-1" />
+          Redo
+        </Button>
+      </div>
     </div>
   );
 }
