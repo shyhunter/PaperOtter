@@ -1,8 +1,9 @@
 // TextOverlay: Renders editable text divs positioned over the PDF canvas.
-// Each text item is absolutely positioned using PDF coordinates converted to CSS.
-// PDF y=0 is bottom, CSS y=0 is top — conversion uses pageHeight.
+// Each text block has an opaque white background covering the canvas text beneath.
+// Single click → select + show textarea for editing. Double click → select all.
+// "+T" mode → click empty area to add new text.
 
-import { useCallback, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import type { TextBlock, EditorMode } from '@/types/editor';
 
 /** Map PDF font names to web-safe CSS font stacks */
@@ -10,32 +11,20 @@ function mapFontToCSS(fontName: string): string {
   const lower = fontName.toLowerCase();
   if (lower.includes('courier')) return '"Courier New", Courier, monospace';
   if (lower.includes('times')) return '"Times New Roman", Times, serif';
-  // Default: Helvetica / sans-serif (covers Helvetica, Arial, and unknown fonts)
   return 'Helvetica, Arial, sans-serif';
 }
 
 interface TextOverlayProps {
-  /** Text blocks to render */
   textBlocks: TextBlock[];
-  /** Canvas scale factor (CSS pixels per PDF point) */
   scale: number;
-  /** Page height in PDF points (for y-coordinate conversion) */
   pageHeight: number;
-  /** Currently selected block ID */
   selectedId: string | null;
-  /** Current editor mode */
   editorMode: EditorMode;
-  /** Called when a block is selected */
   onSelect: (id: string | null) => void;
-  /** Called when text or props change */
   onTextChange: (id: string, newText: string, newProps?: Partial<TextBlock>) => void;
-  /** Called when a text block is deleted */
   onTextDelete: (id: string) => void;
-  /** Called when a new text block is added */
   onTextAdd: (block: TextBlock) => void;
-  /** Called when a text block is repositioned via drag */
   onTextMove?: (id: string, x: number, y: number) => void;
-  /** Called when a text block is resized */
   onTextResize?: (id: string, width: number, height: number) => void;
 }
 
@@ -54,46 +43,35 @@ export function TextOverlay({
 }: TextOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Handle click on empty canvas area — creates new text block in 'text' mode
   const handleOverlayClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
-      // Only create new text blocks in text mode and when clicking the overlay itself
-      if (editorMode !== 'text' || e.target !== overlayRef.current) {
-        // Clicked on empty area in select mode — deselect
-        if (e.target === overlayRef.current) {
-          onSelect(null);
-        }
-        return;
+      if (e.target !== overlayRef.current) return;
+
+      if (editorMode === 'text') {
+        const rect = overlayRef.current!.getBoundingClientRect();
+        const pdfX = (e.clientX - rect.left) / scale;
+        const pdfY = pageHeight - (e.clientY - rect.top) / scale;
+
+        onTextAdd({
+          id: crypto.randomUUID(),
+          pageIndex: 0,
+          x: pdfX,
+          y: pdfY,
+          width: 200,
+          height: 18,
+          text: '',
+          fontSize: 12,
+          fontName: 'Helvetica',
+          color: '#000000',
+          alignment: 'left',
+          bold: false,
+          italic: false,
+          underline: false,
+          isNew: true,
+        });
+      } else {
+        onSelect(null);
       }
-
-      const rect = overlayRef.current!.getBoundingClientRect();
-      const cssX = e.clientX - rect.left;
-      const cssY = e.clientY - rect.top;
-
-      // Convert CSS coordinates back to PDF points
-      const pdfX = cssX / scale;
-      // CSS top -> PDF bottom: y = pageHeight - cssTop/scale
-      const pdfY = pageHeight - cssY / scale;
-
-      const newBlock: TextBlock = {
-        id: crypto.randomUUID(),
-        pageIndex: 0, // will be set by parent
-        x: pdfX,
-        y: pdfY,
-        width: 150,
-        height: 16,
-        text: 'New text',
-        fontSize: 12,
-        fontName: 'Helvetica',
-        color: '#000000',
-        alignment: 'left',
-        bold: false,
-        italic: false,
-        underline: false,
-        isNew: true,
-      };
-
-      onTextAdd(newBlock);
     },
     [editorMode, scale, pageHeight, onTextAdd, onSelect],
   );
@@ -123,7 +101,7 @@ export function TextOverlay({
   );
 }
 
-// --- Individual text block overlay div ---
+// --- Individual text block ---
 
 interface TextBlockDivProps {
   block: TextBlock;
@@ -144,91 +122,97 @@ function TextBlockDiv({
   isSelected,
   onSelect,
   onTextChange,
+  onDelete,
   onMove,
   onResize,
 }: TextBlockDivProps) {
-  const divRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [localText, setLocalText] = useState(block.text);
   const [isDragging, setIsDragging] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const dragStartRef = useRef<{ mouseX: number; mouseY: number; blockX: number; blockY: number } | null>(null);
+  const dragStartRef = useRef<{
+    mouseX: number; mouseY: number; blockX: number; blockY: number;
+  } | null>(null);
 
-  // PDF y=0 is bottom-left; CSS y=0 is top-left
+  // Keep local text in sync when block.text changes from outside (undo/redo)
+  useEffect(() => {
+    if (!isSelected) {
+      setLocalText(block.text);
+    }
+  }, [block.text, isSelected]);
+
+  // Auto-focus textarea when selected
+  useEffect(() => {
+    if (isSelected && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isSelected]);
+
+  // PDF → CSS coordinate conversion
   const top = (pageHeight - block.y - block.height) * scale;
   const left = block.x * scale;
-  const minHeight = block.height * scale;
+  const cssWidth = block.width * scale;
+  const cssHeight = block.height * scale;
   const fontSize = block.fontSize * scale;
 
+  // Click: select this block
   const handleClick = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
       if (isDragging) return;
-      if (!isSelected) {
-        // First click: select the block
-        onSelect(block.id);
-        setTimeout(() => divRef.current?.focus(), 0);
-      }
-      // If already selected, click places cursor inside (contentEditable handles it)
+      onSelect(block.id);
     },
-    [block.id, onSelect, isDragging, isSelected],
+    [block.id, onSelect, isDragging],
   );
 
-  // Double-click enters full edit mode (shows text cursor, disables drag)
+  // Double-click: select all text in the textarea
   const handleDoubleClick = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
-      if (!isSelected) {
-        onSelect(block.id);
-      }
-      setIsEditing(true);
-      setTimeout(() => divRef.current?.focus(), 0);
+      onSelect(block.id);
+      setTimeout(() => textareaRef.current?.select(), 0);
     },
-    [block.id, isSelected, onSelect],
+    [block.id, onSelect],
   );
 
-  // Drag support: mousedown on selected block starts drag (only when not in edit mode)
+  // Drag: only on the container border area or when not focused in textarea
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
-      if (!isSelected || !onMove || isEditing) return;
-      if (e.button !== 0) return;
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && sel.toString().length > 0) return;
+      // Don't drag when clicking inside the textarea
+      if (e.target === textareaRef.current) return;
+      if (!onMove || e.button !== 0) return;
 
+      e.preventDefault();
       dragStartRef.current = {
-        mouseX: e.clientX,
-        mouseY: e.clientY,
-        blockX: block.x,
-        blockY: block.y,
+        mouseX: e.clientX, mouseY: e.clientY,
+        blockX: block.x, blockY: block.y,
       };
 
       const handleMouseMove = (ev: globalThis.MouseEvent) => {
         if (!dragStartRef.current) return;
         const dx = ev.clientX - dragStartRef.current.mouseX;
         const dy = ev.clientY - dragStartRef.current.mouseY;
-        // Only start actual drag if moved > 3px to avoid accidental drags
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
           setIsDragging(true);
-          const newX = dragStartRef.current.blockX + dx / scale;
-          // CSS y is inverted from PDF y
-          const newY = dragStartRef.current.blockY - dy / scale;
-          onMove(block.id, newX, newY);
+          onMove(block.id,
+            dragStartRef.current.blockX + dx / scale,
+            dragStartRef.current.blockY - dy / scale,
+          );
         }
       };
-
       const handleMouseUp = () => {
         dragStartRef.current = null;
-        // Reset dragging flag after a tick so click handler can check it
         setTimeout(() => setIsDragging(false), 0);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
-
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [isSelected, isEditing, onMove, block.id, block.x, block.y, scale],
+    [onMove, block.id, block.x, block.y, scale],
   );
 
-  // Resize support: drag bottom-right handle
+  // Resize handle
   const handleResizeMouseDown = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
@@ -238,93 +222,150 @@ function TextBlockDiv({
       const startY = e.clientY;
       const startW = block.width;
       const startH = block.height;
-
       const handleMouseMove = (ev: globalThis.MouseEvent) => {
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        const newW = Math.max(20, startW + dx / scale);
-        // Height grows downward in CSS but upward in PDF
-        const newH = Math.max(10, startH + dy / scale);
-        onResize(block.id, newW, newH);
+        onResize(block.id,
+          Math.max(30, startW + (ev.clientX - startX) / scale),
+          Math.max(12, startH + (ev.clientY - startY) / scale),
+        );
       };
-
       const handleMouseUp = () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
-
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
     [onResize, block.id, block.width, block.height, scale],
   );
 
+  // Commit text changes on blur
   const handleBlur = useCallback(() => {
-    const newText = divRef.current?.innerText ?? block.text;
-    if (newText !== block.text) {
-      onTextChange(block.id, newText);
+    if (localText !== block.text) {
+      onTextChange(block.id, localText);
     }
-    setIsEditing(false);
-  }, [block.id, block.text, onTextChange]);
+  }, [block.id, block.text, localText, onTextChange]);
 
+  // Keyboard shortcuts in the textarea
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        divRef.current?.blur();
-      }
       if (e.key === 'Escape') {
         e.preventDefault();
+        // Revert local text and deselect
+        setLocalText(block.text);
         onSelect(null);
-        divRef.current?.blur();
+      }
+      // Delete block when empty and pressing Backspace/Delete
+      if ((e.key === 'Backspace' || e.key === 'Delete') && localText === '') {
+        e.preventDefault();
+        onDelete(block.id);
       }
     },
-    [onSelect],
+    [block.id, block.text, localText, onSelect, onDelete],
   );
+
+  // Border styling
+  const borderStyle = isSelected
+    ? '2px solid #3b82f6'
+    : '1px solid transparent';
+  const hoverBorder = !isSelected ? '1px solid #93c5fd' : undefined;
 
   return (
     <div
-      ref={divRef}
-      contentEditable={isSelected && !isDragging}
-      suppressContentEditableWarning
+      ref={containerRef}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      className={[
-        'absolute whitespace-pre-wrap outline-none transition-shadow duration-150',
-        isSelected && isEditing
-          ? 'ring-2 ring-blue-500 bg-blue-50/20 shadow-sm cursor-text'
-          : isSelected
-            ? 'ring-2 ring-blue-500 bg-blue-50/10 shadow-sm cursor-move'
-            : 'hover:ring-1 hover:ring-blue-300 hover:bg-blue-50/10 cursor-text',
-      ].join(' ')}
       style={{
+        position: 'absolute',
         top,
         left,
-        width: block.width * scale,
-        minHeight,
-        fontSize,
-        fontFamily: mapFontToCSS(block.fontName),
-        fontWeight: block.bold ? 'bold' : 'normal',
-        fontStyle: block.italic ? 'italic' : 'normal',
-        textDecoration: block.underline ? 'underline' : 'none',
-        color: block.color,
-        textAlign: block.alignment as React.CSSProperties['textAlign'],
-        lineHeight: 1.2,
-        padding: '0 1px',
+        width: cssWidth,
+        minHeight: cssHeight,
+        // Opaque white background covers the canvas text
+        backgroundColor: 'white',
+        border: borderStyle,
+        cursor: isSelected ? 'text' : 'pointer',
         pointerEvents: 'auto',
-        userSelect: isDragging ? 'none' : 'auto',
+        zIndex: isSelected ? 10 : 1,
+        // Padding matches the border difference so text doesn't shift
+        padding: isSelected ? 0 : 0.5,
+        boxSizing: 'border-box',
+      }}
+      onMouseEnter={(e) => {
+        if (!isSelected) (e.currentTarget.style.border = hoverBorder ?? '');
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected) (e.currentTarget.style.border = borderStyle);
       }}
     >
-      {block.text}
-      {/* Resize handle — bottom-right corner */}
+      {isSelected ? (
+        // Editable textarea — real input, no contentEditable hacks
+        <textarea
+          ref={textareaRef}
+          value={localText}
+          onChange={(e) => setLocalText(e.target.value)}
+          aria-label="Edit text block"
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          spellCheck={false}
+          style={{
+            width: '100%',
+            height: '100%',
+            minHeight: cssHeight,
+            fontSize,
+            fontFamily: mapFontToCSS(block.fontName),
+            fontWeight: block.bold ? 'bold' : 'normal',
+            fontStyle: block.italic ? 'italic' : 'normal',
+            textDecoration: block.underline ? 'underline' : 'none',
+            color: block.color,
+            textAlign: block.alignment as React.CSSProperties['textAlign'],
+            lineHeight: 1.2,
+            padding: 0,
+            margin: 0,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            resize: 'none',
+            overflow: 'hidden',
+            display: 'block',
+          }}
+        />
+      ) : (
+        // Static display — shows text with matching styling
+        <div
+          style={{
+            fontSize,
+            fontFamily: mapFontToCSS(block.fontName),
+            fontWeight: block.bold ? 'bold' : 'normal',
+            fontStyle: block.italic ? 'italic' : 'normal',
+            textDecoration: block.underline ? 'underline' : 'none',
+            color: block.color,
+            textAlign: block.alignment as React.CSSProperties['textAlign'],
+            lineHeight: 1.2,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            userSelect: 'none',
+          }}
+        >
+          {block.text}
+        </div>
+      )}
+
+      {/* Resize handle — bottom-right */}
       {isSelected && onResize && (
         <div
           onMouseDown={handleResizeMouseDown}
-          className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize rounded-tl-sm"
-          style={{ pointerEvents: 'auto', transform: 'translate(50%, 50%)' }}
+          style={{
+            position: 'absolute',
+            bottom: -4,
+            right: -4,
+            width: 8,
+            height: 8,
+            background: '#3b82f6',
+            cursor: 'se-resize',
+            borderRadius: 2,
+            pointerEvents: 'auto',
+          }}
         />
       )}
     </div>

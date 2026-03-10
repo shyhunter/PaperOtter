@@ -39,13 +39,7 @@ export function ImageOverlay({
 }: ImageOverlayProps) {
   return (
     <div
-      className="absolute inset-0 pointer-events-auto"
-      onMouseDown={(e) => {
-        // Click on empty area deselects
-        if (e.target === e.currentTarget) {
-          onSelect(null);
-        }
-      }}
+      className="absolute inset-0 pointer-events-none"
     >
       {imageBlocks.map((block) => (
         <ImageOverlayItem
@@ -284,6 +278,7 @@ function ImageOverlayItem({
         outline: isSelected ? '2px solid #3b82f6' : 'none',
         outlineOffset: 1,
         zIndex: isSelected ? 10 : 1,
+        pointerEvents: 'auto',
       }}
       onMouseDown={handleMouseDown}
     >

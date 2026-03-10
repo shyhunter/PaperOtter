@@ -16,7 +16,7 @@ import {
   type PDFPage,
   type PDFFont,
 } from 'pdf-lib';
-import type { PageEditState, TextBlock, ImageBlock } from '@/types/editor';
+import type { PageEditState, ImageBlock } from '@/types/editor';
 
 /** Base font -> variant mapping for pdf-lib StandardFonts */
 const FONT_VARIANTS: Record<string, Record<string, keyof typeof StandardFonts>> = {
@@ -105,19 +105,21 @@ export async function applyAllEdits(
 
     // ── Text edits ──────────────────────────────────────────────────────
 
-    // Cover deleted text blocks with white rectangles
-    for (const _deletedId of pageEdit.deletedTextIds) {
-      // We don't have the original positions of deleted blocks readily here.
-      // In practice, the EditorLayout tracks the original block before deletion.
-      // For a minimal approach: deletions are handled by not re-drawing.
-      // The white-rect approach works if we stored original bounds, but
-      // since we're working with text overlays, leaving original text visible
-      // is acceptable -- the user edits text in-place (contentEditable).
+    // Cover deleted text blocks with white rectangles using stored bounds
+    for (const deleted of pageEdit.deletedTextBlocks ?? []) {
+      page.drawRectangle({
+        x: deleted.x - 1,
+        y: deleted.y - 1,
+        width: deleted.width + 2,
+        height: deleted.height + 2,
+        color: rgb(1, 1, 1),
+        borderWidth: 0,
+      });
     }
 
-    // Draw modified/new text blocks
+    // Draw modified/new text blocks (only those actually changed)
     for (const block of pageEdit.textBlocks) {
-      if (!block.isNew && !isBlockModified(block)) continue;
+      if (!block.isNew && !block.isModified) continue;
 
       // Cover original area with white rect for modified blocks
       if (!block.isNew) {
@@ -139,9 +141,19 @@ export async function applyAllEdits(
         fontCache.set(fontKey, font);
       }
 
+      // Calculate x position based on alignment
       const textColor = parseColor(block.color);
+      let drawX = block.x;
+      if (block.alignment === 'center') {
+        const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
+        drawX = block.x + (block.width - textWidth) / 2;
+      } else if (block.alignment === 'right') {
+        const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
+        drawX = block.x + block.width - textWidth;
+      }
+
       page.drawText(block.text, {
-        x: block.x,
+        x: drawX,
         y: block.y,
         size: block.fontSize,
         font,
@@ -153,8 +165,8 @@ export async function applyAllEdits(
         const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
         const underlineY = block.y - block.fontSize * 0.15;
         page.drawLine({
-          start: { x: block.x, y: underlineY },
-          end: { x: block.x + textWidth, y: underlineY },
+          start: { x: drawX, y: underlineY },
+          end: { x: drawX + textWidth, y: underlineY },
           thickness: Math.max(0.5, block.fontSize * 0.05),
           color: textColor,
         });
@@ -163,10 +175,17 @@ export async function applyAllEdits(
 
     // ── Image edits ─────────────────────────────────────────────────────
 
-    // Handle deleted images: cover with white rect
-    // Note: deletedImageIds tracks images by ID -- we need original bounds
-    // which we stored in the ImageBlock before deletion
-    // For now, deletion is handled via the image blocks tracking
+    // Cover deleted images with white rectangles using stored bounds
+    for (const deleted of pageEdit.deletedImageBlocks ?? []) {
+      page.drawRectangle({
+        x: deleted.x - 1,
+        y: deleted.y - 1,
+        width: deleted.width + 2,
+        height: deleted.height + 2,
+        color: rgb(1, 1, 1),
+        borderWidth: 0,
+      });
+    }
 
     // Draw modified and new images
     await applyImageEditsToPage(doc, page, pageEdit);
@@ -237,14 +256,6 @@ function isImageModified(block: ImageBlock): boolean {
   );
 }
 
-/**
- * Simple heuristic to check if a text block has been modified.
- * In practice, the editor marks blocks as dirty.
- */
-function isBlockModified(_block: TextBlock): boolean {
-  // All non-new blocks that reach this point have been edited
-  return true;
-}
 
 /**
  * Check if bytes represent a PNG image (by magic bytes).
@@ -326,9 +337,21 @@ export async function applyTextEdits(
     if (pageIndex < 0 || pageIndex >= pages.length) continue;
     const page = pages[pageIndex];
 
+    // Cover deleted text blocks
+    for (const deleted of pageEdit.deletedTextBlocks ?? []) {
+      page.drawRectangle({
+        x: deleted.x - 1,
+        y: deleted.y - 1,
+        width: deleted.width + 2,
+        height: deleted.height + 2,
+        color: rgb(1, 1, 1),
+        borderWidth: 0,
+      });
+    }
+
     // Draw text blocks (modified + new)
     for (const block of pageEdit.textBlocks) {
-      if (!block.isNew && !isBlockModified(block)) continue;
+      if (!block.isNew && !block.isModified) continue;
 
       // Cover original area with white rect for modified blocks
       if (!block.isNew) {

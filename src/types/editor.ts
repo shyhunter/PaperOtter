@@ -16,6 +16,17 @@ export interface TextBlock {
   italic: boolean;
   underline: boolean;
   isNew: boolean;
+  /** True when the block has been edited by the user (text changed, moved, styled, etc.) */
+  isModified?: boolean;
+}
+
+/** Original bounds of a deleted block — needed to white-rect cover it in the saved PDF */
+export interface DeletedBlock {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface ImageBlock {
@@ -38,6 +49,10 @@ export interface PageEditState {
   imageBlocks: ImageBlock[];
   deletedTextIds: string[];
   deletedImageIds: string[];
+  /** Original bounds of deleted text blocks — for white-rect coverage in save engine */
+  deletedTextBlocks: DeletedBlock[];
+  /** Original bounds of deleted image blocks */
+  deletedImageBlocks: DeletedBlock[];
 }
 
 export interface EditorState {

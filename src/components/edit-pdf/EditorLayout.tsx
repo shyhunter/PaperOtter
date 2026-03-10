@@ -237,7 +237,7 @@ export function EditorLayout({
         return {
           ...page,
           textBlocks: page.textBlocks.map((b) =>
-            b.id === id ? { ...b, text: newText, ...newProps } : b,
+            b.id === id ? { ...b, text: newText, ...newProps, isModified: true } : b,
           ),
         };
       });
@@ -254,10 +254,13 @@ export function EditorLayout({
         return {
           ...page,
           textBlocks: page.textBlocks.filter((b) => b.id !== id),
-          // Track deleted non-new blocks for save engine
           deletedTextIds: block && !block.isNew
             ? [...page.deletedTextIds, id]
             : page.deletedTextIds,
+          // Store original bounds so save engine can white-rect cover the deleted text
+          deletedTextBlocks: block && !block.isNew
+            ? [...page.deletedTextBlocks, { id: block.id, x: block.x, y: block.y, width: block.width, height: block.height }]
+            : page.deletedTextBlocks,
         };
       });
       setSelectedBlockId(null);
@@ -288,7 +291,7 @@ export function EditorLayout({
         return {
           ...page,
           textBlocks: page.textBlocks.map((b) =>
-            b.id === id ? { ...b, x, y } : b,
+            b.id === id ? { ...b, x, y, isModified: true } : b,
           ),
         };
       });
@@ -304,7 +307,7 @@ export function EditorLayout({
         return {
           ...page,
           textBlocks: page.textBlocks.map((b) =>
-            b.id === id ? { ...b, width, height } : b,
+            b.id === id ? { ...b, width, height, isModified: true } : b,
           ),
         };
       });
@@ -320,7 +323,7 @@ export function EditorLayout({
         return {
           ...page,
           textBlocks: page.textBlocks.map((b) =>
-            b.id === id ? { ...b, ...props } : b,
+            b.id === id ? { ...b, ...props, isModified: true } : b,
           ),
         };
       });
@@ -369,6 +372,9 @@ export function EditorLayout({
           deletedImageIds: block && !block.isNew
             ? [...page.deletedImageIds, id]
             : page.deletedImageIds,
+          deletedImageBlocks: block && !block.isNew
+            ? [...page.deletedImageBlocks, { id: block.id, x: block.x, y: block.y, width: block.width, height: block.height }]
+            : page.deletedImageBlocks,
         };
       });
       setSelectedBlockId(null);

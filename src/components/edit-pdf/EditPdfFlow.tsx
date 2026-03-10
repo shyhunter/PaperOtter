@@ -5,7 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp, Loader2, Save } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
@@ -21,6 +21,8 @@ function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): Edito
     imageBlocks: [],
     deletedTextIds: [],
     deletedImageIds: [],
+    deletedTextBlocks: [],
+    deletedImageBlocks: [],
   }));
 
   return {
@@ -176,15 +178,15 @@ export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
 
         {/* Step 1: Editor */}
         {step === 1 && pdfBytes && editorState && (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Save button bar */}
+          <div className="flex flex-1 flex-col overflow-hidden relative">
+            {/* Top info bar */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
               <span className="text-xs text-muted-foreground">
                 {fileName} -- {pageCount} page{pageCount !== 1 ? 's' : ''}
               </span>
-              <Button size="sm" onClick={handleSave}>
-                Save
-              </Button>
+              {editorState.isDirty && (
+                <span className="text-xs text-amber-600 font-medium">Unsaved changes</span>
+              )}
             </div>
             <EditorLayout
               pdfBytes={pdfBytes}
@@ -195,6 +197,15 @@ export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
               editorState={editorState}
               onEditorStateChange={handleEditorStateChange}
             />
+            {/* Floating Save button — prominent, always visible like iLovePDF */}
+            <Button
+              size="lg"
+              onClick={handleSave}
+              className="absolute bottom-6 right-6 z-50 shadow-lg px-6 py-3 text-base font-semibold gap-2 rounded-full"
+            >
+              <Save className="w-5 h-5" />
+              Save changes
+            </Button>
           </div>
         )}
 

@@ -28,6 +28,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -211,9 +212,11 @@ export function Dashboard() {
                 Your local document toolkit — private, fast, offline.
               </p>
             </div>
-            {/* Recent Folder */}
-            {recentDirs.length > 0 && (
-              <RecentDirsButton
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {/* Recent Folder */}
+              {recentDirs.length > 0 && (
+                <RecentDirsButton
                 dirs={recentDirs}
                 onFileSelected={(filePath) => {
                   const tools = getCompatibleTools(filePath);
@@ -224,9 +227,10 @@ export function Dashboard() {
                     setDroppedFiles([filePath]);
                     setCompatibleTools(tools);
                   }
-                }}
-              />
-            )}
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {/* Search bar */}
