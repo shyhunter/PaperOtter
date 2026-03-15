@@ -1,4 +1,4 @@
-/** Document/ebook conversion types — used by the Convert Document tool (Phase 13). */
+/** Document/ebook conversion types — used by the Convert Document tool. */
 
 export type ConvertFormat =
   | 'docx'
@@ -33,22 +33,38 @@ export interface ConvertResult {
   outputSize: number;
 }
 
-/** Tracks which engine handles a given conversion. */
-export type ConverterEngine = 'libreoffice' | 'calibre' | 'js';
+/** All converter backends the app can use. */
+export type ConverterEngine = 'textutil' | 'word' | 'libreoffice' | 'calibre' | 'pandoc';
 
-/** Formats handled by LibreOffice (system binary). */
-export const DOCUMENT_FORMATS: readonly ConvertFormat[] = [
-  'docx',
-  'doc',
-  'odt',
-  'txt',
-  'rtf',
-  'pdf',
+/** Which backends are available on this system (detected once at startup). */
+export interface ConverterAvailability {
+  textutil: boolean;
+  word: boolean;
+  libreoffice: boolean;
+  calibre: boolean;
+  pandoc: boolean;
+}
+
+/** Formats textutil can produce (macOS built-in). */
+export const TEXTUTIL_OUTPUT_FORMATS: readonly ConvertFormat[] = [
+  'txt', 'rtf', 'doc', 'docx', 'odt',
 ] as const;
 
-/** Formats handled by Calibre ebook-convert (system binary). */
-export const EBOOK_FORMATS: readonly ConvertFormat[] = [
-  'epub',
-  'mobi',
-  'azw3',
+/** Formats Word can produce. */
+export const WORD_OUTPUT_FORMATS: readonly ConvertFormat[] = [
+  'pdf', 'docx', 'doc', 'rtf', 'txt', 'odt',
 ] as const;
+
+/** Formats LibreOffice can produce. */
+export const LIBREOFFICE_OUTPUT_FORMATS: readonly ConvertFormat[] = [
+  'pdf', 'docx', 'doc', 'odt', 'txt', 'rtf',
+] as const;
+
+/** Formats Calibre can produce. */
+export const CALIBRE_OUTPUT_FORMATS: readonly ConvertFormat[] = [
+  'epub', 'mobi', 'azw3', 'pdf',
+] as const;
+
+// Keep for backward compat with existing imports
+export const DOCUMENT_FORMATS = LIBREOFFICE_OUTPUT_FORMATS;
+export const EBOOK_FORMATS = CALIBRE_OUTPUT_FORMATS;
