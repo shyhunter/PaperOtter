@@ -7,6 +7,77 @@ use image::codecs::png::{PngEncoder, CompressionType};
 use std::io::Cursor;
 use std::sync::Mutex;
 
+/// Validates a source file path from the frontend.
+/// Blocks null bytes, path traversal, and overly long paths.
+fn validate_source_path(path: &str) -> Result<(), String> {
+    if path.is_empty() {
+        return Err("File path is empty".to_string());
+    }
+    if path.contains('\0') {
+        return Err("Invalid file path".to_string());
+    }
+    if path.len() > 4096 {
+        return Err("File path is too long".to_string());
+    }
+    // Block path traversal
+    let canonical = std::path::Path::new(path);
+    for component in canonical.components() {
+        if let std::path::Component::ParentDir = component {
+            return Err("Path traversal not allowed".to_string());
+        }
+    }
+    // Validate filename characters
+    validate_filename_chars(path)?;
+    Ok(())
+}
+
+/// Allow-list approach: only permit alphanumeric (Unicode-aware),
+/// spaces, dots, hyphens, underscores, parens, brackets, and common safe punctuation.
+/// Rejects filenames with shell-dangerous characters (backticks, semicolons, dollar signs, quotes, pipes, etc.).
+fn validate_filename_chars(path: &str) -> Result<(), String> {
+    let filename = std::path::Path::new(path)
+        .file_name()
+        .and_then(|f| f.to_str())
+        .ok_or("Could not read filename")?;
+
+    let safe = filename.chars().all(|c| {
+        c.is_alphanumeric()
+            || " .-_()[]{}+=#@!,".contains(c)
+    });
+    if !safe {
+        return Err(
+            "This filename contains characters that aren't supported. \
+             Please rename the file and try again.".to_string()
+        );
+    }
+    Ok(())
+}
+
+/// Validates Calibre extra_args against a known-safe flag allow-list.
+const CALIBRE_ALLOWED_FLAGS: &[&str] = &[
+    "--base-font-size", "--font-size-mapping", "--margin-top",
+    "--margin-bottom", "--margin-left", "--margin-right",
+    "--change-justification", "--insert-blank-line",
+    "--line-height", "--input-encoding", "--output-profile",
+    "--extra-css",
+];
+
+fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
+    let mut i = 0;
+    while i < args.len() {
+        let flag = &args[i];
+        if flag.starts_with("--") {
+            // Extract just the flag name (before any =)
+            let flag_name = flag.split('=').next().unwrap_or(flag);
+            if !CALIBRE_ALLOWED_FLAGS.contains(&flag_name) {
+                return Err(format!("Unsupported conversion option: {}", flag_name));
+            }
+        }
+        i += 1;
+    }
+    Ok(())
+}
+
 /// Managed cancellation state — holds the running GS child process.
 /// cancel_processing() takes the child out and kills it, which signals
 /// compress_pdf's event loop to exit with a CANCELLED error.
@@ -98,6 +169,7 @@ fn rotate_image(
     output_format: String,
     quality: u8,
 ) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
     let source_bytes = std::fs::read(&source_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
@@ -173,6 +245,7 @@ fn process_image(
     resize_height: Option<u32>,
     resize_exact: bool,
 ) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
     let source_bytes = std::fs::read(&source_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
     let output_buf = encode_image(
@@ -208,6 +281,7 @@ async fn compress_pdf(
     source_path: String,
     preset: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     // Validate preset to prevent injection — only allow known GS presets
     let valid_presets = ["screen", "ebook", "printer", "prepress"];
     if !valid_presets.contains(&preset.as_str()) {
@@ -329,6 +403,7 @@ async fn protect_pdf(
     owner_password: String,
     user_password: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     if owner_password.is_empty() || user_password.is_empty() {
         return Err("Password cannot be empty".to_string());
     }
@@ -400,6 +475,7 @@ async fn unlock_pdf(
     source_path: String,
     password: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     if password.is_empty() {
         return Err("Password cannot be empty".to_string());
     }
@@ -468,6 +544,7 @@ async fn convert_pdfa(
     source_path: String,
     pdfa_level: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     // Validate pdfa_level — only allow known conformance levels
     let valid_levels = ["1", "2", "3"];
     if !valid_levels.contains(&pdfa_level.as_str()) {
@@ -571,6 +648,7 @@ async fn repair_pdf(
     app: tauri::AppHandle,
     source_path: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_repaired_{}.pdf",
         std::time::SystemTime::now()
@@ -661,6 +739,7 @@ async fn convert_with_libreoffice(
     source_path: String,
     output_format: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     // Validate output_format against allow-list
     let valid_formats = ["docx", "doc", "odt", "pdf", "txt", "rtf"];
     if !valid_formats.contains(&output_format.as_str()) {
@@ -838,6 +917,8 @@ async fn convert_with_calibre(
     output_format: String,
     extra_args: Vec<String>,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
+    validate_calibre_extra_args(&extra_args)?;
     // Validate output_format against allow-list
     let valid_formats = ["epub", "mobi", "azw3", "pdf"];
     if !valid_formats.contains(&output_format.as_str()) {
@@ -858,6 +939,7 @@ async fn convert_with_calibre(
         source_stem, output_format
     ));
     let output_path_str = output_path.to_string_lossy().to_string();
+    validate_filename_chars(&output_path_str)?;
 
     // Try ebook-convert; on macOS check Calibre app bundle path
     let ebook_convert_cmd = if cfg!(target_os = "macos") {
@@ -1022,6 +1104,7 @@ async fn convert_with_textutil(
 
     #[cfg(target_os = "macos")]
     {
+        validate_source_path(&source_path)?;
         let valid_formats = ["txt", "html", "rtf", "doc", "docx", "odt", "wordml"];
         if !valid_formats.contains(&output_format.as_str()) {
             return Err(format!(
@@ -1075,6 +1158,7 @@ async fn convert_with_word(
     source_path: String,
     output_format: String,
 ) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
     let convert_id = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -1186,6 +1270,7 @@ async fn convert_with_word(
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
+    validate_source_path(&path)?;
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("open")
