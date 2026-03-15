@@ -919,6 +919,270 @@ async fn convert_with_calibre(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
+/// Detect which document conversion tools are available on the user's system.
+/// Returns a JSON object with boolean flags for each backend.
+/// Cached in TypeScript after first call — runs detection once per app launch.
+#[tauri::command]
+async fn detect_converters() -> Result<String, String> {
+    let mut results = std::collections::HashMap::new();
+
+    // textutil — built-in on macOS, handles doc/docx/odt/rtf/txt
+    #[cfg(target_os = "macos")]
+    {
+        let textutil_ok = std::process::Command::new("textutil")
+            .arg("-info")
+            .arg("/dev/null")
+            .output()
+            .is_ok();
+        results.insert("textutil", textutil_ok);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        results.insert("textutil", false);
+    }
+
+    // Microsoft Word — check if installed
+    #[cfg(target_os = "macos")]
+    {
+        let word_ok = std::path::Path::new("/Applications/Microsoft Word.app").exists();
+        results.insert("word", word_ok);
+    }
+    #[cfg(target_os = "windows")]
+    {
+        // Check Windows registry or common install paths for Word
+        let word_ok = std::process::Command::new("powershell")
+            .args(["-Command", "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WINWORD.EXE' -ErrorAction SilentlyContinue) -ne $null"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "True")
+            .unwrap_or(false);
+        results.insert("word", word_ok);
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        results.insert("word", false);
+    }
+
+    // LibreOffice
+    #[cfg(target_os = "macos")]
+    {
+        let lo_ok = std::path::Path::new("/Applications/LibreOffice.app").exists();
+        results.insert("libreoffice", lo_ok);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let lo_ok = std::process::Command::new("soffice")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+        results.insert("libreoffice", lo_ok);
+    }
+
+    // Calibre ebook-convert
+    #[cfg(target_os = "macos")]
+    {
+        let cal_ok = std::path::Path::new("/Applications/calibre.app").exists();
+        results.insert("calibre", cal_ok);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let cal_ok = std::process::Command::new("ebook-convert")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+        results.insert("calibre", cal_ok);
+    }
+
+    // Pandoc
+    let pandoc_ok = std::process::Command::new("pandoc")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+    results.insert("pandoc", pandoc_ok);
+
+    serde_json::to_string(&results)
+        .map_err(|e| format!("Failed to serialize converter status: {}", e))
+}
+
+/// Convert a document using macOS built-in textutil.
+/// Supports: txt, html, rtf, doc, docx, odt, wordml, webarchive.
+/// Does NOT support PDF output — use another backend for PDF.
+#[tauri::command]
+async fn convert_with_textutil(
+    source_path: String,
+    output_format: String,
+) -> Result<tauri::ipc::Response, String> {
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (source_path, output_format);
+        return Err("textutil is only available on macOS".to_string());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let valid_formats = ["txt", "html", "rtf", "doc", "docx", "odt", "wordml"];
+        if !valid_formats.contains(&output_format.as_str()) {
+            return Err(format!(
+                "textutil does not support '{}' output. Supported: {}",
+                output_format,
+                valid_formats.join(", ")
+            ));
+        }
+
+        let convert_id = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis();
+        let source_stem = std::path::Path::new(&source_path)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or("Failed to extract source filename stem")?;
+        let output_path = std::env::temp_dir().join(format!(
+            "papercut_textutil_{}_{}.{}",
+            source_stem, convert_id, output_format
+        ));
+        let output_path_str = output_path.to_string_lossy().to_string();
+
+        let output = std::process::Command::new("textutil")
+            .args([
+                "-convert", &output_format,
+                "-output", &output_path_str,
+                &source_path,
+            ])
+            .output()
+            .map_err(|e| format!("textutil failed to start: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("textutil conversion failed: {}", stderr));
+        }
+
+        let bytes = std::fs::read(&output_path)
+            .map_err(|e| format!("Failed to read textutil output: {}", e))?;
+
+        let _ = std::fs::remove_file(&output_path);
+
+        Ok(tauri::ipc::Response::new(bytes))
+    }
+}
+
+/// Convert a document using Microsoft Word via AppleScript (macOS) or COM automation (Windows).
+/// Particularly useful for PDF output since textutil can't produce PDFs.
+#[tauri::command]
+async fn convert_with_word(
+    source_path: String,
+    output_format: String,
+) -> Result<tauri::ipc::Response, String> {
+    let convert_id = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    let source_stem = std::path::Path::new(&source_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Failed to extract source filename stem")?;
+    let output_path = std::env::temp_dir().join(format!(
+        "papercut_word_{}_{}.{}",
+        source_stem, convert_id, output_format
+    ));
+    let output_path_str = output_path.to_string_lossy().to_string();
+
+    #[cfg(target_os = "macos")]
+    {
+        // Map output format to Word for Mac save format constant
+        let (word_format, _) = match output_format.as_str() {
+            "pdf" => ("format PDF", "pdf"),
+            "docx" => ("format document", "docx"),
+            "doc" => ("format Microsoft Word 97-2004 document", "doc"),
+            "rtf" => ("format rtf format", "rtf"),
+            "txt" => ("format plain text", "txt"),
+            _ => return Err(format!("Word does not support '{}' output", output_format)),
+        };
+
+        let applescript = format!(
+            r#"
+            tell application "Microsoft Word"
+                activate
+                open POSIX file "{}"
+                set theDoc to active document
+                save as theDoc file name POSIX file "{}" file format {}
+                close theDoc saving no
+            end tell
+            "#,
+            source_path.replace('"', "\\\""),
+            output_path_str.replace('"', "\\\""),
+            word_format,
+        );
+
+        let output = std::process::Command::new("osascript")
+            .args(["-e", &applescript])
+            .output()
+            .map_err(|e| format!("Failed to run Word via AppleScript: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Word conversion failed: {}", stderr));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // Map output format to Word COM WdSaveFormat enum values
+        let wd_format = match output_format.as_str() {
+            "pdf" => "17",      // wdFormatPDF
+            "docx" => "16",     // wdFormatDocumentDefault
+            "doc" => "0",       // wdFormatDocument (97-2003)
+            "rtf" => "6",       // wdFormatRTF
+            "txt" => "2",       // wdFormatText
+            "odt" => "23",      // wdFormatOpenDocumentText
+            _ => return Err(format!("Word does not support '{}' output", output_format)),
+        };
+
+        let ps_script = format!(
+            r#"
+            $word = New-Object -ComObject Word.Application
+            $word.Visible = $false
+            try {{
+                $doc = $word.Documents.Open("{}")
+                $doc.SaveAs2([ref]"{}", [ref]{})
+                $doc.Close([ref]0)
+            }} finally {{
+                $word.Quit()
+                [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null
+            }}
+            "#,
+            source_path.replace('\\', "\\\\").replace('"', "`\""),
+            output_path_str.replace('\\', "\\\\").replace('"', "`\""),
+            wd_format,
+        );
+
+        let output = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &ps_script])
+            .output()
+            .map_err(|e| format!("Failed to run Word via PowerShell: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Word conversion failed: {}", stderr));
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let _ = output_path_str;
+        return Err("Word automation is not supported on this platform".to_string());
+    }
+
+    let bytes = std::fs::read(&output_path)
+        .map_err(|e| format!("Failed to read Word output: {}", e))?;
+
+    let _ = std::fs::remove_file(&output_path);
+
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
@@ -960,7 +1224,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, reveal_in_finder]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, detect_converters, reveal_in_finder]);
 
     // E2E automation plugin — debug builds only, never ships in release
     #[cfg(debug_assertions)]

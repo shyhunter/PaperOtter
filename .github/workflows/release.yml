@@ -1,0 +1,100 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            gs_binary: gs-aarch64-apple-darwin
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            gs_binary: gs-x86_64-apple-darwin
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            gs_binary: gs-x86_64-pc-windows-msvc.exe
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # Download Ghostscript sidecar for each platform
+      - name: Download Ghostscript (macOS ARM64)
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: echo "Ghostscript binary already in repo for this target"
+
+      - name: Download Ghostscript (macOS x86_64)
+        if: matrix.target == 'x86_64-apple-darwin'
+        run: |
+          brew install ghostscript
+          cp $(which gs) src-tauri/binaries/gs-x86_64-apple-darwin
+          chmod +x src-tauri/binaries/gs-x86_64-apple-darwin
+
+      - name: Download Ghostscript (Windows)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        shell: powershell
+        run: |
+          # Download Ghostscript installer (silent install)
+          $gsVersion = "10.05.0"
+          $gsUrl = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10050/gs10050w64.exe"
+          Invoke-WebRequest -Uri $gsUrl -OutFile gs-installer.exe
+          Start-Process -Wait -FilePath .\gs-installer.exe -ArgumentList '/S'
+          # Find and copy gswin64c.exe as the sidecar
+          $gsPath = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" | Select-Object -First 1
+          if ($gsPath) {
+            Copy-Item $gsPath.FullName "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
+          } else {
+            Write-Error "Ghostscript not found after installation"
+            exit 1
+          }
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Papercut ${{ github.ref_name }}'
+          releaseBody: |
+            Download the installer for your platform:
+            - **macOS ARM (M1/M2/M3/M4):** `.dmg` file (aarch64)
+            - **macOS Intel:** `.dmg` file (x86_64)
+            - **Windows:** `.msi` or `.exe` installer
+
+            All builds include Ghostscript bundled — no additional installation needed for PDF tools.
+            LibreOffice and Calibre are optional (for document/ebook conversion).
+          releaseDraft: true
+          prerelease: true
+          args: --target ${{ matrix.target }}

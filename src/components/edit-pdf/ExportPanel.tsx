@@ -13,12 +13,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   getAvailableOutputFormats,
-  checkSidecarAvailability,
-  getEngineForFormat,
+  detectConverters,
+  getBestEngine,
+  hasAnyConverter,
   convertDocument,
 } from '@/lib/documentConverter';
 import { applyAllEdits } from '@/lib/pdfEditor';
-import type { ConvertFormat, ConvertOptions, EpubLayout } from '@/types/converter';
+import type { ConvertFormat, ConvertOptions, ConverterAvailability, EpubLayout } from '@/types/converter';
 import type { PageEditState } from '@/types/editor';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
@@ -68,9 +69,8 @@ export function ExportPanel({
   isDirty,
   onExportComplete,
 }: ExportPanelProps) {
-  const availableFormats = getAvailableOutputFormats('pdf');
+  const [availability, setAvailability] = useState<ConverterAvailability | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<ConvertFormat | null>(null);
-  const [sidecarStatus, setSidecarStatus] = useState<{ libreoffice: boolean; calibre: boolean } | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -83,15 +83,14 @@ export function ExportPanel({
   const [lineSpacing, setLineSpacing] = useState(1.15);
   const [epubLayout, setEpubLayout] = useState<EpubLayout>('reflowable');
 
-  // Check sidecar availability on mount
   useEffect(() => {
-    checkSidecarAvailability().then(setSidecarStatus);
+    detectConverters().then(setAvailability);
   }, []);
 
-  const neededEngine = selectedFormat ? getEngineForFormat(selectedFormat) : null;
-  const engineAvailable = !neededEngine || !sidecarStatus
-    ? true
-    : neededEngine === 'libreoffice' ? sidecarStatus.libreoffice : sidecarStatus.calibre;
+  // Only show formats this system can actually produce
+  const availableFormats = getAvailableOutputFormats('pdf', availability ?? undefined);
+
+  const canExport = selectedFormat && availability && getBestEngine(selectedFormat, availability) !== null;
 
   const handleExport = useCallback(async () => {
     if (!selectedFormat) return;
@@ -158,7 +157,7 @@ export function ExportPanel({
         Export / Convert
       </h4>
 
-      {/* Format selector grid */}
+      {/* Format selector grid — only formats this system can produce */}
       <div className="grid grid-cols-3 gap-1.5">
         {availableFormats.map((fmt) => (
           <button
@@ -268,14 +267,12 @@ export function ExportPanel({
         </div>
       )}
 
-      {/* Sidecar availability warning */}
-      {selectedFormat && !engineAvailable && (
+      {/* No converter warning — only if nothing at all is available */}
+      {availability && !hasAnyConverter(availability) && (
         <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md p-2">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>
-            {neededEngine === 'libreoffice'
-              ? 'LibreOffice is required. Install from libreoffice.org'
-              : 'Calibre is required. Install from calibre-ebook.com'}
+            No document converter found. Install any converter (Microsoft Word, LibreOffice, etc.) to enable export.
           </span>
         </div>
       )}
@@ -284,7 +281,7 @@ export function ExportPanel({
       <Button
         size="sm"
         className="w-full"
-        disabled={!selectedFormat || !engineAvailable || isConverting}
+        disabled={!canExport || isConverting}
         onClick={handleExport}
       >
         {isConverting ? (

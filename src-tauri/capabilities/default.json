@@ -28,6 +28,9 @@
       "identifier": "shell:allow-execute",
       "allow": [
         { "name": "gs", "sidecar": true },
+        { "name": "textutil", "sidecar": false },
+        { "name": "osascript", "sidecar": false },
+        { "name": "powershell", "sidecar": false },
         { "name": "soffice", "sidecar": false },
         { "name": "/Applications/LibreOffice.app/Contents/MacOS/soffice", "sidecar": false },
         { "name": "ebook-convert", "sidecar": false },
