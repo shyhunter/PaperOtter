@@ -38,14 +38,14 @@ describe('getExtension', () => {
 // ─── isSupportedFile ─────────────────────────────────────────────────────────
 
 describe('isSupportedFile', () => {
-  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp', 'scan.tiff', 'scan.tif', 'diagram.bmp', 'animation.gif'])(
+  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp', 'scan.tiff', 'scan.tif', 'diagram.bmp', 'animation.gif', 'report.docx'])(
     'accepts supported file: %s',
     (path) => {
       expect(isSupportedFile(path)).toBe(true);
     },
   );
 
-  it.each(['report.docx', 'spreadsheet.xlsx', 'archive.zip', 'video.mp4', 'Makefile'])(
+  it.each(['spreadsheet.xlsx', 'archive.zip', 'video.mp4', 'Makefile'])(
     'rejects unsupported file: %s',
     (path) => {
       expect(isSupportedFile(path)).toBe(false);
@@ -106,8 +106,11 @@ describe('detectFormat', () => {
     expect(detectFormat('animation.gif')).toBe('image');
   });
 
+  it('detects document format for docx', () => {
+    expect(detectFormat('document.docx')).toBe('document');
+  });
+
   it('returns null for unsupported extensions', () => {
-    expect(detectFormat('document.docx')).toBeNull();
     expect(detectFormat('archive.zip')).toBeNull();
     expect(detectFormat('Makefile')).toBeNull();
   });
