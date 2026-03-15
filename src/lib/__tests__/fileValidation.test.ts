@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes } from '@/lib/fileValidation';
+import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE } from '@/lib/fileValidation';
 
 // ─── getExtension ────────────────────────────────────────────────────────────
 
@@ -139,6 +139,59 @@ describe('getFileName', () => {
   it('handles trailing slash gracefully (returns empty string, not a crash)', () => {
     // /path/to/dir/ → last segment is '' after split
     expect(getFileName('/some/dir/')).toBe('');
+  });
+});
+
+// ─── isFilenameSafe ───────────────────────────────────────────────────────────
+
+describe('isFilenameSafe', () => {
+  it('accepts normal filenames', () => {
+    expect(isFilenameSafe('document.pdf')).toBe(true);
+    expect(isFilenameSafe('my report (final).docx')).toBe(true);
+    expect(isFilenameSafe('photo-2024.jpg')).toBe(true);
+    expect(isFilenameSafe('file_name.txt')).toBe(true);
+  });
+
+  it('accepts Unicode filenames', () => {
+    expect(isFilenameSafe('resume.pdf')).toBe(true);
+  });
+
+  it('rejects filenames with backticks', () => {
+    expect(isFilenameSafe('file`name.pdf')).toBe(false);
+  });
+
+  it('rejects filenames with semicolons', () => {
+    expect(isFilenameSafe('file;name.pdf')).toBe(false);
+  });
+
+  it('rejects filenames with dollar signs', () => {
+    expect(isFilenameSafe('file$name.pdf')).toBe(false);
+  });
+
+  it('rejects filenames with pipe characters', () => {
+    expect(isFilenameSafe('file|name.pdf')).toBe(false);
+  });
+
+  it('rejects filenames with ampersands', () => {
+    expect(isFilenameSafe('file&name.pdf')).toBe(false);
+  });
+
+  it('rejects filenames with single quotes', () => {
+    expect(isFilenameSafe("file'name.pdf")).toBe(false);
+  });
+
+  it('rejects filenames with double quotes', () => {
+    expect(isFilenameSafe('file"name.pdf')).toBe(false);
+  });
+
+  it('provides correct error message', () => {
+    expect(UNSAFE_FILENAME_MESSAGE).toContain("aren't supported");
+    expect(UNSAFE_FILENAME_MESSAGE).toContain("rename the file");
+  });
+
+  it('extracts filename from full path', () => {
+    expect(isFilenameSafe('/Users/test/safe-file.pdf')).toBe(true);
+    expect(isFilenameSafe('/Users/test/bad;file.pdf')).toBe(false);
   });
 });
 
