@@ -6,6 +6,7 @@ use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::{PngEncoder, CompressionType};
 use std::io::Cursor;
 use std::sync::Mutex;
+use uuid::Uuid;
 
 /// Validates a source file path from the frontend.
 /// Blocks null bytes, path traversal, and overly long paths.
@@ -295,10 +296,7 @@ async fn compress_pdf(
     // Write output to a temp file (GS requires a file output path)
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_compressed_{}.pdf",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
@@ -410,10 +408,7 @@ async fn protect_pdf(
 
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_protected_{}.pdf",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
@@ -482,10 +477,7 @@ async fn unlock_pdf(
 
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_unlocked_{}.pdf",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
@@ -557,20 +549,14 @@ async fn convert_pdfa(
 
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_pdfa_{}.pdf",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
     // Generate a minimal PDFA_def.ps file with required pdfmark metadata
     let pdfa_def_path = std::env::temp_dir().join(format!(
         "papercut_PDFA_def_{}.ps",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let pdfa_def_content = format!(
         r#"%!PS
@@ -651,10 +637,7 @@ async fn repair_pdf(
     validate_source_path(&source_path)?;
     let tmp_path = std::env::temp_dir().join(format!(
         "papercut_repaired_{}.pdf",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .subsec_nanos()
+        Uuid::new_v4()
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
@@ -751,10 +734,7 @@ async fn convert_with_libreoffice(
     }
 
     // Use a unique temp directory per conversion to avoid stale file conflicts
-    let convert_id = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis();
+    let convert_id = Uuid::new_v4();
     let tmp_dir = std::env::temp_dir().join(format!("papercut_convert_{}", convert_id));
     std::fs::create_dir_all(&tmp_dir)
         .map_err(|e| format!("Failed to create temp dir: {}", e))?;
@@ -834,8 +814,9 @@ async fn convert_with_libreoffice(
         match event {
             CommandEvent::Terminated(payload) => {
                 if payload.code != Some(0) {
-                    // Clean up temp dir
+                    // Clean up temp dir and LO profile
                     let _ = std::fs::remove_dir_all(&tmp_dir);
+                    let _ = std::fs::remove_dir_all(&lo_profile_dir);
                     let all_output = [
                         stderr_lines.join("\n"),
                         stdout_lines.join("\n"),
@@ -856,6 +837,7 @@ async fn convert_with_libreoffice(
             }
             CommandEvent::Error(e) => {
                 let _ = std::fs::remove_dir_all(&tmp_dir);
+                let _ = std::fs::remove_dir_all(&lo_profile_dir);
                 return Err(format!("LibreOffice error: {}", e));
             }
             _ => {}
@@ -904,6 +886,7 @@ async fn convert_with_libreoffice(
 
     // Clean up temp files
     let _ = std::fs::remove_dir_all(&tmp_dir);
+    let _ = std::fs::remove_dir_all(&lo_profile_dir);
 
     Ok(tauri::ipc::Response::new(bytes))
 }
@@ -929,17 +912,12 @@ async fn convert_with_calibre(
         ));
     }
 
-    // Construct temp output path: temp_dir + source stem + new extension
-    let source_stem = std::path::Path::new(&source_path)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .ok_or("Failed to extract source filename stem")?;
+    // Construct temp output path: temp_dir + UUID + new extension
     let output_path = std::env::temp_dir().join(format!(
         "papercut_calibre_{}.{}",
-        source_stem, output_format
+        Uuid::new_v4(), output_format
     ));
     let output_path_str = output_path.to_string_lossy().to_string();
-    validate_filename_chars(&output_path_str)?;
 
     // Try ebook-convert; on macOS check Calibre app bundle path
     let ebook_convert_cmd = if cfg!(target_os = "macos") {
@@ -1114,17 +1092,9 @@ async fn convert_with_textutil(
             ));
         }
 
-        let convert_id = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis();
-        let source_stem = std::path::Path::new(&source_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .ok_or("Failed to extract source filename stem")?;
         let output_path = std::env::temp_dir().join(format!(
-            "papercut_textutil_{}_{}.{}",
-            source_stem, convert_id, output_format
+            "papercut_textutil_{}.{}",
+            Uuid::new_v4(), output_format
         ));
         let output_path_str = output_path.to_string_lossy().to_string();
 
@@ -1159,17 +1129,9 @@ async fn convert_with_word(
     output_format: String,
 ) -> Result<tauri::ipc::Response, String> {
     validate_source_path(&source_path)?;
-    let convert_id = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis();
-    let source_stem = std::path::Path::new(&source_path)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .ok_or("Failed to extract source filename stem")?;
     let output_path = std::env::temp_dir().join(format!(
-        "papercut_word_{}_{}.{}",
-        source_stem, convert_id, output_format
+        "papercut_word_{}.{}",
+        Uuid::new_v4(), output_format
     ));
     let output_path_str = output_path.to_string_lossy().to_string();
 
@@ -1300,6 +1262,35 @@ async fn reveal_in_finder(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Sweep orphan temp files from crashed sessions.
+/// Deletes any file/directory in the system temp dir matching "papercut_*"
+/// that was last modified more than 1 hour ago.
+fn sweep_papercut_temp_files() {
+    let temp = std::env::temp_dir();
+    let threshold = std::time::Duration::from_secs(3600); // 1 hour
+
+    if let Ok(entries) = std::fs::read_dir(&temp) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with("papercut_") {
+                if let Ok(meta) = entry.metadata() {
+                    if let Ok(modified) = meta.modified() {
+                        if modified.elapsed().unwrap_or_default() > threshold {
+                            let path = entry.path();
+                            if path.is_dir() {
+                                let _ = std::fs::remove_dir_all(&path);
+                            } else {
+                                let _ = std::fs::remove_file(&path);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -1316,6 +1307,10 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_webdriver_automation::init());
 
     builder
+        .setup(|_app| {
+            sweep_papercut_temp_files();
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
