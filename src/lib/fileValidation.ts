@@ -42,3 +42,20 @@ export function detectFormat(filePath: string): SupportedFormat | null {
 export function getFileName(filePath: string): string {
   return filePath.replace(/\\/g, '/').split('/').pop() ?? filePath;
 }
+
+/**
+ * Validates that a filename contains only safe characters.
+ * Mirrors the Rust-side validate_filename_chars() allow-list.
+ * Returns true if safe, false if the filename contains dangerous characters.
+ */
+export function isFilenameSafe(filePath: string): boolean {
+  const filename = filePath.replace(/\\/g, '/').split('/').pop() ?? '';
+  if (!filename) return false;
+
+  const SAFE_CHARS = /^[a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF .\-_()[\]{}+=#@!,]+$/;
+  return SAFE_CHARS.test(filename);
+}
+
+/** User-facing error message for unsafe filenames (matches Rust-side message). */
+export const UNSAFE_FILENAME_MESSAGE =
+  "This filename contains characters that aren't supported. Please rename the file and try again.";

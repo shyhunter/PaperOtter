@@ -40,6 +40,43 @@ describe('Privacy — Tauri capability config', () => {
   });
 });
 
+// ─── CSP configuration assertions ────────────────────────────────────────────
+
+describe('Privacy — CSP configuration', () => {
+  let tauriConf: { app: { security: { csp: string | null } } };
+
+  beforeAll(() => {
+    const confPath = path.join(__dirname, '../../../src-tauri/tauri.conf.json');
+    tauriConf = JSON.parse(readFileSync(confPath, 'utf-8'));
+  });
+
+  it('CSP is not null', () => {
+    expect(tauriConf.app.security.csp).not.toBeNull();
+  });
+
+  it('CSP blocks inline scripts', () => {
+    const csp = tauriConf.app.security.csp!;
+    expect(csp).toContain("script-src 'self'");
+    // unsafe-inline must NOT appear in script-src (it IS expected in style-src for Tailwind)
+    const scriptSrc = csp.match(/script-src[^;]*/)?.[0] ?? '';
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
+  });
+
+  it('CSP blocks external connections', () => {
+    const csp = tauriConf.app.security.csp!;
+    // Extract connect-src directive and remove the Tauri IPC URL (http://ipc.localhost)
+    // which is required for Tauri's internal communication, not an external connection
+    const connectSrc = csp.match(/connect-src[^;]*/)?.[0] ?? '';
+    const withoutIpc = connectSrc.replace(/http:\/\/ipc\.localhost/g, '');
+    expect(withoutIpc).not.toMatch(/https?:/);
+  });
+
+  it('CSP allows inline styles for Tailwind', () => {
+    const csp = tauriConf.app.security.csp!;
+    expect(csp).toMatch(/style-src[^;]*'unsafe-inline'/);
+  });
+});
+
 // ─── Runtime fetch spy ────────────────────────────────────────────────────────
 //
 // Stubs window.fetch before running processImage.  Because processImage

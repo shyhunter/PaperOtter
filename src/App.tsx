@@ -18,6 +18,7 @@ import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { PrivacyFooter } from '@/components/PrivacyFooter';
+import { FirstLaunchBanner } from '@/components/FirstLaunchBanner';
 import { MergeFlow } from '@/components/merge/MergeFlow';
 import { SplitFlow } from '@/components/split/SplitFlow';
 import { RotateFlow } from '@/components/rotate/RotateFlow';
@@ -668,6 +669,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
+      {activeTool === null && <FirstLaunchBanner />}
       {activeTool === null ? <Dashboard /> : <ToolFlow />}
       <PrivacyFooter />
       <Toaster position="bottom-center" />
