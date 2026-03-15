@@ -438,12 +438,7 @@ async fn protect_pdf(
             CommandEvent::Terminated(payload) => {
                 if payload.code != Some(0) {
                     let _ = std::fs::remove_file(&tmp_path);
-                    let stderr = stderr_lines.join("\n");
-                    return Err(format!(
-                        "Ghostscript failed (exit {}): {}",
-                        payload.code.unwrap_or(-1),
-                        stderr
-                    ));
+                    return Err("PDF password protection failed. The file may be corrupted or unsupported.".to_string());
                 }
                 break;
             }
@@ -452,7 +447,7 @@ async fn protect_pdf(
             }
             CommandEvent::Error(e) => {
                 let _ = std::fs::remove_file(&tmp_path);
-                return Err(format!("Ghostscript error: {}", e));
+                return Err(format!("Ghostscript error: {}", redact_gs_passwords(&e)));
             }
             _ => {}
         }
@@ -504,12 +499,7 @@ async fn unlock_pdf(
             CommandEvent::Terminated(payload) => {
                 if payload.code != Some(0) {
                     let _ = std::fs::remove_file(&tmp_path);
-                    let stderr = stderr_lines.join("\n");
-                    return Err(format!(
-                        "Ghostscript failed (exit {}). Wrong password or corrupted PDF. {}",
-                        payload.code.unwrap_or(-1),
-                        stderr
-                    ));
+                    return Err("PDF unlock failed. The password may be incorrect or the file may be corrupted.".to_string());
                 }
                 break;
             }
@@ -518,7 +508,7 @@ async fn unlock_pdf(
             }
             CommandEvent::Error(e) => {
                 let _ = std::fs::remove_file(&tmp_path);
-                return Err(format!("Ghostscript error: {}", e));
+                return Err(format!("Ghostscript error: {}", redact_gs_passwords(&e)));
             }
             _ => {}
         }
@@ -1260,6 +1250,24 @@ async fn reveal_in_finder(path: String) -> Result<(), String> {
             .map_err(|e| format!("Failed to open file manager: {}", e))?;
     }
     Ok(())
+}
+
+/// Redact any password values from a Ghostscript error/stderr string.
+/// Replaces the value after password-related flags with [REDACTED].
+fn redact_gs_passwords(stderr: &str) -> String {
+    let mut result = stderr.to_string();
+    for flag in &["-sOwnerPassword=", "-sUserPassword=", "-sPDFPassword="] {
+        while let Some(start) = result.find(flag) {
+            let value_start = start + flag.len();
+            // Find end of value (next space or end of string)
+            let value_end = result[value_start..]
+                .find(' ')
+                .map(|i| value_start + i)
+                .unwrap_or(result.len());
+            result.replace_range(value_start..value_end, "[REDACTED]");
+        }
+    }
+    result
 }
 
 /// Sweep orphan temp files from crashed sessions.
