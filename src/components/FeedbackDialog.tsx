@@ -6,8 +6,8 @@ import { readFile } from '@tauri-apps/plugin-fs';
 
 const store = new LazyStore('papercut-settings.json');
 const GITHUB_TOKEN_KEY = 'github-pat';
-const PROJECT_NUMBER = 9;
-const PROJECT_OWNER = 'shyhunter';
+const REPO_OWNER = 'shyhunter';
+const REPO_NAME = 'papercut';
 
 type Priority = 'high' | 'medium' | 'low';
 type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error' | 'no-token';
@@ -36,47 +36,42 @@ async function fileToBase64DataUrl(filePath: string): Promise<string> {
   return `data:${mime};base64,${btoa(binary)}`;
 }
 
-/** Get project node ID via GraphQL */
-async function getProjectId(token: string): Promise<string> {
-  const query = `query { user(login: "${PROJECT_OWNER}") { projectV2(number: ${PROJECT_NUMBER}) { id } } }`;
-  const res = await fetch('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query }),
-  });
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-  return json.data.user.projectV2.id;
-}
+const PRIORITY_MAP: Record<Priority, string> = {
+  high: 'priority: high',
+  medium: 'priority: medium',
+  low: 'priority: low',
+};
 
-/** Create draft issue in GitHub Project */
-async function createDraftIssue(
+/** Create a GitHub issue via REST API (fine-grained PAT with Issues:write on the repo) */
+async function createGitHubIssue(
   token: string,
-  projectId: string,
   title: string,
   body: string,
-): Promise<void> {
-  const mutation = `mutation($projectId: ID!, $title: String!, $body: String!) {
-    addProjectV2DraftIssue(input: { projectId: $projectId, title: $title, body: $body }) {
-      projectItem { id }
-    }
-  }`;
-  const res = await fetch('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  priority: Priority,
+): Promise<string> {
+  const labels = ['feedback', PRIORITY_MAP[priority]];
+
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify({ title, body, labels }),
     },
-    body: JSON.stringify({
-      query: mutation,
-      variables: { projectId, title, body },
-    }),
-  });
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(err.message || `GitHub API error: ${res.status}`);
+  }
+
   const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0].message);
+  return json.html_url;
 }
 
 interface FeedbackDialogProps {
@@ -107,8 +102,12 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     store
       .get<string>(GITHUB_TOKEN_KEY)
       .then((val) => {
-        if (val) setToken(val);
-        else setShowTokenInput(true);
+        if (val) {
+          setToken(val);
+          setShowTokenInput(false);
+        } else {
+          setShowTokenInput(true);
+        }
       })
       .catch(() => setShowTokenInput(true));
   }, [open]);
@@ -176,8 +175,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
 
       const body = parts.join('\n');
 
-      const projectId = await getProjectId(currentToken);
-      await createDraftIssue(currentToken, projectId, `[${priority.toUpperCase()}] ${title}`, body);
+      await createGitHubIssue(currentToken, `[${priority.toUpperCase()}] ${title}`, body, priority);
 
       setStatus('success');
       // Reset after delay
@@ -243,18 +241,18 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           </button>
         </div>
 
-        {/* Token setup (only shown when no token) */}
+        {/* Token setup (only shown when no token saved) */}
         {showTokenInput && (
           <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
             <p className="text-xs text-muted-foreground">
-              One-time setup: enter a GitHub Personal Access Token with <code className="text-foreground">project</code> scope.
+              One-time setup: enter a GitHub fine-grained token with <strong className="text-foreground">Issues: Read &amp; Write</strong> on <code className="text-foreground">{REPO_OWNER}/{REPO_NAME}</code>.
             </p>
             <div className="flex gap-2">
               <input
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="ghp_..."
+                placeholder="github_pat_..."
                 className="flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
               />
               <button
