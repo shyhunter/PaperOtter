@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
+import { SplashScreen } from '@/components/SplashScreen';
 import { LandingCard } from '@/components/LandingCard';
 import { ToolHeader } from '@/components/ToolHeader';
 import { ConfigureStep } from '@/components/ConfigureStep';
@@ -678,9 +679,12 @@ function AppContent() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <AppErrorBoundary>
       <ToolProvider>
+        {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
         <AppContent />
       </ToolProvider>
     </AppErrorBoundary>
