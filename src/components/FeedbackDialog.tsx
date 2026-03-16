@@ -241,7 +241,18 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           </button>
         </div>
 
-        {/* Token setup (only shown when no token saved) */}
+        {/* Change token link (shown when token exists but input is hidden) */}
+        {!showTokenInput && token && (
+          <button
+            type="button"
+            onClick={() => setShowTokenInput(true)}
+            className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          >
+            Change GitHub token
+          </button>
+        )}
+
+        {/* Token setup */}
         {showTokenInput && (
           <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
             <p className="text-xs text-muted-foreground">
