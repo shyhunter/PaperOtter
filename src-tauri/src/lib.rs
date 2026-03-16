@@ -79,6 +79,66 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
+/// Resolve the system-installed Ghostscript binary path.
+/// - macOS/Linux: tries `which gs`
+/// - Windows: tries `where gswin64c` then `where gs`
+/// Returns the binary name (not full path) suitable for `app.shell().command()`.
+fn find_ghostscript() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        // Try gswin64c first (standard Windows GS name), then gs
+        let candidates = ["gswin64c", "gswin32c", "gs"];
+        for candidate in candidates {
+            let result = std::process::Command::new("where")
+                .arg(candidate)
+                .output();
+            if let Ok(output) = result {
+                if output.status.success() {
+                    return Ok(candidate.to_string());
+                }
+            }
+        }
+        return Err(
+            "Ghostscript is not installed. Install it from https://ghostscript.com/releases/gsdnld.html and ensure it is in your PATH.".to_string()
+        );
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // macOS / Linux: check for gs in PATH
+        let result = std::process::Command::new("which")
+            .arg("gs")
+            .output();
+        if let Ok(output) = result {
+            if output.status.success() {
+                return Ok("gs".to_string());
+            }
+        }
+
+        // On macOS, also check Homebrew common paths
+        #[cfg(target_os = "macos")]
+        {
+            let brew_paths = [
+                "/opt/homebrew/bin/gs",
+                "/usr/local/bin/gs",
+            ];
+            for path in brew_paths {
+                if std::path::Path::new(path).exists() {
+                    return Ok(path.to_string());
+                }
+            }
+        }
+
+        Err(
+            if cfg!(target_os = "macos") {
+                "Ghostscript is not installed. Install it with: brew install ghostscript".to_string()
+            } else {
+                "Ghostscript is not installed. Install it with your package manager (e.g. sudo apt install ghostscript).".to_string()
+            }
+        )
+    }
+}
+
 /// Managed cancellation state — holds the running GS child process.
 /// cancel_processing() takes the child out and kills it, which signals
 /// compress_pdf's event loop to exit with a CANCELLED error.
@@ -300,11 +360,13 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    // Build and spawn the GS sidecar process
+    // Resolve system-installed Ghostscript binary
+    let gs_bin = find_ghostscript()?;
+
+    // Build and spawn the GS process
     let (mut rx, child) = app
         .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .command(&gs_bin)
         .args([
             "-sDEVICE=pdfwrite",
             "-dNOPAUSE",
@@ -315,7 +377,7 @@ async fn compress_pdf(
             &source_path,
         ])
         .spawn()
-        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
 
     // Store the child so cancel_processing() can kill it
     {
@@ -412,10 +474,11 @@ async fn protect_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
+    let gs_bin = find_ghostscript()?;
+
     let (mut rx, _child) = app
         .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .command(&gs_bin)
         .args([
             "-sDEVICE=pdfwrite",
             "-dNOPAUSE",
@@ -429,7 +492,7 @@ async fn protect_pdf(
             &source_path,
         ])
         .spawn()
-        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -476,10 +539,11 @@ async fn unlock_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
+    let gs_bin = find_ghostscript()?;
+
     let (mut rx, _child) = app
         .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .command(&gs_bin)
         .args([
             "-sDEVICE=pdfwrite",
             "-dNOPAUSE",
@@ -490,7 +554,7 @@ async fn unlock_pdf(
             &source_path,
         ])
         .spawn()
-        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -564,10 +628,11 @@ async fn convert_pdfa(
     std::fs::write(&pdfa_def_path, &pdfa_def_content)
         .map_err(|e| format!("Failed to write PDFA_def.ps: {}", e))?;
 
+    let gs_bin = find_ghostscript()?;
+
     let (mut rx, _child) = app
         .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .command(&gs_bin)
         .args([
             "-sDEVICE=pdfwrite",
             "-dNOPAUSE",
@@ -581,7 +646,7 @@ async fn convert_pdfa(
             &source_path,
         ])
         .spawn()
-        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -631,10 +696,11 @@ async fn repair_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
+    let gs_bin = find_ghostscript()?;
+
     let (mut rx, _child) = app
         .shell()
-        .sidecar("gs")
-        .map_err(|e| format!("Failed to locate Ghostscript sidecar: {}", e))?
+        .command(&gs_bin)
         .args([
             "-sDEVICE=pdfwrite",
             "-dNOPAUSE",
@@ -644,7 +710,7 @@ async fn repair_pdf(
             &source_path,
         ])
         .spawn()
-        .map_err(|e| format!("Ghostscript spawn failed: {}", e))?;
+        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
 
     // Wait for completion — handle partial success per user decision
     let mut exit_code: Option<i32> = None;
@@ -1051,6 +1117,10 @@ async fn detect_converters() -> Result<String, String> {
         .map(|o| o.status.success())
         .unwrap_or(false);
     results.insert("pandoc", pandoc_ok);
+
+    // Ghostscript (system-installed, not bundled)
+    let gs_ok = find_ghostscript().is_ok();
+    results.insert("ghostscript", gs_ok);
 
     serde_json::to_string(&results)
         .map_err(|e| format!("Failed to serialize converter status: {}", e))
