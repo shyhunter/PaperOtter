@@ -83,7 +83,8 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
 /// - macOS/Linux: tries `which gs`
 /// - Windows: tries `where gswin64c` then `where gs`
 /// Returns the binary name (not full path) suitable for `app.shell().command()`.
-fn find_ghostscript() -> Result<String, String> {
+/// Used as fallback when sidecar is not available, and by check_capabilities.
+fn find_system_ghostscript() -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
         // Try gswin64c first (standard Windows GS name), then gs
@@ -137,6 +138,43 @@ fn find_ghostscript() -> Result<String, String> {
             }
         )
     }
+}
+
+/// Spawn a Ghostscript process with the given arguments.
+/// Tries the bundled sidecar binary first (`binaries/gs`), then falls back
+/// to system-installed GS via PATH lookup.
+fn spawn_gs(
+    app: &tauri::AppHandle,
+    args: Vec<String>,
+) -> Result<(tauri::async_runtime::Receiver<CommandEvent>, CommandChild), String> {
+    // 1. Try bundled sidecar first
+    if let Ok(sidecar_cmd) = app.shell().sidecar("gs") {
+        if let Ok(result) = sidecar_cmd.args(&args).spawn() {
+            return Ok(result);
+        }
+    }
+
+    // 2. Fallback: system-installed GS via PATH
+    let gs_bin = find_system_ghostscript()?;
+    app.shell()
+        .command(&gs_bin)
+        .args(&args)
+        .spawn()
+        .map_err(|e| format!(
+            "Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}",
+            e
+        ))
+}
+
+/// Check if Ghostscript is available (sidecar or system).
+/// Used by detect_converters to report GS availability.
+fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
+    // Check sidecar availability — if sidecar command can be created, the binary exists
+    if app.shell().sidecar("gs").is_ok() {
+        return true;
+    }
+    // Fallback to system PATH
+    find_system_ghostscript().is_ok()
 }
 
 /// Managed cancellation state — holds the running GS child process.
@@ -360,24 +398,16 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    // Resolve system-installed Ghostscript binary
-    let gs_bin = find_ghostscript()?;
-
-    // Build and spawn the GS process
-    let (mut rx, child) = app
-        .shell()
-        .command(&gs_bin)
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-dPDFSETTINGS=/{}", preset),
-            &format!("-sOutputFile={}", tmp_path_str),
-            &source_path,
-        ])
-        .spawn()
-        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
+    // Spawn GS process (sidecar first, then system PATH fallback)
+    let (mut rx, child) = spawn_gs(&app, vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-dPDFSETTINGS=/{}", preset),
+        format!("-sOutputFile={}", tmp_path_str),
+        source_path.clone(),
+    ])?;
 
     // Store the child so cancel_processing() can kill it
     {
@@ -474,25 +504,18 @@ async fn protect_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let gs_bin = find_ghostscript()?;
-
-    let (mut rx, _child) = app
-        .shell()
-        .command(&gs_bin)
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-sOwnerPassword={}", owner_password),
-            &format!("-sUserPassword={}", user_password),
-            "-dEncryptionR=3",
-            "-dKeyLength=128",
-            &format!("-sOutputFile={}", tmp_path_str),
-            &source_path,
-        ])
-        .spawn()
-        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
+    let (mut rx, _child) = spawn_gs(&app, vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-sOwnerPassword={}", owner_password),
+        format!("-sUserPassword={}", user_password),
+        "-dEncryptionR=3".to_string(),
+        "-dKeyLength=128".to_string(),
+        format!("-sOutputFile={}", tmp_path_str),
+        source_path.clone(),
+    ])?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -539,22 +562,15 @@ async fn unlock_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let gs_bin = find_ghostscript()?;
-
-    let (mut rx, _child) = app
-        .shell()
-        .command(&gs_bin)
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-sPDFPassword={}", password),
-            &format!("-sOutputFile={}", tmp_path_str),
-            &source_path,
-        ])
-        .spawn()
-        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
+    let (mut rx, _child) = spawn_gs(&app, vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-sPDFPassword={}", password),
+        format!("-sOutputFile={}", tmp_path_str),
+        source_path.clone(),
+    ])?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -628,25 +644,18 @@ async fn convert_pdfa(
     std::fs::write(&pdfa_def_path, &pdfa_def_content)
         .map_err(|e| format!("Failed to write PDFA_def.ps: {}", e))?;
 
-    let gs_bin = find_ghostscript()?;
-
-    let (mut rx, _child) = app
-        .shell()
-        .command(&gs_bin)
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-dPDFA={}", pdfa_level),
-            "-dPDFACompatibilityPolicy=1",
-            "-sColorConversionStrategy=RGB",
-            &format!("-sOutputFile={}", tmp_path_str),
-            &pdfa_def_path.to_string_lossy(),
-            &source_path,
-        ])
-        .spawn()
-        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
+    let (mut rx, _child) = spawn_gs(&app, vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-dPDFA={}", pdfa_level),
+        "-dPDFACompatibilityPolicy=1".to_string(),
+        "-sColorConversionStrategy=RGB".to_string(),
+        format!("-sOutputFile={}", tmp_path_str),
+        pdfa_def_path.to_string_lossy().to_string(),
+        source_path.clone(),
+    ])?;
 
     // Wait for completion
     let mut stderr_lines: Vec<String> = Vec::new();
@@ -696,21 +705,14 @@ async fn repair_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let gs_bin = find_ghostscript()?;
-
-    let (mut rx, _child) = app
-        .shell()
-        .command(&gs_bin)
-        .args([
-            "-sDEVICE=pdfwrite",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dQUIET",
-            &format!("-sOutputFile={}", tmp_path_str),
-            &source_path,
-        ])
-        .spawn()
-        .map_err(|e| format!("Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}", e))?;
+    let (mut rx, _child) = spawn_gs(&app, vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-sOutputFile={}", tmp_path_str),
+        source_path.clone(),
+    ])?;
 
     // Wait for completion — handle partial success per user decision
     let mut exit_code: Option<i32> = None;
@@ -1039,7 +1041,7 @@ async fn convert_with_calibre(
 /// Returns a JSON object with boolean flags for each backend.
 /// Cached in TypeScript after first call — runs detection once per app launch.
 #[tauri::command]
-async fn detect_converters() -> Result<String, String> {
+async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     let mut results = std::collections::HashMap::new();
 
     // textutil — built-in on macOS, handles doc/docx/odt/rtf/txt
@@ -1118,8 +1120,8 @@ async fn detect_converters() -> Result<String, String> {
         .unwrap_or(false);
     results.insert("pandoc", pandoc_ok);
 
-    // Ghostscript (system-installed, not bundled)
-    let gs_ok = find_ghostscript().is_ok();
+    // Ghostscript (bundled sidecar or system-installed)
+    let gs_ok = is_ghostscript_available(&app);
     results.insert("ghostscript", gs_ok);
 
     serde_json::to_string(&results)
