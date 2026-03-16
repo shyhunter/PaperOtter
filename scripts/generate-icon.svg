@@ -1,31 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!--
-    Papercut Icon — Lucide-style scissors
-    Clean geometric lines matching the app's Lucide icon set
-    Visible rounded border for icon boundary
-  -->
-
-  <!-- White background with visible rounded border -->
+  <!-- White background with rounded border -->
   <rect x="2" y="2" width="1020" height="1020" rx="228" ry="228" fill="#ffffff" stroke="#222222" stroke-width="12"/>
 
-  <!--
-    Lucide-style scissors: two circles (handles) + crossing lines (blades)
-    Scaled up and centered, matching the geometric Lucide stroke style
-  -->
-  <g transform="translate(512, 490)" stroke="#1a1a1a" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Left blade: from top-right down to left handle -->
-    <line x1="200" y1="-280" x2="-95" y2="60"/>
+  <!-- Lucide-style scissors — bigger, thicker, centered -->
+  <g transform="translate(512, 480)" stroke="#1a1a1a" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Left blade: top-right to bottom-left handle -->
+    <line x1="240" y1="-320" x2="-110" y2="55"/>
 
-    <!-- Right blade: from top-left down to right handle -->
-    <line x1="-200" y1="-280" x2="95" y2="60"/>
+    <!-- Right blade: top-left to bottom-right handle -->
+    <line x1="-240" y1="-320" x2="110" y2="55"/>
 
     <!-- Center connector -->
-    <line x1="-55" y1="-15" x2="55" y2="-15"/>
+    <line x1="-60" y1="-15" x2="60" y2="-15"/>
 
     <!-- Left handle (circle) -->
-    <circle cx="-115" cy="105" r="65" stroke-width="28"/>
+    <circle cx="-135" cy="120" r="78" stroke-width="42"/>
 
     <!-- Right handle (circle) -->
-    <circle cx="115" cy="105" r="65" stroke-width="28"/>
+    <circle cx="135" cy="120" r="78" stroke-width="42"/>
   </g>
 </svg>
