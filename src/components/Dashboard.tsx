@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   FileDown,
   ImageDown,
@@ -138,9 +138,9 @@ function FavoriteCard({
   tool: ToolDefinition;
   onClick: () => void;
   index: number;
-  onDragStart: (index: number) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
-  onDrop: (index: number) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd: () => void;
   isDragging: boolean;
   onRemove: () => void;
@@ -149,9 +149,9 @@ function FavoriteCard({
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(index)}
+      onDragStart={(e) => onDragStart(e, index)}
       onDragOver={(e) => onDragOver(e, index)}
-      onDrop={() => onDrop(index)}
+      onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
       className={`relative group/fav transition-all duration-200 ${isDragging ? 'opacity-40 scale-95' : ''}`}
     >
@@ -197,6 +197,7 @@ export function Dashboard() {
   // Drag-and-drop state for favorites reordering
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [, setDragOverIndex] = useState<number | null>(null);
+  const internalDragRef = useRef(false);
 
   // Filter tools by search query
   const filteredGroups = useMemo(() => {
@@ -223,26 +224,35 @@ export function Dashboard() {
   );
 
   // Drag handlers for favorite reordering
-  const handleFavDragStart = useCallback((index: number) => {
+  const handleFavDragStart = useCallback((e: React.DragEvent, index: number) => {
+    internalDragRef.current = true;
     setDragIndex(index);
+    // Set transfer data so the browser treats this as a valid drag
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
   }, []);
 
   const handleFavDragOver = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     setDragOverIndex(index);
   }, []);
 
-  const handleFavDrop = useCallback((toIndex: number) => {
+  const handleFavDrop = useCallback((e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (dragIndex !== null && dragIndex !== toIndex) {
       reorderFavorites(dragIndex, toIndex);
     }
     setDragIndex(null);
     setDragOverIndex(null);
+    internalDragRef.current = false;
   }, [dragIndex, reorderFavorites]);
 
   const handleFavDragEnd = useCallback(() => {
     setDragIndex(null);
     setDragOverIndex(null);
+    internalDragRef.current = false;
   }, []);
 
   // Listen for drag-drop events on the dashboard
@@ -254,7 +264,10 @@ export function Dashboard() {
         const { type } = event.payload;
 
         if (type === 'enter' || type === 'over') {
-          setIsDragOver(true);
+          // Suppress overlay during internal favorites reorder
+          if (!internalDragRef.current) {
+            setIsDragOver(true);
+          }
         } else if (type === 'drop') {
           setIsDragOver(false);
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
