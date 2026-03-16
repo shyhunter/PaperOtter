@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import LoadingScissors from '@/components/ui/loading-scissors';
+import logoSvg from '@/assets/logo.svg';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -9,7 +9,7 @@ const APP_VERSION = '1.0.0-beta.1';
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [fadeOut, setFadeOut] = useState(false);
-  const [showScissors, setShowScissors] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
   const [version, setVersion] = useState(APP_VERSION);
 
   useEffect(() => {
@@ -20,23 +20,23 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   }, []);
 
   useEffect(() => {
-    // 1. Text appears immediately (fade-in 0.5s)
-    // 2. Scissors animation starts after 0.8s
-    const scissorsTimer = setTimeout(() => {
-      setShowScissors(true);
+    // Text appears immediately (fade-in 0.6s)
+    // Logo fades in after 0.8s
+    const logoTimer = setTimeout(() => {
+      setShowLogo(true);
     }, 800);
 
-    // 3. Scissors draws for 3s (0.8 + 3 = 3.8s), hold 1s
+    // Hold for 3.5s total, then fade out
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, 5000);
+    }, 3500);
 
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, 5400);
+    }, 4000);
 
     return () => {
-      clearTimeout(scissorsTimer);
+      clearTimeout(logoTimer);
       clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
@@ -44,7 +44,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background transition-opacity duration-[400ms] ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background transition-opacity duration-[500ms] ${
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -55,25 +55,33 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       <p className="splash-text-in-delayed mt-2 text-sm text-muted-foreground">
         Your local document toolkit — private, fast, offline
       </p>
-      <p className="splash-text-in-delayed mt-2 text-xs text-muted-foreground/50">
+      <p className="splash-text-in-delayed mt-1 text-xs text-muted-foreground/50">
         v{version}
       </p>
 
-      {/* Scissors animation appears after text, draws over it */}
-      <div className="mt-8">
-        {showScissors && <LoadingScissors />}
+      {/* Logo fades in below text */}
+      <div
+        className={`mt-8 transition-opacity duration-700 ${
+          showLogo ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        <img
+          src={logoSvg}
+          alt="Papercut logo"
+          className="h-28 w-28 dark:invert"
+        />
       </div>
 
       <style>{`
         .splash-text-in {
           opacity: 0;
           transform: translateY(6px);
-          animation: splashIn 0.5s ease-out 0.1s forwards;
+          animation: splashIn 0.6s ease-out 0.1s forwards;
         }
         .splash-text-in-delayed {
           opacity: 0;
           transform: translateY(6px);
-          animation: splashIn 0.5s ease-out 0.3s forwards;
+          animation: splashIn 0.6s ease-out 0.35s forwards;
         }
         @keyframes splashIn {
           to {
