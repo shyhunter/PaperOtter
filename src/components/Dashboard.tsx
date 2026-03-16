@@ -22,6 +22,7 @@ import {
   Search,
   Star,
   GripVertical,
+  Info,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -33,6 +34,7 @@ import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
+import { AboutDialog } from '@/components/AboutDialog';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -206,6 +208,7 @@ export function Dashboard() {
   const { selectTool, setPendingFiles } = useToolContext();
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
+  const [aboutOpen, setAboutOpen] = useState(false);
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -335,6 +338,14 @@ export function Dashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAboutOpen(true)}
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:text-foreground hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                title="About Papercut"
+              >
+                <Info className="h-4 w-4" />
+              </button>
               <ThemeToggle />
               {/* Recent Folder */}
               {recentDirs.length > 0 && (
@@ -443,6 +454,9 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* About dialog */}
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
 
       {/* Tool picker overlay */}
       {droppedFiles.length > 0 && compatibleTools.length > 0 && (

@@ -40,6 +40,7 @@ import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
 import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
 import { UpdateChecker } from '@/components/UpdateChecker';
+import { FeedbackButton } from '@/components/FeedbackButton';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -675,6 +676,10 @@ function AppContent() {
       {activeTool === null && <FirstLaunchBanner />}
       {activeTool === null ? <Dashboard /> : <ToolFlow />}
       <PrivacyFooter />
+      {/* Floating feedback button — bottom-right, above toaster */}
+      <div className="fixed bottom-14 right-4 z-40">
+        <FeedbackButton />
+      </div>
       <Toaster position="bottom-center" />
     </div>
   );
