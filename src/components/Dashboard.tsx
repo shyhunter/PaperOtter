@@ -144,18 +144,19 @@ function FavoriteCard({
   onRemove: () => void;
 }) {
   const Icon = ICON_MAP[tool.icon];
+  const isTarget = swapModeActive && !isSwapSource;
   return (
     <div
       className={`relative group/fav transition-all duration-200 ${
         isSwapSource ? 'ring-2 ring-primary scale-95' : ''
-      } ${swapModeActive && !isSwapSource ? 'cursor-pointer ring-1 ring-primary/30 hover:ring-primary hover:scale-[1.02]' : ''}`}
-      onClick={swapModeActive && !isSwapSource ? (e) => { e.stopPropagation(); onSwapTarget(index); } : undefined}
+      } ${isTarget ? 'ring-1 ring-primary/30 hover:ring-primary hover:scale-[1.02]' : ''}`}
     >
       <button
         type="button"
-        onClick={swapModeActive ? undefined : onClick}
-        disabled={swapModeActive}
-        className="w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
+        onClick={isTarget ? () => onSwapTarget(index) : onClick}
+        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5 ${
+          isTarget ? 'opacity-50' : ''
+        }`}
       >
         {Icon && <Icon className="h-7 w-7 text-primary" />}
         <div className="text-center">
@@ -167,7 +168,7 @@ function FavoriteCard({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onGripClick(index); }}
-        className={`absolute top-2 left-2 p-1 rounded transition-all duration-200 cursor-grab ${
+        className={`absolute top-2 left-2 p-1 rounded transition-all duration-200 cursor-grab z-10 ${
           isSwapSource
             ? 'text-primary opacity-100 bg-primary/10'
             : 'text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 hover:text-muted-foreground'
@@ -176,21 +177,27 @@ function FavoriteCard({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      {/* Swap hint */}
-      {swapModeActive && !isSwapSource && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl pointer-events-none">
-          <span className="text-xs font-medium text-primary">Drop here</span>
-        </div>
+      {/* Swap hint overlay — clickable */}
+      {isTarget && (
+        <button
+          type="button"
+          onClick={() => onSwapTarget(index)}
+          className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl z-10 cursor-pointer"
+        >
+          <span className="text-xs font-medium text-primary bg-background/80 px-3 py-1 rounded-md">Swap here</span>
+        </button>
       )}
       {/* Remove star */}
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
-        title="Remove from favorites"
-      >
-        <Star className="h-4 w-4 fill-yellow-500" />
-      </button>
+      {!swapModeActive && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
+          title="Remove from favorites"
+        >
+          <Star className="h-4 w-4 fill-yellow-500" />
+        </button>
+      )}
     </div>
   );
 }
