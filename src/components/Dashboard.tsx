@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   FileDown,
   ImageDown,
@@ -128,36 +128,33 @@ function FavoriteCard({
   tool,
   onClick,
   index,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
-  isDragging,
+  isSwapSource,
+  swapModeActive,
+  onGripClick,
+  onSwapTarget,
   onRemove,
 }: {
   tool: ToolDefinition;
   onClick: () => void;
   index: number;
-  onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, index: number) => void;
-  onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd: () => void;
-  isDragging: boolean;
+  isSwapSource: boolean;
+  swapModeActive: boolean;
+  onGripClick: (index: number) => void;
+  onSwapTarget: (index: number) => void;
   onRemove: () => void;
 }) {
   const Icon = ICON_MAP[tool.icon];
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
-      onDragOver={(e) => onDragOver(e, index)}
-      onDrop={(e) => onDrop(e, index)}
-      onDragEnd={onDragEnd}
-      className={`relative group/fav transition-all duration-200 ${isDragging ? 'opacity-40 scale-95' : ''}`}
+      className={`relative group/fav transition-all duration-200 ${
+        isSwapSource ? 'ring-2 ring-primary scale-95' : ''
+      } ${swapModeActive && !isSwapSource ? 'cursor-pointer ring-1 ring-primary/30 hover:ring-primary hover:scale-[1.02]' : ''}`}
+      onClick={swapModeActive && !isSwapSource ? (e) => { e.stopPropagation(); onSwapTarget(index); } : undefined}
     >
       <button
         type="button"
-        onClick={onClick}
+        onClick={swapModeActive ? undefined : onClick}
+        disabled={swapModeActive}
         className="w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
       >
         {Icon && <Icon className="h-7 w-7 text-primary" />}
@@ -166,10 +163,25 @@ function FavoriteCard({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
         </div>
       </button>
-      {/* Drag handle */}
-      <div className="absolute top-2 left-2 p-1 text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+      {/* Reorder grip handle — click to enter swap mode */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onGripClick(index); }}
+        className={`absolute top-2 left-2 p-1 rounded transition-all duration-200 cursor-grab ${
+          isSwapSource
+            ? 'text-primary opacity-100 bg-primary/10'
+            : 'text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 hover:text-muted-foreground'
+        }`}
+        title={isSwapSource ? 'Click another card to swap' : 'Click to reorder'}
+      >
         <GripVertical className="h-4 w-4" />
-      </div>
+      </button>
+      {/* Swap hint */}
+      {swapModeActive && !isSwapSource && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl pointer-events-none">
+          <span className="text-xs font-medium text-primary">Drop here</span>
+        </div>
+      )}
       {/* Remove star */}
       <button
         type="button"
@@ -194,10 +206,8 @@ export function Dashboard() {
   const [compatibleTools, setCompatibleTools] = useState<ToolDefinition[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Drag-and-drop state for favorites reordering
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [, setDragOverIndex] = useState<number | null>(null);
-  const internalDragRef = useRef(false);
+  // Swap-mode state for favorites reordering
+  const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
 
   // Filter tools by search query
   const filteredGroups = useMemo(() => {
@@ -223,37 +233,18 @@ export function Dashboard() {
     [favorites],
   );
 
-  // Drag handlers for favorite reordering
-  const handleFavDragStart = useCallback((e: React.DragEvent, index: number) => {
-    internalDragRef.current = true;
-    setDragIndex(index);
-    // Set transfer data so the browser treats this as a valid drag
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(index));
+  // Swap-mode handlers for favorite reordering
+  // Click grip → enter swap mode (card highlighted), click another card → swap positions
+  const handleGripClick = useCallback((index: number) => {
+    setSwapSourceIndex((prev) => (prev === index ? null : index));
   }, []);
 
-  const handleFavDragOver = useCallback((e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  }, []);
-
-  const handleFavDrop = useCallback((e: React.DragEvent, toIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (dragIndex !== null && dragIndex !== toIndex) {
-      reorderFavorites(dragIndex, toIndex);
+  const handleSwapTarget = useCallback((toIndex: number) => {
+    if (swapSourceIndex !== null && swapSourceIndex !== toIndex) {
+      reorderFavorites(swapSourceIndex, toIndex);
     }
-    setDragIndex(null);
-    setDragOverIndex(null);
-    internalDragRef.current = false;
-  }, [dragIndex, reorderFavorites]);
-
-  const handleFavDragEnd = useCallback(() => {
-    setDragIndex(null);
-    setDragOverIndex(null);
-    internalDragRef.current = false;
-  }, []);
+    setSwapSourceIndex(null);
+  }, [swapSourceIndex, reorderFavorites]);
 
   // Listen for drag-drop events on the dashboard
   useEffect(() => {
@@ -264,10 +255,7 @@ export function Dashboard() {
         const { type } = event.payload;
 
         if (type === 'enter' || type === 'over') {
-          // Suppress overlay during internal favorites reorder
-          if (!internalDragRef.current) {
-            setIsDragOver(true);
-          }
+          setIsDragOver(true);
         } else if (type === 'drop') {
           setIsDragOver(false);
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
@@ -381,7 +369,7 @@ export function Dashboard() {
                 My Favorites
               </h2>
               <p className="text-[10px] text-muted-foreground/50">
-                Drag to reorder &middot; Click &#9733; on any tool to add
+                Click ⠿ to reorder &middot; Click &#9733; on any tool to add
               </p>
             </div>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
@@ -391,11 +379,10 @@ export function Dashboard() {
                   tool={tool}
                   index={idx}
                   onClick={() => selectTool(tool.id)}
-                  onDragStart={handleFavDragStart}
-                  onDragOver={handleFavDragOver}
-                  onDrop={handleFavDrop}
-                  onDragEnd={handleFavDragEnd}
-                  isDragging={dragIndex === idx}
+                  isSwapSource={swapSourceIndex === idx}
+                  swapModeActive={swapSourceIndex !== null}
+                  onGripClick={handleGripClick}
+                  onSwapTarget={handleSwapTarget}
                   onRemove={() => toggleFavorite(tool.id)}
                 />
               ))}
