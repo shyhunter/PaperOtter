@@ -34,46 +34,49 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Scissors icon (inline SVG matching app icon — black & white) */}
+      {/* Scissors icon (inline SVG matching app icon — B&W scissors cutting paper) */}
       <div className="mb-6 animate-fade-in">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 1024 1024"
           className="h-28 w-28 drop-shadow-lg"
         >
-          {/* macOS-style superellipse background */}
-          <path d="
-            M 512 16
-            C 780 16 848 16 912 80
-            C 976 144 1008 244 1008 512
-            C 1008 780 976 880 912 944
-            C 848 1008 780 1008 512 1008
-            C 244 1008 144 1008 80 944
-            C 16 880 16 780 16 512
-            C 16 244 16 144 80 80
-            C 144 16 244 16 512 16 Z
-          " fill="#1a1a1a" className="dark:fill-[#1a1a1a]" />
+          {/* White background */}
+          <rect width="1024" height="1024" rx="220" ry="220" className="fill-white dark:fill-zinc-800" />
 
-          {/* Large paper sheet */}
-          <path d="M 300 160 L 680 160 L 724 204 L 724 864 L 300 864 Z" fill="#ffffff" />
-          <path d="M 680 160 L 680 204 L 724 204 Z" fill="#cccccc" />
-          <line x1="360" y1="280" x2="660" y2="280" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
-          <line x1="360" y1="340" x2="640" y2="340" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
-          <line x1="360" y1="400" x2="620" y2="400" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
-          <line x1="360" y1="460" x2="650" y2="460" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
-          <line x1="360" y1="520" x2="600" y2="520" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
-
-          {/* Large scissors */}
-          <g transform="translate(510, 660) rotate(-25) scale(1.3)">
-            <ellipse cx="-75" cy="70" rx="32" ry="48" fill="none" stroke="#ffffff" strokeWidth="16" />
-            <path d="M -55 30 L 20 -130" stroke="#ffffff" strokeWidth="20" strokeLinecap="round" />
-            <ellipse cx="75" cy="70" rx="32" ry="48" fill="none" stroke="#ffffff" strokeWidth="16" />
-            <path d="M 55 30 L -20 -130" stroke="#ffffff" strokeWidth="20" strokeLinecap="round" />
-            <circle cx="0" cy="-40" r="14" fill="#1a1a1a" stroke="#ffffff" strokeWidth="6" />
+          {/* Paper sheet (slightly rotated, with fold corner) */}
+          <g transform="translate(512, 420) rotate(5)">
+            <rect x="-180" y="-250" width="360" height="480" rx="8" className="fill-gray-100 dark:fill-zinc-700" stroke="currentColor" strokeWidth="3" opacity="0.8" />
+            <path d="M 130 -250 L 180 -250 L 180 -200 Z" className="fill-gray-300 dark:fill-zinc-600" />
+            <path d="M 130 -250 L 130 -200 L 180 -200" fill="none" className="stroke-gray-400 dark:stroke-zinc-500" strokeWidth="2" />
+            <line x1="-130" y1="-180" x2="100" y2="-180" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="8" strokeLinecap="round" />
+            <line x1="-130" y1="-140" x2="80" y2="-140" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="8" strokeLinecap="round" />
+            <line x1="-130" y1="-100" x2="110" y2="-100" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="8" strokeLinecap="round" />
+            <line x1="-130" y1="-60" x2="70" y2="-60" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="8" strokeLinecap="round" />
+            <line x1="-130" y1="-20" x2="90" y2="-20" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="8" strokeLinecap="round" />
           </g>
 
           {/* Cut line */}
-          <line x1="240" y1="620" x2="520" y2="540" stroke="#888888" strokeWidth="4" strokeDasharray="16,12" strokeLinecap="round" />
+          <line x1="220" y1="580" x2="580" y2="380" stroke="#999999" strokeWidth="3" strokeDasharray="12,8" />
+
+          {/* Black scissors */}
+          <g transform="translate(400, 620) rotate(-35) scale(1.6)">
+            <path d="M -8 -10 L -30 -140 Q -32 -150 -25 -150 L -10 -150 Q -3 -150 -2 -140 L 8 -10 Z" className="fill-gray-900 dark:fill-gray-100" />
+            <path d="M -8 -10 L 25 -140 Q 27 -150 34 -148 L 45 -142 Q 50 -138 48 -130 L 8 -10 Z" className="fill-gray-800 dark:fill-gray-200" />
+            <circle cx="0" cy="-10" r="10" className="fill-gray-700 dark:fill-gray-300 stroke-gray-900 dark:stroke-gray-100" strokeWidth="3" />
+            <circle cx="0" cy="-10" r="4" className="fill-gray-500 dark:fill-gray-400" />
+            <ellipse cx="-40" cy="60" rx="38" ry="50" fill="none" className="stroke-gray-900 dark:stroke-gray-100" strokeWidth="14" />
+            <path d="M -8 0 Q -20 20 -20 30 Q -20 40 -30 45" fill="none" className="stroke-gray-900 dark:stroke-gray-100" strokeWidth="14" strokeLinecap="round" />
+            <ellipse cx="40" cy="60" rx="38" ry="50" fill="none" className="stroke-gray-900 dark:stroke-gray-100" strokeWidth="14" />
+            <path d="M 8 0 Q 20 20 20 30 Q 20 40 30 45" fill="none" className="stroke-gray-900 dark:stroke-gray-100" strokeWidth="14" strokeLinecap="round" />
+          </g>
+
+          {/* Small cut piece */}
+          <g transform="translate(260, 320) rotate(-20)">
+            <rect x="-60" y="-80" width="120" height="140" rx="4" className="fill-gray-200 dark:fill-zinc-600" stroke="currentColor" strokeWidth="2" opacity="0.7" />
+            <line x1="-35" y1="-50" x2="35" y2="-50" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="6" strokeLinecap="round" />
+            <line x1="-35" y1="-20" x2="25" y2="-20" className="stroke-gray-300 dark:stroke-zinc-500" strokeWidth="6" strokeLinecap="round" />
+          </g>
         </svg>
       </div>
 
