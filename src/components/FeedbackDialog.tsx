@@ -25,15 +25,87 @@ async function getSystemInfo(): Promise<string> {
   return `App: v${version} | OS: ${os} | Theme: ${theme}`;
 }
 
-async function fileToBase64DataUrl(filePath: string): Promise<string> {
+/** Read image file and return a small preview data URL (for the dialog) */
+async function fileToPreviewDataUrl(filePath: string): Promise<string> {
   const bytes = await readFile(filePath);
-  const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
-  const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'gif' ? 'image/gif' : 'image/png';
+  const blob = new Blob([bytes]);
+  const bitmap = await createImageBitmap(blob);
+
+  // Resize to max 400px for preview
+  const maxDim = 400;
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+
+  const canvas = new OffscreenCanvas(w, h);
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+
+  const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 });
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(outBlob);
+  });
+}
+
+/** Read image, resize to max 800px, compress as JPEG, return raw base64 (no data: prefix) */
+async function fileToCompressedBase64(filePath: string): Promise<string> {
+  const bytes = await readFile(filePath);
+  const blob = new Blob([bytes]);
+  const bitmap = await createImageBitmap(blob);
+
+  const maxDim = 800;
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+
+  const canvas = new OffscreenCanvas(w, h);
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+
+  const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.6 });
+  const buffer = await outBlob.arrayBuffer();
+  const uint8 = new Uint8Array(buffer);
   let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < uint8.length; i++) {
+    binary += String.fromCharCode(uint8[i]);
   }
-  return `data:${mime};base64,${btoa(binary)}`;
+  return btoa(binary);
+}
+
+/** Upload screenshot to repo and return the raw URL */
+async function uploadScreenshot(token: string, base64Content: string): Promise<string> {
+  const timestamp = Date.now();
+  const path = `feedback-screenshots/${timestamp}.jpg`;
+
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify({
+        message: `feedback screenshot ${timestamp}`,
+        content: base64Content,
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    // Non-critical — skip screenshot if upload fails
+    console.warn('[Feedback] Screenshot upload failed:', res.status);
+    return '';
+  }
+
+  const json = await res.json();
+  return json.content?.download_url || '';
 }
 
 const PRIORITY_MAP: Record<Priority, string> = {
@@ -90,6 +162,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotBase64, setScreenshotBase64] = useState<string | null>(null);
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [token, setToken] = useState('');
@@ -127,10 +200,15 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     });
     if (path) {
       try {
-        const dataUrl = await fileToBase64DataUrl(path as string);
-        setScreenshotPreview(dataUrl);
+        const [preview, compressed] = await Promise.all([
+          fileToPreviewDataUrl(path as string),
+          fileToCompressedBase64(path as string),
+        ]);
+        setScreenshotPreview(preview);
+        setScreenshotBase64(compressed);
       } catch {
         setScreenshotPreview(null);
+        setScreenshotBase64(null);
       }
     }
   }, []);
@@ -169,8 +247,12 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
         systemInfo,
       ];
 
-      if (screenshotPreview) {
-        parts.push('', '## Screenshot', `![screenshot](${screenshotPreview})`);
+      // Upload screenshot if attached
+      if (screenshotBase64) {
+        const screenshotUrl = await uploadScreenshot(currentToken, screenshotBase64);
+        if (screenshotUrl) {
+          parts.push('', '## Screenshot', `![screenshot](${screenshotUrl})`);
+        }
       }
 
       const body = parts.join('\n');
@@ -184,6 +266,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
         setDescription('');
         setPriority('medium');
         setScreenshotPreview(null);
+        setScreenshotBase64(null);
         setStatus('idle');
         onClose();
       }, 1500);
@@ -191,7 +274,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Failed to submit feedback');
     }
-  }, [title, description, priority, screenshotPreview, token, onClose]);
+  }, [title, description, priority, screenshotBase64, token, onClose]);
 
   const handleBackdrop = useCallback(
     (e: React.MouseEvent) => {
@@ -334,6 +417,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
                 type="button"
                 onClick={() => {
                   setScreenshotPreview(null);
+                  setScreenshotBase64(null);
                 }}
                 className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
                 title="Remove screenshot"
