@@ -31,7 +31,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/TODO/papercut/releases/latest/download/latest.json"
+        "https://github.com/shyhunter/papercut/releases/latest/download/latest.json"
       ],
       "pubkey": ""
     }
