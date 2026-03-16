@@ -19,14 +19,14 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   }, []);
 
   useEffect(() => {
-    // Show for 3.8s (animation takes ~3.2s), then fade out
+    // Animation: 3s draw + 0.5s cut + 0.5s hold = 4s, then text, then fade
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, 3800);
+    }, 4800);
 
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, 4200); // 3800ms display + 400ms fade-out
+    }, 5200); // 4800ms display + 400ms fade-out
 
     return () => {
       clearTimeout(fadeTimer);
@@ -58,12 +58,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         .splash-text-reveal {
           opacity: 0;
           transform: translateY(8px);
-          animation: splashReveal 0.5s ease-out 2.8s forwards;
+          animation: splashReveal 0.5s ease-out 3.5s forwards;
         }
         .splash-text-reveal-delayed {
           opacity: 0;
           transform: translateY(8px);
-          animation: splashReveal 0.5s ease-out 3.0s forwards;
+          animation: splashReveal 0.5s ease-out 3.7s forwards;
         }
         @keyframes splashReveal {
           to {

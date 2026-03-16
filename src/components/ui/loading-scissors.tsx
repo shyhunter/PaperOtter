@@ -1,145 +1,146 @@
 import React from "react";
 
+/**
+ * Animated scissors loading indicator.
+ * A single continuous SVG path draws itself from top to bottom,
+ * matching the Lucide scissors icon style (geometric lines + circles).
+ * After drawing completes, a "snip" cut animation plays.
+ */
 const LoadingScissors: React.FC = () => {
   return (
     <div className="flex items-center justify-center">
       <svg
-        viewBox="0 0 200 300"
-        className="scissors-loader"
-        width="100"
-        height="150"
-        fill="transparent"
-        stroke="currentColor"
-        strokeWidth="5"
+        viewBox="0 0 120 160"
+        width="120"
+        height="160"
+        fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {/* Left blade */}
+        {/*
+          Single continuous path that traces the entire scissors shape
+          top-to-bottom in one stroke:
+          1. Right blade tip (top-right) down to center
+          2. Continue to left handle circle (bottom-left)
+          3. Back to center
+          4. Left blade tip (top-left) down to center
+          5. Continue to right handle circle (bottom-right)
+        */}
         <path
-          className="scissors-draw"
-          d="M 90 130 L 60 30 Q 55 15 65 10 Q 75 5 80 20 L 105 115"
+          className="scissors-path"
+          stroke="currentColor"
+          strokeWidth="4.5"
+          d={`
+            M 85 15
+            L 42 72
+
+            C 36 65, 26 62, 20 66
+            C 10 72, 8 86, 16 94
+            C 24 102, 36 98, 38 88
+            C 39 83, 38 78, 35 74
+
+            L 55 80
+
+            L 35 15
+
+            M 55 80
+
+            L 65 74
+            C 62 78, 61 83, 62 88
+            C 64 98, 76 102, 84 94
+            C 92 86, 90 72, 80 66
+            C 74 62, 64 65, 58 72
+            L 85 15
+          `}
         />
-        {/* Right blade */}
-        <path
-          className="scissors-draw"
-          d="M 110 130 L 140 30 Q 145 15 135 10 Q 125 5 120 20 L 95 115"
-        />
-        {/* Pivot screw */}
+
+        {/* Pivot dot at center (appears after drawing) */}
         <circle
-          className="scissors-draw"
-          cx="100"
-          cy="125"
-          r="8"
-        />
-        {/* Left handle */}
-        <path
-          className="scissors-draw"
-          d="M 92 133 Q 80 150 65 165 Q 40 190 35 210 Q 30 235 50 245 Q 70 255 80 240 Q 90 225 85 200 Q 82 185 88 165 Q 92 150 95 140"
-        />
-        {/* Right handle */}
-        <path
-          className="scissors-draw"
-          d="M 108 133 Q 120 150 135 165 Q 160 190 165 210 Q 170 235 150 245 Q 130 255 120 240 Q 110 225 115 200 Q 118 185 112 165 Q 108 150 105 140"
+          className="scissors-pivot"
+          cx="55"
+          cy="76"
+          r="3"
+          fill="currentColor"
+          stroke="currentColor"
+          strokeWidth="1"
         />
 
-        {/* Cut line (appears after scissors are drawn) */}
-        <line
-          className="scissors-cut-line"
-          x1="60"
-          y1="270"
-          x2="140"
-          y2="270"
-          strokeDasharray="4,6"
-          strokeWidth="3"
-        />
-
-        {/* Left cut piece */}
-        <path
-          className="scissors-snip-left"
-          d="M 70 260 L 60 290 L 90 290 L 95 260 Z"
-          strokeWidth="3"
-        />
-        {/* Right cut piece */}
-        <path
-          className="scissors-snip-right"
-          d="M 105 260 L 110 290 L 140 290 L 130 260 Z"
-          strokeWidth="3"
-        />
+        {/* Cut pieces that separate after drawing completes */}
+        <g className="scissors-cut">
+          {/* Left piece */}
+          <rect
+            className="scissors-piece-left"
+            x="20" y="128" width="35" height="24" rx="2"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeDasharray="4,5"
+          />
+          {/* Right piece */}
+          <rect
+            className="scissors-piece-right"
+            x="65" y="128" width="35" height="24" rx="2"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeDasharray="4,5"
+          />
+          {/* Cut line */}
+          <line
+            className="scissors-cut-line"
+            x1="25" y1="140" x2="95" y2="140"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeDasharray="4,6"
+            opacity="0.4"
+          />
+        </g>
       </svg>
 
       <style>{`
-        .scissors-loader {
-          color: var(--foreground, #1a1a1a);
+        .scissors-path {
+          --len: 900;
+          stroke-dasharray: var(--len);
+          stroke-dashoffset: var(--len);
+          animation: drawPath 3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
         }
 
-        .scissors-draw {
-          --path-length: 800;
-          stroke-dashoffset: 800;
-          stroke-dasharray: 0 800;
-          animation: drawScissors 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        .scissors-cut-line {
+        .scissors-pivot {
           opacity: 0;
-          animation: showCutLine 0.3s ease-out 2.6s forwards;
+          animation: fadeIn 0.3s ease-out 1.8s forwards;
         }
 
-        .scissors-snip-left {
+        .scissors-cut {
           opacity: 0;
-          animation: snipLeft 0.4s ease-out 2.8s forwards;
+          animation: fadeIn 0.3s ease-out 3.1s forwards;
         }
 
-        .scissors-snip-right {
-          opacity: 0;
-          animation: snipRight 0.4s ease-out 2.8s forwards;
+        .scissors-piece-left {
+          transform-origin: 55px 140px;
+          animation: snipLeft 0.5s ease-out 3.3s forwards;
         }
 
-        @keyframes drawScissors {
-          0% {
-            stroke-dashoffset: 800;
-            stroke-dasharray: 0 800;
-          }
-          100% {
-            stroke-dashoffset: 0;
-            stroke-dasharray: 800 0;
-          }
+        .scissors-piece-right {
+          transform-origin: 55px 140px;
+          animation: snipRight 0.5s ease-out 3.3s forwards;
         }
 
-        @keyframes showCutLine {
-          from {
-            opacity: 0;
-          }
+        @keyframes drawPath {
           to {
-            opacity: 0.5;
+            stroke-dashoffset: 0;
           }
+        }
+
+        @keyframes fadeIn {
+          to { opacity: 1; }
         }
 
         @keyframes snipLeft {
-          0% {
-            opacity: 0;
-            transform: translate(0, 0) rotate(0deg);
-          }
-          50% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 1;
-            transform: translate(-8px, 6px) rotate(-8deg);
-          }
+          0%   { transform: translate(0, 0) rotate(0deg); }
+          100% { transform: translate(-6px, 4px) rotate(-5deg); }
         }
 
         @keyframes snipRight {
-          0% {
-            opacity: 0;
-            transform: translate(0, 0) rotate(0deg);
-          }
-          50% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 1;
-            transform: translate(8px, 6px) rotate(8deg);
-          }
+          0%   { transform: translate(0, 0) rotate(0deg); }
+          100% { transform: translate(6px, 4px) rotate(5deg); }
         }
       `}</style>
     </div>

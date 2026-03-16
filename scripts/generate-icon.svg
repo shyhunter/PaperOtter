@@ -1,54 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!--
-    Papercut Icon — Simple black-line scissors on white background
-    Just an outline scissors, white fill, black strokes
-    macOS applies its own squircle mask to .icns files
+    Papercut Icon — Lucide-style scissors
+    Clean geometric lines matching the app's Lucide icon set
+    Visible rounded border for icon boundary
   -->
 
-  <!-- White background -->
-  <rect width="1024" height="1024" fill="#ffffff"/>
+  <!-- White background with visible rounded border -->
+  <rect x="2" y="2" width="1020" height="1020" rx="228" ry="228" fill="#ffffff" stroke="#222222" stroke-width="12"/>
 
-  <!-- Scissors — centered, large, black outline with white fill -->
-  <g transform="translate(512, 460) scale(3.2)">
-    <!-- Left blade -->
-    <path
-      d="M -5 -10 L -25 -95 Q -28 -108 -18 -112 Q -8 -115 -3 -102 L 8 -10"
-      fill="#ffffff"
-      stroke="#1a1a1a"
-      stroke-width="7"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-    />
-    <!-- Right blade -->
-    <path
-      d="M 5 -10 L 25 -95 Q 28 -108 18 -112 Q 8 -115 3 -102 L -8 -10"
-      fill="#ffffff"
-      stroke="#1a1a1a"
-      stroke-width="7"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-    />
+  <!--
+    Lucide-style scissors: two circles (handles) + crossing lines (blades)
+    Scaled up and centered, matching the geometric Lucide stroke style
+  -->
+  <g transform="translate(512, 490)" stroke="#1a1a1a" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Left blade: from top-right down to left handle -->
+    <line x1="200" y1="-280" x2="-95" y2="60"/>
 
-    <!-- Pivot screw -->
-    <circle cx="0" cy="-8" r="7" fill="#ffffff" stroke="#1a1a1a" stroke-width="5"/>
+    <!-- Right blade: from top-left down to right handle -->
+    <line x1="-200" y1="-280" x2="95" y2="60"/>
 
-    <!-- Left handle -->
-    <path
-      d="M -6 0 Q -15 15 -25 28 Q -42 50 -48 65 Q -55 85 -42 95 Q -28 105 -18 93 Q -8 80 -12 60 Q -14 48 -8 32 Q -5 22 -3 12"
-      fill="#ffffff"
-      stroke="#1a1a1a"
-      stroke-width="7"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-    />
-    <!-- Right handle -->
-    <path
-      d="M 6 0 Q 15 15 25 28 Q 42 50 48 65 Q 55 85 42 95 Q 28 105 18 93 Q 8 80 12 60 Q 14 48 8 32 Q 5 22 3 12"
-      fill="#ffffff"
-      stroke="#1a1a1a"
-      stroke-width="7"
-      stroke-linejoin="round"
-      stroke-linecap="round"
-    />
+    <!-- Center connector -->
+    <line x1="-55" y1="-15" x2="55" y2="-15"/>
+
+    <!-- Left handle (circle) -->
+    <circle cx="-115" cy="105" r="65" stroke-width="28"/>
+
+    <!-- Right handle (circle) -->
+    <circle cx="115" cy="105" r="65" stroke-width="28"/>
   </g>
 </svg>
