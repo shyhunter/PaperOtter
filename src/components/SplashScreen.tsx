@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -6,6 +7,11 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [fadeOut, setFadeOut] = useState(false);
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => setVersion(''));
+  }, []);
 
   useEffect(() => {
     const fadeTimer = setTimeout(() => {
@@ -28,49 +34,46 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      {/* Scissors icon (inline SVG matching app icon theme) */}
+      {/* Scissors icon (inline SVG matching app icon — black & white) */}
       <div className="mb-6 animate-fade-in">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 1024 1024"
           className="h-28 w-28 drop-shadow-lg"
         >
-          <defs>
-            <linearGradient id="splash-bg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#8b5cf6" />
-            </linearGradient>
-            <linearGradient id="splash-paper" x1="0.2" y1="0" x2="0.8" y2="1">
-              <stop offset="0%" stopColor="#f8fafc" />
-              <stop offset="100%" stopColor="#e2e8f0" />
-            </linearGradient>
-            <linearGradient id="splash-blade" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#c0c0c0" />
-              <stop offset="100%" stopColor="#9ca3af" />
-            </linearGradient>
-          </defs>
-          <rect x="32" y="32" width="960" height="960" rx="200" ry="200" fill="url(#splash-bg)" />
-          {/* Left paper piece */}
-          <path d="M 280 220 L 460 220 L 460 560 L 340 620 L 280 620 Z" fill="url(#splash-paper)" opacity="0.85" transform="rotate(-8, 370, 420)" />
-          <line x1="310" y1="290" x2="430" y2="290" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(-8, 370, 420)" />
-          <line x1="310" y1="340" x2="420" y2="340" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(-8, 370, 420)" />
-          <line x1="310" y1="390" x2="400" y2="390" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(-8, 370, 420)" />
-          {/* Right paper piece */}
-          <path d="M 520 250 L 740 250 L 740 750 L 520 750 Z" fill="url(#splash-paper)" transform="rotate(5, 630, 500)" />
-          <line x1="555" y1="330" x2="705" y2="330" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(5, 630, 500)" />
-          <line x1="555" y1="385" x2="700" y2="385" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(5, 630, 500)" />
-          <line x1="555" y1="440" x2="680" y2="440" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(5, 630, 500)" />
-          <line x1="555" y1="495" x2="690" y2="495" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(5, 630, 500)" />
-          <line x1="555" y1="550" x2="670" y2="550" stroke="#cbd5e1" strokeWidth="8" strokeLinecap="round" transform="rotate(5, 630, 500)" />
-          {/* Scissors */}
-          <g transform="translate(512, 580) rotate(-30)">
-            <ellipse cx="-90" cy="55" rx="28" ry="55" fill="none" stroke="#f1f5f9" strokeWidth="14" transform="rotate(15, -90, 55)" />
-            <path d="M -70 20 L 30 -120" stroke="url(#splash-blade)" strokeWidth="22" strokeLinecap="round" />
-            <ellipse cx="90" cy="55" rx="28" ry="55" fill="none" stroke="#f1f5f9" strokeWidth="14" transform="rotate(-15, 90, 55)" />
-            <path d="M 70 20 L -30 -120" stroke="url(#splash-blade)" strokeWidth="22" strokeLinecap="round" />
-            <circle cx="0" cy="-50" r="14" fill="#f1f5f9" stroke="#9ca3af" strokeWidth="4" />
-            <circle cx="0" cy="-50" r="5" fill="#9ca3af" />
+          {/* macOS-style superellipse background */}
+          <path d="
+            M 512 16
+            C 780 16 848 16 912 80
+            C 976 144 1008 244 1008 512
+            C 1008 780 976 880 912 944
+            C 848 1008 780 1008 512 1008
+            C 244 1008 144 1008 80 944
+            C 16 880 16 780 16 512
+            C 16 244 16 144 80 80
+            C 144 16 244 16 512 16 Z
+          " fill="#1a1a1a" className="dark:fill-[#1a1a1a]" />
+
+          {/* Large paper sheet */}
+          <path d="M 300 160 L 680 160 L 724 204 L 724 864 L 300 864 Z" fill="#ffffff" />
+          <path d="M 680 160 L 680 204 L 724 204 Z" fill="#cccccc" />
+          <line x1="360" y1="280" x2="660" y2="280" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
+          <line x1="360" y1="340" x2="640" y2="340" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
+          <line x1="360" y1="400" x2="620" y2="400" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
+          <line x1="360" y1="460" x2="650" y2="460" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
+          <line x1="360" y1="520" x2="600" y2="520" stroke="#d0d0d0" strokeWidth="12" strokeLinecap="round" />
+
+          {/* Large scissors */}
+          <g transform="translate(510, 660) rotate(-25) scale(1.3)">
+            <ellipse cx="-75" cy="70" rx="32" ry="48" fill="none" stroke="#ffffff" strokeWidth="16" />
+            <path d="M -55 30 L 20 -130" stroke="#ffffff" strokeWidth="20" strokeLinecap="round" />
+            <ellipse cx="75" cy="70" rx="32" ry="48" fill="none" stroke="#ffffff" strokeWidth="16" />
+            <path d="M 55 30 L -20 -130" stroke="#ffffff" strokeWidth="20" strokeLinecap="round" />
+            <circle cx="0" cy="-40" r="14" fill="#1a1a1a" stroke="#ffffff" strokeWidth="6" />
           </g>
+
+          {/* Cut line */}
+          <line x1="240" y1="620" x2="520" y2="540" stroke="#888888" strokeWidth="4" strokeDasharray="16,12" strokeLinecap="round" />
         </svg>
       </div>
 
@@ -79,8 +82,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         Papercut
       </h1>
       <p className="animate-fade-in mt-2 text-sm text-muted-foreground">
-        Resize and reformat, locally
+        Your local document toolkit — private, fast, offline
       </p>
+      {version && (
+        <p className="animate-fade-in mt-3 text-xs text-muted-foreground/60">
+          v{version}
+        </p>
+      )}
 
       <style>{`
         @keyframes fadeIn {
