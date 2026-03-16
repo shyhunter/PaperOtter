@@ -17,13 +17,10 @@ jobs:
         include:
           - platform: macos-latest
             target: aarch64-apple-darwin
-            gs_binary: gs-aarch64-apple-darwin
           - platform: macos-13
             target: x86_64-apple-darwin
-            gs_binary: gs-x86_64-apple-darwin
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-            gs_binary: gs-x86_64-pc-windows-msvc.exe
 
     runs-on: ${{ matrix.platform }}
 
@@ -50,36 +47,6 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      # Download Ghostscript sidecar for each platform
-      - name: Download Ghostscript (macOS ARM64)
-        if: matrix.target == 'aarch64-apple-darwin'
-        run: echo "Ghostscript binary already in repo for this target"
-
-      - name: Download Ghostscript (macOS x86_64)
-        if: matrix.target == 'x86_64-apple-darwin'
-        run: |
-          brew install ghostscript
-          cp $(which gs) src-tauri/binaries/gs-x86_64-apple-darwin
-          chmod +x src-tauri/binaries/gs-x86_64-apple-darwin
-
-      - name: Download Ghostscript (Windows)
-        if: matrix.target == 'x86_64-pc-windows-msvc'
-        shell: powershell
-        run: |
-          # Download Ghostscript installer (silent install)
-          $gsVersion = "10.05.0"
-          $gsUrl = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10050/gs10050w64.exe"
-          Invoke-WebRequest -Uri $gsUrl -OutFile gs-installer.exe
-          Start-Process -Wait -FilePath .\gs-installer.exe -ArgumentList '/S'
-          # Find and copy gswin64c.exe as the sidecar
-          $gsPath = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" | Select-Object -First 1
-          if ($gsPath) {
-            Copy-Item $gsPath.FullName "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
-          } else {
-            Write-Error "Ghostscript not found after installation"
-            exit 1
-          }
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -93,8 +60,19 @@ jobs:
             - **macOS Intel:** `.dmg` file (x86_64)
             - **Windows:** `.msi` or `.exe` installer
 
-            All builds include Ghostscript bundled — no additional installation needed for PDF tools.
-            LibreOffice and Calibre are optional (for document/ebook conversion).
+            ### Optional dependencies
+
+            **Ghostscript** (for PDF compression, PDF/A conversion, and repair):
+            - macOS: `brew install ghostscript`
+            - Windows: Download from https://ghostscript.com/releases/gsdnld.html
+            - Linux: `sudo apt install ghostscript`
+
+            **LibreOffice** (for document format conversion):
+            - macOS/Windows: Download from https://www.libreoffice.org/download/
+            - Linux: `sudo apt install libreoffice`
+
+            **Calibre** (for ebook format conversion):
+            - All platforms: Download from https://calibre-ebook.com/download
           releaseDraft: true
           prerelease: true
           args: --target ${{ matrix.target }}
