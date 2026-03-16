@@ -24,6 +24,9 @@ coverage
 *.sln
 *.sw?
 
+# Bundled sidecar binaries (too large for git — see src-tauri/binaries/README.md)
+src-tauri/binaries/gs-*
+
 # E2E test artifacts
 e2e-output/
 test-fixtures-e2e/large-sparse.pdf
