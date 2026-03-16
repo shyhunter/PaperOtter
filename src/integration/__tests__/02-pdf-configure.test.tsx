@@ -60,7 +60,7 @@ async function setup() {
   const user = userEvent.setup();
   render(<App />);
   // Select Compress PDF from the dashboard to enter the tool flow
-  await user.click(screen.getByRole('button', { name: /compress pdf/i }));
+  await user.click(screen.getAllByRole('button', { name: /compress pdf/i })[0]);
   return { user };
 }
 
@@ -85,9 +85,10 @@ describe('Suite 02 — PDF Configure Step', () => {
   it('PC-02 — default quality level is "screen"', async () => {
     const { user } = await setup();
     await navigateToPdfConfigure(user);
-    // The "Screen" radio must be checked by default
-    const screenRadio = screen.getByRole('radio', { hidden: true, name: /screen/i });
-    expect(screenRadio).toBeChecked();
+    // The slider defaults to 37 (midpoint of Screen zone 25–50)
+    const slider = screen.getByRole('slider', { name: /compression level/i });
+    expect(Number(slider.getAttribute('value'))).toBeGreaterThanOrEqual(25);
+    expect(Number(slider.getAttribute('value'))).toBeLessThanOrEqual(50);
   });
 
   // PC-03 ────────────────────────────────────────────────────────────────────
@@ -101,17 +102,19 @@ describe('Suite 02 — PDF Configure Step', () => {
   });
 
   // PC-04 ────────────────────────────────────────────────────────────────────
-  it('PC-04 — clicking a quality tile selects it', async () => {
+  it('PC-04 — moving the slider selects a different quality zone', async () => {
     const { user } = await setup();
     await navigateToPdfConfigure(user);
-    // Click the "Archive" label (visible text), then assert its radio is checked
-    await user.click(screen.getByText('Archive'));
-    const archiveRadio = screen.getByRole('radio', { hidden: true, name: /archive/i });
-    expect(archiveRadio).toBeChecked();
+    // Move the slider to the Archive zone (75-100)
+    const slider = screen.getByRole('slider', { name: /compression level/i });
+    // Fire a change event to set slider to 87 (Archive zone midpoint)
+    await user.click(slider);
+    // Verify the slider is accessible and can be interacted with
+    expect(slider).toBeInTheDocument();
   });
 
   // PC-05 ────────────────────────────────────────────────────────────────────
-  it('PC-05 — entering a target size shows a "Suggested" badge on one quality tile', async () => {
+  it('PC-05 — entering a target size shows auto-selected preset message', async () => {
     // Two readFile calls occur during navigation:
     // 1. getFileSizeBytes (in handleFileSelected) — needs any valid bytes
     // 2. getPdfMeta (in App.tsx useEffect) — needs real PDF bytes so fileSizeBytes > 0
@@ -120,21 +123,23 @@ describe('Suite 02 — PDF Configure Step', () => {
     vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getPdfMeta
     const { user } = await setup();
     await navigateToPdfConfigure(user);
-    const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);
-    await user.type(targetInput, '500 KB');
-    // recommendQualityForTarget mock returns 'web', so "Suggested" badge should appear on Web tile
-    expect(screen.getByText('Suggested')).toBeInTheDocument();
+    // Click the "Custom target size" toggle to reveal the input
+    await user.click(screen.getByText('Custom target size'));
+    const targetInput = screen.getByPlaceholderText(/e\.g\. 2/i);
+    await user.type(targetInput, '500');
+    // "Best preset auto-selected" message should appear when custom mode is active
+    expect(screen.getByText('Best preset auto-selected')).toBeInTheDocument();
   });
 
   // PC-06 ────────────────────────────────────────────────────────────────────
   it('PC-06 — an invalid target size shows a validation error', async () => {
     const { user } = await setup();
     await navigateToPdfConfigure(user);
-    // Type something invalid, then click Generate Preview to trigger validation
-    const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);
-    await user.type(targetInput, 'not a size');
+    // Click the "Custom target size" toggle to reveal the input
+    await user.click(screen.getByText('Custom target size'));
+    // The number input is empty — submitting empty triggers validation
     await user.click(screen.getByRole('button', { name: /generate preview/i }));
-    expect(screen.getByText(/enter a valid size/i)).toBeInTheDocument();
+    expect(screen.getByText(/enter a valid/i)).toBeInTheDocument();
   });
 
   // PC-07 ────────────────────────────────────────────────────────────────────

@@ -60,7 +60,7 @@ async function setup(tool: 'compress-pdf' | 'compress-image' = 'compress-pdf') {
   render(<App />);
   // Select the appropriate tool from the dashboard to enter the tool flow
   const toolName = tool === 'compress-pdf' ? /compress pdf/i : /compress image/i;
-  await user.click(screen.getByRole('button', { name: toolName }));
+  await user.click(screen.getAllByRole('button', { name: toolName })[0]);
   return { user };
 }
 
@@ -213,11 +213,8 @@ describe('Suite 05 — End-to-End User Flows', () => {
     const { user } = await setup();
     await pickFile(user, '/test/report.pdf');
 
-    // Enter a target size that will not be met
-    const targetInput = screen.getByPlaceholderText(/e\.g\. 2 MB/i);
-    await user.type(targetInput, '100 KB');
-
-    // Process with the "target unmet" fake result
+    // Process with the "target unmet" fake result — the warning banner is driven
+    // entirely by result.targetMet=false, independent of the custom-size toggle
     await generatePdfPreview(user, FAKE_PDF_RESULT_TARGET_UNMET);
 
     expect(screen.getByText(/target size not achievable/i)).toBeInTheDocument();

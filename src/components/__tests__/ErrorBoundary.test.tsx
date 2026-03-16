@@ -31,7 +31,8 @@ describe('StepErrorBoundary', () => {
       </StepErrorBoundary>,
     );
 
-    expect(screen.getByText('Configure encountered an unexpected error.')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reset this step/i })).toBeInTheDocument();
   });
 
   it('EB-02: Reset this step button clears the boundary (fallback message disappears)', async () => {
@@ -42,7 +43,7 @@ describe('StepErrorBoundary', () => {
     );
 
     // Verify fallback is shown
-    expect(screen.getByText('Configure encountered an unexpected error.')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
 
     // Click Reset this step
     fireEvent.click(screen.getByRole('button', { name: /reset this step/i }));
@@ -51,7 +52,7 @@ describe('StepErrorBoundary', () => {
     // the test verifies the boundary performs its reset action)
     // After reset with the same throwing child it will catch again — verify the cycle works cleanly
     // by confirming the button and message still exist (re-caught), proving reset did trigger
-    expect(screen.getByText('Configure encountered an unexpected error.')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reset this step/i })).toBeInTheDocument();
   });
 });
@@ -72,7 +73,7 @@ describe('AppErrorBoundary', () => {
       </AppErrorBoundary>,
     );
 
-    expect(screen.getByText('The app encountered an unexpected error.')).toBeInTheDocument();
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /restart app/i })).toBeInTheDocument();
   });
 });

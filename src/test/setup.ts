@@ -36,6 +36,28 @@ vi.stubGlobal(
   vi.fn(async () => ({ width: 100, height: 80, close: vi.fn() })),
 );
 
+// Stub DOMMatrix — jsdom does not implement this; pdfjs-dist accesses it at import time.
+vi.stubGlobal(
+  'DOMMatrix',
+  class DOMMatrix {
+    m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+    m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+    m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+    m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+    is2D = true;
+    isIdentity = true;
+    inverse() { return new DOMMatrix(); }
+    multiply() { return new DOMMatrix(); }
+    translate() { return new DOMMatrix(); }
+    scale() { return new DOMMatrix(); }
+    rotate() { return new DOMMatrix(); }
+    transformPoint() { return { x: 0, y: 0, z: 0, w: 1 }; }
+    toFloat32Array() { return new Float32Array(16); }
+    toFloat64Array() { return new Float64Array(16); }
+  },
+);
+
 // Stub window.matchMedia — jsdom does not implement this; required by sonner (toast library).
 vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
   matches: false,

@@ -75,7 +75,7 @@ async function setup() {
   const user = userEvent.setup();
   render(<App />);
   // Select Compress PDF from the dashboard to enter the tool flow
-  await user.click(screen.getByRole('button', { name: /compress pdf/i }));
+  await user.click(screen.getAllByRole('button', { name: /compress pdf/i })[0]);
   return { user };
 }
 
