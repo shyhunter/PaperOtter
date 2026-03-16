@@ -148,9 +148,9 @@ export function LandingCard({
 
             {/* Loading bar — visible briefly after valid drop before advancing */}
             {isLoading && (
-              <div data-testid="loading-spinner" className="px-8 pb-6 pt-3">
-                <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full bg-primary animate-pulse rounded-full" />
+              <div data-testid="loading-spinner" className="px-8 pb-6 pt-3 animate-bounce-in">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full w-2/3 bg-primary rounded-full animate-pulse" />
                 </div>
                 <p className="text-sm text-muted-foreground text-center mt-2">Loading file...</p>
               </div>

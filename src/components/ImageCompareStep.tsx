@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { ZoomIn, ZoomOut, ArrowRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ImageProcessingResult } from '@/types/file';
@@ -49,6 +49,7 @@ export function ImageCompareStep({
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
 
+  const [copiedStats, setCopiedStats] = useState(false);
   const { label: zoomLabel, wrapperClass: zoomWrapperClass } = ZOOM_STEPS[zoomIndex];
 
   // ── Synced scrolling ────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export function ImageCompareStep({
     : `${result.quality}%`;
 
   return (
-    <div data-testid="image-compare-step" className="flex flex-1 flex-col overflow-hidden">
+    <div data-testid="image-compare-step" className="flex flex-1 flex-col overflow-hidden animate-fade-slide-in">
 
       {/* Stats row above panels */}
       <div data-testid="stats-bar" className="flex items-center gap-4 px-4 py-2 text-xs border-b border-border bg-muted/30 flex-none">
@@ -146,6 +147,22 @@ export function ImageCompareStep({
         <span className="text-muted-foreground whitespace-nowrap">
           Quality: {qualityLabel}
         </span>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => {
+            const stats = `${formatBytes(result.inputSizeBytes)} → ${formatBytes(result.outputSizeBytes)} (${Math.abs(savingsPct)}% ${grew ? 'larger' : 'smaller'})`;
+            navigator.clipboard.writeText(stats).then(() => {
+              setCopiedStats(true);
+              setTimeout(() => setCopiedStats(false), 2000);
+            });
+          }}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title="Copy processing stats to clipboard"
+        >
+          {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
+        </button>
       </div>
 
       {/* Side-by-side preview panels with floating zoom toolbar */}
@@ -162,12 +179,13 @@ export function ImageCompareStep({
             className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0"
           >
             {originalUrl ? (
-              <div className={zoomWrapperClass}>
+              <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
                 <img src={originalUrl} alt="Original" className="w-full h-auto block" />
               </div>
             ) : (
-              <div className="flex h-full min-h-[300px] items-center justify-center">
-                <span className="text-sm text-muted-foreground animate-pulse">Loading…</span>
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
+                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading…</span>
               </div>
             )}
           </div>
@@ -186,7 +204,7 @@ export function ImageCompareStep({
             {processedUrl ? (
               <>
                 <div className={cn('transition-opacity', isProcessing ? 'opacity-40' : 'opacity-100')}>
-                  <div className={zoomWrapperClass}>
+                  <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
                     <img src={processedUrl} alt="Processed" className="w-full h-auto block" />
                   </div>
                 </div>
@@ -199,8 +217,9 @@ export function ImageCompareStep({
                 )}
               </>
             ) : isProcessing ? (
-              <div className="flex h-full min-h-[300px] items-center justify-center">
-                <span className="text-sm text-muted-foreground animate-pulse">Processing…</span>
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
+                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+                <span className="text-sm text-muted-foreground">Processing…</span>
               </div>
             ) : null}
           </div>

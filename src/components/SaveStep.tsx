@@ -140,7 +140,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
   };
 
   return (
-    <div className="relative rounded-lg border border-border bg-card shadow-sm p-4 mx-4 mt-3">
+    <div className="relative rounded-lg border border-border bg-card shadow-sm p-4 mx-4 mt-3 animate-fade-slide-in">
       <button
         type="button"
         onClick={onDismiss}
@@ -501,7 +501,8 @@ export function SaveStep({
   if (saveState === 'dialog-open' || saveState === 'writing') {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
           <p className="text-sm font-medium text-foreground">
             {saveState === 'dialog-open' ? 'Choose a save location…' : 'Saving…'}
           </p>

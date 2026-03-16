@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { ZoomIn, ZoomOut, Ban, ArrowRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, Ban, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
@@ -86,11 +86,12 @@ function PreviewPanel({
             <span className="text-sm text-muted-foreground">Preview unavailable</span>
           </div>
         ) : isRendering ? (
-          <div className="flex h-full min-h-[300px] items-center justify-center">
-            <span className="text-sm text-muted-foreground animate-pulse">Rendering…</span>
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
+            <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+            <span className="text-sm text-muted-foreground">Rendering preview…</span>
           </div>
         ) : (
-          <div className={zoomWrapperClass}>
+          <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
             {pageUrls.map((url, i) => (
               <img
                 key={i}
@@ -114,6 +115,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
   const [originalError, setOriginalError] = useState(false);
   const [processedError, setProcessedError] = useState(false);
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
+  const [copiedStats, setCopiedStats] = useState(false);
 
   const { label: zoomLabel, wrapperClass: zoomWrapperClass } = ZOOM_STEPS[zoomIndex];
 
@@ -216,7 +218,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     : null;
 
   return (
-    <div data-testid="compare-step" className="flex flex-1 flex-col overflow-hidden">
+    <div data-testid="compare-step" className="flex flex-1 flex-col overflow-hidden animate-fade-slide-in">
 
       {/* Target not met warning */}
       {!result.targetMet && result.bestAchievableSizeBytes != null && (
@@ -267,6 +269,22 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         {result.wasAlreadyOptimal && (
           <span className="text-muted-foreground hidden sm:inline">File already optimal</span>
         )}
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => {
+            const stats = `${formatBytes(result.inputSizeBytes)} → ${formatBytes(result.outputSizeBytes)} (${Math.abs(savingsPct)}% ${grew ? 'larger' : 'smaller'})`;
+            navigator.clipboard.writeText(stats).then(() => {
+              setCopiedStats(true);
+              setTimeout(() => setCopiedStats(false), 2000);
+            });
+          }}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title="Copy processing stats to clipboard"
+        >
+          {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
+        </button>
       </div>
 
       {/* Side-by-side preview panels with floating zoom toolbar */}
