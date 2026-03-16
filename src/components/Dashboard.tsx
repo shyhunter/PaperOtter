@@ -205,9 +205,14 @@ export function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-[clamp(1.3rem,2.5vw,2rem)] font-bold text-foreground tracking-tight">
-                Papercut
-              </h1>
+              <div className="flex items-baseline gap-2">
+                <h1 className="text-[clamp(1.3rem,2.5vw,2rem)] font-bold text-foreground tracking-tight">
+                  Papercut
+                </h1>
+                <span className="text-[clamp(0.6rem,0.8vw,0.75rem)] text-muted-foreground/50 font-medium">
+                  v1.0.0-beta.1
+                </span>
+              </div>
               <p className="text-[clamp(0.8rem,1vw,0.95rem)] text-muted-foreground">
                 Your local document toolkit — private, fast, offline.
               </p>

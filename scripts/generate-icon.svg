@@ -1,61 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <!--
-    Papercut App Icon
-    Design: Black scissors cutting a white paper sheet
-    Style: Clean, minimal, high contrast
-    Background: White with subtle border
-    macOS will apply its own rounded mask to the .icns
+    Papercut Icon — Simple black-line scissors on white background
+    Just an outline scissors, white fill, black strokes
+    macOS applies its own squircle mask to .icns files
   -->
 
-  <!-- White background (macOS masks .icns to squircle automatically) -->
+  <!-- White background -->
   <rect width="1024" height="1024" fill="#ffffff"/>
 
-  <!-- Paper sheet (light gray, slightly rotated, with fold corner) -->
-  <g transform="translate(512, 420) rotate(5)">
-    <!-- Paper body -->
-    <rect x="-180" y="-250" width="360" height="480" rx="8" fill="#f0f0f0" stroke="#d0d0d0" stroke-width="3"/>
-    <!-- Fold corner -->
-    <path d="M 130 -250 L 180 -250 L 180 -200 Z" fill="#d8d8d8"/>
-    <path d="M 130 -250 L 130 -200 L 180 -200" fill="none" stroke="#c0c0c0" stroke-width="2"/>
-    <!-- Text lines -->
-    <line x1="-130" y1="-180" x2="100" y2="-180" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-    <line x1="-130" y1="-140" x2="80" y2="-140" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-    <line x1="-130" y1="-100" x2="110" y2="-100" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-    <line x1="-130" y1="-60" x2="70" y2="-60" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-    <line x1="-130" y1="-20" x2="90" y2="-20" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-    <line x1="-130" y1="20" x2="60" y2="20" stroke="#c8c8c8" stroke-width="8" stroke-linecap="round"/>
-  </g>
-
-  <!-- Cut line (dashed, diagonal across paper) -->
-  <line x1="220" y1="580" x2="580" y2="380" stroke="#999999" stroke-width="3" stroke-dasharray="12,8"/>
-
-  <!-- BLACK SCISSORS — large, centered, clearly recognizable -->
-  <g transform="translate(400, 620) rotate(-35) scale(1.6)">
-    <!-- Left blade (thick, tapered) -->
-    <path d="M -8 -10 L -30 -140 Q -32 -150 -25 -150 L -10 -150 Q -3 -150 -2 -140 L 8 -10 Z" fill="#1a1a1a"/>
-    <!-- Right blade (thick, tapered) -->
-    <path d="M -8 -10 L 25 -140 Q 27 -150 34 -148 L 45 -142 Q 50 -138 48 -130 L 8 -10 Z" fill="#2a2a2a"/>
+  <!-- Scissors — centered, large, black outline with white fill -->
+  <g transform="translate(512, 460) scale(3.2)">
+    <!-- Left blade -->
+    <path
+      d="M -5 -10 L -25 -95 Q -28 -108 -18 -112 Q -8 -115 -3 -102 L 8 -10"
+      fill="#ffffff"
+      stroke="#1a1a1a"
+      stroke-width="7"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />
+    <!-- Right blade -->
+    <path
+      d="M 5 -10 L 25 -95 Q 28 -108 18 -112 Q 8 -115 3 -102 L -8 -10"
+      fill="#ffffff"
+      stroke="#1a1a1a"
+      stroke-width="7"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />
 
     <!-- Pivot screw -->
-    <circle cx="0" cy="-10" r="10" fill="#333333" stroke="#1a1a1a" stroke-width="3"/>
-    <circle cx="0" cy="-10" r="4" fill="#666666"/>
+    <circle cx="0" cy="-8" r="7" fill="#ffffff" stroke="#1a1a1a" stroke-width="5"/>
 
-    <!-- Left handle (finger hole) -->
-    <ellipse cx="-40" cy="60" rx="38" ry="50" fill="none" stroke="#1a1a1a" stroke-width="14"/>
-    <!-- Handle connector left -->
-    <path d="M -8 0 Q -20 20 -20 30 Q -20 40 -30 45" fill="none" stroke="#1a1a1a" stroke-width="14" stroke-linecap="round"/>
-
-    <!-- Right handle (finger hole) -->
-    <ellipse cx="40" cy="60" rx="38" ry="50" fill="none" stroke="#1a1a1a" stroke-width="14"/>
-    <!-- Handle connector right -->
-    <path d="M 8 0 Q 20 20 20 30 Q 20 40 30 45" fill="none" stroke="#1a1a1a" stroke-width="14" stroke-linecap="round"/>
-  </g>
-
-  <!-- Small cut paper piece falling away (top-left) -->
-  <g transform="translate(260, 320) rotate(-20)">
-    <rect x="-60" y="-80" width="120" height="140" rx="4" fill="#e8e8e8" stroke="#d0d0d0" stroke-width="2"/>
-    <line x1="-35" y1="-50" x2="35" y2="-50" stroke="#c8c8c8" stroke-width="6" stroke-linecap="round"/>
-    <line x1="-35" y1="-20" x2="25" y2="-20" stroke="#c8c8c8" stroke-width="6" stroke-linecap="round"/>
-    <line x1="-35" y1="10" x2="30" y2="10" stroke="#c8c8c8" stroke-width="6" stroke-linecap="round"/>
+    <!-- Left handle -->
+    <path
+      d="M -6 0 Q -15 15 -25 28 Q -42 50 -48 65 Q -55 85 -42 95 Q -28 105 -18 93 Q -8 80 -12 60 Q -14 48 -8 32 Q -5 22 -3 12"
+      fill="#ffffff"
+      stroke="#1a1a1a"
+      stroke-width="7"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />
+    <!-- Right handle -->
+    <path
+      d="M 6 0 Q 15 15 25 28 Q 42 50 48 65 Q 55 85 42 95 Q 28 105 18 93 Q 8 80 12 60 Q 14 48 8 32 Q 5 22 3 12"
+      fill="#ffffff"
+      stroke="#1a1a1a"
+      stroke-width="7"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />
   </g>
 </svg>
