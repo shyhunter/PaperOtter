@@ -1,0 +1,84 @@
+name: Bug Report
+description: Report a bug in Papercut
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Open Papercut
+        2. Select a PDF file
+        3. Choose 'Compress' tool
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows 10
+        - Windows 11
+        - Ubuntu / Debian
+        - Fedora / RHEL
+        - Arch Linux
+        - Other Linux
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: Papercut Version
+      description: Check Help > About or the title bar.
+      placeholder: "1.0.0-beta.1"
+    validations:
+      required: true
+
+  - type: input
+    id: ghostscript-version
+    attributes:
+      label: Ghostscript Version (if applicable)
+      description: Run `gs --version` in your terminal.
+      placeholder: "10.02.1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem.
+    validations:
+      required: false
