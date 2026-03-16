@@ -38,6 +38,7 @@
       ]
     },
     "shell:allow-open",
+    "opener:default",
     "updater:default",
     "process:allow-restart"
   ]
