@@ -63,3 +63,19 @@ export interface EditorState {
 }
 
 export type EditorMode = 'select' | 'text' | 'image';
+
+// ── Full-page PDF Editor types (Phase 16) ──────────────────────────────
+
+export type ZoomPreset = 0.5 | 0.75 | 1.0 | 1.5 | 'fit-width';
+
+export interface EditorViewState {
+  pdfBytes: Uint8Array;
+  filePath: string | null;         // null until first save
+  fileName: string;
+  pageCount: number;
+  zoom: number;                    // actual zoom level (0.25 - 3.0)
+  zoomPreset: ZoomPreset | null;   // null if manual zoom
+  currentPage: number;             // 0-based, tracks scroll position
+  isDirty: boolean;
+  pages: PageEditState[];
+}
