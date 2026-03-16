@@ -34,7 +34,9 @@ import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useDependencies } from '@/hooks/useDependencies';
 import { AboutDialog } from '@/components/AboutDialog';
+import { FeedbackButton } from '@/components/FeedbackButton';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -88,24 +90,36 @@ function ToolCard({
   onClick,
   isFavorite,
   onToggleFavorite,
+  disabled,
+  disabledHint,
 }: {
   tool: ToolDefinition;
   onClick: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  disabled?: boolean;
+  disabledHint?: string;
 }) {
   const Icon = ICON_MAP[tool.icon];
   return (
     <div className="relative group/card">
       <button
         type="button"
-        onClick={onClick}
-        className="w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        title={disabled ? disabledHint : undefined}
+        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed'
+            : 'cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5'
+        }`}
       >
-        {Icon && <Icon className="h-7 w-7 text-primary transition-transform duration-200" />}
+        {Icon && <Icon className={`h-7 w-7 transition-transform duration-200 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
           <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {disabled ? disabledHint : tool.description}
+          </p>
         </div>
       </button>
       {onToggleFavorite && (
@@ -208,6 +222,7 @@ export function Dashboard() {
   const { selectTool, setPendingFiles } = useToolContext();
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
+  const { isAvailable, getHint } = useDependencies();
   const [aboutOpen, setAboutOpen] = useState(false);
   const groups = groupByCategory();
 
@@ -346,6 +361,7 @@ export function Dashboard() {
               >
                 <Info className="h-4 w-4" />
               </button>
+              <FeedbackButton />
               <ThemeToggle />
               {/* Recent Folder */}
               {recentDirs.length > 0 && (
@@ -422,15 +438,20 @@ export function Dashboard() {
                 className="grid gap-4"
                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
               >
-                {tools.map((tool) => (
-                  <ToolCard
-                    key={tool.id}
-                    tool={tool}
-                    onClick={() => selectTool(tool.id)}
-                    isFavorite={isFavorite(tool.id)}
-                    onToggleFavorite={() => toggleFavorite(tool.id)}
-                  />
-                ))}
+                {tools.map((tool) => {
+                  const depMissing = !isAvailable(tool.requiresDependency);
+                  return (
+                    <ToolCard
+                      key={tool.id}
+                      tool={tool}
+                      onClick={() => selectTool(tool.id)}
+                      isFavorite={isFavorite(tool.id)}
+                      onToggleFavorite={() => toggleFavorite(tool.id)}
+                      disabled={depMissing}
+                      disabledHint={tool.requiresDependency ? getHint(tool.requiresDependency) : undefined}
+                    />
+                  );
+                })}
               </div>
             </section>
           );

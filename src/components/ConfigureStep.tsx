@@ -430,13 +430,14 @@ export function ConfigureStep({
           )}
         </div>
 
-        {/* Strip metadata toggle */}
+        {/* Remove personal info toggle */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Strip metadata</h2>
+              <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Remove personal info</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Remove title, author, subject, keywords, creator, and producer fields.
+                Removes author name, software info, and document properties.
+                Helps comply with GDPR data minimisation. Does not affect DRM, encryption, or copyright.
               </p>
             </div>
 
@@ -445,7 +446,7 @@ export function ConfigureStep({
               role="switch"
               data-testid="strip-metadata-toggle"
               aria-checked={stripMetadata ? 'true' : 'false'}
-              aria-label="Strip PDF metadata"
+              aria-label="Remove personal info from PDF"
               onClick={() => setStripMetadata((v) => !v)}
               disabled={isProcessing}
               className={cn(

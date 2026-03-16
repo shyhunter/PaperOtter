@@ -28,6 +28,8 @@ export interface ToolStep {
   description: string;
 }
 
+export type DependencyName = 'ghostscript' | 'calibre' | 'libreoffice';
+
 export interface ToolDefinition {
   id: ToolId;
   name: string;
@@ -37,6 +39,8 @@ export interface ToolDefinition {
   acceptsFormats: Array<'pdf' | 'image' | 'document'>;
   acceptsMultipleFiles?: boolean;
   steps: ToolStep[];
+  /** External dependency required to use this tool. Tool is disabled if not installed. */
+  requiresDependency?: DependencyName;
 }
 
 export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
@@ -47,6 +51,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'FileDown',
     acceptsFormats: ['pdf'],
+    requiresDependency: 'ghostscript',
     steps: [
       { label: 'Pick', description: 'Open a PDF file' },
       { label: 'Configure', description: 'Set compression options' },
@@ -142,6 +147,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Lock',
     acceptsFormats: ['pdf'],
+    requiresDependency: 'ghostscript',
     steps: [
       { label: 'Pick', description: 'Open a PDF file' },
       { label: 'Password', description: 'Set a password' },
@@ -155,6 +161,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Unlock',
     acceptsFormats: ['pdf'],
+    requiresDependency: 'ghostscript',
     steps: [
       { label: 'Pick', description: 'Open a PDF file' },
       { label: 'Password', description: 'Enter the password' },
@@ -273,6 +280,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Archive',
     acceptsFormats: ['pdf'],
+    requiresDependency: 'ghostscript',
     steps: [
       { label: 'Select PDF', description: 'Open a PDF file' },
       { label: 'Configure', description: 'Set PDF/A options' },
@@ -286,6 +294,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Wrench',
     acceptsFormats: ['pdf'],
+    requiresDependency: 'ghostscript',
     steps: [
       { label: 'Select PDF', description: 'Open a PDF file' },
       { label: 'Repair', description: 'Fix PDF issues' },
@@ -312,6 +321,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'document',
     icon: 'ArrowLeftRight',
     acceptsFormats: ['pdf', 'document'],
+    requiresDependency: 'calibre',
     steps: [
       { label: 'Pick', description: 'Open a document file' },
       { label: 'Configure', description: 'Set conversion options' },
