@@ -91,9 +91,9 @@ function ToolCard({ tool, onClick }: { tool: ToolDefinition; onClick: () => void
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
     >
-      {Icon && <Icon className="h-7 w-7 text-primary" />}
+      {Icon && <Icon className="h-7 w-7 text-primary transition-transform duration-200 group-hover:scale-110" />}
       <div className="text-center">
         <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
@@ -199,8 +199,8 @@ export function Dashboard() {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 relative">
-      <div className="max-w-5xl mx-auto w-full space-y-6">
+    <div className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
+      <div className="max-w-5xl mx-auto w-full space-y-8">
         {/* Header with search */}
         <div className="space-y-4">
           <div className="flex items-start justify-between">
@@ -253,11 +253,11 @@ export function Dashboard() {
 
         {/* Quick Actions — hidden when searching */}
         {!searchQuery.trim() && (
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <section className="space-y-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
               Quick Actions
             </h2>
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               {quickActions.map((tool) => (
                 <ToolCard key={tool.id} tool={tool} onClick={() => selectTool(tool.id)} />
               ))}
@@ -271,12 +271,12 @@ export function Dashboard() {
           if (tools.length === 0) return null;
 
           return (
-            <section key={category} className="space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <section key={category} className="space-y-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                 {CATEGORY_LABELS[category]}
               </h2>
               <div
-                className="grid gap-3"
+                className="grid gap-4"
                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
               >
                 {tools.map((tool) => (

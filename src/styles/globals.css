@@ -128,5 +128,59 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* ── Theme transition for cards, panels, and inputs ──────────────────── */
+.dark *,
+:root * {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ── Animation keyframes ─────────────────────────────────────────────── */
+@keyframes fade-slide-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes checkmark-draw {
+  0% { stroke-dashoffset: 48; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-slide-in {
+  animation: fade-slide-in 0.3s ease-out both;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.3s ease-out both;
+}
+
+/* ── Respect reduced motion preference ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
