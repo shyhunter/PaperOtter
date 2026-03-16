@@ -7,7 +7,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 const store = new LazyStore('papercut-settings.json');
 const GITHUB_TOKEN_KEY = 'github-pat';
 const REPO_OWNER = 'shyhunter';
-const REPO_NAME = 'papercut';
+const REPO_NAME = 'Vibecoding2';
 
 type Priority = 'high' | 'medium' | 'low';
 type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error' | 'no-token';

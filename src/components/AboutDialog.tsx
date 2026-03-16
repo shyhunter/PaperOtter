@@ -3,7 +3,7 @@ import { X, ExternalLink } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 // TODO: Replace with actual GitHub repo URL when public
-const GITHUB_REPO_URL = 'https://github.com/shyhunter/papercut';
+const GITHUB_REPO_URL = 'https://github.com/shyhunter/Vibecoding2';
 
 const APP_VERSION_FALLBACK = '1.0.0-beta.1';
 

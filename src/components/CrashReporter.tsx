@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 // TODO: Replace with actual GitHub repo URL when public
-const GITHUB_REPO_URL = 'https://github.com/shyhunter/papercut';
+const GITHUB_REPO_URL = 'https://github.com/shyhunter/Vibecoding2';
 
 interface CrashReporterProps {
   error: Error | null;
