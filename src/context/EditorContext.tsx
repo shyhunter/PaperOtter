@@ -76,6 +76,8 @@ interface EditorContextValue {
   updatePdfBytes: (bytes: Uint8Array) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
+  /** Initialize full editor state (used by EditorView on PDF load) */
+  initState: (state: EditorViewState) => void;
   /** Current fit-width zoom value (recalculated on resize) */
   fitWidthZoom: number;
   setFitWidthZoom: (z: number) => void;
@@ -143,6 +145,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_FILE_NAME', name });
   }, []);
 
+  const initState = useCallback((s: EditorViewState) => {
+    dispatch({ type: 'INIT', state: s });
+  }, []);
+
   // Keyboard shortcuts: Cmd+= zoom in, Cmd+- zoom out, Cmd+0 fit-width
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -180,6 +186,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       updatePdfBytes,
       setFilePath,
       setFileName,
+      initState,
       fitWidthZoom: fitWidthZoomRef.current,
       setFitWidthZoom,
     }),
@@ -194,6 +201,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       updatePdfBytes,
       setFilePath,
       setFileName,
+      initState,
       setFitWidthZoom,
     ],
   );
