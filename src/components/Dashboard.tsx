@@ -20,6 +20,8 @@ import {
   Wrench,
   FileEdit,
   Search,
+  Star,
+  GripVertical,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -30,6 +32,7 @@ import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -61,13 +64,6 @@ const CATEGORY_LABELS: Record<ToolCategory, string> = {
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
-/** Quick Action tool IDs — most commonly used tools */
-const QUICK_ACTION_IDS: ToolId[] = [
-  'compress-pdf',
-  'merge-pdf',
-  'split-pdf',
-  'pdf-to-jpg',
-];
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
   const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
@@ -85,32 +81,122 @@ function getCompatibleTools(filePath: string): ToolDefinition[] {
   );
 }
 
-function ToolCard({ tool, onClick }: { tool: ToolDefinition; onClick: () => void }) {
+function ToolCard({
+  tool,
+  onClick,
+  isFavorite,
+  onToggleFavorite,
+}: {
+  tool: ToolDefinition;
+  onClick: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+}) {
   const Icon = ICON_MAP[tool.icon];
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
+    <div className="relative group/card">
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
+      >
+        {Icon && <Icon className="h-7 w-7 text-primary transition-transform duration-200" />}
+        <div className="text-center">
+          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+        </div>
+      </button>
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          className={`absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 ${
+            isFavorite
+              ? 'text-yellow-500 opacity-100'
+              : 'text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500'
+          }`}
+          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Star className={`h-4 w-4 ${isFavorite ? 'fill-yellow-500' : ''}`} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function FavoriteCard({
+  tool,
+  onClick,
+  index,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  isDragging,
+  onRemove,
+}: {
+  tool: ToolDefinition;
+  onClick: () => void;
+  index: number;
+  onDragStart: (index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (index: number) => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
+  onRemove: () => void;
+}) {
+  const Icon = ICON_MAP[tool.icon];
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={() => onDrop(index)}
+      onDragEnd={onDragEnd}
+      className={`relative group/fav transition-all duration-200 ${isDragging ? 'opacity-40 scale-95' : ''}`}
     >
-      {Icon && <Icon className="h-7 w-7 text-primary transition-transform duration-200 group-hover:scale-110" />}
-      <div className="text-center">
-        <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5"
+      >
+        {Icon && <Icon className="h-7 w-7 text-primary" />}
+        <div className="text-center">
+          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+        </div>
+      </button>
+      {/* Drag handle */}
+      <div className="absolute top-2 left-2 p-1 text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+        <GripVertical className="h-4 w-4" />
       </div>
-    </button>
+      {/* Remove star */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
+        title="Remove from favorites"
+      >
+        <Star className="h-4 w-4 fill-yellow-500" />
+      </button>
+    </div>
   );
 }
 
 export function Dashboard() {
   const { selectTool, setPendingFiles } = useToolContext();
   const { dirs: recentDirs } = useRecentDirs();
+  const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<string[]>([]);
   const [compatibleTools, setCompatibleTools] = useState<ToolDefinition[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Drag-and-drop state for favorites reordering
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [, setDragOverIndex] = useState<number | null>(null);
 
   // Filter tools by search query
   const filteredGroups = useMemo(() => {
@@ -130,11 +216,34 @@ export function Dashboard() {
 
   const hasSearchResults = CATEGORY_ORDER.some((c) => filteredGroups[c].length > 0);
 
-  // Quick action tools
-  const quickActions = useMemo(
-    () => QUICK_ACTION_IDS.map((id) => TOOL_REGISTRY[id]).filter(Boolean),
-    [],
+  // Favorite tools resolved from IDs
+  const favoriteTools = useMemo(
+    () => favorites.map((id) => TOOL_REGISTRY[id]).filter(Boolean),
+    [favorites],
   );
+
+  // Drag handlers for favorite reordering
+  const handleFavDragStart = useCallback((index: number) => {
+    setDragIndex(index);
+  }, []);
+
+  const handleFavDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }, []);
+
+  const handleFavDrop = useCallback((toIndex: number) => {
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      reorderFavorites(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, [dragIndex, reorderFavorites]);
+
+  const handleFavDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, []);
 
   // Listen for drag-drop events on the dashboard
   useEffect(() => {
@@ -251,15 +360,31 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions — hidden when searching */}
-        {!searchQuery.trim() && (
+        {/* My Favorites — hidden when searching */}
+        {!searchQuery.trim() && favoriteTools.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Quick Actions
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                My Favorites
+              </h2>
+              <p className="text-[10px] text-muted-foreground/50">
+                Drag to reorder &middot; Click &#9733; on any tool to add
+              </p>
+            </div>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-              {quickActions.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} onClick={() => selectTool(tool.id)} />
+              {favoriteTools.map((tool, idx) => (
+                <FavoriteCard
+                  key={tool.id}
+                  tool={tool}
+                  index={idx}
+                  onClick={() => selectTool(tool.id)}
+                  onDragStart={handleFavDragStart}
+                  onDragOver={handleFavDragOver}
+                  onDrop={handleFavDrop}
+                  onDragEnd={handleFavDragEnd}
+                  isDragging={dragIndex === idx}
+                  onRemove={() => toggleFavorite(tool.id)}
+                />
               ))}
             </div>
           </section>
@@ -280,7 +405,13 @@ export function Dashboard() {
                 style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
               >
                 {tools.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} onClick={() => selectTool(tool.id)} />
+                  <ToolCard
+                    key={tool.id}
+                    tool={tool}
+                    onClick={() => selectTool(tool.id)}
+                    isFavorite={isFavorite(tool.id)}
+                    onToggleFavorite={() => toggleFavorite(tool.id)}
+                  />
                 ))}
               </div>
             </section>
