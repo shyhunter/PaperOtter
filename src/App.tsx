@@ -39,6 +39,7 @@ import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
 import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
+import { UpdateChecker } from '@/components/UpdateChecker';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -670,6 +671,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
+      <UpdateChecker />
       {activeTool === null && <FirstLaunchBanner />}
       {activeTool === null ? <Dashboard /> : <ToolFlow />}
       <PrivacyFooter />
