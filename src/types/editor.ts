@@ -78,4 +78,8 @@ export interface EditorViewState {
   currentPage: number;             // 0-based, tracks scroll position
   isDirty: boolean;
   pages: PageEditState[];
+  // Text editing state (Phase 16 Plan 03)
+  selectedBlockId: string | null;
+  editingBlockId: string | null;
+  editorMode: EditorMode;
 }

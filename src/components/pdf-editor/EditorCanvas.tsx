@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useEditorContext } from '@/context/EditorContext';
+import { TextEditingLayer } from './TextEditingLayer';
 
 const PAGE_GAP = 16; // px between pages
 const RENDER_WINDOW = 2; // render current page +/- this many pages
@@ -202,14 +203,22 @@ export function EditorCanvas() {
               key={idx}
               data-page-idx={idx}
               ref={(el) => setPageRef(idx, el)}
-              className="shadow-md bg-white dark:bg-zinc-900 flex-shrink-0"
+              className="shadow-md bg-white dark:bg-zinc-900 flex-shrink-0 relative"
               style={{ width: scaledW, height: scaledH }}
             >
               {isInRenderWindow(idx) ? (
-                <canvas
-                  ref={(el) => setCanvasRef(idx, el)}
-                  style={{ display: 'block', width: '100%', height: '100%' }}
-                />
+                <>
+                  <canvas
+                    ref={(el) => setCanvasRef(idx, el)}
+                    style={{ display: 'block', width: '100%', height: '100%' }}
+                  />
+                  <TextEditingLayer
+                    pageIndex={idx}
+                    pageWidth={info.width}
+                    pageHeight={info.height}
+                    zoom={zoom}
+                  />
+                </>
               ) : (
                 <div
                   className="w-full h-full bg-white dark:bg-zinc-800"
