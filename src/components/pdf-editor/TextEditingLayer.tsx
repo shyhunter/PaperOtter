@@ -372,10 +372,10 @@ function TextBlockOverlay({
     [block, zoom, onUpdate, onDirty],
   );
 
-  // Border styling
+  // Border styling — only show borders on hover/selection, not by default
   const borderStyle = isSelected
     ? '2px dashed #3b82f6'
-    : '1px solid transparent';
+    : 'none';
 
   return (
     <div
@@ -399,10 +399,10 @@ function TextBlockOverlay({
         borderRadius: 2,
       }}
       onMouseEnter={(e) => {
-        if (!isSelected) e.currentTarget.style.border = '1px solid #93c5fd';
+        if (!isSelected) e.currentTarget.style.border = '1px dashed #93c5fd';
       }}
       onMouseLeave={(e) => {
-        if (!isSelected) e.currentTarget.style.border = borderStyle;
+        if (!isSelected) e.currentTarget.style.border = 'none';
       }}
     >
       {isEditing ? (
@@ -441,7 +441,9 @@ function TextBlockOverlay({
             fontWeight: block.bold ? 'bold' : 'normal',
             fontStyle: block.italic ? 'italic' : 'normal',
             textDecoration: block.underline ? 'underline' : 'none',
-            color: block.color,
+            // Transparent text in non-editing mode — canvas already renders the text.
+            // This div acts as a click target; text becomes visible only when selected.
+            color: isSelected ? block.color : 'transparent',
             textAlign: block.alignment as React.CSSProperties['textAlign'],
             lineHeight: 1.2,
             whiteSpace: 'pre-wrap',

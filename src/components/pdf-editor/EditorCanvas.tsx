@@ -8,8 +8,10 @@ import { useEditorContext } from '@/context/EditorContext';
 import { TextEditingLayer } from './TextEditingLayer';
 
 const PAGE_GAP = 16; // px between pages
-const RENDER_WINDOW = 2; // render current page +/- this many pages
 const ZOOM_DEBOUNCE_MS = 150;
+// For small docs (< 50 pages), render all pages. For large docs, use a window.
+const MAX_PAGES_NO_VIRTUALIZATION = 50;
+const LARGE_DOC_RENDER_WINDOW = 5;
 
 interface PageInfo {
   width: number;  // PDF points
@@ -17,7 +19,7 @@ interface PageInfo {
 }
 
 export function EditorCanvas() {
-  const { state, setCurrentPage, setFitWidthZoom, scrollToPageRef } = useEditorContext();
+  const { state, setCurrentPage, setFitWidthZoom, setZoom, scrollToPageRef } = useEditorContext();
   const { pdfBytes, zoom, pageCount } = state;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,8 +121,12 @@ export function EditorCanvas() {
     const pdfDoc = await loadingTask.promise;
 
     try {
-      const start = Math.max(0, visiblePage - RENDER_WINDOW);
-      const end = Math.min(pageCount - 1, visiblePage + RENDER_WINDOW);
+      const start = pageCount <= MAX_PAGES_NO_VIRTUALIZATION
+        ? 0
+        : Math.max(0, visiblePage - LARGE_DOC_RENDER_WINDOW);
+      const end = pageCount <= MAX_PAGES_NO_VIRTUALIZATION
+        ? pageCount - 1
+        : Math.min(pageCount - 1, visiblePage + LARGE_DOC_RENDER_WINDOW);
 
       for (let i = start; i <= end; i++) {
         const canvas = canvasRefs.current.get(i);
@@ -176,8 +182,28 @@ export function EditorCanvas() {
     }
   }, []);
 
-  const isInRenderWindow = (idx: number) =>
-    idx >= visiblePage - RENDER_WINDOW && idx <= visiblePage + RENDER_WINDOW;
+  const isInRenderWindow = (idx: number) => {
+    if (pageCount <= MAX_PAGES_NO_VIRTUALIZATION) return true;
+    return idx >= visiblePage - LARGE_DOC_RENDER_WINDOW && idx <= visiblePage + LARGE_DOC_RENDER_WINDOW;
+  };
+
+  // Pinch-to-zoom via wheel event with ctrlKey (trackpad pinch sends wheel+ctrlKey)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    function handleWheel(e: WheelEvent) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = -e.deltaY * 0.005;
+        const newZoom = Math.min(3.0, Math.max(0.25, zoom + delta));
+        setZoom(newZoom);
+      }
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [zoom, setZoom]);
 
   // Expose scrollToPage for PagePanel via context ref
   useEffect(() => {

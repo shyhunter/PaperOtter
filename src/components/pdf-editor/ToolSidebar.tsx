@@ -75,8 +75,8 @@ export function ToolSidebar() {
         </div>
       )}
 
-      {/* Icon strip */}
-      <div className="w-[48px] flex-none border-l bg-muted/30 flex flex-col items-center py-1">
+      {/* Icon strip — stays fixed, scrolls internally if too many icons */}
+      <div className="w-[48px] flex-none border-l bg-muted/30 flex flex-col items-center py-1 overflow-y-auto">
         {tools.map(({ id, def, Icon }) => {
           const isActive = activeTool === id && !collapsed;
           return (

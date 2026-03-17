@@ -28,11 +28,7 @@ function useDebouncedPreview(
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    return () => { mountedRef.current = false; };
-  }, []);
+  const runIdRef = useRef(0);
 
   useEffect(() => {
     if (pdfBytes.byteLength === 0) return;
@@ -40,22 +36,31 @@ function useDebouncedPreview(
     clearTimeout(timeoutRef.current);
     setIsProcessing(true);
 
+    const runId = ++runIdRef.current;
+
     timeoutRef.current = setTimeout(async () => {
       try {
         const result = await runTool(pdfBytes);
-        if (mountedRef.current) {
+        // Only update if this is still the latest run
+        if (runIdRef.current === runId) {
           setPreviewBytes(result);
           setIsProcessing(false);
         }
       } catch {
-        if (mountedRef.current) {
+        if (runIdRef.current === runId) {
           setPreviewBytes(null);
           setIsProcessing(false);
         }
       }
     }, delay);
 
-    return () => clearTimeout(timeoutRef.current);
+    return () => {
+      clearTimeout(timeoutRef.current);
+      // If cleanup fires (unmount or re-run), ensure processing flag is cleared
+      if (runIdRef.current === runId) {
+        setIsProcessing(false);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfBytes, ...deps]);
 
@@ -161,20 +166,28 @@ const COMPRESS_PRESETS = [
   { value: 'prepress', label: 'Maximum quality', desc: 'Prepress / archival' },
 ] as const;
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 function CompressPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
 
-  // For compress, we do NOT run a debounced preview because it requires
-  // writing temp files and invoking GS — too heavy for live preview.
-  // Instead, we show a "preview not available" state and just Apply.
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [compressionResult, setCompressionResult] = useState<{
+    originalSize: number;
+    compressedSize: number;
+  } | null>(null);
 
   const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
+    setCompressionResult(null);
     try {
       const { tempDir, join } = await import('@tauri-apps/api/path');
       const tmpBase = await tempDir();
@@ -182,6 +195,7 @@ function CompressPanel() {
       const tempInputPath = await join(tmpBase, `papercut_sidebar_${ts}.pdf`);
 
       const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
+      const originalSize = state.pdfBytes.byteLength;
       await writeFile(tempInputPath, state.pdfBytes);
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
@@ -194,8 +208,11 @@ function CompressPanel() {
       const result = new Uint8Array(gsResult);
       setPreviewBytes(result);
       setIsProcessing(false);
+      setCompressionResult({
+        originalSize,
+        compressedSize: result.byteLength,
+      });
 
-      // Apply immediately
       updatePdfBytes(result);
       markDirty();
     } catch (err) {
@@ -203,6 +220,10 @@ function CompressPanel() {
       await apply(() => Promise.reject(err));
     }
   }, [state.pdfBytes, preset, updatePdfBytes, markDirty, apply]);
+
+  const reductionPct = compressionResult
+    ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
+    : null;
 
   return (
     <div className="space-y-3">
@@ -232,6 +253,26 @@ function CompressPanel() {
           </label>
         ))}
       </div>
+
+      {/* Compression result feedback */}
+      {compressionResult && (
+        <div className="rounded border bg-muted/30 p-2 space-y-1">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-muted-foreground">Original</span>
+            <span className="font-medium">{formatBytes(compressionResult.originalSize)}</span>
+          </div>
+          <div className="flex justify-between text-[10px]">
+            <span className="text-muted-foreground">Compressed</span>
+            <span className="font-medium">{formatBytes(compressionResult.compressedSize)}</span>
+          </div>
+          <div className="flex justify-between text-[10px] pt-1 border-t">
+            <span className="text-muted-foreground">Reduction</span>
+            <span className={`font-semibold ${reductionPct! > 0 ? 'text-green-500' : 'text-orange-500'}`}>
+              {reductionPct! > 0 ? `−${reductionPct}%` : `+${Math.abs(reductionPct!)}%`}
+            </span>
+          </div>
+        </div>
+      )}
 
       <ToolSidebarPreview
         originalBytes={state.pdfBytes}

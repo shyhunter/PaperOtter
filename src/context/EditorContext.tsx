@@ -312,21 +312,19 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     try {
       const srcDoc = await PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
       const newDoc = await PDFDocument.create();
+      // Build new page order: remove fromIdx, insert at toIdx
       const indices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
       const [moved] = indices.splice(fromIdx, 1);
       indices.splice(toIdx, 0, moved);
       const copiedPages = await newDoc.copyPages(srcDoc, indices);
       for (const page of copiedPages) newDoc.addPage(page);
       const newBytes = new Uint8Array(await newDoc.save({ useObjectStreams: false }));
-      const reindexed = state.pages.map((p, i) => ({ ...p, pageIndex: indices.indexOf(i) }));
-      // Sort by new position
-      const sortedPages = [...reindexed].sort((a, b) => {
-        const aNew = indices.indexOf(a.pageIndex);
-        const bNew = indices.indexOf(b.pageIndex);
-        return aNew - bNew;
-      });
-      const finalPages = sortedPages.map((p, i) => ({ ...p, pageIndex: i }));
-      dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: finalPages, isDirty: true } });
+      // Reorder page edit state to match new page order
+      const newPages = indices.map((oldIdx, newIdx) => ({
+        ...state.pages[oldIdx],
+        pageIndex: newIdx,
+      }));
+      dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: newPages, isDirty: true } });
     } catch (err) {
       console.error('reorderPages failed:', err);
     }
