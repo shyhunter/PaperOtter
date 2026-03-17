@@ -14,6 +14,7 @@ import { EditorCanvas } from './EditorCanvas';
 import { ZoomToolbar } from './ZoomToolbar';
 import { ToolSidebar } from './ToolSidebar';
 import { PagePanel } from './PagePanel';
+import { SaveController } from './SaveController';
 
 interface EditorViewProps {
   /** File path to open */
@@ -22,10 +23,48 @@ interface EditorViewProps {
 
 /** Inner component that consumes EditorContext */
 function EditorViewInner({ filePath }: EditorViewProps) {
-  const { initState, setFitWidthZoom, scrollToPageRef } = useEditorContext();
+  const { state, initState, setFitWidthZoom, scrollToPageRef } = useEditorContext();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initRef = useRef(false);
+
+  // Track isDirty via ref so event handlers always have the current value
+  const isDirtyRef = useRef(false);
+  useEffect(() => {
+    isDirtyRef.current = state.isDirty;
+  });
+
+  // Unsaved changes guard: browser beforeunload
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Tauri window close intercept
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      const win = getCurrentWindow();
+      win.onCloseRequested(async (event) => {
+        if (isDirtyRef.current) {
+          const confirmed = window.confirm(
+            'You have unsaved changes. Are you sure you want to close?',
+          );
+          if (!confirmed) {
+            event.preventDefault();
+          }
+        }
+      }).then((fn) => {
+        unlisten = fn;
+      });
+    });
+    return () => { unlisten?.(); };
+  }, []);
 
   const loadPdf = useCallback(async () => {
     setIsLoading(true);
@@ -90,6 +129,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
 
   return (
     <div className="flex flex-col h-full">
+      <SaveController />
       <EditorTopToolbar />
 
       <div className="flex flex-1 min-h-0">

@@ -23,6 +23,7 @@ type EditorAction =
   | { type: 'SET_ZOOM_PRESET'; preset: ZoomPreset; fitWidthZoom: number }
   | { type: 'SET_CURRENT_PAGE'; page: number }
   | { type: 'MARK_DIRTY' }
+  | { type: 'CLEAR_DIRTY' }
   | { type: 'UPDATE_PDF_BYTES'; bytes: Uint8Array; pageCount?: number; pages?: PageEditState[] }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
@@ -60,6 +61,8 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       return { ...state, currentPage: action.page };
     case 'MARK_DIRTY':
       return { ...state, isDirty: true };
+    case 'CLEAR_DIRTY':
+      return { ...state, isDirty: false };
     case 'UPDATE_PDF_BYTES': {
       const updates: Partial<EditorViewState> = { pdfBytes: action.bytes, isDirty: true };
       if (action.pageCount !== undefined) updates.pageCount = action.pageCount;
@@ -137,6 +140,7 @@ interface EditorContextValue {
   zoomOut: () => void;
   setCurrentPage: (idx: number) => void;
   markDirty: () => void;
+  clearDirty: () => void;
   updatePdfBytes: (bytes: Uint8Array) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
@@ -225,6 +229,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const markDirty = useCallback(() => {
     dispatch({ type: 'MARK_DIRTY' });
+  }, []);
+
+  const clearDirty = useCallback(() => {
+    dispatch({ type: 'CLEAR_DIRTY' });
   }, []);
 
   const updatePdfBytes = useCallback((bytes: Uint8Array) => {
@@ -497,6 +505,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       zoomOut,
       setCurrentPage,
       markDirty,
+      clearDirty,
       updatePdfBytes,
       setFilePath,
       setFileName,
@@ -531,6 +540,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       zoomOut,
       setCurrentPage,
       markDirty,
+      clearDirty,
       updatePdfBytes,
       setFilePath,
       setFileName,
