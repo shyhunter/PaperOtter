@@ -40,6 +40,7 @@ import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
 import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
 import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
 import { UpdateChecker } from '@/components/UpdateChecker';
+import { EditorView } from '@/components/pdf-editor/EditorView';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 
@@ -667,14 +668,38 @@ function ToolFlow() {
 }
 
 function AppContent() {
-  const { activeTool } = useToolContext();
+  const { activeTool, editorFilePath, openEditor } = useToolContext();
+
+  // Listen for "file-opened" event from Tauri backend (file association / CLI arg)
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen<string>('file-opened', (event) => {
+        if (event.payload && event.payload.endsWith('.pdf')) {
+          openEditor(event.payload);
+        }
+      }).then((fn) => {
+        unlisten = fn;
+      });
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, [openEditor]);
+
+  // Priority: editorFilePath > activeTool > dashboard
+  const showEditor = editorFilePath !== null;
+  const showToolFlow = !showEditor && activeTool !== null;
+  const showDashboard = !showEditor && activeTool === null;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <UpdateChecker />
-      {activeTool === null && <FirstLaunchBanner />}
-      {activeTool === null ? <Dashboard /> : <ToolFlow />}
-      <PrivacyFooter />
+      {showDashboard && <FirstLaunchBanner />}
+      {showEditor && <EditorView filePath={editorFilePath} />}
+      {showToolFlow && <ToolFlow />}
+      {showDashboard && <Dashboard />}
+      {!showEditor && <PrivacyFooter />}
       <Toaster position="bottom-center" />
     </div>
   );

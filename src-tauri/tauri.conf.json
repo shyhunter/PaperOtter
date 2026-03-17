@@ -48,6 +48,14 @@
     ],
     "externalBin": [
       "binaries/gs"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["pdf"],
+        "mimeType": "application/pdf",
+        "description": "PDF Document",
+        "role": "Editor"
+      }
     ]
   }
 }

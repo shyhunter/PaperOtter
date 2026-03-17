@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::ipc::Response;
+use tauri::Emitter;
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use image::codecs::jpeg::JpegEncoder;
@@ -1373,6 +1374,11 @@ fn sweep_papercut_temp_files() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    run_with_file(None)
+}
+
+/// Run the app, optionally opening a file passed via CLI argument (macOS "Open with").
+pub fn run_with_file(open_file: Option<String>) {
     let builder = tauri::Builder::default()
         .manage(ProcessState { gs_child: Mutex::new(None) })
         .plugin(tauri_plugin_shell::init())
@@ -1389,8 +1395,20 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_webdriver_automation::init());
 
     builder
-        .setup(|_app| {
+        .setup(move |app| {
             sweep_papercut_temp_files();
+
+            // If a PDF file was passed via CLI, emit a "file-opened" event to the frontend
+            if let Some(ref file_path) = open_file {
+                let handle = app.handle().clone();
+                let path = file_path.clone();
+                // Delay slightly so the webview has time to mount and register listeners
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    let _ = handle.emit("file-opened", path);
+                });
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())
