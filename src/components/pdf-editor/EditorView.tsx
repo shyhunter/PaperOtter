@@ -13,6 +13,7 @@ import { EditorTopToolbar } from './EditorTopToolbar';
 import { EditorCanvas } from './EditorCanvas';
 import { ZoomToolbar } from './ZoomToolbar';
 import { ToolSidebar } from './ToolSidebar';
+import { PagePanel } from './PagePanel';
 
 interface EditorViewProps {
   /** File path to open */
@@ -21,7 +22,7 @@ interface EditorViewProps {
 
 /** Inner component that consumes EditorContext */
 function EditorViewInner({ filePath }: EditorViewProps) {
-  const { initState, setFitWidthZoom } = useEditorContext();
+  const { initState, setFitWidthZoom, scrollToPageRef } = useEditorContext();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initRef = useRef(false);
@@ -92,8 +93,8 @@ function EditorViewInner({ filePath }: EditorViewProps) {
       <EditorTopToolbar />
 
       <div className="flex flex-1 min-h-0">
-        {/* Left panel placeholder (future: page panel) */}
-        <div className="w-0 flex-none" />
+        {/* Left: Page panel with thumbnails */}
+        <PagePanel onScrollToPage={(idx) => scrollToPageRef.current?.(idx)} />
 
         {/* Center: Canvas with zoom toolbar overlay */}
         <div className="flex-1 relative min-w-0">

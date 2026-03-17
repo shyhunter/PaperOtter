@@ -299,13 +299,29 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Page operations
-  const reorderPages = useCallback((fromIdx: number, toIdx: number) => {
-    const pages = [...state.pages];
-    const [moved] = pages.splice(fromIdx, 1);
-    pages.splice(toIdx, 0, moved);
-    // Re-index pageIndex
-    const reindexed = pages.map((p, i) => ({ ...p, pageIndex: i }));
-    dispatch({ type: 'INIT', state: { ...state, pages: reindexed, isDirty: true } });
+  const reorderPages = useCallback(async (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || state.pdfBytes.byteLength === 0) return;
+    try {
+      const srcDoc = await PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
+      const newDoc = await PDFDocument.create();
+      const indices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
+      const [moved] = indices.splice(fromIdx, 1);
+      indices.splice(toIdx, 0, moved);
+      const copiedPages = await newDoc.copyPages(srcDoc, indices);
+      for (const page of copiedPages) newDoc.addPage(page);
+      const newBytes = new Uint8Array(await newDoc.save({ useObjectStreams: false }));
+      const reindexed = state.pages.map((p, i) => ({ ...p, pageIndex: indices.indexOf(i) }));
+      // Sort by new position
+      const sortedPages = [...reindexed].sort((a, b) => {
+        const aNew = indices.indexOf(a.pageIndex);
+        const bNew = indices.indexOf(b.pageIndex);
+        return aNew - bNew;
+      });
+      const finalPages = sortedPages.map((p, i) => ({ ...p, pageIndex: i }));
+      dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: finalPages, isDirty: true } });
+    } catch (err) {
+      console.error('reorderPages failed:', err);
+    }
   }, [state]);
 
   const addBlankPage = useCallback(async (afterIdx: number) => {

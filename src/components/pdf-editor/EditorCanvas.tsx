@@ -17,7 +17,7 @@ interface PageInfo {
 }
 
 export function EditorCanvas() {
-  const { state, setCurrentPage, setFitWidthZoom } = useEditorContext();
+  const { state, setCurrentPage, setFitWidthZoom, scrollToPageRef } = useEditorContext();
   const { pdfBytes, zoom, pageCount } = state;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,6 +178,17 @@ export function EditorCanvas() {
 
   const isInRenderWindow = (idx: number) =>
     idx >= visiblePage - RENDER_WINDOW && idx <= visiblePage + RENDER_WINDOW;
+
+  // Expose scrollToPage for PagePanel via context ref
+  useEffect(() => {
+    scrollToPageRef.current = (idx: number) => {
+      const el = pageRefs.current.get(idx);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    return () => { scrollToPageRef.current = null; };
+  }, [scrollToPageRef]);
 
   if (pageInfos.length === 0) {
     return (
