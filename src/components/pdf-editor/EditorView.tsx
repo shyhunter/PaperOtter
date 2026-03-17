@@ -12,6 +12,7 @@ import {
 import { EditorTopToolbar } from './EditorTopToolbar';
 import { EditorCanvas } from './EditorCanvas';
 import { ZoomToolbar } from './ZoomToolbar';
+import { ToolSidebar } from './ToolSidebar';
 
 interface EditorViewProps {
   /** File path to open */
@@ -100,8 +101,8 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <ZoomToolbar />
         </div>
 
-        {/* Right panel placeholder (future: tool sidebar) */}
-        <div className="w-0 flex-none" />
+        {/* Right: Tool sidebar */}
+        <ToolSidebar />
       </div>
     </div>
   );
