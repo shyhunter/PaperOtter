@@ -54,6 +54,38 @@ export async function renderPdfThumbnail(
 }
 
 /**
+ * Renders a single specific page of a PDF to a PNG data URL.
+ * @param pdfBytes  - PDF bytes
+ * @param pageIndex - 0-based page index
+ * @param scale     - Render scale factor
+ * @returns         - PNG data URL string
+ */
+export async function renderPdfPageThumbnail(
+  pdfBytes: Uint8Array,
+  pageIndex: number,
+  scale = 1.0,
+): Promise<string> {
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+  const pdfDoc = await loadingTask.promise;
+
+  try {
+    const pageNum = Math.min(Math.max(pageIndex + 1, 1), pdfDoc.numPages);
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvas, viewport }).promise;
+
+    return canvas.toDataURL('image/png');
+  } finally {
+    pdfDoc.destroy();
+  }
+}
+
+/**
  * Renders ALL pages of a PDF to an array of PNG data URLs.
  * Used by CompareStep for the full before/after preview.
  * @param pdfBytes - PDF bytes (source or processed)

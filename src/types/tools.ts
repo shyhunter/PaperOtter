@@ -330,3 +330,23 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     ],
   },
 };
+
+/**
+ * PDF tools shown in the editor sidebar, in display order.
+ * Excludes merge-pdf (needs multiple files), split-pdf (produces multiple outputs),
+ * pdf-to-jpg, jpg-to-pdf, and edit-pdf (handled by the editor canvas itself).
+ */
+export const EDITOR_SIDEBAR_TOOLS: ToolId[] = [
+  'compress-pdf',
+  'rotate-pdf',
+  'page-numbers',
+  'watermark',
+  'crop-pdf',
+  'organize-pdf',
+  'sign-pdf',
+  'redact-pdf',
+  'pdfa-convert',
+  'repair-pdf',
+  'protect-pdf',
+  'unlock-pdf',
+];
