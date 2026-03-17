@@ -668,7 +668,28 @@ function ToolFlow() {
 }
 
 function AppContent() {
-  const { activeTool, editorFilePath, openEditor } = useToolContext();
+  const { activeTool, editorFilePath, openEditor, goToDashboard } = useToolContext();
+
+  // Intercept edit-pdf tool: open file picker then redirect to new editor
+  useEffect(() => {
+    if (activeTool !== 'edit-pdf') return;
+    let cancelled = false;
+    (async () => {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const result = await open({
+        multiple: false,
+        directory: false,
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+      });
+      if (cancelled) return;
+      if (typeof result === 'string') {
+        openEditor(result);
+      } else {
+        goToDashboard();
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeTool, openEditor, goToDashboard]);
 
   // Listen for "file-opened" event from Tauri backend (file association / CLI arg)
   useEffect(() => {
