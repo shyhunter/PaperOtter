@@ -12,6 +12,7 @@ import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary';
 import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
+import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES } from '@/lib/fileValidation';
@@ -668,7 +669,7 @@ function ToolFlow() {
 }
 
 function AppContent() {
-  const { activeTool, editorFilePath, openEditor, goToDashboard } = useToolContext();
+  const { activeTool, editorFilePath, openEditor, goToDashboard, selectTool } = useToolContext();
 
   // Intercept edit-pdf tool: open file picker then redirect to new editor
   useEffect(() => {
@@ -707,6 +708,18 @@ function AppContent() {
       unlisten?.();
     };
   }, [openEditor]);
+
+  // Listen for custom "papercut:open-tool" events from editor sidebar (sign/redact navigation)
+  useEffect(() => {
+    function handleOpenTool(e: Event) {
+      const toolId = (e as CustomEvent).detail;
+      if (typeof toolId === 'string') {
+        selectTool(toolId as ToolId);
+      }
+    }
+    window.addEventListener('papercut:open-tool', handleOpenTool);
+    return () => window.removeEventListener('papercut:open-tool', handleOpenTool);
+  }, [selectTool]);
 
   // Priority: editorFilePath > activeTool > dashboard
   const showEditor = editorFilePath !== null;

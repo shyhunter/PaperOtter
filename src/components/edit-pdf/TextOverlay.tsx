@@ -67,6 +67,7 @@ export function TextOverlay({
           bold: false,
           italic: false,
           underline: false,
+          lineHeight: 1.2,
           isNew: true,
         });
       } else {

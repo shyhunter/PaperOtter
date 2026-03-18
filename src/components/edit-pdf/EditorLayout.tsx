@@ -55,6 +55,7 @@ function textItemToBlock(item: ExtractedTextItem, pageIndex: number): TextBlock 
     bold: false,
     italic: false,
     underline: false,
+    lineHeight: 1.2,
     isNew: false,
   };
 }

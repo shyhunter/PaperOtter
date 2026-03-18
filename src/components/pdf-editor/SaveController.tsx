@@ -6,9 +6,24 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
+
+/** Show a save-success toast with a clickable "Show in Finder" action */
+function showSavedToast(savedPath: string) {
+  const fileName = savedPath.split('/').pop() ?? savedPath.split('\\').pop() ?? 'file';
+  toast.success(`Saved to ${fileName}`, {
+    duration: 5000,
+    action: {
+      label: 'Show in Finder',
+      onClick: () => {
+        invoke('reveal_in_finder', { path: savedPath }).catch(() => {});
+      },
+    },
+  });
+}
 
 export function SaveController() {
   const { state, setFilePath, setFileName, clearDirty } = useEditorContext();
@@ -55,7 +70,7 @@ export function SaveController() {
       }
       clearDirty();
 
-      toast.success('Saved', { duration: 1500 });
+      showSavedToast(targetPath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
       toast.error('Failed to save', { description: msg });
@@ -138,7 +153,7 @@ export function useSaveActions() {
         setFileName(newName);
       }
       clearDirty();
-      toast.success('Saved', { duration: 1500 });
+      showSavedToast(targetPath);
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';

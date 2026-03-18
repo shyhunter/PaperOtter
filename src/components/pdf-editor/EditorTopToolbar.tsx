@@ -1,14 +1,14 @@
 // EditorTopToolbar: fixed top bar for the PDF editor.
 // Shows breadcrumb row (Dashboard > filename.pdf) with save button and formatting toolbar row below it.
 import { useCallback, useState } from 'react';
-import { ChevronRight, Save } from 'lucide-react';
+import { ChevronRight, Save, Columns2 } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import { useToolContext } from '@/context/ToolContext';
 import { useSaveActions } from './SaveController';
 import { FormattingToolbar } from './FormattingToolbar';
 
 export function EditorTopToolbar() {
-  const { state } = useEditorContext();
+  const { state, setCompareMode } = useEditorContext();
   const { goToDashboard } = useToolContext();
   const { save, isSaving } = useSaveActions();
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
@@ -76,6 +76,23 @@ export function EditorTopToolbar() {
             ) : (
               <span>Save</span>
             )}
+          </button>
+        </div>
+
+        {/* Compare toggle */}
+        <div className="ml-2">
+          <button
+            type="button"
+            onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
+              state.compareMode !== 'off'
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'hover:bg-muted text-muted-foreground'
+            }`}
+            title="Toggle compare view (original vs edited)"
+          >
+            <Columns2 className="w-3.5 h-3.5" />
+            <span>Compare</span>
           </button>
         </div>
 

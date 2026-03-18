@@ -11,6 +11,7 @@ import {
 } from '@/context/EditorContext';
 import { EditorTopToolbar } from './EditorTopToolbar';
 import { EditorCanvas } from './EditorCanvas';
+import { CompareFloatingWindow } from './CompareFloatingWindow';
 import { ZoomToolbar } from './ZoomToolbar';
 import { ToolSidebar } from './ToolSidebar';
 import { PagePanel } from './PagePanel';
@@ -45,24 +46,36 @@ function EditorViewInner({ filePath }: EditorViewProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  // Tauri window close intercept
+  // Tauri window close intercept — only block if there are unsaved changes
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+
+    import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
       const win = getCurrentWindow();
-      win.onCloseRequested(async (event) => {
-        if (isDirtyRef.current) {
-          const confirmed = window.confirm(
-            'You have unsaved changes. Are you sure you want to close?',
-          );
-          if (!confirmed) {
-            event.preventDefault();
+      unlisten = await win.onCloseRequested(async (event) => {
+        if (!isDirtyRef.current) {
+          // Not dirty — allow the close to proceed naturally
+          return;
+        }
+        // Dirty — ask user
+        event.preventDefault();
+        const confirmed = window.confirm(
+          'You have unsaved changes. Are you sure you want to close?',
+        );
+        if (confirmed) {
+          // Force close by destroying the window
+          try {
+            await win.destroy();
+          } catch {
+            // Fallback: try close()
+            try { await win.close(); } catch { /* give up */ }
           }
         }
-      }).then((fn) => {
-        unlisten = fn;
       });
+    }).catch(() => {
+      // Not in Tauri environment
     });
+
     return () => { unlisten?.(); };
   }, []);
 
@@ -128,7 +141,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       <SaveController />
       <EditorTopToolbar />
 
@@ -141,6 +154,9 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <EditorCanvas />
           <ZoomToolbar />
         </div>
+
+        {/* Floating compare window (original PDF) */}
+        {state.compareMode !== 'off' && <CompareFloatingWindow />}
 
         {/* Right: Tool sidebar */}
         <ToolSidebar />

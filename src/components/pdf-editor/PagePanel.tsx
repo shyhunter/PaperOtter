@@ -105,10 +105,14 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       });
       if (typeof result === 'string') {
         const bytes = await readFile(result);
-        addPagesFromPdf(insertAfter(), new Uint8Array(bytes));
+        await addPagesFromPdf(insertAfter(), new Uint8Array(bytes));
       }
-    } catch {
-      // User cancelled or read failed
+    } catch (err) {
+      // Only show error if not a user cancellation
+      if (err instanceof Error && !err.message.includes('cancel')) {
+        console.error('Insert from PDF failed:', err);
+        alert(`Failed to insert pages: ${err.message}`);
+      }
     }
   }, [addPagesFromPdf, insertAfter]);
 
@@ -145,11 +149,12 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
   const handleDrop = useCallback(
     (targetIndex: number, e: React.DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       const fromIdx = dragSourceRef.current;
+      dragSourceRef.current = null;
       if (fromIdx !== null && fromIdx !== targetIndex) {
         reorderPages(fromIdx, targetIndex);
       }
-      dragSourceRef.current = null;
     },
     [reorderPages],
   );

@@ -342,7 +342,6 @@ export const EDITOR_SIDEBAR_TOOLS: ToolId[] = [
   'page-numbers',
   'watermark',
   'crop-pdf',
-  'organize-pdf',
   'sign-pdf',
   'redact-pdf',
   'pdfa-convert',

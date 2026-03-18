@@ -1,14 +1,13 @@
 // ToolSidebar: collapsible right sidebar with tool icon strip and expandable panel.
 // Collapsed: thin icon strip (~48px). Expanded: icon strip + settings panel (~280px total).
 // Clicking an icon expands/toggles that tool's panel. Similar to VS Code activity bar.
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   FileDown,
   RotateCw,
   Hash,
   Stamp,
   Crop,
-  LayoutGrid,
   PenTool,
   EyeOff,
   Archive,
@@ -30,7 +29,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Hash,
   Stamp,
   Crop,
-  LayoutGrid,
   PenTool,
   EyeOff,
   Archive,
@@ -41,9 +39,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 export function ToolSidebar() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const lastToolRef = useRef<ToolId>(EDITOR_SIDEBAR_TOOLS[0]);
 
-  const isExpanded = activeTool !== null && !collapsed;
+  const isExpanded = activeTool !== null;
 
   const tools = useMemo(
     () =>
@@ -56,13 +54,11 @@ export function ToolSidebar() {
   );
 
   function handleIconClick(toolId: ToolId) {
-    if (collapsed) {
-      setCollapsed(false);
-      setActiveTool(toolId);
-    } else if (activeTool === toolId) {
+    if (activeTool === toolId) {
       setActiveTool(null); // collapse panel
     } else {
       setActiveTool(toolId);
+      lastToolRef.current = toolId;
     }
   }
 
@@ -78,7 +74,7 @@ export function ToolSidebar() {
       {/* Icon strip — stays fixed, scrolls internally if too many icons */}
       <div className="w-[48px] flex-none border-l bg-muted/30 flex flex-col items-center py-1 overflow-y-auto">
         {tools.map(({ id, def, Icon }) => {
-          const isActive = activeTool === id && !collapsed;
+          const isActive = activeTool === id;
           return (
             <button
               key={id}
@@ -108,7 +104,8 @@ export function ToolSidebar() {
             if (isExpanded) {
               setActiveTool(null);
             } else {
-              setCollapsed(!collapsed);
+              // Re-open last used tool panel
+              setActiveTool(lastToolRef.current);
             }
           }}
           title={isExpanded ? 'Close panel' : 'Open panel'}

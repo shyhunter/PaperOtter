@@ -1411,8 +1411,27 @@ pub fn run_with_file(open_file: Option<String>) {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Handle macOS "Open With" when app is already running
+            if let tauri::RunEvent::Opened { urls } = event {
+                for url in urls {
+                    let path = url.to_string();
+                    // url may be a file:// URL or a plain path
+                    let file_path = if path.starts_with("file://") {
+                        url.to_file_path().ok().and_then(|p| p.to_str().map(|s| s.to_string()))
+                    } else {
+                        Some(path)
+                    };
+                    if let Some(fp) = file_path {
+                        if fp.ends_with(".pdf") {
+                            let _ = app_handle.emit("file-opened", fp);
+                        }
+                    }
+                }
+            }
+        });
 }
 
 // ─── Unit tests ───────────────────────────────────────────────────────────────

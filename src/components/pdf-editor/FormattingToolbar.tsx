@@ -3,7 +3,7 @@
 // Integrated into EditorTopToolbar, always visible (disabled when no block selected).
 
 import { useCallback, useRef, useState } from 'react';
-import { Bold, Italic, Underline, Plus, Minus, Type } from 'lucide-react';
+import { Bold, Italic, Underline, Plus, Minus, Type, AlignVerticalSpaceAround } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
 
@@ -64,20 +64,24 @@ export function FormattingToolbar() {
   const handleFontSizeChange = useCallback(
     (delta: number) => {
       if (!selectedBlock) return;
-      const newSize = Math.max(6, Math.min(72, Math.round(selectedBlock.fontSize + delta)));
-      updateProp({ fontSize: newSize });
+      const oldSize = selectedBlock.fontSize;
+      const newSize = Math.max(6, Math.min(72, Math.round(oldSize + delta)));
+      const scale = newSize / oldSize;
+      updateProp({ fontSize: newSize, height: selectedBlock.height * scale });
     },
     [selectedBlock, updateProp],
   );
 
   const handleFontSizeInput = useCallback(
     (value: string) => {
+      if (!selectedBlock) return;
       const num = parseInt(value, 10);
       if (!isNaN(num) && num >= 6 && num <= 72) {
-        updateProp({ fontSize: num });
+        const scale = num / selectedBlock.fontSize;
+        updateProp({ fontSize: num, height: selectedBlock.height * scale });
       }
     },
-    [updateProp],
+    [selectedBlock, updateProp],
   );
 
   const handleColorChange = useCallback(
@@ -86,6 +90,19 @@ export function FormattingToolbar() {
       setShowColorPicker(false);
     },
     [updateProp],
+  );
+
+  const handleLineHeightChange = useCallback(
+    (value: string) => {
+      if (!selectedBlock) return;
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        const oldLH = selectedBlock.lineHeight || 1.2;
+        const scale = num / oldLH;
+        updateProp({ lineHeight: num, height: selectedBlock.height * scale });
+      }
+    },
+    [selectedBlock, updateProp],
   );
 
   const handleAddText = useCallback(() => {
@@ -244,6 +261,26 @@ export function FormattingToolbar() {
       >
         <Underline className="w-3.5 h-3.5 mx-auto" />
       </button>
+
+      <div className="w-px h-5 bg-border" />
+
+      {/* Line spacing */}
+      <div className="flex items-center gap-1">
+        <AlignVerticalSpaceAround className="w-3.5 h-3.5 text-muted-foreground" />
+        <select
+          value={selectedBlock?.lineHeight ?? 1.2}
+          onChange={(e) => handleLineHeightChange(e.target.value)}
+          disabled={isDisabled}
+          className="h-7 rounded border border-input bg-background px-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed min-w-[52px]"
+          title="Line spacing"
+        >
+          <option value={0.8}>0.8</option>
+          <option value={1.0}>1.0</option>
+          <option value={1.2}>1.2</option>
+          <option value={1.5}>1.5</option>
+          <option value={2.0}>2.0</option>
+        </select>
+      </div>
     </div>
   );
 }

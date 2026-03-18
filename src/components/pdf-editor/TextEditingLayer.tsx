@@ -35,6 +35,7 @@ function extractedToBlock(item: ExtractedTextItem, pageIndex: number): TextBlock
     bold: false,
     italic: false,
     underline: false,
+    lineHeight: 1.2,
     isNew: false,
   };
 }
@@ -134,6 +135,7 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
           bold: false,
           italic: false,
           underline: false,
+          lineHeight: 1.2,
           isNew: true,
         };
         addTextBlock(pageIndex, newBlock);
@@ -252,7 +254,7 @@ function TextBlockOverlay({
   const top = (pageHeight - block.y - block.height) * zoom;
   const left = block.x * zoom;
   const cssWidth = block.width * zoom;
-  const cssHeight = block.height * zoom;
+  const cssMinHeight = block.height * zoom;
   const fontSize = block.fontSize * zoom;
 
   // Single click: select
@@ -317,7 +319,8 @@ function TextBlockOverlay({
   const handleBlur = useCallback(() => {
     if (!editableRef.current) return;
     const newText = editableRef.current.innerText;
-    if (newText !== block.text) {
+    // Always persist text for new blocks, or when text changed for existing blocks
+    if (newText !== block.text || block.isNew) {
       onUpdate({ ...block, text: newText, isModified: true });
       onDirty();
     }
@@ -389,13 +392,13 @@ function TextBlockOverlay({
         top,
         left,
         width: cssWidth,
-        minHeight: cssHeight,
+        minHeight: cssMinHeight,
         border: borderStyle,
         cursor: isEditing ? 'text' : isSelected ? 'move' : 'pointer',
         pointerEvents: 'auto',
         zIndex: isSelected ? 10 : 1,
         boxSizing: 'border-box',
-        backgroundColor: isSelected ? 'rgba(255,255,255,0.9)' : 'transparent',
+        backgroundColor: (block.isModified || block.isNew || isSelected) ? 'rgba(255,255,255,0.95)' : 'transparent',
         borderRadius: 2,
       }}
       onMouseEnter={(e) => {
@@ -415,7 +418,7 @@ function TextBlockOverlay({
           spellCheck={false}
           style={{
             width: '100%',
-            minHeight: cssHeight,
+            minHeight: cssMinHeight,
             fontSize,
             fontFamily: mapFontToCSS(block.fontName),
             fontWeight: block.bold ? 'bold' : 'normal',
@@ -423,7 +426,7 @@ function TextBlockOverlay({
             textDecoration: block.underline ? 'underline' : 'none',
             color: block.color,
             textAlign: block.alignment as React.CSSProperties['textAlign'],
-            lineHeight: 1.2,
+            lineHeight: block.lineHeight ?? 1.2,
             padding: 0,
             margin: 0,
             outline: 'none',
@@ -441,11 +444,11 @@ function TextBlockOverlay({
             fontWeight: block.bold ? 'bold' : 'normal',
             fontStyle: block.italic ? 'italic' : 'normal',
             textDecoration: block.underline ? 'underline' : 'none',
-            // Transparent text in non-editing mode — canvas already renders the text.
-            // This div acts as a click target; text becomes visible only when selected.
-            color: isSelected ? block.color : 'transparent',
+            // Modified/new blocks must always be visible (with white bg to cover original canvas text).
+            // Unmodified blocks stay transparent — canvas already renders the text.
+            color: (block.isModified || block.isNew || isSelected) ? block.color : 'transparent',
             textAlign: block.alignment as React.CSSProperties['textAlign'],
-            lineHeight: 1.2,
+            lineHeight: block.lineHeight ?? 1.2,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
             userSelect: 'none',

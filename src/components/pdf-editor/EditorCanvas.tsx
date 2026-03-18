@@ -1,22 +1,103 @@
 // EditorCanvas: renders all PDF pages stacked vertically in a continuous scroll.
-// Uses IntersectionObserver to track the most visible page.
-// Virtualizes rendering: only renders pages within +/- 2 of the visible page.
+// Each page renders itself independently via PageCanvasRenderer.
 // CRITICAL: Uses pdfBytes.slice() for React StrictMode safety.
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useEditorContext } from '@/context/EditorContext';
 import { TextEditingLayer } from './TextEditingLayer';
 
 const PAGE_GAP = 16; // px between pages
 const ZOOM_DEBOUNCE_MS = 150;
-// For small docs (< 50 pages), render all pages. For large docs, use a window.
-const MAX_PAGES_NO_VIRTUALIZATION = 50;
-const LARGE_DOC_RENDER_WINDOW = 5;
+const VIRTUALIZATION_WINDOW = 3; // render current page +/- this many pages
 
 interface PageInfo {
   width: number;  // PDF points
   height: number; // PDF points
 }
+
+// ── Self-rendering page component ────────────────────────────────────
+// Each page independently loads and renders its content from the PDF.
+// This eliminates the timing issue where a batch renderer misses canvas refs.
+
+interface PageCanvasRendererProps {
+  pdfBytes: Uint8Array;
+  pageIndex: number;
+  zoom: number;
+  pageWidth: number;
+  pageHeight: number;
+}
+
+const PageCanvasRenderer = memo(function PageCanvasRenderer({
+  pdfBytes,
+  pageIndex,
+  zoom,
+  pageWidth,
+  pageHeight,
+}: PageCanvasRendererProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderIdRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || pdfBytes.byteLength === 0) return;
+
+    const currentId = ++renderIdRef.current;
+
+    // Debounce zoom changes, render immediately for pdfBytes changes
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const doRender = async () => {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+        const pdfDoc = await loadingTask.promise;
+        try {
+          if (renderIdRef.current !== currentId) return;
+          const page = await pdfDoc.getPage(pageIndex + 1);
+          if (renderIdRef.current !== currentId) return;
+
+          const viewport = page.getViewport({ scale: zoom });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvas, viewport }).promise;
+        } finally {
+          pdfDoc.destroy();
+        }
+      } catch {
+        // Non-fatal: page render failure
+      }
+    };
+
+    debounceRef.current = setTimeout(doRender, ZOOM_DEBOUNCE_MS);
+    // Also render immediately on first mount or pdfBytes change
+    if (renderIdRef.current === 1) {
+      clearTimeout(debounceRef.current);
+      doRender();
+    }
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [pdfBytes, pageIndex, zoom]);
+
+  return (
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+      <TextEditingLayer
+        pageIndex={pageIndex}
+        pageWidth={pageWidth}
+        pageHeight={pageHeight}
+        zoom={zoom}
+      />
+    </>
+  );
+});
+
+// ── Main EditorCanvas ────────────────────────────────────────────────
 
 export function EditorCanvas() {
   const { state, setCurrentPage, setFitWidthZoom, setZoom, scrollToPageRef } = useEditorContext();
@@ -24,13 +105,13 @@ export function EditorCanvas() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const [pageInfos, setPageInfos] = useState<PageInfo[]>([]);
-  const [visiblePage, setVisiblePage] = useState(0);
-  const renderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevZoomRef = useRef(zoom);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
   // Load page dimensions on mount / when pdfBytes change
+  // For large PDFs, sample first page dimensions and apply to all initially,
+  // then load real dimensions in batches to avoid blocking.
   useEffect(() => {
     let cancelled = false;
 
@@ -41,13 +122,40 @@ export function EditorCanvas() {
       const pdfDoc = await loadingTask.promise;
 
       try {
-        const infos: PageInfo[] = [];
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-          const page = await pdfDoc.getPage(i);
-          const vp = page.getViewport({ scale: 1 });
-          infos.push({ width: vp.width, height: vp.height });
+        const numPages = pdfDoc.numPages;
+
+        // For large PDFs (50+ pages), load first page dimensions immediately
+        // and estimate the rest to avoid blocking
+        if (numPages > 50) {
+          const firstPage = await pdfDoc.getPage(1);
+          const vp = firstPage.getViewport({ scale: 1 });
+          const defaultInfo = { width: vp.width, height: vp.height };
+          const infos = Array.from({ length: numPages }, () => ({ ...defaultInfo }));
+          if (!cancelled) setPageInfos(infos);
+
+          // Then load real dimensions in batches (non-blocking)
+          const BATCH_SIZE = 20;
+          for (let start = 2; start <= numPages; start += BATCH_SIZE) {
+            if (cancelled) break;
+            const end = Math.min(start + BATCH_SIZE, numPages + 1);
+            for (let i = start; i < end; i++) {
+              const page = await pdfDoc.getPage(i);
+              const pageVp = page.getViewport({ scale: 1 });
+              infos[i - 1] = { width: pageVp.width, height: pageVp.height };
+            }
+            if (!cancelled) setPageInfos([...infos]);
+            // Yield to main thread between batches
+            await new Promise((r) => requestAnimationFrame(r));
+          }
+        } else {
+          const infos: PageInfo[] = [];
+          for (let i = 1; i <= numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const vp = page.getViewport({ scale: 1 });
+            infos.push({ width: vp.width, height: vp.height });
+          }
+          if (!cancelled) setPageInfos(infos);
         }
-        if (!cancelled) setPageInfos(infos);
       } finally {
         pdfDoc.destroy();
       }
@@ -63,17 +171,15 @@ export function EditorCanvas() {
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const containerWidth = entry.contentRect.width - 48; // subtract padding
+        const containerWidth = entry.contentRect.width - 48;
         if (containerWidth > 0 && pageInfos[0]) {
-          const fwz = containerWidth / pageInfos[0].width;
-          setFitWidthZoom(fwz);
+          setFitWidthZoom(containerWidth / pageInfos[0].width);
         }
       }
     });
 
     observer.observe(containerRef.current);
 
-    // Initial calculation
     const containerWidth = containerRef.current.clientWidth - 48;
     if (containerWidth > 0 && pageInfos[0]) {
       setFitWidthZoom(containerWidth / pageInfos[0].width);
@@ -89,7 +195,7 @@ export function EditorCanvas() {
     const observer = new IntersectionObserver(
       (entries) => {
         let maxRatio = 0;
-        let maxIdx = visiblePage;
+        let maxIdx = -1;
         for (const entry of entries) {
           const idx = Number(entry.target.getAttribute('data-page-idx'));
           if (!isNaN(idx) && entry.intersectionRatio > maxRatio) {
@@ -97,8 +203,7 @@ export function EditorCanvas() {
             maxIdx = idx;
           }
         }
-        if (maxRatio > 0) {
-          setVisiblePage(maxIdx);
+        if (maxRatio > 0 && maxIdx >= 0) {
           setCurrentPage(maxIdx);
         }
       },
@@ -113,97 +218,51 @@ export function EditorCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageInfos, pageCount, setCurrentPage]);
 
-  // Render visible pages to canvas (debounced on zoom change)
-  const renderPages = useCallback(async () => {
-    if (pdfBytes.byteLength === 0 || pageInfos.length === 0) return;
-
-    const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-    const pdfDoc = await loadingTask.promise;
-
-    try {
-      const start = pageCount <= MAX_PAGES_NO_VIRTUALIZATION
-        ? 0
-        : Math.max(0, visiblePage - LARGE_DOC_RENDER_WINDOW);
-      const end = pageCount <= MAX_PAGES_NO_VIRTUALIZATION
-        ? pageCount - 1
-        : Math.min(pageCount - 1, visiblePage + LARGE_DOC_RENDER_WINDOW);
-
-      for (let i = start; i <= end; i++) {
-        const canvas = canvasRefs.current.get(i);
-        if (!canvas) continue;
-
-        const page = await pdfDoc.getPage(i + 1);
-        const viewport = page.getViewport({ scale: zoom });
-
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        await page.render({ canvas, viewport }).promise;
-      }
-    } finally {
-      pdfDoc.destroy();
-    }
-  }, [pdfBytes, pageInfos, visiblePage, pageCount, zoom]);
-
-  // Trigger render on visible page or zoom change (debounced for zoom)
-  useEffect(() => {
-    if (renderTimeoutRef.current) clearTimeout(renderTimeoutRef.current);
-
-    const zoomChanged = prevZoomRef.current !== zoom;
-    prevZoomRef.current = zoom;
-
-    if (zoomChanged) {
-      renderTimeoutRef.current = setTimeout(() => {
-        renderPages();
-      }, ZOOM_DEBOUNCE_MS);
-    } else {
-      renderPages();
-    }
-
-    return () => {
-      if (renderTimeoutRef.current) clearTimeout(renderTimeoutRef.current);
-    };
-  }, [renderPages, zoom]);
-
   // Register page div refs
   const setPageRef = useCallback((idx: number, el: HTMLDivElement | null) => {
-    if (el) {
-      pageRefs.current.set(idx, el);
-    } else {
-      pageRefs.current.delete(idx);
-    }
+    if (el) pageRefs.current.set(idx, el);
+    else pageRefs.current.delete(idx);
   }, []);
 
-  const setCanvasRef = useCallback((idx: number, el: HTMLCanvasElement | null) => {
-    if (el) {
-      canvasRefs.current.set(idx, el);
-    } else {
-      canvasRefs.current.delete(idx);
-    }
-  }, []);
-
-  const isInRenderWindow = (idx: number) => {
-    if (pageCount <= MAX_PAGES_NO_VIRTUALIZATION) return true;
-    return idx >= visiblePage - LARGE_DOC_RENDER_WINDOW && idx <= visiblePage + LARGE_DOC_RENDER_WINDOW;
-  };
-
-  // Pinch-to-zoom via wheel event with ctrlKey (trackpad pinch sends wheel+ctrlKey)
+  // Pinch-to-zoom: wheel+ctrlKey (trackpad pinch on macOS sends this)
+  // + gesturechange for native Safari/WebKit gesture events
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     function handleWheel(e: WheelEvent) {
-      if (e.ctrlKey || e.metaKey) {
+      if (e.ctrlKey) {
         e.preventDefault();
-        const delta = -e.deltaY * 0.005;
-        const newZoom = Math.min(3.0, Math.max(0.25, zoom + delta));
+        e.stopPropagation();
+        const delta = -e.deltaY * 0.01;
+        const newZoom = Math.min(3.0, Math.max(0.25, zoomRef.current + delta));
         setZoom(newZoom);
       }
     }
 
+    // Safari/WebKit gesture events (macOS trackpad)
+    let gestureStartZoom = 1.0;
+    function handleGestureStart(e: Event) {
+      e.preventDefault();
+      gestureStartZoom = zoomRef.current;
+    }
+    function handleGestureChange(e: Event) {
+      e.preventDefault();
+      const ge = e as unknown as { scale: number };
+      const newZoom = Math.min(3.0, Math.max(0.25, gestureStartZoom * ge.scale));
+      setZoom(newZoom);
+    }
+
     container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, [zoom, setZoom]);
+    container.addEventListener('gesturestart', handleGestureStart, { passive: false } as EventListenerOptions);
+    container.addEventListener('gesturechange', handleGestureChange, { passive: false } as EventListenerOptions);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('gesturestart', handleGestureStart);
+      container.removeEventListener('gesturechange', handleGestureChange);
+    };
+  }, [setZoom]);
 
   // Expose scrollToPage for PagePanel via context ref
   useEffect(() => {
@@ -234,33 +293,29 @@ export function EditorCanvas() {
         {pageInfos.map((info, idx) => {
           const scaledW = info.width * zoom;
           const scaledH = info.height * zoom;
+          // Virtualization: only render full page content for pages near viewport
+          const isNearViewport = Math.abs(idx - state.currentPage) <= VIRTUALIZATION_WINDOW;
 
           return (
             <div
               key={idx}
               data-page-idx={idx}
               ref={(el) => setPageRef(idx, el)}
-              className="shadow-md bg-white dark:bg-zinc-900 flex-shrink-0 relative"
+              className="shadow-md bg-white flex-shrink-0 relative"
               style={{ width: scaledW, height: scaledH }}
             >
-              {isInRenderWindow(idx) ? (
-                <>
-                  <canvas
-                    ref={(el) => setCanvasRef(idx, el)}
-                    style={{ display: 'block', width: '100%', height: '100%' }}
-                  />
-                  <TextEditingLayer
-                    pageIndex={idx}
-                    pageWidth={info.width}
-                    pageHeight={info.height}
-                    zoom={zoom}
-                  />
-                </>
-              ) : (
-                <div
-                  className="w-full h-full bg-white dark:bg-zinc-800"
-                  style={{ width: scaledW, height: scaledH }}
+              {isNearViewport ? (
+                <PageCanvasRenderer
+                  pdfBytes={pdfBytes}
+                  pageIndex={idx}
+                  zoom={zoom}
+                  pageWidth={info.width}
+                  pageHeight={info.height}
                 />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                  {idx + 1}
+                </div>
               )}
             </div>
           );

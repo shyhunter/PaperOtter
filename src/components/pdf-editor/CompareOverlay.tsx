@@ -87,7 +87,7 @@ export function CompareOverlay({
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-20 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg text-xs font-medium hover:bg-primary/90"
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg text-xs font-medium hover:bg-primary/90"
       >
         <Maximize2 className="h-3.5 w-3.5" />
         Before / After

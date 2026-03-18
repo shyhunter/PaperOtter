@@ -11,7 +11,7 @@ import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { cropPdf, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock, ArrowRight } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -143,6 +143,46 @@ function useApply(
   }, [previewBytes, updatePdfBytes, markDirty]);
 
   return { apply, isApplying, success, error };
+}
+
+// ── Tool result feedback ─────────────────────────────────────────────
+
+function ToolResultFeedback({
+  originalSize,
+  resultSize,
+  toolLabel,
+}: {
+  originalSize: number;
+  resultSize: number;
+  toolLabel: string;
+}) {
+  const sizeDiff = resultSize - originalSize;
+  const pctChange = Math.round(((resultSize - originalSize) / originalSize) * 100);
+
+  return (
+    <div className="rounded border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 p-2 space-y-1">
+      <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
+        <Check className="h-3 w-3" />
+        {toolLabel} applied successfully
+      </div>
+      <div className="flex justify-between text-[10px]">
+        <span className="text-muted-foreground">Before</span>
+        <span className="font-medium">{formatBytes(originalSize)}</span>
+      </div>
+      <div className="flex justify-between text-[10px]">
+        <span className="text-muted-foreground">After</span>
+        <span className="font-medium">{formatBytes(resultSize)}</span>
+      </div>
+      {sizeDiff !== 0 && (
+        <div className="flex justify-between text-[10px] pt-1 border-t border-green-200 dark:border-green-800">
+          <span className="text-muted-foreground">Size change</span>
+          <span className={`font-semibold ${pctChange <= 0 ? 'text-green-600' : 'text-orange-500'}`}>
+            {pctChange <= 0 ? `${pctChange}%` : `+${pctChange}%`}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Panel header ─────────────────────────────────────────────────────
@@ -293,19 +333,28 @@ function CompressPanel() {
 
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
+/** Compass direction entries for the rotate tool */
+const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegrees | 0 }[] = [
+  { label: 'Original', short: '↑', degrees: 0 },
+  { label: 'Turn Right', short: '→', degrees: 90 },
+  { label: 'Upside Down', short: '↓', degrees: 180 },
+  { label: 'Turn Left', short: '←', degrees: 270 },
+];
+
 function RotatePanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
-  const [rotation, setRotation] = useState<RotationDegrees>(90);
+  const [rotation, setRotation] = useState<RotationDegrees | 0>(0);
   const [applyToAll, setApplyToAll] = useState(false);
 
   const runTool = useCallback(async (bytes: Uint8Array) => {
+    if (rotation === 0) return bytes; // No rotation
     const pageIndices = applyToAll
       ? Array.from({ length: state.pageCount }, (_, i) => i)
       : [state.currentPage];
 
     const result = await rotatePdf(
       bytes,
-      pageIndices.map((idx) => ({ pageIndex: idx, rotation })),
+      pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
     );
     return result.bytes;
   }, [rotation, applyToAll, state.currentPage, state.pageCount]);
@@ -323,17 +372,22 @@ function RotatePanel() {
       <PanelHeader toolId="rotate-pdf" />
 
       <div className="space-y-1.5">
-        <label className="text-[10px] font-medium text-muted-foreground">Rotation</label>
-        <div className="grid grid-cols-3 gap-1">
-          {([90, 180, 270] as RotationDegrees[]).map((deg) => (
+        <label className="text-[10px] font-medium text-muted-foreground">Direction</label>
+        {/* Compass-style 2x2 grid */}
+        <div className="grid grid-cols-2 gap-1">
+          {COMPASS_DIRECTIONS.map((dir) => (
             <button
-              key={deg}
-              onClick={() => setRotation(deg)}
-              className={`py-1 px-2 text-[11px] rounded border ${
-                rotation === deg ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
+              type="button"
+              key={dir.degrees}
+              onClick={() => setRotation(dir.degrees)}
+              className={`flex items-center gap-1.5 py-1.5 px-2 text-[11px] rounded border transition-colors ${
+                rotation === dir.degrees
+                  ? 'border-primary bg-primary/10 font-medium'
+                  : 'border-border hover:bg-muted/50'
               }`}
             >
-              {deg}
+              <span className="text-base leading-none">{dir.short}</span>
+              <span>{dir.label}</span>
             </button>
           ))}
         </div>
@@ -356,7 +410,7 @@ function RotatePanel() {
 
       <ApplyButton
         onClick={() => apply()}
-        disabled={!previewBytes}
+        disabled={rotation === 0 || !previewBytes}
         isApplying={isApplying}
         success={success}
         error={error}
@@ -579,6 +633,15 @@ function PageNumbersPanel() {
 function CropPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [margins, setMargins] = useState({ top: 10, bottom: 10, left: 10, right: 10 });
+  const [linked, setLinked] = useState(true);
+
+  const handleMarginChange = useCallback((side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
+    if (linked) {
+      setMargins({ top: value, bottom: value, left: value, right: value });
+    } else {
+      setMargins((m) => ({ ...m, [side]: value }));
+    }
+  }, [linked]);
 
   const runTool = useCallback(async (bytes: Uint8Array) => {
     const cropMargins: CropMargins = {
@@ -603,22 +666,50 @@ function CropPanel() {
       <PanelHeader toolId="crop-pdf" />
 
       <div className="space-y-2">
-        <label className="text-[10px] font-medium text-muted-foreground">Margins (mm)</label>
-        <div className="grid grid-cols-2 gap-2">
-          {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
-            <div key={side}>
-              <label className="text-[10px] text-muted-foreground capitalize">{side}</label>
-              <input
-                type="number"
-                value={margins[side]}
-                onChange={(e) => setMargins((m) => ({ ...m, [side]: Number(e.target.value) || 0 }))}
-                className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-                min={0}
-                max={100}
-              />
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-medium text-muted-foreground">Margins (mm)</label>
+          <label className="flex items-center gap-1 text-[10px] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={linked}
+              onChange={(e) => setLinked(e.target.checked)}
+              className="rounded"
+            />
+            <span className="text-muted-foreground">All equal</span>
+          </label>
         </div>
+
+        {linked ? (
+          <div>
+            <label className="text-[10px] text-muted-foreground">All sides</label>
+            <input
+              type="number"
+              value={margins.top}
+              onChange={(e) => handleMarginChange('top', Number(e.target.value) || 0)}
+              className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
+              min={0}
+              max={100}
+              title="All margins (mm)"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
+              <div key={side}>
+                <label className="text-[10px] text-muted-foreground capitalize">{side}</label>
+                <input
+                  type="number"
+                  value={margins[side]}
+                  onChange={(e) => handleMarginChange(side, Number(e.target.value) || 0)}
+                  className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
+                  min={0}
+                  max={100}
+                  title={`${side} margin (mm)`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <ToolSidebarPreview
@@ -641,14 +732,42 @@ function CropPanel() {
 // ── Sign Panel (placeholder) ─────────────────────────────────────────
 
 function SignPanel() {
-  const { state } = useEditorContext();
+  const { state, setEditorMode } = useEditorContext();
+  const isTextMode = state.editorMode === 'text';
   return (
     <div className="space-y-3">
       <PanelHeader toolId="sign-pdf" />
-      <p className="text-[10px] text-muted-foreground">
-        Use the full Sign PDF tool for signature placement. The inline editor sign tool will be available in a future update.
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Use the text tool to type your signature directly on the PDF. Activate text mode, then click anywhere on the page to place your signature text.
       </p>
-      <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} />
+      <button
+        type="button"
+        onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
+        className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
+          isTextMode
+            ? 'bg-green-600 text-white'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+        }`}
+      >
+        {isTextMode ? (
+          <>
+            <Check className="h-3 w-3" />
+            Text Mode Active — Click on page to place text
+          </>
+        ) : (
+          'Activate Text Mode'
+        )}
+      </button>
+      {isTextMode && (
+        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
+          <p className="text-[10px] text-green-700 dark:text-green-400 font-medium">
+            Click anywhere on the PDF canvas to place a new text block. The cursor will show as a crosshair (+) on the page.
+          </p>
+        </div>
+      )}
+      <p className="text-[9px] text-muted-foreground italic">
+        Image-based signature support coming in a future update.
+      </p>
     </div>
   );
 }
@@ -656,14 +775,45 @@ function SignPanel() {
 // ── Redact Panel ─────────────────────────────────────────────────────
 
 function RedactPanel() {
-  const { state } = useEditorContext();
+  const { state, setEditorMode } = useEditorContext();
+  const isTextMode = state.editorMode === 'text';
   return (
     <div className="space-y-3">
       <PanelHeader toolId="redact-pdf" />
-      <p className="text-[10px] text-muted-foreground">
-        Redaction requires drawing rectangles on the canvas. Use the full Redact PDF tool for now. Inline redaction mode will be added in a future update.
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        To redact text: click a text block to select it, then press <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Delete</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Backspace</kbd>. The area will be covered with a white rectangle in the saved PDF.
       </p>
-      <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} />
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        You can also place opaque text blocks over sensitive content:
+      </p>
+      <button
+        type="button"
+        onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
+        className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
+          isTextMode
+            ? 'bg-green-600 text-white'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+        }`}
+      >
+        {isTextMode ? (
+          <>
+            <Check className="h-3 w-3" />
+            Text Mode Active — Click on page to place block
+          </>
+        ) : (
+          'Activate Text Mode'
+        )}
+      </button>
+      {isTextMode && (
+        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
+          <p className="text-[10px] text-green-700 dark:text-green-400 font-medium">
+            Click anywhere on the PDF canvas to place a covering text block. The cursor will show as a crosshair (+) on the page.
+          </p>
+        </div>
+      )}
+      <p className="text-[9px] text-muted-foreground italic">
+        Rectangle-based redaction coming in a future update.
+      </p>
     </div>
   );
 }
@@ -672,12 +822,15 @@ function RedactPanel() {
 
 function PdfaPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
-  const [pdfaLevel, setPdfaLevel] = useState<string>('2b');
+  const [pdfaLevel, setPdfaLevel] = useState<string>('2');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [resultInfo, setResultInfo] = useState<{ originalSize: number; resultSize: number } | null>(null);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
+    setResultInfo(null);
+    const originalSize = state.pdfBytes.byteLength;
     try {
       const { tempDir, join } = await import('@tauri-apps/api/path');
       const tmpBase = await tempDir();
@@ -695,14 +848,14 @@ function PdfaPanel() {
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(bytes);
-      updatePdfBytes(result);
-      markDirty();
       setIsProcessing(false);
+      setResultInfo({ originalSize, resultSize: result.byteLength });
+      await apply(() => Promise.resolve(result));
     } catch (err) {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, pdfaLevel, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, pdfaLevel, apply]);
 
   return (
     <div className="space-y-3">
@@ -714,12 +867,21 @@ function PdfaPanel() {
           value={pdfaLevel}
           onChange={(e) => setPdfaLevel(e.target.value)}
           className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
+          title="PDF/A conformance level"
         >
-          <option value="1b">PDF/A-1b</option>
-          <option value="2b">PDF/A-2b</option>
-          <option value="3b">PDF/A-3b</option>
+          <option value="1">PDF/A-1 (most compatible)</option>
+          <option value="2">PDF/A-2 (recommended)</option>
+          <option value="3">PDF/A-3 (full features)</option>
         </select>
       </div>
+
+      {resultInfo && (
+        <ToolResultFeedback
+          originalSize={resultInfo.originalSize}
+          resultSize={resultInfo.resultSize}
+          toolLabel={`PDF/A-${pdfaLevel} conversion`}
+        />
+      )}
 
       <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} isProcessing={isProcessing} />
 
@@ -739,10 +901,13 @@ function PdfaPanel() {
 function RepairPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [resultInfo, setResultInfo] = useState<{ originalSize: number; resultSize: number } | null>(null);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
+    setResultInfo(null);
+    const originalSize = state.pdfBytes.byteLength;
     try {
       const { tempDir, join } = await import('@tauri-apps/api/path');
       const tmpBase = await tempDir();
@@ -759,14 +924,14 @@ function RepairPanel() {
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(bytes);
-      updatePdfBytes(result);
-      markDirty();
       setIsProcessing(false);
+      setResultInfo({ originalSize, resultSize: result.byteLength });
+      await apply(() => Promise.resolve(result));
     } catch (err) {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, apply]);
 
   return (
     <div className="space-y-3">
@@ -774,6 +939,14 @@ function RepairPanel() {
       <p className="text-[10px] text-muted-foreground">
         Attempt to fix corrupted or malformed PDF structure using Ghostscript.
       </p>
+
+      {resultInfo && (
+        <ToolResultFeedback
+          originalSize={resultInfo.originalSize}
+          resultSize={resultInfo.resultSize}
+          toolLabel="PDF repair"
+        />
+      )}
 
       <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} isProcessing={isProcessing} />
 
@@ -820,14 +993,13 @@ function ProtectPanel() {
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(bytes);
-      updatePdfBytes(result);
-      markDirty();
       setIsProcessing(false);
+      await apply(() => Promise.resolve(result));
     } catch (err) {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, password, passwordsMatch, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, password, passwordsMatch, apply]);
 
   return (
     <div className="space-y-3">
@@ -859,9 +1031,18 @@ function ProtectPanel() {
         )}
       </div>
 
-      <div className="flex items-center justify-center py-3">
-        <Lock className="h-8 w-8 text-muted-foreground" />
-      </div>
+      {success ? (
+        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
+            <Check className="h-3 w-3" />
+            PDF is now password-protected
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center py-3">
+          <Lock className="h-8 w-8 text-muted-foreground" />
+        </div>
+      )}
 
       <ApplyButton
         onClick={handleApply}
@@ -902,14 +1083,13 @@ function UnlockPanel() {
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(bytes);
-      updatePdfBytes(result);
-      markDirty();
       setIsProcessing(false);
+      await apply(() => Promise.resolve(result));
     } catch (err) {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, password, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, password, apply]);
 
   return (
     <div className="space-y-3">
@@ -926,9 +1106,18 @@ function UnlockPanel() {
         />
       </div>
 
-      <div className="flex items-center justify-center py-3">
-        <Unlock className="h-8 w-8 text-muted-foreground" />
-      </div>
+      {success ? (
+        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
+            <Check className="h-3 w-3" />
+            PDF password protection removed
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center py-3">
+          <Unlock className="h-8 w-8 text-muted-foreground" />
+        </div>
+      )}
 
       <ApplyButton
         onClick={handleApply}
@@ -937,20 +1126,6 @@ function UnlockPanel() {
         success={success}
         error={error}
       />
-    </div>
-  );
-}
-
-// ── Organize Panel (hint) ────────────────────────────────────────────
-
-function OrganizePanel() {
-  return (
-    <div className="space-y-3">
-      <PanelHeader toolId="organize-pdf" />
-      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded text-[11px]">
-        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-        <span>Use the Page Panel on the left to reorder, delete, or duplicate pages.</span>
-      </div>
     </div>
   );
 }
@@ -981,8 +1156,6 @@ export function ToolSidebarPanel({ toolId }: ToolSidebarPanelProps) {
       return <ProtectPanel />;
     case 'unlock-pdf':
       return <UnlockPanel />;
-    case 'organize-pdf':
-      return <OrganizePanel />;
     default:
       return (
         <div className="text-[10px] text-muted-foreground p-2">

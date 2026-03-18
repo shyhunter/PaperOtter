@@ -14,7 +14,7 @@ import React, {
 } from 'react';
 import type { ReactNode } from 'react';
 import { PDFDocument, PageSizes } from 'pdf-lib';
-import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode } from '@/types/editor';
+import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 
 // ── Actions ────────────────────────────────────────────────────────────
 
@@ -35,7 +35,8 @@ type EditorAction =
   | { type: 'SET_PAGE_TEXT_BLOCKS'; pageIdx: number; blocks: TextBlock[] }
   | { type: 'UPDATE_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
   | { type: 'ADD_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
-  | { type: 'DELETE_TEXT_BLOCK'; pageIdx: number; blockId: string };
+  | { type: 'DELETE_TEXT_BLOCK'; pageIdx: number; blockId: string }
+  | { type: 'SET_COMPARE_MODE'; mode: CompareMode };
 
 // ── Reducer ────────────────────────────────────────────────────────────
 
@@ -125,6 +126,8 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
         editingBlockId: state.editingBlockId === action.blockId ? null : state.editingBlockId,
       };
     }
+    case 'SET_COMPARE_MODE':
+      return { ...state, compareMode: action.mode };
     default:
       return state;
   }
@@ -170,6 +173,7 @@ interface EditorContextValue {
   startEditing: (id: string) => void;
   stopEditing: () => void;
   setEditorMode: (mode: EditorMode) => void;
+  setCompareMode: (mode: CompareMode) => void;
   setPageTextBlocks: (pageIdx: number, blocks: TextBlock[]) => void;
   updateTextBlock: (pageIdx: number, block: TextBlock) => void;
   addTextBlock: (pageIdx: number, block: TextBlock) => void;
@@ -183,6 +187,7 @@ const EditorCtx = createContext<EditorContextValue | null>(null);
 function createEmptyState(): EditorViewState {
   return {
     pdfBytes: new Uint8Array(0),
+    originalPdfBytes: new Uint8Array(0),
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -194,6 +199,7 @@ function createEmptyState(): EditorViewState {
     selectedBlockId: null,
     editingBlockId: null,
     editorMode: 'select',
+    compareMode: 'off',
   };
 }
 
@@ -268,6 +274,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_EDITOR_MODE', mode });
   }, []);
 
+  const setCompareMode = useCallback((mode: CompareMode) => {
+    dispatch({ type: 'SET_COMPARE_MODE', mode });
+  }, []);
+
   const setPageTextBlocks = useCallback((pageIdx: number, blocks: TextBlock[]) => {
     dispatch({ type: 'SET_PAGE_TEXT_BLOCKS', pageIdx, blocks });
   }, []);
@@ -309,24 +319,37 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   // Page operations
   const reorderPages = useCallback(async (fromIdx: number, toIdx: number) => {
     if (fromIdx === toIdx || state.pdfBytes.byteLength === 0) return;
+    if (fromIdx < 0 || fromIdx >= state.pageCount || toIdx < 0 || toIdx >= state.pageCount) return;
     try {
       const srcDoc = await PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
-      const newDoc = await PDFDocument.create();
+      const numPages = srcDoc.getPageCount();
       // Build new page order: remove fromIdx, insert at toIdx
-      const indices = Array.from({ length: srcDoc.getPageCount() }, (_, i) => i);
+      const indices = Array.from({ length: numPages }, (_, i) => i);
       const [moved] = indices.splice(fromIdx, 1);
       indices.splice(toIdx, 0, moved);
+
+      const newDoc = await PDFDocument.create();
       const copiedPages = await newDoc.copyPages(srcDoc, indices);
       for (const page of copiedPages) newDoc.addPage(page);
-      const newBytes = new Uint8Array(await newDoc.save({ useObjectStreams: false }));
+      const newBytes = new Uint8Array(await newDoc.save());
+
       // Reorder page edit state to match new page order
       const newPages = indices.map((oldIdx, newIdx) => ({
-        ...state.pages[oldIdx],
+        ...(state.pages[oldIdx] ?? {
+          pageIndex: newIdx,
+          textBlocks: [],
+          imageBlocks: [],
+          deletedTextIds: [],
+          deletedImageIds: [],
+          deletedTextBlocks: [],
+          deletedImageBlocks: [],
+        }),
         pageIndex: newIdx,
       }));
-      dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: newPages, isDirty: true } });
+      dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: newPages, pageCount: numPages, isDirty: true } });
     } catch (err) {
       console.error('reorderPages failed:', err);
+      alert(`Failed to reorder pages: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [state]);
 
@@ -366,7 +389,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     try {
       const targetDoc = await PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
       const sourceDoc = await PDFDocument.load(sourcePdfBytes, { ignoreEncryption: true });
-      const indices = Array.from({ length: sourceDoc.getPageCount() }, (_, i) => i);
+      const sourcePageCount = sourceDoc.getPageCount();
+      if (sourcePageCount === 0) {
+        alert('The selected PDF has no pages.');
+        return;
+      }
+      const indices = Array.from({ length: sourcePageCount }, (_, i) => i);
       const copiedPages = await targetDoc.copyPages(sourceDoc, indices);
       copiedPages.forEach((page, i) => targetDoc.insertPage(afterIdx + 1 + i, page));
 
@@ -395,7 +423,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
           isDirty: true,
         },
       });
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('addPagesFromPdf failed:', err);
+      alert(`Failed to add pages: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }, [state]);
 
   const deletePages = useCallback(async (indices: number[]) => {
@@ -514,6 +545,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       startEditing,
       stopEditing,
       setEditorMode,
+      setCompareMode,
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
@@ -548,6 +580,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       startEditing,
       stopEditing,
       setEditorMode,
+      setCompareMode,
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
@@ -595,6 +628,7 @@ export function createEditorViewState(
 
   return {
     pdfBytes,
+    originalPdfBytes: pdfBytes.slice(), // Snapshot — never modified
     filePath,
     fileName,
     pageCount,
@@ -606,5 +640,6 @@ export function createEditorViewState(
     selectedBlockId: null,
     editingBlockId: null,
     editorMode: 'select',
+    compareMode: 'off',
   };
 }

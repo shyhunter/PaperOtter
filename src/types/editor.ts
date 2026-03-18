@@ -15,6 +15,7 @@ export interface TextBlock {
   bold: boolean;
   italic: boolean;
   underline: boolean;
+  lineHeight: number;
   isNew: boolean;
   /** True when the block has been edited by the user (text changed, moved, styled, etc.) */
   isModified?: boolean;
@@ -68,8 +69,12 @@ export type EditorMode = 'select' | 'text' | 'image';
 
 export type ZoomPreset = 0.5 | 0.75 | 1.0 | 1.5 | 'fit-width';
 
+export type CompareMode = 'off' | 'floating' | 'split' | 'slider';
+
 export interface EditorViewState {
   pdfBytes: Uint8Array;
+  /** Snapshot of the original PDF at load time — never modified after init */
+  originalPdfBytes: Uint8Array;
   filePath: string | null;         // null until first save
   fileName: string;
   pageCount: number;
@@ -82,4 +87,5 @@ export interface EditorViewState {
   selectedBlockId: string | null;
   editingBlockId: string | null;
   editorMode: EditorMode;
+  compareMode: CompareMode;
 }
