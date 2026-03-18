@@ -10,6 +10,51 @@ import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
 
+/** Hook to forward pinch-to-zoom from an overlay div to the editor zoom.
+ *  Needed because WKWebView gesture events don't always bubble through overlays. */
+function usePinchZoomForwarding(
+  overlayRef: React.RefObject<HTMLDivElement | null>,
+  setZoom: (z: number) => void,
+  zoomRef: React.MutableRefObject<number>,
+) {
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+
+    function handleWheel(e: WheelEvent) {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = -e.deltaY * 0.01;
+        const newZoom = Math.min(3.0, Math.max(0.25, zoomRef.current + delta));
+        setZoom(newZoom);
+      }
+    }
+
+    let gestureStartZoom = 1.0;
+    function handleGestureStart(e: Event) {
+      e.preventDefault();
+      gestureStartZoom = zoomRef.current;
+    }
+    function handleGestureChange(e: Event) {
+      e.preventDefault();
+      const ge = e as unknown as { scale: number };
+      const newZoom = Math.min(3.0, Math.max(0.25, gestureStartZoom * ge.scale));
+      setZoom(newZoom);
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('gesturestart', handleGestureStart, { passive: false } as AddEventListenerOptions);
+    el.addEventListener('gesturechange', handleGestureChange, { passive: false } as AddEventListenerOptions);
+
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+      el.removeEventListener('gesturestart', handleGestureStart);
+      el.removeEventListener('gesturechange', handleGestureChange);
+    };
+  }, [overlayRef, setZoom, zoomRef]);
+}
+
 /** Map PDF font names to web-safe CSS font stacks */
 function mapFontToCSS(fontName: string): string {
   const lower = fontName.toLowerCase();
@@ -62,6 +107,7 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
     addTextBlock,
     deleteTextBlock,
     markDirty,
+    setZoom,
   } = useEditorContext();
 
   const { pdfBytes, selectedBlockId, editingBlockId, editorMode, pages } = state;
@@ -69,6 +115,11 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
   const textBlocks = pageState?.textBlocks ?? [];
 
   const overlayRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  // Forward pinch-to-zoom gestures from the overlay to editor zoom
+  usePinchZoomForwarding(overlayRef, setZoom, zoomRef);
   const [isExtracted, setIsExtracted] = useState(false);
 
   // Extract text blocks on mount (lazy, cached by pdfBytes identity + pageIndex)
@@ -254,8 +305,9 @@ function TextBlockOverlay({
   const top = (pageHeight - block.y - block.height) * zoom;
   const left = block.x * zoom;
   const cssWidth = block.width * zoom;
-  const cssMinHeight = block.height * zoom;
   const fontSize = block.fontSize * zoom;
+  // Use auto height — let content determine size so font/spacing changes expand naturally
+  // The white background will grow with the content, covering original text below
 
   // Single click: select
   const handleClick = useCallback(
@@ -392,14 +444,15 @@ function TextBlockOverlay({
         top,
         left,
         width: cssWidth,
-        minHeight: cssMinHeight,
         border: borderStyle,
         cursor: isEditing ? 'text' : isSelected ? 'move' : 'pointer',
         pointerEvents: 'auto',
         zIndex: isSelected ? 10 : 1,
         boxSizing: 'border-box',
-        backgroundColor: (block.isModified || block.isNew || isSelected) ? 'rgba(255,255,255,0.95)' : 'transparent',
+        backgroundColor: (block.isModified || block.isNew || isSelected) ? 'rgba(255,255,255,0.98)' : 'transparent',
         borderRadius: 2,
+        // Pad bottom to cover original text that may be below after font/spacing change
+        paddingBottom: (block.isModified || block.isNew) ? Math.max(2, fontSize * 0.3) : 0,
       }}
       onMouseEnter={(e) => {
         if (!isSelected) e.currentTarget.style.border = '1px dashed #93c5fd';
@@ -418,7 +471,6 @@ function TextBlockOverlay({
           spellCheck={false}
           style={{
             width: '100%',
-            minHeight: cssMinHeight,
             fontSize,
             fontFamily: mapFontToCSS(block.fontName),
             fontWeight: block.bold ? 'bold' : 'normal',

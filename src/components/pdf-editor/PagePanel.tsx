@@ -1,9 +1,12 @@
 // PagePanel: collapsible left panel with page thumbnails, multi-select, and page operations.
 // Supports click-to-scroll, collapse/expand, and operations (insert, delete, duplicate).
+// Uses custom mouse-based drag-to-reorder (HTML5 DnD is unreliable in WKWebView).
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Plus,
   Trash2,
   Copy,
@@ -44,8 +47,11 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
   const activeThumbRef = useRef<HTMLDivElement>(null);
   const lastClickedRef = useRef<number | null>(null);
 
-  // Drag state
-  const dragSourceRef = useRef<number | null>(null);
+  // Custom drag state (replaces HTML5 DnD for WKWebView reliability)
+  const [dragSource, setDragSource] = useState<number | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<number | null>(null);
+  const dragStartYRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
 
   // Scroll current page thumbnail into view
   useEffect(() => {
@@ -66,6 +72,9 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
 
   const handleThumbnailClick = useCallback(
     (pageIndex: number, e: React.MouseEvent) => {
+      // Don't handle click if we were dragging
+      if (isDraggingRef.current) return;
+
       const isMulti = e.metaKey || e.ctrlKey;
       const isRange = e.shiftKey;
 
@@ -126,43 +135,80 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
     duplicatePages(Array.from(selectedPages));
   }, [duplicatePages, selectedPages]);
 
-  // Drag handlers
-  const handleDragStart = useCallback(
-    (pageIndex: number, e: React.DragEvent) => {
-      dragSourceRef.current = pageIndex;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(pageIndex));
-      // Reduce opacity on dragged element
-      const target = e.currentTarget as HTMLElement;
-      requestAnimationFrame(() => {
-        target.style.opacity = '0.4';
-      });
-    },
-    [],
-  );
+  // Move selected page up/down (reliable alternative to drag)
+  const handleMoveUp = useCallback(() => {
+    if (selectedPages.size !== 1) return;
+    const idx = Array.from(selectedPages)[0];
+    if (idx > 0) {
+      reorderPages(idx, idx - 1);
+      clearPageSelection();
+      togglePageSelection(idx - 1, false);
+    }
+  }, [selectedPages, reorderPages, clearPageSelection, togglePageSelection]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }, []);
+  const handleMoveDown = useCallback(() => {
+    if (selectedPages.size !== 1) return;
+    const idx = Array.from(selectedPages)[0];
+    if (idx < pageCount - 1) {
+      reorderPages(idx, idx + 1);
+      clearPageSelection();
+      togglePageSelection(idx + 1, false);
+    }
+  }, [selectedPages, reorderPages, pageCount, clearPageSelection, togglePageSelection]);
 
-  const handleDrop = useCallback(
-    (targetIndex: number, e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const fromIdx = dragSourceRef.current;
-      dragSourceRef.current = null;
-      if (fromIdx !== null && fromIdx !== targetIndex) {
-        reorderPages(fromIdx, targetIndex);
+  // We need to track dragOverTarget outside the closure
+  const dragOverRef = useRef(dragOverTarget);
+  dragOverRef.current = dragOverTarget;
+
+  // Custom mouse-based drag-to-reorder (HTML5 DnD unreliable in WKWebView)
+  const handleDragMouseDownFixed = useCallback((pageIndex: number, e: React.MouseEvent) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    dragStartYRef.current = e.clientY;
+    isDraggingRef.current = false;
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      const dy = Math.abs(ev.clientY - dragStartYRef.current);
+      if (dy > 5 && !isDraggingRef.current) {
+        isDraggingRef.current = true;
+        setDragSource(pageIndex);
       }
-    },
-    [reorderPages],
-  );
+      if (isDraggingRef.current) {
+        const thumbEls = document.querySelectorAll('[data-page-thumb-idx]');
+        let closestIdx = pageIndex;
+        let closestDist = Infinity;
+        thumbEls.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const centerY = rect.top + rect.height / 2;
+          const dist = Math.abs(ev.clientY - centerY);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIdx = Number(el.getAttribute('data-page-thumb-idx'));
+          }
+        });
+        setDragOverTarget(closestIdx);
+        dragOverRef.current = closestIdx;
+      }
+    };
 
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
-    (e.currentTarget as HTMLElement).style.opacity = '1';
-    dragSourceRef.current = null;
-  }, []);
+    const handleMouseUp = () => {
+      const target = dragOverRef.current;
+      if (isDraggingRef.current && target !== null && target !== pageIndex) {
+        reorderPages(pageIndex, target);
+        clearPageSelection();
+        togglePageSelection(target, false);
+      }
+      setTimeout(() => {
+        isDraggingRef.current = false;
+      }, 0);
+      setDragSource(null);
+      setDragOverTarget(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [reorderPages, clearPageSelection, togglePageSelection]);
 
   if (isCollapsed) {
     return (
@@ -184,6 +230,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
 
   const canDelete = selectedPages.size > 0 && selectedPages.size < pageCount;
   const canDuplicate = selectedPages.size > 0;
+  const canMoveUp = selectedPages.size === 1 && !selectedPages.has(0);
+  const canMoveDown = selectedPages.size === 1 && !selectedPages.has(pageCount - 1);
 
   return (
     <div
@@ -208,24 +256,30 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       {/* Thumbnail list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {Array.from({ length: pageCount }, (_, i) => (
-          <div key={i} ref={i === currentPage ? activeThumbRef : undefined}>
+          <div
+            key={i}
+            ref={i === currentPage ? activeThumbRef : undefined}
+            data-page-thumb-idx={i}
+            onMouseDown={(e) => handleDragMouseDownFixed(i, e)}
+          >
+            {/* Drop insertion indicator */}
+            {dragSource !== null && dragOverTarget === i && dragSource !== i && (
+              <div className="h-0.5 bg-blue-500 rounded-full mx-2 mb-1" />
+            )}
             <PagePanelThumbnail
               pdfBytes={pdfBytes}
               pageIndex={i}
               isSelected={selectedPages.has(i)}
               isCurrent={i === currentPage}
+              isDragSource={dragSource === i}
               onClick={(e) => handleThumbnailClick(i, e)}
-              onDragStart={(e) => handleDragStart(i, e)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(i, e)}
-              onDragEnd={handleDragEnd}
             />
           </div>
         ))}
       </div>
 
       {/* Operations bar */}
-      <div className="border-t border-border px-2 py-1.5 flex items-center gap-1">
+      <div className="border-t border-border px-2 py-1.5 flex items-center gap-0.5">
         {/* Insert dropdown */}
         <div className="relative" ref={insertMenuRef}>
           <button
@@ -259,6 +313,30 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
             </div>
           )}
         </div>
+
+        {/* Move up */}
+        <button
+          type="button"
+          onClick={handleMoveUp}
+          disabled={!canMoveUp}
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Move page up"
+          title="Move page up"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Move down */}
+        <button
+          type="button"
+          onClick={handleMoveDown}
+          disabled={!canMoveDown}
+          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Move page down"
+          title="Move page down"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
 
         {/* Delete */}
         <button

@@ -50,31 +50,31 @@ function EditorViewInner({ filePath }: EditorViewProps) {
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
-    import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
-      const win = getCurrentWindow();
-      unlisten = await win.onCloseRequested(async (event) => {
-        if (!isDirtyRef.current) {
-          // Not dirty — allow the close to proceed naturally
-          return;
-        }
-        // Dirty — ask user
-        event.preventDefault();
-        const confirmed = window.confirm(
-          'You have unsaved changes. Are you sure you want to close?',
-        );
-        if (confirmed) {
-          // Force close by destroying the window
-          try {
-            await win.destroy();
-          } catch {
-            // Fallback: try close()
-            try { await win.close(); } catch { /* give up */ }
+    (async () => {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const { ask } = await import('@tauri-apps/plugin-dialog');
+        const win = getCurrentWindow();
+        unlisten = await win.onCloseRequested(async (event) => {
+          if (!isDirtyRef.current) {
+            // Not dirty — allow the close to proceed naturally
+            return;
           }
-        }
-      });
-    }).catch(() => {
-      // Not in Tauri environment
-    });
+          // Dirty — prevent default and ask user via native dialog
+          event.preventDefault();
+          const confirmed = await ask(
+            'You have unsaved changes. Close without saving?',
+            { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+          );
+          if (confirmed) {
+            // Force close by destroying the window
+            await win.destroy();
+          }
+        });
+      } catch {
+        // Not in Tauri environment
+      }
+    })();
 
     return () => { unlisten?.(); };
   }, []);
@@ -155,7 +155,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <ZoomToolbar />
         </div>
 
-        {/* Floating compare window (original PDF) */}
+        {/* Compare side panel (original PDF) — sits between canvas and tool sidebar */}
         {state.compareMode !== 'off' && <CompareFloatingWindow />}
 
         {/* Right: Tool sidebar */}

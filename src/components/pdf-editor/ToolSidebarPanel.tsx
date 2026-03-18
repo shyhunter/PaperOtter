@@ -199,22 +199,32 @@ function PanelHeader({ toolId }: { toolId: ToolId }) {
 
 // ── Compress Panel ───────────────────────────────────────────────────
 
-const COMPRESS_PRESETS = [
-  { value: 'screen', label: 'Low quality (smallest)', desc: 'Best for screen viewing' },
-  { value: 'ebook', label: 'Medium quality', desc: 'Good for reading on devices' },
-  { value: 'printer', label: 'High quality', desc: 'Suitable for printing' },
-  { value: 'prepress', label: 'Maximum quality', desc: 'Prepress / archival' },
-] as const;
-
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+/** Quality zones matching the full compress tool */
+const QUALITY_ZONES = [
+  { value: 'screen', label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
+  { value: 'ebook', label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
+  { value: 'printer', label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
+  { value: 'prepress', label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+] as const;
+
 function CompressPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
+
+  // Target file size mode
+  const [useTargetSize, setUseTargetSize] = useState(false);
+  const [targetSizeValue, setTargetSizeValue] = useState('');
+  const [targetUnit, setTargetUnit] = useState<'MB' | 'KB'>('MB');
+
+  // Additional options
+  const [stripMetadata, setStripMetadata] = useState(false);
+  const [downsampleImages, setDownsampleImages] = useState(true);
 
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -224,6 +234,21 @@ function CompressPanel() {
   } | null>(null);
 
   const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
+
+  // Auto-select best preset for target size
+  const resolvedPreset = useCallback((): string => {
+    if (!useTargetSize || !targetSizeValue.trim()) return preset;
+    const parsed = parseInt(targetSizeValue, 10);
+    if (isNaN(parsed) || parsed < 1) return preset;
+    const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
+    const originalSize = state.pdfBytes.byteLength;
+    const ratio = targetBytes / originalSize;
+    // Pick the most aggressive preset that might meet the target
+    if (ratio < 0.3) return 'screen';
+    if (ratio < 0.5) return 'ebook';
+    if (ratio < 0.8) return 'printer';
+    return 'prepress';
+  }, [useTargetSize, targetSizeValue, targetUnit, state.pdfBytes.byteLength, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -240,7 +265,7 @@ function CompressPanel() {
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
-        preset,
+        preset: resolvedPreset(),
       });
 
       await remove(tempInputPath).catch(() => {});
@@ -259,7 +284,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, preset, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, resolvedPreset, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -269,13 +294,20 @@ function CompressPanel() {
     <div className="space-y-3">
       <PanelHeader toolId="compress-pdf" />
 
+      {/* Current file size */}
+      <div className="rounded bg-muted/30 p-2 flex justify-between text-[10px]">
+        <span className="text-muted-foreground">Current size</span>
+        <span className="font-medium">{formatBytes(state.pdfBytes.byteLength)}</span>
+      </div>
+
+      {/* Quality presets */}
       <div className="space-y-1.5">
         <label className="text-[10px] font-medium text-muted-foreground">Quality Preset</label>
-        {COMPRESS_PRESETS.map((p) => (
+        {QUALITY_ZONES.map((p) => (
           <label
             key={p.value}
             className={`flex items-start gap-2 p-1.5 rounded cursor-pointer text-[11px] border ${
-              preset === p.value ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted/50'
+              preset === p.value && !useTargetSize ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted/50'
             }`}
           >
             <input
@@ -283,15 +315,70 @@ function CompressPanel() {
               name="compress-preset"
               value={p.value}
               checked={preset === p.value}
-              onChange={() => setPreset(p.value)}
+              onChange={() => { setPreset(p.value); setUseTargetSize(false); }}
               className="mt-0.5"
             />
             <div>
               <div className="font-medium">{p.label}</div>
-              <div className="text-[10px] text-muted-foreground">{p.desc}</div>
+              <div className="text-[10px] text-muted-foreground">{p.dpi} — {p.desc}</div>
             </div>
           </label>
         ))}
+      </div>
+
+      {/* Target file size */}
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useTargetSize}
+            onChange={(e) => setUseTargetSize(e.target.checked)}
+          />
+          <span className="font-medium">Target file size</span>
+        </label>
+        {useTargetSize && (
+          <div className="flex gap-1.5 items-center">
+            <input
+              type="number"
+              value={targetSizeValue}
+              onChange={(e) => setTargetSizeValue(e.target.value)}
+              placeholder="e.g. 5"
+              title="Target file size"
+              min={1}
+              className="flex-1 px-2 py-1 text-xs border rounded bg-background"
+            />
+            <select
+              value={targetUnit}
+              onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
+              title="Size unit"
+              className="px-1.5 py-1 text-xs border rounded bg-background"
+            >
+              <option value="MB">MB</option>
+              <option value="KB">KB</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Advanced options */}
+      <div className="space-y-1.5 border-t pt-2">
+        <span className="text-[10px] font-medium text-muted-foreground">Options</span>
+        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={downsampleImages}
+            onChange={(e) => setDownsampleImages(e.target.checked)}
+          />
+          Downsample images
+        </label>
+        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={stripMetadata}
+            onChange={(e) => setStripMetadata(e.target.checked)}
+          />
+          Strip metadata
+        </label>
       </div>
 
       {/* Compression result feedback */}
@@ -731,43 +818,254 @@ function CropPanel() {
 
 // ── Sign Panel (placeholder) ─────────────────────────────────────────
 
+/** Handwriting-style fonts for typed signatures */
+const SIGNATURE_FONTS = [
+  { value: 'cursive', label: 'Script', css: "'Brush Script MT', 'Segoe Script', cursive" },
+  { value: 'serif', label: 'Formal', css: "'Georgia', 'Times New Roman', serif" },
+  { value: 'sans', label: 'Clean', css: "'Helvetica Neue', Arial, sans-serif" },
+];
+
+const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';
+
+interface SavedSignature {
+  text: string;
+  font: string;
+  color: string;
+  createdAt: number;
+}
+
+function loadSavedSignatures(): SavedSignature[] {
+  try {
+    const raw = localStorage.getItem(SAVED_SIGNATURES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveSavedSignatures(sigs: SavedSignature[]) {
+  localStorage.setItem(SAVED_SIGNATURES_KEY, JSON.stringify(sigs));
+}
+
 function SignPanel() {
-  const { state, setEditorMode } = useEditorContext();
+  const { state, setEditorMode, addTextBlock, startEditing } = useEditorContext();
   const isTextMode = state.editorMode === 'text';
+
+  const [sigText, setSigText] = useState('');
+  const [sigFont, setSigFont] = useState(SIGNATURE_FONTS[0].value);
+  const [sigColor, setSigColor] = useState('#1a365d');
+  const [sigSize, setSigSize] = useState(24);
+  const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
+  const [showSaved, setShowSaved] = useState(false);
+
+  const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
+
+  // Place signature as a text block on the current page
+  const handlePlaceSignature = useCallback((text: string, font: string, color: string) => {
+    const pageIndex = state.currentPage;
+    const newBlock = {
+      id: crypto.randomUUID(),
+      pageIndex,
+      x: 100,
+      y: 100,
+      width: Math.max(200, text.length * sigSize * 0.6),
+      height: sigSize * 1.5,
+      text,
+      fontSize: sigSize,
+      fontName: font === 'cursive' ? 'Helvetica' : font === 'serif' ? 'TimesRoman' : 'Helvetica',
+      color,
+      alignment: 'left' as const,
+      bold: false,
+      italic: font === 'cursive',
+      underline: false,
+      lineHeight: 1.2,
+      isNew: true,
+      isModified: true,
+    };
+    addTextBlock(pageIndex, newBlock);
+    startEditing(newBlock.id);
+  }, [state.currentPage, sigSize, addTextBlock, startEditing]);
+
+  const handleSaveSignature = useCallback(() => {
+    if (!sigText.trim()) return;
+    const newSig: SavedSignature = { text: sigText, font: sigFont, color: sigColor, createdAt: Date.now() };
+    const updated = [newSig, ...savedSignatures].slice(0, 5); // Keep last 5
+    setSavedSignatures(updated);
+    saveSavedSignatures(updated);
+  }, [sigText, sigFont, sigColor, savedSignatures]);
+
+  const handleDeleteSavedSig = useCallback((idx: number) => {
+    const updated = savedSignatures.filter((_, i) => i !== idx);
+    setSavedSignatures(updated);
+    saveSavedSignatures(updated);
+  }, [savedSignatures]);
+
   return (
     <div className="space-y-3">
       <PanelHeader toolId="sign-pdf" />
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        Use the text tool to type your signature directly on the PDF. Activate text mode, then click anywhere on the page to place your signature text.
-      </p>
-      <button
-        type="button"
-        onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-        className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-          isTextMode
-            ? 'bg-green-600 text-white'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-        }`}
-      >
-        {isTextMode ? (
-          <>
-            <Check className="h-3 w-3" />
-            Text Mode Active — Click on page to place text
-          </>
-        ) : (
-          'Activate Text Mode'
+
+      {/* Type signature */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-medium text-muted-foreground">Type your signature</label>
+        <input
+          type="text"
+          value={sigText}
+          onChange={(e) => setSigText(e.target.value)}
+          placeholder="Your Name"
+          title="Signature text"
+          className="w-full px-2 py-1.5 text-sm border rounded bg-background"
+          style={{ fontFamily: selectedFontCss, fontStyle: sigFont === 'cursive' ? 'italic' : 'normal' }}
+        />
+
+        {/* Live preview */}
+        {sigText && (
+          <div className="rounded border bg-white p-3 text-center overflow-hidden">
+            <span
+              style={{
+                fontFamily: selectedFontCss,
+                fontSize: `${Math.min(sigSize, 28)}px`,
+                color: sigColor,
+                fontStyle: sigFont === 'cursive' ? 'italic' : 'normal',
+              }}
+            >
+              {sigText}
+            </span>
+          </div>
         )}
-      </button>
-      {isTextMode && (
-        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
-          <p className="text-[10px] text-green-700 dark:text-green-400 font-medium">
-            Click anywhere on the PDF canvas to place a new text block. The cursor will show as a crosshair (+) on the page.
-          </p>
+
+        {/* Font style */}
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground">Style</label>
+          <div className="flex gap-1 mt-0.5">
+            {SIGNATURE_FONTS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setSigFont(f.value)}
+                className={`flex-1 py-1 text-[10px] rounded border transition-colors ${
+                  sigFont === f.value ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color + Size */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground">Color</label>
+            <div className="flex gap-1 mt-0.5">
+              {['#1a365d', '#000000', '#2563EB', '#DC2626'].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setSigColor(c)}
+                  className={`w-5 h-5 rounded-sm border-2 ${sigColor === c ? 'border-primary' : 'border-border'}`}
+                  style={{ backgroundColor: c }}
+                  title={c}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground">Size</label>
+            <input
+              type="number"
+              value={sigSize}
+              onChange={(e) => setSigSize(Math.max(12, Math.min(48, Number(e.target.value) || 24)))}
+              title="Signature font size"
+              className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
+              min={12}
+              max={48}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Place + Save buttons */}
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => { if (sigText.trim()) handlePlaceSignature(sigText, sigFont, sigColor); }}
+          disabled={!sigText.trim()}
+          className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Place on Page
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveSignature}
+          disabled={!sigText.trim()}
+          className="py-1.5 px-2 text-xs rounded border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Save signature for reuse"
+        >
+          Save
+        </button>
+      </div>
+
+      {/* Saved signatures */}
+      {savedSignatures.length > 0 && (
+        <div className="space-y-1.5 border-t pt-2">
+          <button
+            type="button"
+            onClick={() => setShowSaved(!showSaved)}
+            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            Saved signatures ({savedSignatures.length}) {showSaved ? '▾' : '▸'}
+          </button>
+          {showSaved && savedSignatures.map((sig, idx) => (
+            <div key={sig.createdAt} className="flex items-center gap-1.5 p-1.5 rounded border hover:bg-muted/50 group">
+              <button
+                type="button"
+                onClick={() => handlePlaceSignature(sig.text, sig.font, sig.color)}
+                className="flex-1 text-left text-xs truncate"
+                style={{
+                  fontFamily: SIGNATURE_FONTS.find(f => f.value === sig.font)?.css ?? 'cursive',
+                  color: sig.color,
+                  fontStyle: sig.font === 'cursive' ? 'italic' : 'normal',
+                }}
+              >
+                {sig.text}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteSavedSig(idx)}
+                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 text-[10px]"
+                title="Delete saved signature"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
-      <p className="text-[9px] text-muted-foreground italic">
-        Image-based signature support coming in a future update.
-      </p>
+
+      {/* Text mode for freehand placement */}
+      <div className="border-t pt-2">
+        <button
+          type="button"
+          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
+          className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
+            isTextMode
+              ? 'bg-green-600 text-white'
+              : 'border border-border hover:bg-muted'
+          }`}
+        >
+          {isTextMode ? (
+            <>
+              <Check className="h-3 w-3" />
+              Placement Mode Active
+            </>
+          ) : (
+            'Click-to-Place Mode'
+          )}
+        </button>
+        {isTextMode && (
+          <p className="text-[9px] text-muted-foreground mt-1">
+            Click anywhere on the PDF to place a text block.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -775,45 +1073,119 @@ function SignPanel() {
 // ── Redact Panel ─────────────────────────────────────────────────────
 
 function RedactPanel() {
-  const { state, setEditorMode } = useEditorContext();
+  const { state, setEditorMode, addTextBlock, markDirty } = useEditorContext();
   const isTextMode = state.editorMode === 'text';
+
+  const [redactColor, setRedactColor] = useState('#000000');
+  const [redactedCount, setRedactedCount] = useState(0);
+
+  // Place a solid redaction rectangle (opaque text block with block character)
+  const handlePlaceRedactBlock = useCallback(() => {
+    const pageIndex = state.currentPage;
+    const newBlock = {
+      id: crypto.randomUUID(),
+      pageIndex,
+      x: 100,
+      y: 300,
+      width: 200,
+      height: 30,
+      text: '█'.repeat(30), // Solid block characters
+      fontSize: 24,
+      fontName: 'Helvetica',
+      color: redactColor,
+      alignment: 'left' as const,
+      bold: false,
+      italic: false,
+      underline: false,
+      lineHeight: 1.0,
+      isNew: true,
+      isModified: true,
+    };
+    addTextBlock(pageIndex, newBlock);
+    markDirty();
+    setRedactedCount((c) => c + 1);
+  }, [state.currentPage, redactColor, addTextBlock, markDirty]);
+
   return (
     <div className="space-y-3">
       <PanelHeader toolId="redact-pdf" />
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        To redact text: click a text block to select it, then press <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Delete</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Backspace</kbd>. The area will be covered with a white rectangle in the saved PDF.
-      </p>
-      <p className="text-[10px] text-muted-foreground leading-relaxed">
-        You can also place opaque text blocks over sensitive content:
-      </p>
-      <button
-        type="button"
-        onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-        className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-          isTextMode
-            ? 'bg-green-600 text-white'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-        }`}
-      >
-        {isTextMode ? (
-          <>
-            <Check className="h-3 w-3" />
-            Text Mode Active — Click on page to place block
-          </>
-        ) : (
-          'Activate Text Mode'
+
+      {/* Method 1: Click to select + delete text */}
+      <div className="space-y-1.5">
+        <span className="text-[10px] font-medium text-muted-foreground">Method 1: Delete text</span>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Click a text block to select it, then press <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Delete</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Backspace</kbd>. The area is covered with a white rectangle in the saved PDF.
+        </p>
+      </div>
+
+      {/* Method 2: Place opaque redaction block */}
+      <div className="space-y-1.5 border-t pt-2">
+        <span className="text-[10px] font-medium text-muted-foreground">Method 2: Cover with redaction block</span>
+
+        <div>
+          <label className="text-[10px] text-muted-foreground">Redaction color</label>
+          <div className="flex gap-1 mt-0.5">
+            {['#000000', '#FFFFFF', '#333333'].map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setRedactColor(c)}
+                className={`w-6 h-6 rounded-sm border-2 ${redactColor === c ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
+                style={{ backgroundColor: c }}
+                title={c === '#000000' ? 'Black' : c === '#FFFFFF' ? 'White' : 'Dark gray'}
+              />
+            ))}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePlaceRedactBlock}
+          className="w-full py-1.5 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+        >
+          Place Redaction Block
+        </button>
+        <p className="text-[9px] text-muted-foreground">
+          Drag and resize the block to cover sensitive content. The block is opaque and will permanently cover content when saved.
+        </p>
+      </div>
+
+      {/* Method 3: Click-to-place mode */}
+      <div className="border-t pt-2">
+        <span className="text-[10px] font-medium text-muted-foreground">Method 3: Click-to-place</span>
+        <button
+          type="button"
+          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
+          className={`w-full mt-1.5 py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
+            isTextMode
+              ? 'bg-green-600 text-white'
+              : 'border border-border hover:bg-muted'
+          }`}
+        >
+          {isTextMode ? (
+            <>
+              <Check className="h-3 w-3" />
+              Click-to-Place Active
+            </>
+          ) : (
+            'Activate Click-to-Place'
+          )}
+        </button>
+        {isTextMode && (
+          <p className="text-[9px] text-muted-foreground mt-1">
+            Click anywhere on the PDF to place a covering block at that position.
+          </p>
         )}
-      </button>
-      {isTextMode && (
-        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
-          <p className="text-[10px] text-green-700 dark:text-green-400 font-medium">
-            Click anywhere on the PDF canvas to place a covering text block. The cursor will show as a crosshair (+) on the page.
+      </div>
+
+      {/* Counter */}
+      {redactedCount > 0 && (
+        <div className="rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-2">
+          <p className="text-[10px] text-red-700 dark:text-red-400 font-medium">
+            {redactedCount} redaction block{redactedCount !== 1 ? 's' : ''} placed. Remember to save to make redactions permanent.
           </p>
         </div>
       )}
-      <p className="text-[9px] text-muted-foreground italic">
-        Rectangle-based redaction coming in a future update.
-      </p>
     </div>
   );
 }

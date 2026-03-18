@@ -254,8 +254,8 @@ export function EditorCanvas() {
     }
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('gesturestart', handleGestureStart, { passive: false } as EventListenerOptions);
-    container.addEventListener('gesturechange', handleGestureChange, { passive: false } as EventListenerOptions);
+    container.addEventListener('gesturestart', handleGestureStart, { passive: false } as AddEventListenerOptions);
+    container.addEventListener('gesturechange', handleGestureChange, { passive: false } as AddEventListenerOptions);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);

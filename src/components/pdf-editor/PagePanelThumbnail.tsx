@@ -11,11 +11,9 @@ interface PagePanelThumbnailProps {
   isSelected: boolean;
   /** Is this the page currently visible on the canvas? */
   isCurrent: boolean;
+  /** Is this thumbnail currently being dragged? */
+  isDragSource?: boolean;
   onClick: (e: React.MouseEvent) => void;
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
 }
 
 const THUMB_SCALE = 0.3;
@@ -25,17 +23,13 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
   pageIndex,
   isSelected,
   isCurrent,
+  isDragSource = false,
   onClick,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd,
 }: PagePanelThumbnailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [rendered, setRendered] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   // IntersectionObserver for lazy loading
   useEffect(() => {
@@ -98,21 +92,6 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfBytes]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-    onDragOver?.(e);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    setIsDragOver(false);
-    onDrop?.(e);
-  };
-
   let borderClass = 'border-transparent';
   if (isSelected) {
     borderClass = 'border-blue-500 ring-2 ring-blue-500/30';
@@ -123,7 +102,6 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
   return (
     <div
       ref={containerRef}
-      draggable
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -132,25 +110,16 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
           onClick(e as unknown as React.MouseEvent);
         }
       }}
-      onDragStart={onDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onDragEnd={onDragEnd}
       className={`
         relative cursor-pointer rounded-md border-2 transition-all mx-auto
         hover:border-muted-foreground/30
         ${borderClass}
+        ${isDragSource ? 'opacity-40' : ''}
       `}
       aria-label={`Page ${pageIndex + 1}`}
       aria-current={isCurrent ? 'page' : undefined}
       data-page-idx={pageIndex}
     >
-      {/* Drop insertion indicator */}
-      {isDragOver && (
-        <div className="absolute -top-1 left-1 right-1 h-0.5 bg-blue-500 rounded-full z-10" />
-      )}
-
       {/* Selection check indicator */}
       {isSelected && (
         <div className="absolute top-1 right-1 z-10 bg-blue-500 rounded-full p-0.5">
