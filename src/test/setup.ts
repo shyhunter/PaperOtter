@@ -24,9 +24,67 @@ vi.mock('@tauri-apps/api/path', () => ({
 }));
 
 // Mock @tauri-apps/api/core — Tauri IPC is not available in Node.
+// invoke must return a Promise (callers chain .then()); default resolves to '{}' for JSON callers.
 // Image tests control what invoke returns via vi.mocked(invoke).mockResolvedValue(...)
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn().mockResolvedValue('{}'),
+  transformCallback: vi.fn(),
+}));
+
+// Mock @tauri-apps/api/event — Tauri event system not available in Node.
+// listen returns an unlisten function; emit is a no-op.
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn().mockResolvedValue(() => {}),
+  emit: vi.fn(),
+}));
+
+// Mock @tauri-apps/plugin-updater — native updater not available in Node.
+vi.mock('@tauri-apps/plugin-updater', () => ({
+  check: vi.fn().mockResolvedValue(null),
+}));
+
+// Mock @tauri-apps/plugin-process — native process APIs not available in Node.
+vi.mock('@tauri-apps/plugin-process', () => ({
+  relaunch: vi.fn(),
+  exit: vi.fn(),
+}));
+
+// Mock @tauri-apps/api/webview — drag-drop listener used by useFileDrop hook.
+vi.mock('@tauri-apps/api/webview', () => ({
+  getCurrentWebview: vi.fn(() => ({
+    onDragDropEvent: vi.fn().mockResolvedValue(() => {}),
+  })),
+}));
+
+// Mock @tauri-apps/api/window — window operations used by close handler, etc.
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: vi.fn(() => ({
+    onCloseRequested: vi.fn().mockResolvedValue(() => {}),
+    destroy: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+// Mock @tauri-apps/plugin-store — persistent key-value store used by favorites/recents/signatures.
+vi.mock('@tauri-apps/plugin-store', () => ({
+  LazyStore: vi.fn().mockImplementation(() => ({
+    get: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+// Mock @tauri-apps/plugin-dialog — file open/save dialogs.
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+  open: vi.fn().mockResolvedValue(null),
+  save: vi.fn().mockResolvedValue(null),
+  ask: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock @tauri-apps/plugin-opener — URL/file opener.
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  openUrl: vi.fn(),
+  openPath: vi.fn(),
 }));
 
 // Stub createImageBitmap — browser API not available in Node environment.
