@@ -1140,7 +1140,7 @@ async fn convert_with_textutil(
     #[cfg(not(target_os = "macos"))]
     {
         let _ = (source_path, output_format);
-        return Err("textutil is only available on macOS".to_string());
+        Err("textutil is only available on macOS".to_string())
     }
 
     #[cfg(target_os = "macos")]
@@ -1281,15 +1281,18 @@ async fn convert_with_word(
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         let _ = output_path_str;
-        return Err("Word automation is not supported on this platform".to_string());
+        Err("Word automation is not supported on this platform".to_string())
     }
 
-    let bytes = std::fs::read(&output_path)
-        .map_err(|e| format!("Failed to read Word output: {}", e))?;
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
+        let bytes = std::fs::read(&output_path)
+            .map_err(|e| format!("Failed to read Word output: {}", e))?;
 
-    let _ = std::fs::remove_file(&output_path);
+        let _ = std::fs::remove_file(&output_path);
 
-    Ok(tauri::ipc::Response::new(bytes))
+        Ok(tauri::ipc::Response::new(bytes))
+    }
 }
 
 /// Reveal a file in Finder (macOS) or the system file manager.
