@@ -115,11 +115,11 @@ jobs:
 
             | Platform | Installer | Download |
             |----------|-----------|----------|
-            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_aarch64.dmg) |
-            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64.dmg) |
-            | **Windows** | .exe | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64-setup.exe) |
-            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
-            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
+            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_aarch64.dmg) |
+            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64.dmg) |
+            | **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64-setup.exe) |
+            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
+            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
 
             Everything you need is included — just install and go.
 

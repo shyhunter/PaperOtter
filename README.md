@@ -2,11 +2,11 @@
 
 **Your local document toolkit -- private, fast, offline.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0--beta.1-blue)](https://github.com/user/papercut/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0--beta.2-blue)](https://github.com/shyhunter/Papercut/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/user/papercut/releases)
-[![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/user/papercut/releases)
-[![Linux](https://img.shields.io/badge/Linux-x64-orange)](https://github.com/user/papercut/releases)
+[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/shyhunter/Papercut/releases)
+[![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/shyhunter/Papercut/releases)
+[![Linux](https://img.shields.io/badge/Linux-x64-orange)](https://github.com/shyhunter/Papercut/releases)
 
 <!-- TODO: Add hero screenshot -->
 
@@ -66,22 +66,30 @@ All file processing happens locally using native binaries (Ghostscript, LibreOff
 
 Download the latest release for your platform:
 
-| Platform | Download |
-|----------|----------|
-| macOS (Apple Silicon) | [Papercut_1.0.0-beta.1_aarch64.dmg](https://github.com/user/papercut/releases/latest) |
-| macOS (Intel) | [Papercut_1.0.0-beta.1_x64.dmg](https://github.com/user/papercut/releases/latest) |
-| Windows (x64) | [Papercut_1.0.0-beta.1_x64-setup.exe](https://github.com/user/papercut/releases/latest) |
-| Linux (x64) | [Papercut_1.0.0-beta.1_amd64.deb](https://github.com/user/papercut/releases/latest) |
+| Platform | Installer | Download |
+|----------|-----------|----------|
+| **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+| **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+| **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+| **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+| **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+
+Everything you need is included -- just install and go. Ghostscript is bundled with the app.
+
+> **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
+> ```
+> xattr -cr /Applications/Papercut.app
+> ```
+> Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate.
 
 ### Optional Dependencies
 
-Some tools require external software for full functionality:
+Most tools work out of the box. These are only needed for specific features:
 
-| Dependency | Used For | macOS | Windows | Linux |
-|------------|----------|-------|---------|-------|
-| [Ghostscript](https://ghostscript.com/) | PDF compression, PDF/A, Repair | `brew install ghostscript` | [Download](https://ghostscript.com/releases/gsdnld.html) | `sudo apt install ghostscript` |
-| [LibreOffice](https://www.libreoffice.org/) | DOC/DOCX conversion | `brew install --cask libreoffice` | [Download](https://www.libreoffice.org/download/) | `sudo apt install libreoffice` |
-| [Calibre](https://calibre-ebook.com/) | EPUB/MOBI/ebook formats | `brew install --cask calibre` | [Download](https://calibre-ebook.com/download) | `sudo apt install calibre` |
+| Dependency | Used For | Install |
+|------------|----------|---------|
+| [LibreOffice](https://www.libreoffice.org/) | DOC/DOCX conversion | [Download](https://www.libreoffice.org/download/) |
+| [Calibre](https://calibre-ebook.com/) | EPUB/MOBI ebook formats | [Download](https://calibre-ebook.com/download) |
 
 Without these, the corresponding tools will show a prompt to install the missing dependency.
 
@@ -123,7 +131,7 @@ npm run lint
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
 | PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
 | Image Processing | [Sharp](https://sharp.pixelplumbing.com/) (via Rust sidecar) |
-| PDF Compression | [Ghostscript](https://ghostscript.com/) (system binary) |
+| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
 
 ---
 

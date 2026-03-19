@@ -4,7 +4,7 @@ import { open as openFileDialog } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 
 const REPO_OWNER = 'shyhunter';
-const REPO_NAME = 'Vibecoding2';
+const REPO_NAME = 'Papercut';
 
 type Priority = 'high' | 'medium' | 'low';
 type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error' | 'no-token';
