@@ -5,8 +5,11 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:window:allow-destroy",
+    "core:window:allow-close",
     "dialog:allow-open",
     "dialog:allow-save",
+    "dialog:allow-ask",
     {
       "identifier": "fs:allow-read-file",
       "allow": [{ "path": "$HOME/**" }]

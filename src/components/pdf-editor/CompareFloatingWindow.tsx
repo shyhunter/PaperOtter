@@ -1,250 +1,260 @@
-// CompareSidePanel: inline side panel showing the original (unmodified) PDF
-// alongside the editor canvas. Visible while editing — not a modal overlay.
-// Supports: scroll sync with main canvas, independent zoom, resize handle.
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
-import { X, ZoomIn, ZoomOut, GripVertical } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
+// Full comparison overlay: side-by-side Before (original) / After (current edited)
+// with synced scrolling, zoom controls — mirrors the CompareStep UX.
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { X, ZoomIn, ZoomOut } from 'lucide-react';
+import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
+import { cn } from '@/lib/utils';
 
-const PAGE_GAP = 16;
-const VIRTUALIZATION_WINDOW = 3;
-const DEFAULT_PANEL_WIDTH = 400;
-const MIN_PANEL_WIDTH = 200;
-const MAX_PANEL_WIDTH = 800;
+// Zoom steps matching CompareStep
+const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
+  { label: '50%',  wrapperClass: 'w-1/2 mx-auto' },
+  { label: '75%',  wrapperClass: 'w-3/4 mx-auto' },
+  { label: '100%', wrapperClass: 'w-full' },
+  { label: '150%', wrapperClass: 'min-w-[150%]' },
+  { label: '200%', wrapperClass: 'min-w-[200%]' },
+];
+const DEFAULT_ZOOM_INDEX = 2; // 100%
+const RENDER_SCALE = 2.0;
 
-interface PageInfo {
-  width: number;
-  height: number;
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(2)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
-// ── Page renderer (read-only) ───────────────────────────────────────
-
-interface PageRendererProps {
-  pdfBytes: Uint8Array;
-  pageIndex: number;
-  zoom: number;
+interface PreviewPanelProps {
+  label: string;
+  sizeLabel: string;
+  pageUrls: string[];
+  isRendering: boolean;
+  hasError: boolean;
+  zoomWrapperClass: string;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  onScroll?: () => void;
 }
 
-const PageRenderer = memo(function PageRenderer({
-  pdfBytes,
-  pageIndex,
-  zoom,
-}: PageRendererProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const renderIdRef = useRef(0);
+function PreviewPanel({
+  label,
+  sizeLabel,
+  pageUrls,
+  isRendering,
+  hasError,
+  zoomWrapperClass,
+  scrollRef,
+  onScroll,
+}: PreviewPanelProps) {
+  return (
+    <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
+      {/* Panel header */}
+      <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
+        <span className="text-sm font-semibold text-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{sizeLabel}</span>
+      </div>
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || pdfBytes.byteLength === 0) return;
-
-    const currentId = ++renderIdRef.current;
-
-    const timer = setTimeout(async () => {
-      try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        const pdfDoc = await loadingTask.promise;
-        try {
-          if (renderIdRef.current !== currentId) return;
-          const page = await pdfDoc.getPage(pageIndex + 1);
-          if (renderIdRef.current !== currentId) return;
-          const viewport = page.getViewport({ scale: zoom });
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          await page.render({ canvas, viewport }).promise;
-        } finally {
-          pdfDoc.destroy();
-        }
-      } catch {
-        // Non-fatal
-      }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [pdfBytes, pageIndex, zoom]);
-
-  return <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />;
-});
-
-// ── Main CompareSidePanel ────────────────────────────────────────────
+      {/* Scrollable area */}
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-auto rounded-lg border border-border bg-white min-h-0"
+      >
+        {hasError ? (
+          <div className="flex h-full min-h-[300px] items-center justify-center">
+            <span className="text-sm text-muted-foreground">Preview unavailable</span>
+          </div>
+        ) : isRendering ? (
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
+            <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+            <span className="text-sm text-muted-foreground">Rendering preview...</span>
+          </div>
+        ) : (
+          <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
+            {pageUrls.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt={`${label} page ${i + 1}`}
+                className="w-full h-auto block border-b border-border/30 last:border-b-0"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function CompareFloatingWindow() {
   const { state, setCompareMode } = useEditorContext();
-  const { originalPdfBytes, currentPage } = state;
+  const { originalPdfBytes, pdfBytes } = state;
 
-  const [zoom, setZoom] = useState(0.6);
-  const [pageInfos, setPageInfos] = useState<PageInfo[]>([]);
-  const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
+  const [originalUrls, setOriginalUrls] = useState<string[]>([]);
+  const [currentUrls, setCurrentUrls] = useState<string[]>([]);
+  const [originalRendering, setOriginalRendering] = useState(true);
+  const [currentRendering, setCurrentRendering] = useState(true);
+  const [originalError, setOriginalError] = useState(false);
+  const [currentError, setCurrentError] = useState(false);
+  const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
+  const { label: zoomLabel, wrapperClass: zoomWrapperClass } = ZOOM_STEPS[zoomIndex];
 
-  // Load page dimensions
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      if (originalPdfBytes.byteLength === 0) return;
-      const loadingTask = pdfjsLib.getDocument({ data: originalPdfBytes.slice() });
-      const pdfDoc = await loadingTask.promise;
-      try {
-        const infos: PageInfo[] = [];
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-          const page = await pdfDoc.getPage(i);
-          const vp = page.getViewport({ scale: 1 });
-          infos.push({ width: vp.width, height: vp.height });
-        }
-        if (!cancelled) setPageInfos(infos);
-      } finally {
-        pdfDoc.destroy();
-      }
+  // ── Synced scrolling ──────────────────────────────────────────────────
+  const isSyncing = useRef(false);
+  const beforeScrollRef = useRef<HTMLDivElement>(null);
+  const afterScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = useCallback((source: 'before' | 'after') => {
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    const src = source === 'before' ? beforeScrollRef.current : afterScrollRef.current;
+    const tgt = source === 'before' ? afterScrollRef.current : beforeScrollRef.current;
+    if (src && tgt) {
+      tgt.scrollTop = src.scrollTop;
+      tgt.scrollLeft = src.scrollLeft;
     }
-    load();
+    requestAnimationFrame(() => { isSyncing.current = false; });
+  }, []);
+
+  // Render original (Before)
+  useEffect(() => {
+    if (originalPdfBytes.byteLength === 0) return;
+    let cancelled = false;
+    setOriginalUrls([]);
+    setOriginalRendering(true);
+    setOriginalError(false);
+
+    renderAllPdfPages(originalPdfBytes, RENDER_SCALE)
+      .then((urls) => {
+        if (cancelled) return;
+        setOriginalUrls(urls);
+        setOriginalRendering(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOriginalError(true);
+        setOriginalRendering(false);
+      });
     return () => { cancelled = true; };
   }, [originalPdfBytes]);
 
-  // Auto-scroll to current page when it changes in the main editor
+  // Render current (After)
   useEffect(() => {
-    if (!scrollRef.current || pageInfos.length === 0) return;
-    // Find the target page element by index
-    const target = scrollRef.current.querySelector(`[data-compare-page="${currentPage}"]`);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [currentPage, pageInfos]);
+    if (pdfBytes.byteLength === 0) return;
+    let cancelled = false;
+    setCurrentUrls([]);
+    setCurrentRendering(true);
+    setCurrentError(false);
 
-  // Pinch-to-zoom within the compare panel
+    renderAllPdfPages(pdfBytes, RENDER_SCALE)
+      .then((urls) => {
+        if (cancelled) return;
+        setCurrentUrls(urls);
+        setCurrentRendering(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCurrentError(true);
+        setCurrentRendering(false);
+      });
+    return () => { cancelled = true; };
+  }, [pdfBytes]);
+
+  // Close on Escape key
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    function handleWheel(e: WheelEvent) {
-      if (e.ctrlKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        const delta = -e.deltaY * 0.01;
-        const newZoom = Math.min(3.0, Math.max(0.15, zoomRef.current + delta));
-        setZoom(newZoom);
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setCompareMode('off');
       }
     }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setCompareMode]);
 
-    let gestureStartZoom = 1.0;
-    function handleGestureStart(e: Event) {
-      e.preventDefault();
-      gestureStartZoom = zoomRef.current;
-    }
-    function handleGestureChange(e: Event) {
-      e.preventDefault();
-      const ge = e as unknown as { scale: number };
-      const newZoom = Math.min(3.0, Math.max(0.15, gestureStartZoom * ge.scale));
-      setZoom(newZoom);
-    }
-
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    el.addEventListener('gesturestart', handleGestureStart, { passive: false } as AddEventListenerOptions);
-    el.addEventListener('gesturechange', handleGestureChange, { passive: false } as AddEventListenerOptions);
-
-    return () => {
-      el.removeEventListener('wheel', handleWheel);
-      el.removeEventListener('gesturestart', handleGestureStart);
-      el.removeEventListener('gesturechange', handleGestureChange);
-    };
-  }, []);
-
-  // Resize handle: drag to resize the panel width
-  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = panelWidth;
-
-    const handleMouseMove = (ev: MouseEvent) => {
-      // Dragging left = wider panel (since panel is on the right side, but resize handle is on the left edge)
-      const newWidth = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, startWidth - (ev.clientX - startX)));
-      setPanelWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [panelWidth]);
+  const originalSize = originalPdfBytes.byteLength;
+  const currentSize = pdfBytes.byteLength;
 
   return (
-    <div className="flex h-full flex-none border-l border-border" style={{ width: panelWidth }}>
-      {/* Resize handle */}
-      <div
-        className="w-1.5 flex-none cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors flex items-center justify-center"
-        onMouseDown={handleResizeMouseDown}
-      >
-        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+    <div className="absolute inset-0 z-50 flex flex-col bg-background">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 flex-none">
+        <span className="text-sm font-semibold text-foreground">Compare: Original vs Current</span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {formatBytes(originalSize)} → {formatBytes(currentSize)}
+          </span>
+          {originalSize > 0 && (
+            <span className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+              currentSize <= originalSize
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+            )}>
+              {currentSize <= originalSize
+                ? `${Math.round(((originalSize - currentSize) / originalSize) * 100)}% smaller`
+                : `${Math.round(((currentSize - originalSize) / originalSize) * 100)}% larger`
+              }
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setCompareMode('off')}
+            className="ml-2 p-1 rounded hover:bg-muted transition-colors"
+            title="Close comparison (Esc)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Panel content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="flex items-center justify-between px-2 py-1.5 border-b flex-none bg-muted/30">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-            Original
-          </span>
+      {/* Side-by-side preview panels */}
+      <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
+        <PreviewPanel
+          label="Original"
+          sizeLabel={formatBytes(originalSize)}
+          pageUrls={originalUrls}
+          isRendering={originalRendering}
+          hasError={originalError}
+          zoomWrapperClass={zoomWrapperClass}
+          scrollRef={beforeScrollRef}
+          onScroll={() => handleScroll('before')}
+        />
+        <PreviewPanel
+          label="Current"
+          sizeLabel={formatBytes(currentSize)}
+          pageUrls={currentUrls}
+          isRendering={currentRendering}
+          hasError={currentError}
+          zoomWrapperClass={zoomWrapperClass}
+          scrollRef={afterScrollRef}
+          onScroll={() => handleScroll('after')}
+        />
 
-          <div className="flex items-center gap-1">
-            <button onClick={() => setZoom((z) => Math.max(0.15, z - 0.15))} className="p-0.5 rounded hover:bg-muted" title="Zoom out">
-              <ZoomOut className="h-3 w-3" />
-            </button>
-            <span className="text-[10px] font-mono w-8 text-center text-muted-foreground">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom((z) => Math.min(3.0, z + 0.15))} className="p-0.5 rounded hover:bg-muted" title="Zoom in">
-              <ZoomIn className="h-3 w-3" />
-            </button>
-            <div className="w-px h-3.5 bg-border mx-0.5" />
-            <button onClick={() => setCompareMode('off')} className="p-0.5 rounded hover:bg-muted" title="Close compare panel">
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable page list */}
-        {pageInfos.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-          </div>
-        ) : (
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-auto"
-            style={{ backgroundColor: 'var(--editor-canvas-bg, #e5e5e5)' }}
+        {/* Floating zoom toolbar */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
+          <button
+            type="button"
+            onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
+            disabled={zoomIndex === 0}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Zoom out"
           >
-            <div className="flex flex-col items-center py-4 px-3" style={{ gap: PAGE_GAP }}>
-              {pageInfos.map((info, idx) => {
-                const scaledW = info.width * zoom;
-                const scaledH = info.height * zoom;
-                const isNearViewport = Math.abs(idx - currentPage) <= VIRTUALIZATION_WINDOW;
-
-                return (
-                  <div
-                    key={idx}
-                    data-compare-page={idx}
-                    className="shadow-md bg-white flex-shrink-0 relative"
-                    style={{ width: scaledW, height: scaledH }}
-                  >
-                    {isNearViewport ? (
-                      <PageRenderer pdfBytes={originalPdfBytes} pageIndex={idx} zoom={zoom} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                        {idx + 1}
-                      </div>
-                    )}
-                    {/* Page number badge */}
-                    <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 rounded">
-                      {idx + 1}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+            <ZoomOut className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-xs text-muted-foreground tabular-nums w-9 text-center select-none">
+            {zoomLabel}
+          </span>
+          <button
+            type="button"
+            onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
+            disabled={zoomIndex === ZOOM_STEPS.length - 1}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Zoom in"
+          >
+            <ZoomIn className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

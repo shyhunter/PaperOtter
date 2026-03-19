@@ -119,16 +119,10 @@ export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
     setEditorState(newState);
   }, []);
 
-  // Warn before leaving with unsaved changes
-  const isDirty = editorState?.isDirty ?? false;
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
+  // NOTE: Do NOT use browser `beforeunload` for unsaved-changes guard.
+  // WKWebView (macOS) blocks window close when any beforeunload listener
+  // is registered, even without preventDefault(). Unsaved-changes guard
+  // is handled via Tauri's onCloseRequested in EditorView instead.
 
   const handleSave = useCallback(async () => {
     if (!pdfBytes || !editorState) return;

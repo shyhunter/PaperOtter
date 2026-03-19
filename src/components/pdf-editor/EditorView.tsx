@@ -35,48 +35,60 @@ function EditorViewInner({ filePath }: EditorViewProps) {
     isDirtyRef.current = state.isDirty;
   });
 
-  // Unsaved changes guard: browser beforeunload
+  // Tauri window close intercept — only block if there are unsaved changes.
+  // ALWAYS preventDefault + destroy() — on macOS WKWebView, returning from an
+  // async onCloseRequested handler without explicit destroy causes window hang.
+  const unlistenCloseRef = useRef<(() => void) | undefined>(undefined);
   useEffect(() => {
-    function handleBeforeUnload(e: BeforeUnloadEvent) {
-      if (isDirtyRef.current) {
-        e.preventDefault();
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  // Tauri window close intercept — only block if there are unsaved changes
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    let cancelled = false;
 
     (async () => {
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        const { ask } = await import('@tauri-apps/plugin-dialog');
         const win = getCurrentWindow();
-        unlisten = await win.onCloseRequested(async (event) => {
+
+        unlistenCloseRef.current?.();
+        unlistenCloseRef.current = undefined;
+
+        if (cancelled) return;
+
+        const unlisten = await win.onCloseRequested(async (event) => {
+          event.preventDefault();
+
           if (!isDirtyRef.current) {
-            // Not dirty — allow the close to proceed naturally
+            await win.destroy();
             return;
           }
-          // Dirty — prevent default and ask user via native dialog
-          event.preventDefault();
-          const confirmed = await ask(
-            'You have unsaved changes. Close without saving?',
-            { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
-          );
-          if (confirmed) {
-            // Force close by destroying the window
+
+          try {
+            const { ask } = await import('@tauri-apps/plugin-dialog');
+            const confirmed = await ask(
+              'You have unsaved changes. Close without saving?',
+              { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+            );
+            if (confirmed) {
+              await win.destroy();
+            }
+          } catch {
             await win.destroy();
           }
         });
-      } catch {
-        // Not in Tauri environment
+
+        if (cancelled) {
+          unlisten();
+        } else {
+          unlistenCloseRef.current = unlisten;
+        }
+      } catch (err) {
+        console.error('[close-guard] Registration error:', err);
       }
     })();
 
-    return () => { unlisten?.(); };
+    return () => {
+      cancelled = true;
+      unlistenCloseRef.current?.();
+      unlistenCloseRef.current = undefined;
+    };
   }, []);
 
   const loadPdf = useCallback(async () => {
@@ -141,7 +153,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 relative">
       <SaveController />
       <EditorTopToolbar />
 
@@ -155,12 +167,12 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <ZoomToolbar />
         </div>
 
-        {/* Compare side panel (original PDF) — sits between canvas and tool sidebar */}
-        {state.compareMode !== 'off' && <CompareFloatingWindow />}
-
         {/* Right: Tool sidebar */}
         <ToolSidebar />
       </div>
+
+      {/* Full-screen comparison overlay */}
+      {state.compareMode !== 'off' && <CompareFloatingWindow />}
     </div>
   );
 }
