@@ -123,6 +123,12 @@ jobs:
 
             Everything you need is included — just install and go.
 
+            > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
+            > ```
+            > xattr -cr /Applications/Papercut.app
+            > ```
+            > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate — it is safe to use.
+
             > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download) — most users won't need this.
 
             ---
