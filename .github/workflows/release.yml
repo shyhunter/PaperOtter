@@ -97,6 +97,10 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Derive version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -105,16 +109,29 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Papercut ${{ github.ref_name }}'
           releaseBody: |
-            Download the installer for your platform and double-click to install.
+            ## Install Papercut
 
-            | Platform | Download |
-            |----------|----------|
-            | **Mac (M1/M2/M3/M4)** | `.dmg` file (aarch64) |
-            | **Mac (Intel)** | `.dmg` file (x86_64) |
-            | **Windows** | `.exe` file |
-            | **Linux** | `.AppImage` or `.deb` file |
+            Click the link for your platform to download. Then open the file to install.
+
+            | Platform | Installer | Download |
+            |----------|-----------|----------|
+            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_aarch64.dmg) |
+            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64.dmg) |
+            | **Windows** | .exe | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64-setup.exe) |
+            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
+            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/VibeCoding2/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
+
+            Everything you need is included — just install and go.
 
             > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download) — most users won't need this.
+
+            ---
+
+            <details>
+            <summary>What are the Assets below?</summary>
+
+            The **Assets** section below is GitHub's automatic list of the same installer files from the table above. You don't need to use it — the download links in the table are the same files. The `Source code` entries are the raw project code and are only useful for developers.
+            </details>
           releaseDraft: true
           prerelease: true
           args: --target ${{ matrix.target }}
