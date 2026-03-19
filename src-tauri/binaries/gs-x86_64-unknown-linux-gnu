@@ -1,0 +1,3 @@
+#\!/bin/sh
+echo "gs not bundled on this platform"
+exit 1

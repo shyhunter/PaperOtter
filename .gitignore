@@ -24,8 +24,9 @@ coverage
 *.sln
 *.sw?
 
-# Bundled sidecar binaries (too large for git — see src-tauri/binaries/README.md)
-src-tauri/binaries/gs-*
+# Bundled sidecar binaries — only the real macOS ARM binary is too large for git.
+# Placeholder stubs for other platforms are committed so Tauri's externalBin check passes.
+src-tauri/binaries/gs-aarch64-apple-darwin
 
 # E2E test artifacts
 e2e-output/

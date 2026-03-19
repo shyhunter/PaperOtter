@@ -1,0 +1,3 @@
+@echo off
+echo gs not bundled on this platform
+exit /b 1
