@@ -105,31 +105,16 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Papercut ${{ github.ref_name }}'
           releaseBody: |
-            ## Download
+            Download the installer for your platform and double-click to install.
 
-            | Platform | Installer |
-            |----------|-----------|
-            | **macOS ARM** (M1/M2/M3/M4) | `.dmg` (aarch64) |
-            | **macOS Intel** | `.dmg` (x86_64) |
-            | **Windows** | `.exe` installer |
-            | **Linux** | `.AppImage` or `.deb` |
+            | Platform | Download |
+            |----------|----------|
+            | **Mac (M1/M2/M3/M4)** | `.dmg` file (aarch64) |
+            | **Mac (Intel)** | `.dmg` file (x86_64) |
+            | **Windows** | `.exe` file |
+            | **Linux** | `.AppImage` or `.deb` file |
 
-            ## Important Notes
-
-            Most features work out of the box. Some advanced PDF tools require **Ghostscript** (free, open-source):
-
-            | OS | Install command |
-            |----|----------------|
-            | macOS | `brew install ghostscript` |
-            | Windows | [Download from ghostscript.com](https://ghostscript.com/releases/gsdnld.html) |
-            | Linux | `sudo apt install ghostscript` |
-
-            **Ebook conversion** (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download) — most users won't need this.
-
-            ## Checksums
-
-            SHA-256 checksums are listed next to each asset below for download verification.
-            To verify: compare the checksum shown here with the output of `shasum -a 256 <downloaded-file>`.
+            > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download) — most users won't need this.
           releaseDraft: true
           prerelease: true
           args: --target ${{ matrix.target }}
