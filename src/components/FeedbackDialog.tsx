@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Send, ImagePlus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { LazyStore } from '@tauri-apps/plugin-store';
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 
-const store = new LazyStore('papercut-settings.json');
-const GITHUB_TOKEN_KEY = 'github-pat';
 const REPO_OWNER = 'shyhunter';
 const REPO_NAME = 'Vibecoding2';
 
@@ -166,29 +163,21 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [token, setToken] = useState('');
-  const [showTokenInput, setShowTokenInput] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
-
-  // Load token on open
-  useEffect(() => {
-    if (!open) return;
-    store
-      .get<string>(GITHUB_TOKEN_KEY)
-      .then((val) => {
-        if (val) {
-          setToken(val);
-          setShowTokenInput(false);
-        } else {
-          setShowTokenInput(true);
-        }
-      })
-      .catch(() => setShowTokenInput(true));
-  }, [open]);
 
   // Focus title on open
   useEffect(() => {
     if (open) {
       setTimeout(() => titleRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  // Clear token when dialog closes (session-only)
+  useEffect(() => {
+    if (!open) {
+      setToken('');
+      setStatus('idle');
+      setErrorMsg('');
     }
   }, [open]);
 
@@ -213,20 +202,12 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     }
   }, []);
 
-  const handleSaveToken = useCallback(async () => {
-    if (!token.trim()) return;
-    await store.set(GITHUB_TOKEN_KEY, token.trim());
-    await store.save();
-    setShowTokenInput(false);
-  }, [token]);
-
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) return;
 
     const currentToken = token.trim();
     if (!currentToken) {
       setStatus('no-token');
-      setShowTokenInput(true);
       return;
     }
 
@@ -268,6 +249,7 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
         setScreenshotPreview(null);
         setScreenshotBase64(null);
         setStatus('idle');
+        setToken('');
         onClose();
       }, 1500);
     } catch (err) {
@@ -289,14 +271,6 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     },
     [onClose, status],
   );
-
-  // Reset on close
-  useEffect(() => {
-    if (!open) {
-      setStatus('idle');
-      setErrorMsg('');
-    }
-  }, [open]);
 
   if (!open) return null;
 
@@ -324,42 +298,20 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           </button>
         </div>
 
-        {/* Change token link (shown when token exists but input is hidden) */}
-        {!showTokenInput && token && (
-          <button
-            type="button"
-            onClick={() => setShowTokenInput(true)}
-            className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          >
-            Change GitHub token
-          </button>
-        )}
-
-        {/* Token setup */}
-        {showTokenInput && (
-          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">
-              One-time setup: enter a GitHub fine-grained token with <strong className="text-foreground">Issues: Read &amp; Write</strong> on <code className="text-foreground">{REPO_OWNER}/{REPO_NAME}</code>.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="github_pat_..."
-                className="flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button
-                type="button"
-                onClick={handleSaveToken}
-                disabled={!token.trim()}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Token input — session-only, never persisted */}
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Enter a GitHub fine-grained token with <strong className="text-foreground">Issues: Read &amp; Write</strong> on <code className="text-foreground">{REPO_OWNER}/{REPO_NAME}</code>.
+            Token is used for this session only and never saved.
+          </p>
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="github_pat_..."
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
 
         {/* Title */}
         <input
@@ -442,6 +394,14 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           <div className="flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/30 p-3">
             <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
             <p className="text-xs text-red-400">{errorMsg}</p>
+          </div>
+        )}
+
+        {/* No token warning */}
+        {status === 'no-token' && (
+          <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-3">
+            <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-yellow-400">Please enter a GitHub token above.</p>
           </div>
         )}
 

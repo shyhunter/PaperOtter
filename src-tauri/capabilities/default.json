@@ -12,11 +12,21 @@
     "dialog:allow-ask",
     {
       "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "$HOME/**" }]
+      "allow": [
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$TEMP/**" }
+      ]
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$HOME/**" }, { "path": "$TEMP/**" }]
+      "allow": [
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$TEMP/**" }
+      ]
     },
     {
       "identifier": "fs:allow-remove",
@@ -25,7 +35,12 @@
     "store:default",
     {
       "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$HOME/**" }]
+      "allow": [
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$TEMP/**" }
+      ]
     },
     {
       "identifier": "shell:allow-execute",
@@ -41,8 +56,6 @@
       ]
     },
     "shell:allow-open",
-    "opener:default",
-    "updater:default",
-    "process:allow-restart"
+    "opener:default"
   ]
 }

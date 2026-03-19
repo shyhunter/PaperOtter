@@ -466,12 +466,12 @@ async fn compress_pdf(
         }
         Some(0) => {} // success — continue
         Some(_code) => {
-            // Check if tmp_path exists; if not, likely killed/cancelled
-            if !tmp_path.exists() {
+            // Try to clean up; if file doesn't exist, likely killed/cancelled
+            let file_existed = std::fs::remove_file(&tmp_path).is_ok();
+            if !file_existed {
                 return Err("CANCELLED".to_string());
             }
             let stderr = stderr_lines.join("\n");
-            let _ = std::fs::remove_file(&tmp_path);
             return Err(format!(
                 "Ghostscript returned non-zero exit code. stderr: {}",
                 stderr
@@ -747,17 +747,11 @@ async fn repair_pdf(
             Ok(tauri::ipc::Response::new(bytes))
         }
         _ => {
-            // Non-zero exit or signal — check if partial output exists
-            if tmp_path.exists() {
-                let metadata = std::fs::metadata(&tmp_path);
-                if let Ok(meta) = metadata {
-                    if meta.len() > 0 {
-                        // Partial success — return bytes despite non-zero exit
-                        let bytes = std::fs::read(&tmp_path)
-                            .map_err(|e| format!("Failed to read output: {}", e))?;
-                        let _ = std::fs::remove_file(&tmp_path);
-                        return Ok(tauri::ipc::Response::new(bytes));
-                    }
+            // Non-zero exit or signal — try to read partial output directly (no TOCTOU)
+            if let Ok(bytes) = std::fs::read(&tmp_path) {
+                let _ = std::fs::remove_file(&tmp_path);
+                if !bytes.is_empty() {
+                    return Ok(tauri::ipc::Response::new(bytes));
                 }
             }
             // No output or empty — real failure
@@ -1389,8 +1383,6 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, detect_converters, reveal_in_finder]);
 
     // E2E automation plugin — debug builds only, never ships in release
