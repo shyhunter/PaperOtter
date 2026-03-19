@@ -6,7 +6,7 @@
 ///   node scripts/generate_photo_heavy_pdf.mjs  (run from project root)
 /// It embeds pexels-pixabay-459225.jpg into a 3-page PDF via pdf-lib.
 /// The photo_heavy.pdf fixture is used to verify real GS compression differences.
-use image::{ImageBuffer, Rgb};
+use image::Rgb;
 use std::path::Path;
 
 fn main() {
@@ -59,8 +59,8 @@ fn main() {
     let radius = 80u32;
 
     let img_png: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_fn(size, size, |x, y| {
-        let dx = (x as i32 - cx as i32).abs() as u32;
-        let dy = (y as i32 - cy as i32).abs() as u32;
+        let dx = x.abs_diff(cx);
+        let dy = y.abs_diff(cy);
         let dist_sq = dx * dx + dy * dy;
         if dist_sq <= radius * radius {
             // Gradient fill inside circle

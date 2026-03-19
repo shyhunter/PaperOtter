@@ -81,8 +81,10 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
 }
 
 /// Resolve the system-installed Ghostscript binary path.
+///
 /// - macOS/Linux: tries `which gs`
 /// - Windows: tries `where gswin64c` then `where gs`
+///
 /// Returns the binary name (not full path) suitable for `app.shell().command()`.
 /// Used as fallback when sidecar is not available, and by check_capabilities.
 fn find_system_ghostscript() -> Result<String, String> {
@@ -629,8 +631,7 @@ async fn convert_pdfa(
         "papercut_PDFA_def_{}.ps",
         Uuid::new_v4()
     ));
-    let pdfa_def_content = format!(
-        r#"%!PS
+    let pdfa_def_content = r#"%!PS
 % Required PDF/A pdfmark metadata
 [ /Title (PDF/A Document)
   /DOCINFO pdfmark
@@ -640,8 +641,7 @@ async fn convert_pdfa(
   /RegistryName (http://www.color.org)
   /Info (sRGB IEC61966-2.1)
   /OutputIntents pdfmark
-"#
-    );
+"#.to_string();
     std::fs::write(&pdfa_def_path, &pdfa_def_content)
         .map_err(|e| format!("Failed to write PDFA_def.ps: {}", e))?;
 
@@ -1413,11 +1413,12 @@ pub fn run_with_file(open_file: Option<String>) {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| {
+        .run(|_app_handle, _event| {
             // Handle macOS "Open With" when app is already running
-            if let tauri::RunEvent::Opened { urls } = event {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &_event {
                 for url in urls {
-                    let path = url.to_string();
+                    let path: String = url.to_string();
                     // url may be a file:// URL or a plain path
                     let file_path = if path.starts_with("file://") {
                         url.to_file_path().ok().and_then(|p| p.to_str().map(|s| s.to_string()))
@@ -1426,7 +1427,7 @@ pub fn run_with_file(open_file: Option<String>) {
                     };
                     if let Some(fp) = file_path {
                         if fp.ends_with(".pdf") {
-                            let _ = app_handle.emit("file-opened", fp);
+                            let _ = _app_handle.emit("file-opened", fp);
                         }
                     }
                 }
