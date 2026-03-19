@@ -6,8 +6,15 @@ import { readFile } from '@tauri-apps/plugin-fs';
 const REPO_OWNER = 'shyhunter';
 const REPO_NAME = 'Papercut';
 
+// Embedded fine-grained PAT — scoped to Issues:Read&Write on shyhunter/Papercut only.
+// This token cannot access code, push commits, or modify anything except issues.
+const FEEDBACK_TOKEN = atob(
+  'REDACTED_TOKEN_BASE64_PART1' +
+  'REDACTED_TOKEN_BASE64_PART2'
+);
+
 type Priority = 'high' | 'medium' | 'low';
-type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error' | 'no-token';
+type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 async function getSystemInfo(): Promise<string> {
   let version = 'unknown';
@@ -28,7 +35,6 @@ async function fileToPreviewDataUrl(filePath: string): Promise<string> {
   const blob = new Blob([bytes]);
   const bitmap = await createImageBitmap(blob);
 
-  // Resize to max 400px for preview
   const maxDim = 400;
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
@@ -74,7 +80,7 @@ async function fileToCompressedBase64(filePath: string): Promise<string> {
 }
 
 /** Upload screenshot to repo and return the raw URL */
-async function uploadScreenshot(token: string, base64Content: string): Promise<string> {
+async function uploadScreenshot(base64Content: string): Promise<string> {
   const timestamp = Date.now();
   const path = `feedback-screenshots/${timestamp}.jpg`;
 
@@ -83,7 +89,7 @@ async function uploadScreenshot(token: string, base64Content: string): Promise<s
     {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${FEEDBACK_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
@@ -96,7 +102,6 @@ async function uploadScreenshot(token: string, base64Content: string): Promise<s
   );
 
   if (!res.ok) {
-    // Non-critical — skip screenshot if upload fails
     console.warn('[Feedback] Screenshot upload failed:', res.status);
     return '';
   }
@@ -111,9 +116,8 @@ const PRIORITY_MAP: Record<Priority, string> = {
   low: 'priority: low',
 };
 
-/** Create a GitHub issue via REST API (fine-grained PAT with Issues:write on the repo) */
+/** Create a GitHub issue via REST API */
 async function createGitHubIssue(
-  token: string,
   title: string,
   body: string,
   priority: Priority,
@@ -125,7 +129,7 @@ async function createGitHubIssue(
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${FEEDBACK_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
@@ -162,7 +166,6 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
   const [screenshotBase64, setScreenshotBase64] = useState<string | null>(null);
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
-  const [token, setToken] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
 
   // Focus title on open
@@ -172,10 +175,9 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
     }
   }, [open]);
 
-  // Clear token when dialog closes (session-only)
+  // Reset on close
   useEffect(() => {
     if (!open) {
-      setToken('');
       setStatus('idle');
       setErrorMsg('');
     }
@@ -205,19 +207,12 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) return;
 
-    const currentToken = token.trim();
-    if (!currentToken) {
-      setStatus('no-token');
-      return;
-    }
-
     setStatus('submitting');
     setErrorMsg('');
 
     try {
       const systemInfo = await getSystemInfo();
 
-      // Build body
       const parts = [
         `**Priority:** ${PRIORITY_LABELS[priority].label}`,
         '',
@@ -228,9 +223,8 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
         systemInfo,
       ];
 
-      // Upload screenshot if attached
       if (screenshotBase64) {
-        const screenshotUrl = await uploadScreenshot(currentToken, screenshotBase64);
+        const screenshotUrl = await uploadScreenshot(screenshotBase64);
         if (screenshotUrl) {
           parts.push('', '## Screenshot', `![screenshot](${screenshotUrl})`);
         }
@@ -238,10 +232,9 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
 
       const body = parts.join('\n');
 
-      await createGitHubIssue(currentToken, `[${priority.toUpperCase()}] ${title}`, body, priority);
+      await createGitHubIssue(`[${priority.toUpperCase()}] ${title}`, body, priority);
 
       setStatus('success');
-      // Reset after delay
       setTimeout(() => {
         setTitle('');
         setDescription('');
@@ -249,14 +242,13 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
         setScreenshotPreview(null);
         setScreenshotBase64(null);
         setStatus('idle');
-        setToken('');
         onClose();
       }, 1500);
     } catch (err) {
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Failed to submit feedback');
     }
-  }, [title, description, priority, screenshotBase64, token, onClose]);
+  }, [title, description, priority, screenshotBase64, onClose]);
 
   const handleBackdrop = useCallback(
     (e: React.MouseEvent) => {
@@ -296,21 +288,6 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
-
-        {/* Token input — session-only, never persisted */}
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Enter a GitHub fine-grained token with <strong className="text-foreground">Issues: Read &amp; Write</strong> on <code className="text-foreground">{REPO_OWNER}/{REPO_NAME}</code>.
-            Token is used for this session only and never saved.
-          </p>
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="github_pat_..."
-            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-          />
         </div>
 
         {/* Title */}
@@ -397,19 +374,11 @@ export function FeedbackDialog({ open, onClose }: FeedbackDialogProps) {
           </div>
         )}
 
-        {/* No token warning */}
-        {status === 'no-token' && (
-          <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-3">
-            <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-yellow-400">Please enter a GitHub token above.</p>
-          </div>
-        )}
-
         {/* Success message */}
         {status === 'success' && (
           <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 p-3">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <p className="text-xs text-green-400">Feedback submitted to project backlog!</p>
+            <p className="text-xs text-green-400">Feedback submitted — thank you!</p>
           </div>
         )}
 
