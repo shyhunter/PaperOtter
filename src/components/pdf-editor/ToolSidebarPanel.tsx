@@ -8,7 +8,7 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
-import { addWatermark, DEFAULT_WATERMARK_OPTIONS, type WatermarkOptions } from '@/lib/pdfWatermark';
+import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { cropPdf, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
@@ -511,19 +511,42 @@ function RotatePanel() {
 function WatermarkPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [options, setOptions] = useState<WatermarkOptions>({ ...DEFAULT_WATERMARK_OPTIONS });
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
-  const runTool = useCallback(async (bytes: Uint8Array) => {
+  // Preview: only process the current page for fast before/after comparison.
+  // Avoids buffering all pages on every option change, which freezes the UI
+  // for large documents (hundreds of pages).
+  const runPreview = useCallback(async (bytes: Uint8Array) => {
     if (!options.text.trim()) return bytes;
-    return addWatermark(bytes, options);
-  }, [options]);
+    return addWatermarkSinglePage(bytes, options, state.currentPage);
+  }, [options, state.currentPage]);
 
   const { previewBytes, isProcessing } = useDebouncedPreview(
     state.pdfBytes,
-    runTool,
-    [options.text, options.fontSize, options.opacity, options.rotation, options.color],
+    runPreview,
+    [options.text, options.fontSize, options.opacity, options.rotation, options.color, state.currentPage],
   );
 
-  const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
+  // Apply watermark to ALL pages (full processing, runs only on explicit user action).
+  const handleApply = useCallback(async () => {
+    if (!options.text.trim()) return;
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(false);
+    try {
+      const result = await addWatermark(state.pdfBytes, options);
+      updatePdfBytes(result);
+      markDirty();
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 2000);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
 
   return (
     <div className="space-y-3">
@@ -598,18 +621,23 @@ function WatermarkPanel() {
         </div>
       </div>
 
+      {/* previewPageIndex=0 because addWatermarkSinglePage returns a 1-page PDF where
+          the current page is always at index 0. When text is empty runPreview returns
+          the original full-document bytes, so we fall back to undefined (= state.currentPage)
+          to keep before/after showing the same page. */}
       <ToolSidebarPreview
         originalBytes={state.pdfBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
+        previewPageIndex={options.text.trim() ? 0 : undefined}
       />
 
       <ApplyButton
-        onClick={() => apply()}
+        onClick={handleApply}
         disabled={!options.text.trim()}
         isApplying={isApplying}
-        success={success}
-        error={error}
+        success={applySuccess}
+        error={applyError}
       />
     </div>
   );

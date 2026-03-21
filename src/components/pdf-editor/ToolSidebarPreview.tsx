@@ -12,12 +12,17 @@ interface ToolSidebarPreviewProps {
   originalBytes: Uint8Array;
   previewBytes: Uint8Array | null;
   isProcessing?: boolean;
+  /** Override which page to render from previewBytes. Defaults to the editor's
+   *  current page. Pass 0 when previewBytes is a single-page preview PDF so
+   *  the thumbnail always shows the correct page. */
+  previewPageIndex?: number;
 }
 
 export function ToolSidebarPreview({
   originalBytes,
   previewBytes,
   isProcessing = false,
+  previewPageIndex,
 }: ToolSidebarPreviewProps) {
   const { state } = useEditorContext();
   const [beforeUrl, setBeforeUrl] = useState<string | null>(null);
@@ -54,7 +59,8 @@ export function ToolSidebarPreview({
 
     let cancelled = false;
 
-    renderPdfPageThumbnail(previewBytes, state.currentPage, 0.5)
+    const pageIdx = previewPageIndex ?? state.currentPage;
+    renderPdfPageThumbnail(previewBytes, pageIdx, 0.5)
       .then((url) => {
         if (!cancelled) setAfterUrl(url);
       })
@@ -65,7 +71,7 @@ export function ToolSidebarPreview({
     return () => {
       cancelled = true;
     };
-  }, [previewBytes, state.currentPage]);
+  }, [previewBytes, previewPageIndex, state.currentPage]);
 
   return (
     <>
@@ -100,8 +106,10 @@ export function ToolSidebarPreview({
           </div>
         </div>
 
-        {/* Compare button — opens full-page overlay */}
-        {previewBytes && !isProcessing && (
+        {/* Compare button — opens full-page overlay.
+            Hidden when previewPageIndex is provided because previewBytes is then a
+            single-page document that cannot meaningfully compare against the full PDF. */}
+        {previewBytes && !isProcessing && previewPageIndex === undefined && (
           <button
             type="button"
             onClick={() => setShowOverlay(true)}
