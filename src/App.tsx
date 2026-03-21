@@ -115,6 +115,10 @@ function ToolFlow() {
   // Set to true when Back is clicked; cleared when processing starts again.
   const suppressImageAdvance = useRef(false);
 
+  // Tracks whether the Edit PDF flow has unsaved changes (step 1 dirty state).
+  // Used by handleEditPdfBackToDashboard to guard back-navigation with a confirm dialog.
+  const editPdfIsDirtyRef = useRef(false);
+
   // Reset all state and return to the dashboard
   const handleBackToDashboard = useCallback(() => {
     suppressImageAdvance.current = false;
@@ -130,6 +134,18 @@ function ToolFlow() {
     imageProcessor.reset();
     goToDashboard();
   }, [pdfProcessor, imageProcessor, goToDashboard]);
+
+  // Back-to-dashboard handler for Edit PDF — shows a confirmation dialog when the
+  // user has unsaved edits (step 1 dirty state) to prevent accidental data loss.
+  const handleEditPdfBackToDashboard = useCallback(() => {
+    if (editPdfIsDirtyRef.current && dedicatedFlowStep === 1) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to go back to the dashboard? Your edits will be lost.',
+      );
+      if (!confirmed) return;
+    }
+    handleBackToDashboard();
+  }, [handleBackToDashboard, dedicatedFlowStep]);
 
   // Reset everything and go back to landing (step 0 within current tool)
   const handleStartOver = useCallback(() => {
@@ -299,8 +315,8 @@ function ToolFlow() {
   if (activeTool === 'edit-pdf') {
     return (
       <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
-        <EditPdfFlow onStepChange={setDedicatedFlowStep} />
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleEditPdfBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
+        <EditPdfFlow onStepChange={setDedicatedFlowStep} onIsDirtyChange={(dirty) => { editPdfIsDirtyRef.current = dirty; }} />
       </>
     );
   }

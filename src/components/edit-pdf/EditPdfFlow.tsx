@@ -35,9 +35,12 @@ function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): Edito
 
 interface EditPdfFlowProps {
   onStepChange?: (step: number) => void;
+  /** Called whenever the unsaved-changes (dirty) flag changes, so the parent can
+   *  guard back-navigation with a confirmation dialog. */
+  onIsDirtyChange?: (isDirty: boolean) => void;
 }
 
-export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
+export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
@@ -118,6 +121,11 @@ export function EditPdfFlow({ onStepChange }: EditPdfFlowProps) {
   const handleEditorStateChange = useCallback((newState: EditorState) => {
     setEditorState(newState);
   }, []);
+
+  // Notify parent when the dirty flag changes so it can guard back-navigation.
+  useEffect(() => {
+    onIsDirtyChange?.(editorState?.isDirty ?? false);
+  }, [editorState?.isDirty, onIsDirtyChange]);
 
   // NOTE: Do NOT use browser `beforeunload` for unsaved-changes guard.
   // WKWebView (macOS) blocks window close when any beforeunload listener
