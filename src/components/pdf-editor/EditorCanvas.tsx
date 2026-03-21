@@ -267,13 +267,16 @@ export function EditorCanvas() {
   // Expose scrollToPage for PagePanel via context ref
   useEffect(() => {
     scrollToPageRef.current = (idx: number) => {
+      // Immediately update currentPage so the target page renders without
+      // waiting for the IntersectionObserver (which may be delayed in WKWebView).
+      setCurrentPage(idx);
       const el = pageRefs.current.get(idx);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
     return () => { scrollToPageRef.current = null; };
-  }, [scrollToPageRef]);
+  }, [scrollToPageRef, setCurrentPage]);
 
   if (pageInfos.length === 0) {
     return (
