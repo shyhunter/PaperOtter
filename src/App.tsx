@@ -743,7 +743,7 @@ function AppContent() {
   const showDashboard = !showEditor && activeTool === null;
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <UpdateChecker />
       {showDashboard && <FirstLaunchBanner />}
       {showEditor && <EditorView filePath={editorFilePath} />}

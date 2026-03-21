@@ -161,8 +161,11 @@ function EditorViewInner({ filePath }: EditorViewProps) {
         {/* Left: Page panel with thumbnails */}
         <PagePanel onScrollToPage={(idx) => scrollToPageRef.current?.(idx)} />
 
-        {/* Center: Canvas with zoom toolbar overlay */}
-        <div className="flex-1 relative min-w-0">
+        {/* Center: Canvas with zoom toolbar overlay.
+            flex flex-col is required so EditorCanvas (flex-1 overflow-auto)
+            fills the column height and scrolls internally, keeping the
+            header and side panels fixed in place during PDF scroll. */}
+        <div className="flex-1 relative min-w-0 flex flex-col">
           <EditorCanvas />
           <ZoomToolbar />
         </div>
