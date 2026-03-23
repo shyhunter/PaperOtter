@@ -12,10 +12,10 @@ function getTauriBinaryPath(): string {
     return join(__dirname, '../../src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/tauri-app');
   }
   if (process.platform === 'win32') {
-    return join(__dirname, '../../src-tauri/target/debug/Papercut.exe');
+    return join(__dirname, '../../src-tauri/target/debug/tauri-app.exe');
   }
   // Linux
-  return join(__dirname, '../../src-tauri/target/debug/papercut');
+  return join(__dirname, '../../src-tauri/target/debug/tauri-app');
 }
 
 // Poll until something is listening on the given port (TCP connect succeeds).
@@ -49,6 +49,14 @@ export const config: WebdriverIO.Config = {
   specs: [join(__dirname, 'tests/**/*.test.ts')],
   exclude: [],
   maxInstances: 1, // Tauri apps are single-instance; never run in parallel
+
+  // Named suites allow running a subset of specs:
+  //   npx wdio run src/e2e/wdio.conf.ts --suite pdf
+  //   npx wdio run src/e2e/wdio.conf.ts --suite image
+  suites: {
+    pdf:   [join(__dirname, 'tests/pdf-flows.test.ts')],
+    image: [join(__dirname, 'tests/image-flows.test.ts')],
+  },
 
   capabilities: [{ 'tauri:options': { binary: getTauriBinaryPath() } } as unknown as TauriCapability & WebdriverIO.Capabilities],
 
@@ -87,6 +95,12 @@ export const config: WebdriverIO.Config = {
 
     tauriWd = spawn('tauri-wd', ['--port', '4444'], {
       stdio: [null, process.stdout, process.stderr],
+      env: {
+        ...process.env,
+        // Headless CI environments may lack a GPU; disable DMA-BUF to prevent
+        // WebKitGTK rendering failures in Xvfb.
+        WEBKIT_DISABLE_DMABUF_RENDERER: '1',
+      },
     });
     tauriWd.on('error', (error: Error) => {
       console.error('tauri-wd error:', error);

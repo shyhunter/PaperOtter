@@ -3,18 +3,34 @@ import { existsSync, statSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { mockOpenDialog, mockSaveDialog } from '../helpers/dialogs';
 import {
-  waitForStep,
   waitForProcessingComplete,
   screenshotOnFailure,
   prepareOutputPath,
+  selectToolOnDashboard,
+  resetAppState,
   FIXTURES_DIR,
   REAL_FIXTURES_DIR,
 } from '../helpers/driver';
+import {
+  clickTestId,
+  testIdDisplayed,
+  waitForTestId,
+  waitForTestIdDisplayed,
+  waitForStep,
+  setSliderValue,
+  clearAndSetTestIdValue,
+  getTestIdAttr,
+} from '../helpers/testid';
 
 const PHOTO_JPG   = join(REAL_FIXTURES_DIR, 'pexels-pixabay-459225.jpg');
 const SAMPLE_PNG  = join(REAL_FIXTURES_DIR, 'sample.png');
 const LARGE_JPG   = join(FIXTURES_DIR, 'large-sparse.jpg');
 const CORRUPT_JPG = join(FIXTURES_DIR, 'corrupt.jpg');
+
+// Navigate from Dashboard to Compress Image tool once at session start.
+before(async () => {
+  await selectToolOnDashboard(browser, 'Compress Image');
+});
 
 function detectMagicBytes(filePath: string): 'jpeg' | 'png' | 'webp' | 'unknown' {
   const buf = readFileSync(filePath);
@@ -25,19 +41,17 @@ function detectMagicBytes(filePath: string): 'jpeg' | 'png' | 'webp' | 'unknown'
 }
 
 async function injectFile(filePath: string): Promise<void> {
-  // Wait for window ready BEFORE applying mock (browser.execute requires a live window).
-  const openBtn = await browser.$('[data-testid="open-file-btn"]');
-  await openBtn.waitForExist({ timeout: 15000 });
+  // Wait for the file-picker button to appear.
+  await waitForTestId(browser, 'open-file-btn');
   // Apply IPC mock AFTER window is confirmed ready.
   await mockOpenDialog(browser, filePath);
-  await openBtn.click();
+  await clickTestId(browser, 'open-file-btn');
 }
 
 async function navigateToImageCompare(): Promise<void> {
   await waitForStep(browser, 1);
-  const generateBtn = await browser.$('[data-testid="generate-preview-btn"]');
-  await generateBtn.waitForDisplayed({ timeout: 5000 });
-  await generateBtn.click();
+  await waitForTestIdDisplayed(browser, 'generate-preview-btn', { timeout: 5000 });
+  await clickTestId(browser, 'generate-preview-btn');
   // Image compare step uses 'image-compare-step' — NOT the PDF 'compare-step'
   await waitForProcessingComplete(browser, 'image-compare-step');
   await waitForStep(browser, 2);
@@ -47,10 +61,9 @@ afterEach(async function (this: Mocha.Context) {
   if (this.currentTest?.state === 'failed') {
     await screenshotOnFailure(browser, this.currentTest.fullTitle());
   }
-  try {
-    const processAnother = await browser.$('[data-testid="process-another-btn"]');
-    if (await processAnother.isDisplayed().catch(() => false)) await processAnother.click();
-  } catch { /* already on landing */ }
+  // Always reset to the open-file page, regardless of which step we're on.
+  // This prevents cascading failures when a test leaves the app in an unexpected state.
+  await resetAppState(browser, 'Compress Image');
 });
 
 // ─── IMAGE QUALITY ONLY ──────────────────────────────────────────────────────
@@ -61,19 +74,12 @@ describe('Image — quality only', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    await browser.execute(() => {
-      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
-      if (!el) return;
-      el.value = '50';
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    });
+    await setSliderValue(browser, 'quality-slider', 50);
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -89,19 +95,12 @@ describe('Image — quality only', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    await browser.execute(() => {
-      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
-      if (!el) return;
-      el.value = '100';
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    });
+    await setSliderValue(browser, 'quality-slider', 100);
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -118,14 +117,12 @@ describe('Image — quality + format conversion', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const pngBtn = await browser.$('[data-testid="format-option-png"]');
-    await pngBtn.click();
+    await clickTestId(browser, 'format-option-png');
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -138,22 +135,13 @@ describe('Image — quality + format conversion', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const webpBtn = await browser.$('[data-testid="format-option-webp"]');
-    await webpBtn.click();
-
-    await browser.execute(() => {
-      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
-      if (!el) return;
-      el.value = '75';
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    });
+    await clickTestId(browser, 'format-option-webp');
+    await setSliderValue(browser, 'quality-slider', 75);
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -170,31 +158,17 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const pngBtn = await browser.$('[data-testid="format-option-png"]');
-    await pngBtn.click();
-
-    await browser.execute(() => {
-      const el = document.querySelector('[data-testid="quality-slider"]') as HTMLInputElement | null;
-      if (!el) return;
-      el.value = '60';
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      el.dispatchEvent(new Event('mouseup', { bubbles: true }));
-    });
-
-    const resizeToggle = await browser.$('[data-testid="resize-toggle"]');
-    await resizeToggle.click();
-
-    const thumbBtn = await browser.$('[data-testid="preset-btn-thumb"]');
-    await thumbBtn.click();
+    await clickTestId(browser, 'format-option-png');
+    await setSliderValue(browser, 'quality-slider', 60);
+    await clickTestId(browser, 'resize-toggle');
+    await clickTestId(browser, 'preset-btn-thumb');
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const compareStep = await browser.$('[data-testid="image-compare-step"]');
-    await expect(compareStep).toBeDisplayed();
+    expect(await testIdDisplayed(browser, 'image-compare-step')).toBe(true);
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -207,30 +181,20 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
     await injectFile(PHOTO_JPG);
     await waitForStep(browser, 1);
 
-    const webpBtn = await browser.$('[data-testid="format-option-webp"]');
-    await webpBtn.click();
-
-    const resizeToggle = await browser.$('[data-testid="resize-toggle"]');
-    await resizeToggle.click();
+    await clickTestId(browser, 'format-option-webp');
+    await clickTestId(browser, 'resize-toggle');
 
     // Unlock aspect ratio if currently locked
-    const lockBtn = await browser.$('[data-testid="aspect-ratio-lock"]');
-    const isLocked = await lockBtn.getAttribute('data-locked');
-    if (isLocked === 'true') await lockBtn.click();
+    const isLocked = await getTestIdAttr(browser, 'aspect-ratio-lock', 'data-locked');
+    if (isLocked === 'true') await clickTestId(browser, 'aspect-ratio-lock');
 
-    const widthInput = await browser.$('[data-testid="resize-width-input"]');
-    await widthInput.clearValue();
-    await widthInput.setValue('800');
-
-    const heightInput = await browser.$('[data-testid="resize-height-input"]');
-    await heightInput.clearValue();
-    await heightInput.setValue('600');
+    await clearAndSetTestIdValue(browser, 'resize-width-input', '800');
+    await clearAndSetTestIdValue(browser, 'resize-height-input', '600');
 
     await mockSaveDialog(browser, outPath);
     await navigateToImageCompare();
 
-    const saveBtn = await browser.$('[data-testid="save-btn"]');
-    await saveBtn.click();
+    await clickTestId(browser, 'save-btn');
     await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
 
     expect(existsSync(outPath)).toBe(true);
@@ -245,25 +209,19 @@ describe('Image error paths', () => {
   it('[IMG-ERR-OVERSIZE] >100 MB image shows blocking modal', async () => {
     await injectFile(LARGE_JPG);
     await browser.pause(1500);
-    const modal = await browser.$('[data-testid="file-size-limit-modal"]');
-    await expect(modal).toBeDisplayed();
-    const dismissBtn = await browser.$('[data-testid="file-size-limit-dismiss"]');
-    await dismissBtn.click();
+    expect(await testIdDisplayed(browser, 'file-size-limit-modal')).toBe(true);
+    await clickTestId(browser, 'file-size-limit-dismiss');
     await browser.pause(500);
-    await expect(modal).not.toBeDisplayed();
+    expect(await testIdDisplayed(browser, 'file-size-limit-modal')).toBe(false);
   });
 
   it('[IMG-ERR-CORRUPT] zero-byte image shows inline error, no crash', async () => {
     await injectFile(CORRUPT_JPG);
     await browser.pause(1500);
-    const emptyErr  = await browser.$('[data-testid="empty-file-error"]');
-    const corruptErr = await browser.$('[data-testid="corrupt-file-error"]');
-    const oneVisible =
-      (await emptyErr.isDisplayed().catch(() => false)) ||
-      (await corruptErr.isDisplayed().catch(() => false));
-    expect(oneVisible).toBe(true); // Expected inline error for zero-byte image
-    const configStep = await browser.$('[data-testid="image-configure-step"]');
-    expect(await configStep.isDisplayed().catch(() => false)).toBe(false);
+    const emptyVisible  = await testIdDisplayed(browser, 'empty-file-error');
+    const corruptVisible = await testIdDisplayed(browser, 'corrupt-file-error');
+    expect(emptyVisible || corruptVisible).toBe(true); // Expected inline error for zero-byte image
+    expect(await testIdDisplayed(browser, 'image-configure-step')).toBe(false);
   });
 });
 
@@ -279,8 +237,7 @@ describe('Image save dialog filter', () => {
       await injectFile(fixture);
       await waitForStep(browser, 1);
 
-      const fmtBtn = await browser.$(`[data-testid="format-option-${format}"]`);
-      await fmtBtn.click();
+      await clickTestId(browser, `format-option-${format}`);
 
       // Tell SaveStep.handleSave to capture the dialog options instead of opening the OS dialog.
       await browser.execute(() => {
@@ -289,8 +246,7 @@ describe('Image save dialog filter', () => {
       });
 
       await navigateToImageCompare();
-      const saveBtn = await browser.$('[data-testid="save-btn"]');
-      await saveBtn.click();
+      await clickTestId(browser, 'save-btn');
       await browser.pause(500);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

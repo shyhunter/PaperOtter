@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ['**']
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-22.04
@@ -48,7 +51,73 @@ jobs:
       - name: Clippy lint
         run: cd src-tauri && cargo clippy -- -D warnings
 
-  e2e:
+  e2e-pdf:
+    runs-on: ubuntu-22.04
+    needs: validate
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install tauri-wd WebDriver
+        run: cargo install tauri-webdriver-automation
+
+      - name: Prepare GS sidecar (replace placeholder with system Ghostscript wrapper)
+        run: |
+          set -euo pipefail
+          test -d src-tauri/binaries || { echo "ERROR: src-tauri/binaries not found"; exit 1; }
+          test -x /usr/bin/gs || { echo "ERROR: /usr/bin/gs not found"; exit 1; }
+          printf '#!/bin/sh\nexec /usr/bin/gs "$@"\n' > src-tauri/binaries/gs-x86_64-unknown-linux-gnu
+          chmod +x src-tauri/binaries/gs-x86_64-unknown-linux-gnu
+          echo "GS sidecar wrapper created successfully"
+
+      - name: Build Tauri app (debug, for webdriver-automation plugin)
+        run: npx tauri build --debug
+
+      - name: Prepare E2E fixtures
+        run: |
+          set -euo pipefail
+          # Generate fixtures (large-sparse + corrupt stubs) using the existing script
+          node src/e2e/fixtures/generate-e2e-fixtures.mjs
+          # Copy test fixtures to /tmp so they're within Tauri's $TEMP fs scope
+          cp -r test-fixtures /tmp/test-fixtures
+          cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
+          mkdir -p /tmp/e2e-output
+          echo "E2E fixtures prepared in /tmp"
+          ls -la /tmp/test-fixtures/ /tmp/test-fixtures-e2e/
+
+      - name: Run PDF E2E tests
+        run: xvfb-run npm run test:e2e:pdf
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+          E2E_FIXTURES_DIR: /tmp/test-fixtures-e2e
+          E2E_REAL_FIXTURES_DIR: /tmp/test-fixtures
+          E2E_OUTPUT_DIR: /tmp/e2e-output
+
+  e2e-image:
     runs-on: ubuntu-22.04
     needs: validate
     if: github.event_name == 'pull_request'
@@ -79,12 +148,28 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --target x86_64-unknown-linux-gnu
+      - name: Install tauri-wd WebDriver
+        run: cargo install tauri-webdriver-automation
 
-      - name: Run E2E tests
-        run: xvfb-run npm run test:e2e
+      - name: Build Tauri app (debug, for webdriver-automation plugin)
+        run: npx tauri build --debug
+
+      - name: Prepare E2E fixtures
+        run: |
+          set -euo pipefail
+          # Generate fixtures (large-sparse + corrupt stubs) using the existing script
+          node src/e2e/fixtures/generate-e2e-fixtures.mjs
+          # Copy test fixtures to /tmp so they're within Tauri's $TEMP fs scope
+          cp -r test-fixtures /tmp/test-fixtures
+          cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
+          mkdir -p /tmp/e2e-output
+          echo "E2E fixtures prepared in /tmp"
+          ls -la /tmp/test-fixtures/ /tmp/test-fixtures-e2e/
+
+      - name: Run Image E2E tests
+        run: xvfb-run npm run test:e2e:image
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+          E2E_FIXTURES_DIR: /tmp/test-fixtures-e2e
+          E2E_REAL_FIXTURES_DIR: /tmp/test-fixtures
+          E2E_OUTPUT_DIR: /tmp/e2e-output
