@@ -104,8 +104,25 @@ export async function screenshotOnFailure(browser: Browser, testTitle: string): 
  *   1. Already on open-file page → no-op
  *   2. On compare step with "Start Over" button → click it
  *   3. Stuck on any other step → refresh the page and re-navigate from Dashboard
+ *
+ * Guard: if the WebDriver plugin has crashed (browser.execute() throws),
+ * we cannot recover — log and return immediately instead of cascading timeouts.
  */
 export async function resetAppState(browser: Browser, toolName: string): Promise<void> {
+  // Guard: if browser.execute() itself throws, WebDriver plugin is down.
+  // We cannot recover — skip cleanup and return immediately.
+  let browserAlive = true;
+  try {
+    await browser.execute(() => true); // lightweight ping
+  } catch {
+    browserAlive = false;
+  }
+
+  if (!browserAlive) {
+    console.warn('[resetAppState] WebDriver plugin unresponsive — skipping reset');
+    return;
+  }
+
   // Case 1: already on the open-file page
   if (await testIdDisplayed(browser, 'open-file-btn')) return;
 
@@ -125,5 +142,5 @@ export async function resetAppState(browser: Browser, toolName: string): Promise
   // Case 3: stuck in an unknown state — hard refresh resets everything
   await browser.refresh();
   await selectToolOnDashboard(browser, toolName);
-  await waitForTestId(browser, 'open-file-btn', { timeout: 10000 });
+  await waitForTestId(browser, 'open-file-btn', { timeout: 5000 }); // tightened from 10s to 5s
 }

@@ -65,7 +65,7 @@ export const config: WebdriverIO.Config = {
   port: 4444,
 
   logLevel: 'warn',
-  bail: 0,
+  bail: 3, // stop suite after 3 consecutive failures to prevent timeout cascade
   waitforTimeout: 15000,
   connectionRetryTimeout: 60000,
   connectionRetryCount: 3,

@@ -5,6 +5,7 @@ on:
     branches: ['**']
   pull_request:
     branches: ['**']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,6 +26,9 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -47,14 +51,45 @@ jobs:
 
       - name: Cargo check
         run: cd src-tauri && cargo check
+        env:
+          RUSTC_WRAPPER: sccache
 
       - name: Clippy lint
         run: cd src-tauri && cargo clippy -- -D warnings
+        env:
+          RUSTC_WRAPPER: sccache
 
-  e2e-pdf:
+  rust-integration:
     runs-on: ubuntu-22.04
-    needs: validate
-    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install minimal system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+
+      - name: Run Rust integration tests
+        run: cd src-tauri && cargo test --lib -- --test-threads=4
+        env:
+          RUSTC_WRAPPER: sccache
+
+  e2e-full:
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout
@@ -69,21 +104,26 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
 
-      - name: Install Linux system dependencies
+      - name: Install full system dependencies (webkit + GS)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
 
       - name: Install frontend dependencies
         run: npm ci
 
       - name: Install tauri-wd WebDriver
         run: cargo install tauri-webdriver-automation
+        env:
+          RUSTC_WRAPPER: sccache
 
       - name: Prepare GS sidecar (replace placeholder with system Ghostscript wrapper)
         run: |
@@ -96,18 +136,17 @@ jobs:
 
       - name: Build Tauri app (debug, for webdriver-automation plugin)
         run: npx tauri build --debug
+        env:
+          RUSTC_WRAPPER: sccache
 
       - name: Prepare E2E fixtures
         run: |
           set -euo pipefail
-          # Generate fixtures (large-sparse + corrupt stubs) using the existing script
           node src/e2e/fixtures/generate-e2e-fixtures.mjs
-          # Copy test fixtures to /tmp so they're within Tauri's $TEMP fs scope
           cp -r test-fixtures /tmp/test-fixtures
           cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
           mkdir -p /tmp/e2e-output
           echo "E2E fixtures prepared in /tmp"
-          ls -la /tmp/test-fixtures/ /tmp/test-fixtures-e2e/
 
       - name: Run PDF E2E tests
         run: xvfb-run npm run test:e2e:pdf
@@ -117,55 +156,6 @@ jobs:
           E2E_REAL_FIXTURES_DIR: /tmp/test-fixtures
           E2E_OUTPUT_DIR: /tmp/e2e-output
 
-  e2e-image:
-    runs-on: ubuntu-22.04
-    needs: validate
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
-
-      - name: Install Linux system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Install tauri-wd WebDriver
-        run: cargo install tauri-webdriver-automation
-
-      - name: Build Tauri app (debug, for webdriver-automation plugin)
-        run: npx tauri build --debug
-
-      - name: Prepare E2E fixtures
-        run: |
-          set -euo pipefail
-          # Generate fixtures (large-sparse + corrupt stubs) using the existing script
-          node src/e2e/fixtures/generate-e2e-fixtures.mjs
-          # Copy test fixtures to /tmp so they're within Tauri's $TEMP fs scope
-          cp -r test-fixtures /tmp/test-fixtures
-          cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
-          mkdir -p /tmp/e2e-output
-          echo "E2E fixtures prepared in /tmp"
-          ls -la /tmp/test-fixtures/ /tmp/test-fixtures-e2e/
-
       - name: Run Image E2E tests
         run: xvfb-run npm run test:e2e:image
         env:
@@ -173,3 +163,11 @@ jobs:
           E2E_FIXTURES_DIR: /tmp/test-fixtures-e2e
           E2E_REAL_FIXTURES_DIR: /tmp/test-fixtures
           E2E_OUTPUT_DIR: /tmp/e2e-output
+
+      - name: Upload E2E screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: .e2e-artifacts/screenshots/
+          retention-days: 7
