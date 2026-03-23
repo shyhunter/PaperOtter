@@ -6,11 +6,42 @@ on:
   pull_request:
     branches: ['**']
   workflow_dispatch:
+  release:
+    types: [created]
 
 permissions:
   contents: read
 
 jobs:
+  # Detect which areas of the codebase changed to enable smart E2E triggering
+  # Runs on all events, but only applies filtering on PRs (other events always show as changed)
+  detect-changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      pdf-changed: ${{ steps.filter.outputs.pdf }}
+      image-changed: ${{ steps.filter.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect file changes (PR only; non-PR events always trigger E2E)
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            pdf:
+              - '.github/workflows/ci.yml'
+              - 'src/e2e/**'
+              - 'src/e2e/tests/pdf-flows.test.ts'
+              - 'src/lib/pdfProcessor*'
+              - 'src-tauri/src/lib.rs'
+            image:
+              - '.github/workflows/ci.yml'
+              - 'src/e2e/**'
+              - 'src/e2e/tests/image-flows.test.ts'
+              - 'src/lib/imageProcessor*'
+              - 'src-tauri/src/lib.rs'
+
   validate:
     runs-on: ubuntu-22.04
 
@@ -87,9 +118,13 @@ jobs:
         env:
           RUSTC_WRAPPER: sccache
 
-  e2e-full:
+  e2e-pdf:
     runs-on: ubuntu-22.04
-    if: github.event_name == 'workflow_dispatch'
+    needs: [validate, detect-changes]
+    if: |
+      (github.event_name == 'pull_request' && needs.detect-changes.outputs.pdf-changed == 'true') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'release'
 
     steps:
       - name: Checkout
@@ -112,10 +147,10 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      - name: Install full system dependencies (webkit + GS)
+      - name: Install system dependencies (webkit + GS)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
 
       - name: Install frontend dependencies
         run: npm ci
@@ -146,7 +181,6 @@ jobs:
           cp -r test-fixtures /tmp/test-fixtures
           cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
           mkdir -p /tmp/e2e-output
-          echo "E2E fixtures prepared in /tmp"
 
       - name: Run PDF E2E tests
         run: xvfb-run npm run test:e2e:pdf
@@ -155,6 +189,69 @@ jobs:
           E2E_FIXTURES_DIR: /tmp/test-fixtures-e2e
           E2E_REAL_FIXTURES_DIR: /tmp/test-fixtures
           E2E_OUTPUT_DIR: /tmp/e2e-output
+
+      - name: Upload E2E screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-pdf-screenshots
+          path: .e2e-artifacts/screenshots/
+          retention-days: 7
+
+  e2e-image:
+    runs-on: ubuntu-22.04
+    needs: [validate, detect-changes]
+    if: |
+      (github.event_name == 'pull_request' && needs.detect-changes.outputs.image-changed == 'true') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'release'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install system dependencies (webkit, no GS)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install tauri-wd WebDriver
+        run: cargo install tauri-webdriver-automation
+        env:
+          RUSTC_WRAPPER: sccache
+
+      - name: Build Tauri app (debug, for webdriver-automation plugin)
+        run: npx tauri build --debug
+        env:
+          RUSTC_WRAPPER: sccache
+
+      - name: Prepare E2E fixtures
+        run: |
+          set -euo pipefail
+          node src/e2e/fixtures/generate-e2e-fixtures.mjs
+          cp -r test-fixtures /tmp/test-fixtures
+          cp -r test-fixtures-e2e /tmp/test-fixtures-e2e
+          mkdir -p /tmp/e2e-output
 
       - name: Run Image E2E tests
         run: xvfb-run npm run test:e2e:image
@@ -168,6 +265,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-screenshots
+          name: e2e-image-screenshots
           path: .e2e-artifacts/screenshots/
           retention-days: 7
