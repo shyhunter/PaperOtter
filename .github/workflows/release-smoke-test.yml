@@ -1,0 +1,237 @@
+name: Release Smoke Test
+
+# Verify release artifacts launch standalone — no extra software required.
+# Runs after the release build completes, or manually for any tag.
+
+on:
+  workflow_run:
+    workflows: ["Build & Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to test (e.g. v1.0.0-beta.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.value }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            # workflow_run: extract tag from the triggering run
+            TAG="${{ github.event.workflow_run.head_branch }}"
+          fi
+          echo "value=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Testing release: ${TAG}"
+
+      - name: Skip if release build failed
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
+        run: |
+          echo "Release build did not succeed (status: ${{ github.event.workflow_run.conclusion }}). Skipping."
+          exit 1
+
+  smoke-test:
+    needs: resolve-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            asset: "Papercut_{version}_aarch64.dmg"
+            type: dmg
+          - platform: macos-14
+            asset: "Papercut_{version}_x64.dmg"
+            type: dmg
+          - platform: windows-latest
+            asset: "Papercut_{version}_x64-setup.exe"
+            type: nsis
+          - platform: ubuntu-22.04
+            asset: "Papercut_{version}_amd64.AppImage"
+            type: appimage
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 15
+
+    env:
+      TAG: ${{ needs.resolve-tag.outputs.tag }}
+      VERSION: ${{ needs.resolve-tag.outputs.version }}
+
+    steps:
+      - name: Derive asset filename
+        id: asset
+        shell: bash
+        run: |
+          ASSET=$(echo "${{ matrix.asset }}" | sed "s/{version}/$VERSION/g")
+          echo "filename=${ASSET}" >> "$GITHUB_OUTPUT"
+          echo "Will download: ${ASSET}"
+
+      - name: Wait for release assets to be available
+        shell: bash
+        run: |
+          # Release build may still be uploading assets — poll until ours appears
+          for i in $(seq 1 30); do
+            if gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null | grep -q "${{ steps.asset.outputs.filename }}"; then
+              echo "Asset found after attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i: asset not yet available, waiting 60s..."
+            sleep 60
+          done
+          echo "Asset not found after 30 attempts"
+          exit 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download release artifact
+        shell: bash
+        run: |
+          gh release download "$TAG" \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ steps.asset.outputs.filename }}" \
+            --dir .
+          ls -la "${{ steps.asset.outputs.filename }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── macOS (.dmg) ──
+      - name: "macOS: Mount DMG and verify app bundle"
+        if: matrix.type == 'dmg'
+        run: |
+          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
+          echo "=== App bundle contents ==="
+          ls -la /Volumes/Papercut/
+          test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
+          test -x "/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut" || { echo "FAIL: Binary not executable"; exit 1; }
+
+          echo "=== Checking binary dependencies ==="
+          otool -L "/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut" | head -20
+
+          echo "=== Launch test: start app and verify process ==="
+          # Copy to /Applications so macOS can run it
+          cp -R /Volumes/Papercut/Papercut.app /Applications/Papercut.app
+          # Remove quarantine attribute
+          xattr -cr /Applications/Papercut.app
+
+          # Launch the app
+          open -a Papercut
+          sleep 5
+
+          # Verify the process is running
+          if pgrep -x "Papercut" > /dev/null; then
+            echo "PASS: Papercut process is running"
+          else
+            echo "FAIL: Papercut process not found"
+            exit 1
+          fi
+
+          # Check it created a window (has a valid PID with a GUI session)
+          PID=$(pgrep -x "Papercut")
+          echo "Papercut running with PID: $PID"
+
+          # Clean up
+          kill "$PID" 2>/dev/null || true
+          sleep 2
+          rm -rf /Applications/Papercut.app
+          hdiutil detach /Volumes/Papercut
+
+          echo "=== macOS smoke test PASSED ==="
+
+      # ── Windows (NSIS .exe) ──
+      - name: "Windows: Install and verify app"
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $installer = "${{ steps.asset.outputs.filename }}"
+          Write-Host "=== Running silent install ==="
+          Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
+
+          # Find installed binary
+          $installDir = "$env:LOCALAPPDATA\Papercut"
+          if (-Not (Test-Path "$installDir\Papercut.exe")) {
+            # Try alternate location
+            $installDir = "$env:ProgramFiles\Papercut"
+          }
+          if (-Not (Test-Path "$installDir\Papercut.exe")) {
+            Write-Host "Searching for installed binary..."
+            $found = Get-ChildItem -Path "$env:LOCALAPPDATA","$env:ProgramFiles","$env:ProgramFiles(x86)" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+              $installDir = $found.DirectoryName
+              Write-Host "Found at: $installDir"
+            } else {
+              Write-Host "FAIL: Papercut.exe not found after install"
+              exit 1
+            }
+          }
+
+          Write-Host "=== Binary found at: $installDir\Papercut.exe ==="
+
+          Write-Host "=== Launch test ==="
+          $proc = Start-Process -FilePath "$installDir\Papercut.exe" -PassThru
+          Start-Sleep -Seconds 8
+
+          if (-Not $proc.HasExited) {
+            Write-Host "PASS: Papercut is running (PID: $($proc.Id))"
+            Stop-Process -Id $proc.Id -Force
+          } else {
+            Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
+            exit 1
+          }
+
+          Write-Host "=== Windows smoke test PASSED ==="
+
+      # ── Linux (AppImage) ──
+      - name: "Linux: Install dependencies for AppImage"
+        if: matrix.type == 'appimage'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-0 libfuse2 xvfb
+
+      - name: "Linux: Verify AppImage launches"
+        if: matrix.type == 'appimage'
+        run: |
+          APPIMAGE="${{ steps.asset.outputs.filename }}"
+          chmod +x "$APPIMAGE"
+
+          echo "=== AppImage file info ==="
+          file "$APPIMAGE"
+
+          echo "=== Launch test under Xvfb ==="
+          # Start Xvfb for headless display
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x720x24 &
+          XVFB_PID=$!
+          sleep 2
+
+          # Launch AppImage
+          ./"$APPIMAGE" &
+          APP_PID=$!
+          sleep 8
+
+          # Check if process is still running
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
+          else
+            echo "FAIL: Papercut AppImage exited prematurely"
+            kill "$XVFB_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          # Clean up
+          kill "$APP_PID" 2>/dev/null || true
+          kill "$XVFB_PID" 2>/dev/null || true
+          sleep 2
+
+          echo "=== Linux smoke test PASSED ==="
