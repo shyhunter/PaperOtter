@@ -63,7 +63,7 @@ jobs:
             type: appimage
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 15
+    timeout-minutes: 35
 
     env:
       TAG: ${{ needs.resolve-tag.outputs.tag }}
@@ -81,16 +81,18 @@ jobs:
       - name: Wait for release assets to be available
         shell: bash
         run: |
-          # Release build may still be uploading assets — poll until ours appears
-          for i in $(seq 1 30); do
+          # When triggered by workflow_run the build is already done,
+          # but a manual dispatch may fire while the build is still running.
+          # Poll every 30s, up to ~30 min.
+          for i in $(seq 1 60); do
             if gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null | grep -q "${{ steps.asset.outputs.filename }}"; then
               echo "Asset found after attempt $i"
               exit 0
             fi
-            echo "Attempt $i: asset not yet available, waiting 60s..."
-            sleep 60
+            echo "Attempt $i: asset not yet available, waiting 30s..."
+            sleep 30
           done
-          echo "Asset not found after 30 attempts"
+          echo "Asset not found after 60 attempts (~30 min)"
           exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
