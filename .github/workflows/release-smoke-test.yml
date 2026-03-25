@@ -114,34 +114,45 @@ jobs:
           echo "=== App bundle contents ==="
           ls -la /Volumes/Papercut/
           test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
-          test -x "/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut" || { echo "FAIL: Binary not executable"; exit 1; }
+
+          echo "=== Contents/MacOS/ ==="
+          ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
+
+          # Find the actual binary (Tauri may name it after productName or Cargo package)
+          BINARY=$(find /Volumes/Papercut/Papercut.app/Contents/MacOS/ -type f -perm +111 | head -1)
+          if [ -z "$BINARY" ]; then
+            echo "FAIL: No executable binary found in Contents/MacOS/"
+            exit 1
+          fi
+          BINARY_NAME=$(basename "$BINARY")
+          echo "Found binary: $BINARY_NAME"
 
           echo "=== Checking binary dependencies ==="
-          otool -L "/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut" | head -20
+          otool -L "$BINARY" | head -20
 
           echo "=== Launch test: start app and verify process ==="
-          # Copy to /Applications so macOS can run it
           cp -R /Volumes/Papercut/Papercut.app /Applications/Papercut.app
-          # Remove quarantine attribute
           xattr -cr /Applications/Papercut.app
 
-          # Launch the app
           open -a Papercut
-          sleep 5
+          sleep 8
 
-          # Verify the process is running
+          # Try both possible process names
           if pgrep -x "Papercut" > /dev/null; then
-            echo "PASS: Papercut process is running"
+            PID=$(pgrep -x "Papercut")
+          elif pgrep -x "$BINARY_NAME" > /dev/null; then
+            PID=$(pgrep -x "$BINARY_NAME")
+          elif pgrep -f "Papercut.app" > /dev/null; then
+            PID=$(pgrep -f "Papercut.app" | head -1)
           else
             echo "FAIL: Papercut process not found"
+            echo "=== Running processes ==="
+            ps aux | grep -i papercut
             exit 1
           fi
 
-          # Check it created a window (has a valid PID with a GUI session)
-          PID=$(pgrep -x "Papercut")
-          echo "Papercut running with PID: $PID"
+          echo "PASS: Papercut running with PID: $PID"
 
-          # Clean up
           kill "$PID" 2>/dev/null || true
           sleep 2
           rm -rf /Applications/Papercut.app
