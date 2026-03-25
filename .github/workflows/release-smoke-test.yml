@@ -1,12 +1,9 @@
 name: Release Smoke Test
 
 # Verify release artifacts launch standalone — no extra software required.
-# Runs after the release build completes, or manually for any tag.
+# Only runs manually to avoid burning CI minutes on automatic triggers.
 
 on:
-  workflow_run:
-    workflows: ["Build & Release"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
@@ -18,33 +15,7 @@ permissions:
   contents: write  # write needed to read draft releases via gh CLI
 
 jobs:
-  resolve-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.tag.outputs.value }}
-      version: ${{ steps.tag.outputs.version }}
-    steps:
-      - name: Resolve tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            # workflow_run: extract tag from the triggering run
-            TAG="${{ github.event.workflow_run.head_branch }}"
-          fi
-          echo "value=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
-          echo "Testing release: ${TAG}"
-
-      - name: Skip if release build failed
-        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
-        run: |
-          echo "Release build did not succeed (status: ${{ github.event.workflow_run.conclusion }}). Skipping."
-          exit 1
-
   smoke-test:
-    needs: resolve-tag
     strategy:
       fail-fast: false
       matrix:
@@ -63,43 +34,34 @@ jobs:
             type: appimage
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 35
+    timeout-minutes: 10
 
     env:
-      TAG: ${{ needs.resolve-tag.outputs.tag }}
-      VERSION: ${{ needs.resolve-tag.outputs.version }}
+      TAG: ${{ inputs.tag }}
+      VERSION: ""
 
     steps:
       - name: Derive asset filename
         id: asset
         shell: bash
         run: |
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           ASSET=$(echo "${{ matrix.asset }}" | sed "s/{version}/$VERSION/g")
           echo "filename=${ASSET}" >> "$GITHUB_OUTPUT"
           echo "Will download: ${ASSET}"
 
-      - name: Wait for release assets to be available
-        shell: bash
-        run: |
-          # When triggered by workflow_run the build is already done,
-          # but a manual dispatch may fire while the build is still running.
-          # Poll every 30s, up to ~30 min.
-          for i in $(seq 1 60); do
-            if gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null | grep -q "${{ steps.asset.outputs.filename }}"; then
-              echo "Asset found after attempt $i"
-              exit 0
-            fi
-            echo "Attempt $i: asset not yet available, waiting 30s..."
-            sleep 30
-          done
-          echo "Asset not found after 60 attempts (~30 min)"
-          exit 1
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Download release artifact
         shell: bash
         run: |
+          # Verify the release and asset exist before downloading
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null | grep -q "${{ steps.asset.outputs.filename }}"; then
+            echo "FAIL: Asset ${{ steps.asset.outputs.filename }} not found in release $TAG"
+            echo "Available assets:"
+            gh release view "$TAG" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null || echo "(release not found)"
+            exit 1
+          fi
+
           gh release download "$TAG" \
             --repo "${{ github.repository }}" \
             --pattern "${{ steps.asset.outputs.filename }}" \
@@ -109,38 +71,28 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ── macOS (.dmg) ──
-      - name: "macOS: Mount DMG and verify app bundle"
+      - name: "macOS: Mount DMG and verify app launches"
         if: matrix.type == 'dmg'
         run: |
           hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
-          echo "=== App bundle contents ==="
-          ls -la /Volumes/Papercut/
           test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
 
           echo "=== Contents/MacOS/ ==="
           ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
 
           # The main binary is "tauri-app" (Cargo package name).
-          # Other executables (gs, generate_fixtures) are sidecars — skip them.
           BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
           if [ ! -x "$BINARY" ]; then
-            # Fallback: try productName
             BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
           fi
           if [ ! -x "$BINARY" ]; then
             echo "FAIL: No app binary found in Contents/MacOS/"
-            ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
             exit 1
           fi
-          BINARY_NAME=$(basename "$BINARY")
-          echo "Found binary: $BINARY_NAME"
+          echo "Found binary: $(basename "$BINARY")"
 
-          echo "=== Checking binary dependencies ==="
-          otool -L "$BINARY" | head -20
-
-          echo "=== Launch test: run binary directly ==="
-          # Launch the binary directly from the mounted DMG (no need to copy/register)
-          "/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app" &
+          echo "=== Launch test ==="
+          "$BINARY" &
           APP_PID=$!
           sleep 8
 
@@ -148,19 +100,16 @@ jobs:
             echo "PASS: Papercut running with PID: $APP_PID"
           else
             echo "FAIL: Papercut exited prematurely"
-            echo "=== Running processes ==="
-            ps aux | grep -i -E "papercut|tauri" || true
             exit 1
           fi
 
           kill "$APP_PID" 2>/dev/null || true
           sleep 2
           hdiutil detach /Volumes/Papercut
-
           echo "=== macOS smoke test PASSED ==="
 
       # ── Windows (NSIS .exe) ──
-      - name: "Windows: Install and verify app"
+      - name: "Windows: Install and verify app launches"
         if: matrix.type == 'nsis'
         shell: pwsh
         run: |
@@ -168,28 +117,36 @@ jobs:
           Write-Host "=== Running silent install ==="
           Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
 
-          # Find installed binary
-          $installDir = "$env:LOCALAPPDATA\Papercut"
-          if (-Not (Test-Path "$installDir\Papercut.exe")) {
-            # Try alternate location
-            $installDir = "$env:ProgramFiles\Papercut"
-          }
-          if (-Not (Test-Path "$installDir\Papercut.exe")) {
-            Write-Host "Searching for installed binary..."
-            $found = Get-ChildItem -Path "$env:LOCALAPPDATA","$env:ProgramFiles","$env:ProgramFiles(x86)" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) {
-              $installDir = $found.DirectoryName
-              Write-Host "Found at: $installDir"
-            } else {
-              Write-Host "FAIL: Papercut.exe not found after install"
-              exit 1
+          # Search common install locations for the binary
+          $searchPaths = @(
+            "$env:LOCALAPPDATA\Papercut\Papercut.exe",
+            "$env:LOCALAPPDATA\Programs\Papercut\Papercut.exe",
+            "$env:ProgramFiles\Papercut\Papercut.exe"
+          )
+
+          $binary = $null
+          foreach ($path in $searchPaths) {
+            if (Test-Path $path) {
+              $binary = $path
+              break
             }
           }
 
-          Write-Host "=== Binary found at: $installDir\Papercut.exe ==="
+          if (-Not $binary) {
+            Write-Host "Not in common paths, searching..."
+            $found = Get-ChildItem -Path "$env:LOCALAPPDATA" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 1
+            if ($found) { $binary = $found.FullName }
+          }
+
+          if (-Not $binary) {
+            Write-Host "FAIL: Papercut.exe not found after install"
+            exit 1
+          }
+
+          Write-Host "=== Binary found at: $binary ==="
 
           Write-Host "=== Launch test ==="
-          $proc = Start-Process -FilePath "$installDir\Papercut.exe" -PassThru
+          $proc = Start-Process -FilePath $binary -PassThru
           Start-Sleep -Seconds 8
 
           if (-Not $proc.HasExited) {
@@ -199,11 +156,10 @@ jobs:
             Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
             exit 1
           }
-
           Write-Host "=== Windows smoke test PASSED ==="
 
       # ── Linux (AppImage) ──
-      - name: "Linux: Install dependencies for AppImage"
+      - name: "Linux: Install display dependencies"
         if: matrix.type == 'appimage'
         run: |
           sudo apt-get update
@@ -215,22 +171,16 @@ jobs:
           APPIMAGE="${{ steps.asset.outputs.filename }}"
           chmod +x "$APPIMAGE"
 
-          echo "=== AppImage file info ==="
-          file "$APPIMAGE"
-
           echo "=== Launch test under Xvfb ==="
-          # Start Xvfb for headless display
           export DISPLAY=:99
           Xvfb :99 -screen 0 1280x720x24 &
           XVFB_PID=$!
           sleep 2
 
-          # Launch AppImage
           ./"$APPIMAGE" &
           APP_PID=$!
           sleep 8
 
-          # Check if process is still running
           if kill -0 "$APP_PID" 2>/dev/null; then
             echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
           else
@@ -239,9 +189,6 @@ jobs:
             exit 1
           fi
 
-          # Clean up
           kill "$APP_PID" 2>/dev/null || true
           kill "$XVFB_PID" 2>/dev/null || true
-          sleep 2
-
           echo "=== Linux smoke test PASSED ==="
