@@ -120,10 +120,16 @@ jobs:
           echo "=== Contents/MacOS/ ==="
           ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
 
-          # Find the actual binary (Tauri may name it after productName or Cargo package)
-          BINARY=$(find /Volumes/Papercut/Papercut.app/Contents/MacOS/ -type f -perm +111 | head -1)
-          if [ -z "$BINARY" ]; then
-            echo "FAIL: No executable binary found in Contents/MacOS/"
+          # The main binary is "tauri-app" (Cargo package name).
+          # Other executables (gs, generate_fixtures) are sidecars — skip them.
+          BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
+          if [ ! -x "$BINARY" ]; then
+            # Fallback: try productName
+            BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
+          fi
+          if [ ! -x "$BINARY" ]; then
+            echo "FAIL: No app binary found in Contents/MacOS/"
+            ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
             exit 1
           fi
           BINARY_NAME=$(basename "$BINARY")
@@ -139,11 +145,11 @@ jobs:
           open -a Papercut
           sleep 8
 
-          # Try both possible process names
-          if pgrep -x "Papercut" > /dev/null; then
-            PID=$(pgrep -x "Papercut")
-          elif pgrep -x "$BINARY_NAME" > /dev/null; then
+          # Try process names: binary name (tauri-app), productName, or bundle match
+          if pgrep -x "$BINARY_NAME" > /dev/null; then
             PID=$(pgrep -x "$BINARY_NAME")
+          elif pgrep -x "Papercut" > /dev/null; then
+            PID=$(pgrep -x "Papercut")
           elif pgrep -f "Papercut.app" > /dev/null; then
             PID=$(pgrep -f "Papercut.app" | head -1)
           else
