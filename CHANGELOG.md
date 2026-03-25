@@ -5,6 +5,29 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.3] - 2026-03-25
+
+### Fixed
+- PDF edit view not showing pages after 5th page (#9)
+- Header and side menus disappearing when scrolling PDF in edit mode (#8)
+- Unsaved-changes confirmation dialog when leaving Edit PDF mode (#7)
+- Watermark before/after preview freezing UI on large PDFs (#10)
+- Critical and high security issues from security audit
+
+### Added
+- Integration test coverage for all PDF editor features (#11)
+- Smart path-based E2E triggering for PR checks
+- Embedded feedback token for zero-friction tester experience
+
+### Changed
+- Fast PR CI architecture with Rust integration tests (build time reduced from 11+ min to < 5 min)
+- Renamed repository to Papercut with all references updated
+- CI jobs split into parallel validation for faster feedback (#12)
+
+## [1.0.0-beta.2] - 2026-03-19
+
+*(Release automation and download link improvements — no functional changes)*
+
 ## [1.0.0-beta.1] - 2026-03-16
 
 ### Added
