@@ -138,32 +138,23 @@ jobs:
           echo "=== Checking binary dependencies ==="
           otool -L "$BINARY" | head -20
 
-          echo "=== Launch test: start app and verify process ==="
-          cp -R /Volumes/Papercut/Papercut.app /Applications/Papercut.app
-          xattr -cr /Applications/Papercut.app
-
-          open -a Papercut
+          echo "=== Launch test: run binary directly ==="
+          # Launch the binary directly from the mounted DMG (no need to copy/register)
+          "/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app" &
+          APP_PID=$!
           sleep 8
 
-          # Try process names: binary name (tauri-app), productName, or bundle match
-          if pgrep -x "$BINARY_NAME" > /dev/null; then
-            PID=$(pgrep -x "$BINARY_NAME")
-          elif pgrep -x "Papercut" > /dev/null; then
-            PID=$(pgrep -x "Papercut")
-          elif pgrep -f "Papercut.app" > /dev/null; then
-            PID=$(pgrep -f "Papercut.app" | head -1)
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "PASS: Papercut running with PID: $APP_PID"
           else
-            echo "FAIL: Papercut process not found"
+            echo "FAIL: Papercut exited prematurely"
             echo "=== Running processes ==="
-            ps aux | grep -i papercut
+            ps aux | grep -i -E "papercut|tauri" || true
             exit 1
           fi
 
-          echo "PASS: Papercut running with PID: $PID"
-
-          kill "$PID" 2>/dev/null || true
+          kill "$APP_PID" 2>/dev/null || true
           sleep 2
-          rm -rf /Applications/Papercut.app
           hdiutil detach /Volumes/Papercut
 
           echo "=== macOS smoke test PASSED ==="
