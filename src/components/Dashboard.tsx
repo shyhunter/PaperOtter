@@ -291,6 +291,8 @@ export function Dashboard() {
           if (validPaths.length > 1) {
             tools = tools.filter((t) => t.acceptsMultipleFiles);
           }
+          // Filter out tools whose dependencies are not available
+          tools = tools.filter((t) => isAvailable(t.requiresDependency));
           if (tools.length > 0) {
             setDroppedFiles(validPaths);
             setCompatibleTools(tools);
@@ -302,7 +304,7 @@ export function Dashboard() {
       .then((fn) => { unlisten = fn; });
 
     return () => { unlisten?.(); };
-  }, []);
+  }, [isAvailable]);
 
   // Dismiss tool picker on Escape
   useEffect(() => {
@@ -368,7 +370,7 @@ export function Dashboard() {
                 <RecentDirsButton
                 dirs={recentDirs}
                 onFileSelected={(filePath) => {
-                  const tools = getCompatibleTools(filePath);
+                  const tools = getCompatibleTools(filePath).filter((t) => isAvailable(t.requiresDependency));
                   if (tools.length === 1) {
                     setPendingFiles([filePath]);
                     selectTool(tools[0].id);
