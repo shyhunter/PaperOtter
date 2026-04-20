@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   FileDown,
   ImageDown,
@@ -223,6 +223,8 @@ export function Dashboard() {
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
+  const isAvailableRef = useRef(isAvailable);
+  useEffect(() => { isAvailableRef.current = isAvailable; }, [isAvailable]);
   const [aboutOpen, setAboutOpen] = useState(false);
   const groups = groupByCategory();
 
@@ -287,7 +289,8 @@ export function Dashboard() {
           const validPaths = paths.filter((p) => isSupportedFile(p));
           if (validPaths.length === 0) return;
 
-          let tools = getCompatibleTools(validPaths[0]);
+          let tools = getCompatibleTools(validPaths[0])
+            .filter((t) => isAvailableRef.current(t.requiresDependency));
           if (validPaths.length > 1) {
             tools = tools.filter((t) => t.acceptsMultipleFiles);
           }
@@ -370,7 +373,8 @@ export function Dashboard() {
                 <RecentDirsButton
                 dirs={recentDirs}
                 onFileSelected={(filePath) => {
-                  const tools = getCompatibleTools(filePath).filter((t) => isAvailable(t.requiresDependency));
+                  const tools = getCompatibleTools(filePath)
+                    .filter((t) => isAvailable(t.requiresDependency));
                   if (tools.length === 1) {
                     setPendingFiles([filePath]);
                     selectTool(tools[0].id);
