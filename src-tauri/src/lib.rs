@@ -180,6 +180,26 @@ fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
     find_system_ghostscript().is_ok()
 }
 
+/// Build a user-friendly error message when Ghostscript crashes unexpectedly
+/// (signal termination, missing library, etc.) rather than exiting cleanly.
+fn format_gs_crash_error(stderr: &str) -> String {
+    const REINSTALL_HINT: &str =
+        "Try reinstalling the application or installing Ghostscript manually.";
+
+    let hint = if stderr.contains("Library not loaded") || stderr.contains("dyld") {
+        format!("A required library is missing. {}", REINSTALL_HINT)
+    } else if stderr.contains("not found") || stderr.contains("No such file") {
+        format!("Ghostscript could not be found. {}", REINSTALL_HINT)
+    } else {
+        format!("Ghostscript crashed unexpectedly. {}", REINSTALL_HINT)
+    };
+    if stderr.is_empty() {
+        hint
+    } else {
+        format!("{} Details: {}", hint, stderr)
+    }
+}
+
 /// Managed cancellation state — holds the running GS child process.
 /// cancel_processing() takes the child out and kills it, which signals
 /// compress_pdf's event loop to exit with a CANCELLED error.
@@ -445,36 +465,53 @@ async fn compress_pdf(
         }
     }
 
-    // Clear stored child reference now that GS has exited
-    {
+    // Clear stored child reference now that GS has exited.
+    // Detect user-initiated cancellation: cancel_processing() takes the child
+    // out of the mutex, so if it's already None here the user cancelled.
+    // If it's still Some, GS exited on its own (crash / normal exit).
+    let user_cancelled = {
         let mut guard = state.gs_child.lock().unwrap();
+        let was_taken = guard.is_none();
         *guard = None;
-    }
+        was_taken
+    };
 
     // If the channel closed without a Terminated event, the child was killed
     if !terminated {
         let _ = std::fs::remove_file(&tmp_path);
-        return Err("CANCELLED".to_string());
+        if user_cancelled {
+            return Err("CANCELLED".to_string());
+        }
+        let stderr = stderr_lines.join("\n");
+        return Err(format_gs_crash_error(&stderr));
     }
 
     // Non-zero exit code means GS was killed (signal) or failed
     match exit_code {
         None => {
-            // Signal termination (killed) — treat as cancellation
+            // Signal termination — only treat as cancellation if user requested it
             let _ = std::fs::remove_file(&tmp_path);
-            return Err("CANCELLED".to_string());
-        }
-        Some(0) => {} // success — continue
-        Some(_code) => {
-            // Try to clean up; if file doesn't exist, likely killed/cancelled
-            let file_existed = std::fs::remove_file(&tmp_path).is_ok();
-            if !file_existed {
+            if user_cancelled {
                 return Err("CANCELLED".to_string());
             }
             let stderr = stderr_lines.join("\n");
+            return Err(format_gs_crash_error(&stderr));
+        }
+        Some(0) => {} // success — continue
+        Some(_code) => {
+            let file_existed = std::fs::remove_file(&tmp_path).is_ok();
+            if !file_existed && user_cancelled {
+                return Err("CANCELLED".to_string());
+            }
+            let stderr = stderr_lines.join("\n");
+            let details = if stderr.is_empty() {
+                String::new()
+            } else {
+                format!(" Details: {}", stderr)
+            };
             return Err(format!(
-                "Ghostscript returned non-zero exit code. stderr: {}",
-                stderr
+                "Ghostscript compression failed (exit code {}).{}",
+                _code, details
             ));
         }
     }
@@ -757,11 +794,7 @@ async fn repair_pdf(
             // No output or empty — real failure
             let _ = std::fs::remove_file(&tmp_path);
             let stderr = stderr_lines.join("\n");
-            Err(format!(
-                "Ghostscript repair failed (exit {}): {}",
-                exit_code.unwrap_or(-1),
-                stderr
-            ))
+            Err(format_gs_crash_error(&stderr))
         }
     }
 }
@@ -1785,6 +1818,46 @@ mod tests {
         assert!(!valid.contains(&"medium"), "old name 'medium' must not pass the allow-list");
         assert!(!valid.contains(&""), "empty string must not pass the allow-list");
         assert!(!valid.contains(&"best"), "old name 'best' must not pass the allow-list");
+    }
+
+    // ─── format_gs_crash_error — user-friendly GS error messages ──────────────
+
+    #[test]
+    fn gs_crash_error_detects_missing_library() {
+        let stderr = "dyld[84156]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib";
+        let msg = super::format_gs_crash_error(stderr);
+        assert!(msg.contains("missing"), "should mention missing library");
+        assert!(msg.contains("reinstalling"), "should suggest reinstalling");
+        assert!(msg.contains(stderr), "should include original stderr");
+    }
+
+    #[test]
+    fn gs_crash_error_detects_dyld() {
+        let stderr = "dyld: could not load inserted library";
+        let msg = super::format_gs_crash_error(stderr);
+        assert!(msg.contains("missing"), "should mention missing library for dyld errors");
+    }
+
+    #[test]
+    fn gs_crash_error_detects_not_found() {
+        let stderr = "gs: not found";
+        let msg = super::format_gs_crash_error(stderr);
+        assert!(msg.contains("could not be found"), "should mention GS not found");
+    }
+
+    #[test]
+    fn gs_crash_error_generic_fallback() {
+        let stderr = "some unknown error";
+        let msg = super::format_gs_crash_error(stderr);
+        assert!(msg.contains("crashed unexpectedly"), "should use generic crash message");
+        assert!(msg.contains(stderr), "should include original stderr");
+    }
+
+    #[test]
+    fn gs_crash_error_empty_stderr() {
+        let msg = super::format_gs_crash_error("");
+        assert!(msg.contains("crashed unexpectedly"), "should use generic message for empty stderr");
+        assert!(!msg.contains("Details:"), "should not include Details: for empty stderr");
     }
 
     // ─── IM-FIX-01 — Image processing with real committed fixtures ──────────
