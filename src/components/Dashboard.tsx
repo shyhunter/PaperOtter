@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   FileDown,
   ImageDown,
@@ -23,13 +23,18 @@ import {
   Star,
   GripVertical,
   Info,
+  X,
+  FileText,
+  ImageIcon,
+  FileType,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
-import type { ToolDefinition, ToolCategory, ToolId } from '@/types/tools';
+import type { ToolDefinition, ToolCategory } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
+import type { SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -68,6 +73,24 @@ const CATEGORY_LABELS: Record<ToolCategory, string> = {
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
+interface StagedFile {
+  path: string;
+  name: string;
+  format: SupportedFormat;
+}
+
+const FORMAT_ICONS: Record<SupportedFormat, LucideIcon> = {
+  pdf: FileText,
+  image: ImageIcon,
+  document: FileType,
+};
+
+const FORMAT_LABELS: Record<SupportedFormat, string> = {
+  pdf: 'PDF',
+  image: 'Image',
+  document: 'Document',
+};
+
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
   const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
@@ -77,13 +100,6 @@ function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
   return groups;
 }
 
-function getCompatibleTools(filePath: string): ToolDefinition[] {
-  const format = detectFormat(filePath);
-  if (!format) return [];
-  return Object.values(TOOL_REGISTRY).filter((tool) =>
-    tool.acceptsFormats.includes(format),
-  );
-}
 
 function ToolCard({
   tool,
@@ -149,6 +165,8 @@ function FavoriteCard({
   onGripClick,
   onSwapTarget,
   onRemove,
+  disabled,
+  disabledHint,
 }: {
   tool: ToolDefinition;
   onClick: () => void;
@@ -158,6 +176,8 @@ function FavoriteCard({
   onGripClick: (index: number) => void;
   onSwapTarget: (index: number) => void;
   onRemove: () => void;
+  disabled?: boolean;
+  disabledHint?: string;
 }) {
   const Icon = ICON_MAP[tool.icon];
   const isTarget = swapModeActive && !isSwapSource;
@@ -169,15 +189,21 @@ function FavoriteCard({
     >
       <button
         type="button"
-        onClick={isTarget ? () => onSwapTarget(index) : onClick}
-        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground cursor-pointer transition-all duration-200 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/5 ${
-          isTarget ? 'opacity-50' : ''
+        onClick={disabled ? undefined : (isTarget ? () => onSwapTarget(index) : onClick)}
+        disabled={disabled}
+        title={disabled ? disabledHint : undefined}
+        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed'
+            : `cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5 ${isTarget ? 'opacity-50' : ''}`
         }`}
       >
-        {Icon && <Icon className="h-7 w-7 text-primary" />}
+        {Icon && <Icon className={`h-7 w-7 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
           <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{tool.description}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {disabled ? disabledHint : tool.description}
+          </p>
         </div>
       </button>
       {/* Reorder grip handle — click to enter swap mode */}
@@ -223,14 +249,11 @@ export function Dashboard() {
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
-  const isAvailableRef = useRef(isAvailable);
-  useEffect(() => { isAvailableRef.current = isAvailable; }, [isAvailable]);
   const [aboutOpen, setAboutOpen] = useState(false);
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
-  const [droppedFiles, setDroppedFiles] = useState<string[]>([]);
-  const [compatibleTools, setCompatibleTools] = useState<ToolDefinition[]>([]);
+  const [stagedFile, setStagedFile] = useState<StagedFile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Swap-mode state for favorites reordering
@@ -289,17 +312,15 @@ export function Dashboard() {
           const validPaths = paths.filter((p) => isSupportedFile(p));
           if (validPaths.length === 0) return;
 
-          let tools = getCompatibleTools(validPaths[0])
-            .filter((t) => isAvailableRef.current(t.requiresDependency));
-          if (validPaths.length > 1) {
-            tools = tools.filter((t) => t.acceptsMultipleFiles);
-          }
-          // Filter out tools whose dependencies are not available
-          tools = tools.filter((t) => isAvailable(t.requiresDependency));
-          if (tools.length > 0) {
-            setDroppedFiles(validPaths);
-            setCompatibleTools(tools);
-          }
+          const filePath = validPaths[0];
+          const format = detectFormat(filePath);
+          if (!format) return;
+
+          setStagedFile({
+            path: filePath,
+            name: filePath.split('/').pop() ?? filePath,
+            format,
+          });
         } else {
           setIsDragOver(false);
         }
@@ -307,36 +328,29 @@ export function Dashboard() {
       .then((fn) => { unlisten = fn; });
 
     return () => { unlisten?.(); };
-  }, [isAvailable]);
+  }, []);
 
-  // Dismiss tool picker on Escape
+  // Dismiss staged file on Escape
   useEffect(() => {
-    if (droppedFiles.length === 0) return;
+    if (!stagedFile) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setDroppedFiles([]);
-        setCompatibleTools([]);
+        setStagedFile(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [droppedFiles]);
+  }, [stagedFile]);
 
-  const handleToolSelect = useCallback((toolId: ToolId) => {
-    if (droppedFiles.length > 0) {
-      setPendingFiles(droppedFiles);
+  const handleToolClick = useCallback((tool: ToolDefinition) => {
+    if (stagedFile && tool.acceptsFormats.includes(stagedFile.format)) {
+      setPendingFiles([stagedFile.path]);
+      setStagedFile(null);
     }
-    setDroppedFiles([]);
-    setCompatibleTools([]);
-    selectTool(toolId);
-  }, [droppedFiles, selectTool, setPendingFiles]);
-
-  const handleDismissPicker = useCallback(() => {
-    setDroppedFiles([]);
-    setCompatibleTools([]);
-  }, []);
+    selectTool(tool.id);
+  }, [stagedFile, selectTool, setPendingFiles]);
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
@@ -373,15 +387,13 @@ export function Dashboard() {
                 <RecentDirsButton
                 dirs={recentDirs}
                 onFileSelected={(filePath) => {
-                  const tools = getCompatibleTools(filePath)
-                    .filter((t) => isAvailable(t.requiresDependency));
-                  if (tools.length === 1) {
-                    setPendingFiles([filePath]);
-                    selectTool(tools[0].id);
-                  } else if (tools.length > 1) {
-                    setDroppedFiles([filePath]);
-                    setCompatibleTools(tools);
-                  }
+                  const format = detectFormat(filePath);
+                  if (!format) return;
+                  setStagedFile({
+                    path: filePath,
+                    name: filePath.split('/').pop() ?? filePath,
+                    format,
+                  });
                   }}
                 />
               )}
@@ -401,6 +413,30 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* Staged file banner */}
+        {stagedFile && (
+          <div className="flex items-center gap-3 border border-primary/30 bg-primary/5 rounded-lg px-4 py-3">
+            {(() => { const FormatIcon = FORMAT_ICONS[stagedFile.format]; return <FormatIcon className="h-5 w-5 text-primary flex-shrink-0" />; })()}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{stagedFile.name}</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium mr-1.5">
+                  {FORMAT_LABELS[stagedFile.format]}
+                </span>
+                Ready to process — choose a tool below
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStagedFile(null)}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              title="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* My Favorites — hidden when searching */}
         {!searchQuery.trim() && favoriteTools.length > 0 && (
           <section className="space-y-3">
@@ -413,19 +449,28 @@ export function Dashboard() {
               </p>
             </div>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-              {favoriteTools.map((tool, idx) => (
+              {favoriteTools.map((tool, idx) => {
+                const formatIncompat = stagedFile != null && !tool.acceptsFormats.includes(stagedFile.format);
+                return (
                 <FavoriteCard
                   key={tool.id}
                   tool={tool}
                   index={idx}
-                  onClick={() => selectTool(tool.id)}
+                  onClick={() => handleToolClick(tool)}
                   isSwapSource={swapSourceIndex === idx}
                   swapModeActive={swapSourceIndex !== null}
                   onGripClick={handleGripClick}
                   onSwapTarget={handleSwapTarget}
                   onRemove={() => toggleFavorite(tool.id)}
+                  disabled={formatIncompat}
+                  disabledHint={
+                    formatIncompat
+                      ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                      : undefined
+                  }
                 />
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
@@ -446,15 +491,23 @@ export function Dashboard() {
               >
                 {tools.map((tool) => {
                   const depMissing = !isAvailable(tool.requiresDependency);
+                  const formatIncompat = stagedFile != null && !tool.acceptsFormats.includes(stagedFile.format);
+                  const isToolDisabled = depMissing || formatIncompat;
                   return (
                     <ToolCard
                       key={tool.id}
                       tool={tool}
-                      onClick={() => selectTool(tool.id)}
+                      onClick={() => handleToolClick(tool)}
                       isFavorite={isFavorite(tool.id)}
                       onToggleFavorite={() => toggleFavorite(tool.id)}
-                      disabled={depMissing}
-                      disabledHint={tool.requiresDependency ? getHint(tool.requiresDependency) : undefined}
+                      disabled={isToolDisabled}
+                      disabledHint={
+                        depMissing
+                          ? (tool.requiresDependency ? getHint(tool.requiresDependency) : undefined)
+                          : formatIncompat
+                            ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                            : undefined
+                      }
                     />
                   );
                 })}
@@ -477,68 +530,13 @@ export function Dashboard() {
       {isDragOver && (
         <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary/40 rounded-xl flex items-center justify-center z-40 pointer-events-none">
           <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg">
-            <p className="text-lg font-medium text-foreground">Drop to choose a tool</p>
+            <p className="text-lg font-medium text-foreground">Drop file to get started</p>
           </div>
         </div>
       )}
 
       {/* About dialog */}
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-
-      {/* Tool picker overlay */}
-      {droppedFiles.length > 0 && compatibleTools.length > 0 && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={handleDismissPicker}
-          onKeyDown={(e) => { if (e.key === 'Escape') handleDismissPicker(); }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Choose a tool for the dropped file"
-        >
-          <div
-            className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <div className="text-center space-y-1">
-              <h2 className="text-lg font-semibold text-foreground">What do you want to do?</h2>
-              <p className="text-sm text-muted-foreground truncate">
-                {droppedFiles.length === 1
-                  ? (droppedFiles[0].split('/').pop() ?? droppedFiles[0])
-                  : `${droppedFiles.length} files selected`}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              {compatibleTools.map((tool) => {
-                const Icon = ICON_MAP[tool.icon];
-                return (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    onClick={() => handleToolSelect(tool.id)}
-                    className="w-full flex items-center gap-3 border rounded-lg px-4 py-3 bg-background hover:border-primary/50 hover:bg-accent transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    {Icon && <Icon className="h-5 w-5 text-primary flex-shrink-0" />}
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{tool.name}</p>
-                      <p className="text-xs text-muted-foreground">{tool.description}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDismissPicker}
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
