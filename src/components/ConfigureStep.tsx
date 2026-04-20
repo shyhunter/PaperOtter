@@ -148,7 +148,7 @@ export function ConfigureStep({
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <div data-testid="configure-step" className="flex flex-1 flex-col">
+    <div data-testid="configure-step" className="flex flex-1 flex-col min-h-0">
       <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
       <div className="w-full max-w-[clamp(24rem,45vw,36rem)] space-y-4 my-auto">
 
