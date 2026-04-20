@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { convertDocument, checkSidecarAvailability } from '@/lib/documentConverter';
 import type { MultiFileOutput } from '@/components/SaveStep';
@@ -224,8 +225,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }

@@ -5,6 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
 import { FileUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 
 interface SplitPickStepProps {
   onFileLoaded: (pdfBytes: Uint8Array, pageCount: number, fileName: string) => void;
@@ -26,8 +27,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
       const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       onFileLoaded(bytes, pageCount, fileName);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setError(message);
+      setError(friendlyPdfError(err));
     } finally {
       setIsLoading(false);
     }

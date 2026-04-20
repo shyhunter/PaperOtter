@@ -7,6 +7,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
@@ -52,8 +53,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }

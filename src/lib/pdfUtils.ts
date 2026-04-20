@@ -1,6 +1,27 @@
 // Shared utility functions extracted for testability.
 // Used by ConfigureStep.tsx (and potentially CompareStep.tsx).
 
+/**
+ * Convert a raw PDF parsing/loading error into a short, user-friendly message.
+ * The raw errors from pdf-lib (e.g. "Failed to parse PDF document (line:10443
+ * col:114 offset=1693099): No PDF header found") are not actionable for users.
+ */
+export function friendlyPdfError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+
+  if (/no pdf header/i.test(raw) || /not a pdf/i.test(raw)) {
+    return 'This file is not a valid PDF document. Please select a valid PDF file.';
+  }
+  if (/password/i.test(raw) || /encrypted/i.test(raw)) {
+    return 'This PDF is password-protected and could not be opened.';
+  }
+  if (/failed to parse/i.test(raw) || /invalid pdf/i.test(raw)) {
+    return 'This file appears to be corrupted or is not a valid PDF. Please try a different file.';
+  }
+
+  return 'Failed to load PDF. The file may be corrupted or not a valid PDF document.';
+}
+
 /** Parse "2 MB", "500 KB", "1.5 GB" into bytes. No unit defaults to MB. Returns null on invalid input. */
 export function parseSizeInput(input: string): number | null {
   const match = input.trim().match(/^(\d+(?:\.\d+)?)\s*(KB|MB|GB)?$/i);

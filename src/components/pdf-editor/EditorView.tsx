@@ -4,11 +4,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
+import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import {
   EditorProvider,
   useEditorContext,
   createEditorViewState,
 } from '@/context/EditorContext';
+import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
+import { Button } from '@/components/ui/button';
 import { EditorTopToolbar } from './EditorTopToolbar';
 import { EditorCanvas } from './EditorCanvas';
 import { CompareFloatingWindow } from './CompareFloatingWindow';
@@ -25,6 +29,7 @@ interface EditorViewProps {
 /** Inner component that consumes EditorContext */
 function EditorViewInner({ filePath }: EditorViewProps) {
   const { state, initState, setFitWidthZoom, scrollToPageRef } = useEditorContext();
+  const { goToDashboard } = useToolContext();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initRef = useRef(false);
@@ -120,7 +125,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
       initState(viewState);
       setIsLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load PDF');
+      setError(friendlyPdfError(err));
       setIsLoading(false);
     }
   }, [filePath, initState, setFitWidthZoom]);
@@ -146,8 +151,20 @@ function EditorViewInner({ filePath }: EditorViewProps) {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-sm text-destructive">{error}</div>
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground">Unable to open file</h2>
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
+            <p className="text-xs text-destructive">{error}</p>
+          </div>
+          <Button onClick={goToDashboard} variant="outline" className="w-full">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }

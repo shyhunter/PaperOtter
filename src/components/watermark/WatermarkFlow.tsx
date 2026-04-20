@@ -8,6 +8,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
@@ -86,8 +87,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }

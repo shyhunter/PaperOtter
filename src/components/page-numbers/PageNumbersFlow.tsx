@@ -9,6 +9,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addPageNumbers } from '@/lib/pdfPageNumbers';
 import type { PageNumberOptions } from '@/lib/pdfPageNumbers';
 
@@ -54,8 +55,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }

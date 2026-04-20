@@ -5,6 +5,7 @@ import { FilePlus, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
 
 interface FileWithThumb extends MergeInput {
@@ -35,8 +36,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
       }
       setFiles((prev) => [...prev, ...newFiles]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoading(false);
     }

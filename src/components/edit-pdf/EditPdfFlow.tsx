@@ -11,6 +11,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { EditorLayout } from './EditorLayout';
 import type { EditorState, PageEditState } from '@/types/editor';
 
@@ -86,8 +87,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
       setEditorState(buildInitialEditorState(pdfBytesArray, count));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }

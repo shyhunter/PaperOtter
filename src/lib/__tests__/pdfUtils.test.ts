@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSizeInput, parsePageRange, formatBytes } from '@/lib/pdfUtils';
+import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError } from '@/lib/pdfUtils';
 
 // ─── parseSizeInput ───────────────────────────────────────────────────────────
 
@@ -159,5 +159,42 @@ describe('formatBytes', () => {
   it('formats values in the GB range', () => {
     expect(formatBytes(1024 ** 3)).toBe('1.00 GB');
     expect(formatBytes(1.5 * 1024 ** 3)).toBe('1.50 GB');
+  });
+});
+
+// ─── friendlyPdfError ─────────────────────────────────────────────────────────
+
+describe('friendlyPdfError', () => {
+  it('returns user-friendly message for "No PDF header found" errors', () => {
+    const err = new Error(
+      'Failed to parse PDF document (line:10443 col:114 offset=1693099): No PDF header found',
+    );
+    expect(friendlyPdfError(err)).toBe(
+      'This file is not a valid PDF document. Please select a valid PDF file.',
+    );
+  });
+
+  it('returns user-friendly message for password-protected PDFs', () => {
+    expect(friendlyPdfError(new Error('PDF is encrypted with a password'))).toBe(
+      'This PDF is password-protected and could not be opened.',
+    );
+  });
+
+  it('returns user-friendly message for generic parse failures', () => {
+    expect(friendlyPdfError(new Error('Failed to parse PDF structure'))).toBe(
+      'This file appears to be corrupted or is not a valid PDF. Please try a different file.',
+    );
+  });
+
+  it('returns fallback message for unknown errors', () => {
+    expect(friendlyPdfError(new Error('Something unexpected'))).toBe(
+      'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
+    );
+  });
+
+  it('handles non-Error values', () => {
+    expect(friendlyPdfError('string error')).toBe(
+      'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
+    );
   });
 });

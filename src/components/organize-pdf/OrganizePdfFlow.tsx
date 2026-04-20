@@ -8,6 +8,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import { organizePdf } from '@/lib/pdfOrganize';
 import { renderAllPdfPages } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
@@ -69,8 +70,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       setPages(Array.from({ length: count }, (_, i) => ({ sourceIndex: i, id: nextId() })));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load PDF.';
-      setLoadError(message);
+      setLoadError(friendlyPdfError(err));
     } finally {
       setIsLoadingFile(false);
     }
