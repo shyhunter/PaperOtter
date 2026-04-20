@@ -35,11 +35,14 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
   });
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
+  // Use higher thumbnail quality for low page counts since they render larger
+  const thumbScale = pageCount <= 4 ? 0.5 : 0.3;
+
   // Load thumbnails
   useEffect(() => {
     let cancelled = false;
     setIsLoadingThumbs(true);
-    renderAllPdfPages(pdfBytes, 0.3)
+    renderAllPdfPages(pdfBytes, thumbScale)
       .then((urls) => {
         if (!cancelled) {
           setThumbnails(urls);
@@ -50,7 +53,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
         if (!cancelled) setIsLoadingThumbs(false);
       });
     return () => { cancelled = true; };
-  }, [pdfBytes]);
+  }, [pdfBytes, thumbScale]);
 
   const rotatedCount = Array.from(rotations.values()).filter((r) => r !== 0).length;
   const selectedCount = selected.size;
@@ -188,7 +191,17 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          <div className={
+            pageCount <= 1
+              ? 'grid grid-cols-1 gap-4 max-w-[220px] mx-auto'
+              : pageCount <= 2
+                ? 'grid grid-cols-2 gap-4 max-w-sm mx-auto'
+                : pageCount <= 4
+                  ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-lg mx-auto'
+                  : pageCount <= 6
+                    ? 'grid grid-cols-3 sm:grid-cols-4 gap-3 max-w-lg mx-auto'
+                    : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3'
+          }>
             {thumbnails.map((url, i) => {
               const rotation = rotations.get(i) ?? 0;
               const isRotated = rotation !== 0;
