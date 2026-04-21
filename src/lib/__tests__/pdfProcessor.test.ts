@@ -787,6 +787,38 @@ describe('processPdf — cancellation behaviour', () => {
       processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true }),
     ).rejects.toThrow('CANCELLED');
   });
+
+  // [PC-CRASH-01] when compress_pdf rejects with a GS crash error (missing library),
+  // processPdf propagates a rejection that does NOT contain "CANCELLED".
+  // This is the regression for the bug where GS crashes were silently swallowed
+  // and mis-classified as user cancellation.
+  it('[PC-CRASH-01] processPdf rejects with a non-CANCELLED error when GS crashes with a missing library', async () => {
+    mockReadFile(a4Pdf);
+    const crashError = 'A required library is missing. Try reinstalling the application or installing Ghostscript manually. Details: dyld[1234]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib';
+    vi.mocked(invoke).mockRejectedValue(new Error(crashError));
+
+    await expect(
+      processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true }),
+    ).rejects.toThrow(crashError);
+  });
+
+  // [PC-CRASH-02] the GS crash error message must NOT contain "CANCELLED".
+  // This ensures the hook's catch branch routes it to error=message, not isCancelled=true.
+  it('[PC-CRASH-02] GS crash error message does not contain CANCELLED — hook will show error, not cancel state', async () => {
+    mockReadFile(a4Pdf);
+    const crashError = 'A required library is missing. Try reinstalling the application.';
+    vi.mocked(invoke).mockRejectedValue(new Error(crashError));
+
+    let thrownMessage = '';
+    try {
+      await processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true });
+    } catch (err) {
+      thrownMessage = err instanceof Error ? err.message : String(err);
+    }
+
+    expect(thrownMessage).not.toContain('CANCELLED');
+    expect(thrownMessage).toContain('library');
+  });
 });
 
 // ─── BUG-01: GS bloat regression ─────────────────────────────────────────────
