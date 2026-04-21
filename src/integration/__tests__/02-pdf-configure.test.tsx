@@ -43,6 +43,7 @@ vi.mock('@/lib/pdfThumbnail', () => ({ renderAllPdfPages: vi.fn().mockResolvedVa
 vi.mock('@/lib/pdfProcessor', () => ({
   processPdf: vi.fn(),
   recommendQualityForTarget: vi.fn().mockReturnValue('web'),
+  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
   getPdfImageCount: vi.fn().mockResolvedValue(0),
   getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 0, compressibilityScore: 0.5 }),
 }));

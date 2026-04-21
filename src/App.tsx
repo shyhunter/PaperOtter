@@ -15,7 +15,7 @@ import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES } from '@/lib/fileValidation';
+import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader } from '@/lib/fileValidation';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -76,7 +76,7 @@ async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSi
 }
 
 function ToolFlow() {
-  const { activeTool, goToDashboard, pendingFiles, setPendingFiles } = useToolContext();
+  const { activeTool, goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [dedicatedFlowStep, setDedicatedFlowStep] = useState(0);
@@ -107,6 +107,7 @@ function ToolFlow() {
   const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
   const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
   const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
+  const [corruptPdfBlock, setCorruptPdfBlock] = useState<{ name: string } | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   // Stores the last PDF options so Retry can re-run with the same settings
   const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
@@ -132,6 +133,7 @@ function ToolFlow() {
     setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
+    setCorruptPdfBlock(null);
     goToDashboard();
   }, [pdfProcessor, imageProcessor, goToDashboard]);
 
@@ -159,6 +161,7 @@ function ToolFlow() {
     setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
+    setCorruptPdfBlock(null);
   }, [pdfProcessor, imageProcessor]);
 
   // Merge PDF — dedicated flow
@@ -388,6 +391,24 @@ function ToolFlow() {
       return;
     }
 
+    // For PDFs: check magic bytes before loading to give a clear corrupt-file message
+    // instead of a cryptic parse error later in the processing step.
+    if (format === 'pdf') {
+      try {
+        const { readFile } = await import('@tauri-apps/plugin-fs');
+        // Read only the first 5 bytes — enough for the %PDF- magic number check
+        const headerBytes = await readFile(filePath, { offset: 0, len: 5 });
+        if (!isPdfHeader(headerBytes)) {
+          setCorruptPdfBlock({ name: getFileName(filePath) });
+          return;
+        }
+      } catch {
+        // Could not read — treat as corrupt
+        setCorruptPdfBlock({ name: getFileName(filePath) });
+        return;
+      }
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
@@ -576,6 +597,9 @@ function ToolFlow() {
           corruptFileError={corruptFileError}
           fileSizeLimitBytes={fileSizeLimitBytes}
           onFileSizeLimitDismiss={handleFileSizeLimitDismiss}
+          corruptPdfBlock={corruptPdfBlock}
+          onCorruptPdfDismiss={() => setCorruptPdfBlock(null)}
+          onCorruptPdfRepair={() => { selectTool('repair-pdf'); setCorruptPdfBlock(null); }}
         />
       )}
 

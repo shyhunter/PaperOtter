@@ -205,11 +205,41 @@ describe('CompareStep — BUG-01 regression (wasAlreadyOptimal messaging)', () =
     expect(screen.queryByText(/larger/i)).not.toBeInTheDocument();
   });
 
-  it('[BUG-01-UI-b] target-not-met banner says "fully optimised" when wasAlreadyOptimal=true', () => {
+  it('[BUG-01-UI-b] target-not-met banner says "already at maximum compression" when wasAlreadyOptimal=true', () => {
     render(<CompareStep
       result={makeResult({ wasAlreadyOptimal: true, targetMet: false, bestAchievableSizeBytes: 100_000 })}
       onSave={onSave} onBack={onBack} onStartOver={onStartOver}
     />);
-    expect(screen.getByText(/fully optimis/i)).toBeInTheDocument();
+    expect(screen.getByText(/already at maximum compression/i)).toBeInTheDocument();
+  });
+});
+
+// ─── Phase E: recovery button and updated "already optimal" message ───────────
+
+describe('CompareStep — Phase E: recovery CTA and message update', () => {
+  it('[CMP-BACK-01] shows "Back and try again" button in target-not-met banner', () => {
+    render(<CompareStep
+      result={makeResult({ targetMet: false, bestAchievableSizeBytes: 80_000 })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    expect(screen.getByRole('button', { name: /back and try again/i })).toBeInTheDocument();
+  });
+
+  it('[CMP-BACK-01b] "Back and try again" button calls onBack', async () => {
+    render(<CompareStep
+      result={makeResult({ targetMet: false, bestAchievableSizeBytes: 80_000 })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    await userEvent.click(screen.getByRole('button', { name: /back and try again/i }));
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('[CMP-MSG-01] wasAlreadyOptimal shows updated message (not "fully optimised")', () => {
+    render(<CompareStep
+      result={makeResult({ wasAlreadyOptimal: true, targetMet: false, bestAchievableSizeBytes: 100_000 })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    expect(screen.getByText(/already at maximum compression for all quality settings/i)).toBeInTheDocument();
+    expect(screen.queryByText(/fully optimis/i)).not.toBeInTheDocument();
   });
 });

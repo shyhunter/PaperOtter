@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { PageSizes } from 'pdf-lib';
-import { processPdf } from '@/lib/pdfProcessor';
+import { processPdf, estimateOutputSizeBytes } from '@/lib/pdfProcessor';
 import { createMinimalPdf, createContentPdf, getPageDimensions } from '@/test/fixtures';
 import type { PdfProcessingOptions } from '@/types/file';
 
@@ -787,6 +787,38 @@ describe('processPdf — cancellation behaviour', () => {
       processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true }),
     ).rejects.toThrow('CANCELLED');
   });
+
+  // [PC-CRASH-01] when compress_pdf rejects with a GS crash error (missing library),
+  // processPdf propagates a rejection that does NOT contain "CANCELLED".
+  // This is the regression for the bug where GS crashes were silently swallowed
+  // and mis-classified as user cancellation.
+  it('[PC-CRASH-01] processPdf rejects with a non-CANCELLED error when GS crashes with a missing library', async () => {
+    mockReadFile(a4Pdf);
+    const crashError = 'A required library is missing. Try reinstalling the application or installing Ghostscript manually. Details: dyld[1234]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib';
+    vi.mocked(invoke).mockRejectedValue(new Error(crashError));
+
+    await expect(
+      processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true }),
+    ).rejects.toThrow(crashError);
+  });
+
+  // [PC-CRASH-02] the GS crash error message must NOT contain "CANCELLED".
+  // This ensures the hook's catch branch routes it to error=message, not isCancelled=true.
+  it('[PC-CRASH-02] GS crash error message does not contain CANCELLED — hook will show error, not cancel state', async () => {
+    mockReadFile(a4Pdf);
+    const crashError = 'A required library is missing. Try reinstalling the application.';
+    vi.mocked(invoke).mockRejectedValue(new Error(crashError));
+
+    let thrownMessage = '';
+    try {
+      await processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true });
+    } catch (err) {
+      thrownMessage = err instanceof Error ? err.message : String(err);
+    }
+
+    expect(thrownMessage).not.toContain('CANCELLED');
+    expect(thrownMessage).toContain('library');
+  });
 });
 
 // ─── BUG-01: GS bloat regression ─────────────────────────────────────────────
@@ -843,5 +875,159 @@ describe('processPdf — BUG-01 regression (GS bloat on text-only PDFs)', () => 
     expect(result.targetMet).toBe(false);
     // bestAchievableSizeBytes must reflect original size, not GS-inflated size
     expect(result.bestAchievableSizeBytes).toBe(warnockPdf.length);
+  });
+});
+
+// ─── Phase A: estimateOutputSizeBytes ────────────────────────────────────────
+// [EST-01] estimateOutputSizeBytes ordering: web < screen < print < archive
+// at both high compressibility (score=1.0) and low (score=0.0).
+
+describe('estimateOutputSizeBytes', () => {
+  const fileSizeBytes = 6_650_000; // 6.34 MB — representative of DHL-style PDF
+
+  it('[EST-01a] ordering: web < screen < print < archive at score=1.0 (image-heavy)', () => {
+    const web     = estimateOutputSizeBytes('web',     fileSizeBytes, 1.0);
+    const screen  = estimateOutputSizeBytes('screen',  fileSizeBytes, 1.0);
+    const print   = estimateOutputSizeBytes('print',   fileSizeBytes, 1.0);
+    const archive = estimateOutputSizeBytes('archive', fileSizeBytes, 1.0);
+
+    expect(web).toBeLessThan(screen);
+    expect(screen).toBeLessThan(print);
+    expect(print).toBeLessThan(archive);
+  });
+
+  it('[EST-01b] ordering: web < screen < print < archive at score=0.0 (text-only)', () => {
+    const web     = estimateOutputSizeBytes('web',     fileSizeBytes, 0.0);
+    const screen  = estimateOutputSizeBytes('screen',  fileSizeBytes, 0.0);
+    const print   = estimateOutputSizeBytes('print',   fileSizeBytes, 0.0);
+    const archive = estimateOutputSizeBytes('archive', fileSizeBytes, 0.0);
+
+    expect(web).toBeLessThan(screen);
+    expect(screen).toBeLessThan(print);
+    expect(print).toBeLessThan(archive);
+  });
+
+  it('[EST-01c] returns a positive number above 1 KB floor', () => {
+    const estimate = estimateOutputSizeBytes('web', 1024, 1.0);
+    expect(estimate).toBeGreaterThan(0);
+  });
+
+  it('[EST-01d] estimate at score=1.0 is smaller than at score=0.0 for web preset', () => {
+    const highCompressibility = estimateOutputSizeBytes('web', fileSizeBytes, 1.0);
+    const lowCompressibility  = estimateOutputSizeBytes('web', fileSizeBytes, 0.0);
+    expect(highCompressibility).toBeLessThan(lowCompressibility);
+  });
+
+  it('[EST-01e] archive estimate is close to original size at score=0.0', () => {
+    const estimate = estimateOutputSizeBytes('archive', fileSizeBytes, 0.0);
+    // archive at text-only should be ≥ 95% of original
+    expect(estimate).toBeGreaterThanOrEqual(fileSizeBytes * 0.95);
+  });
+});
+
+// ─── Phase B: cascade compression ────────────────────────────────────────────
+// [CAS-01] When targetSizeBytes is set and the initial preset bloats the file,
+//          cascade should try more aggressive presets until target is met or exhausted.
+// [CAS-02] When ALL presets bloat the file, wasAlreadyOptimal=true.
+
+describe('processPdf — cascade compression (targetSizeBytes)', () => {
+  let a4Pdf: Uint8Array;
+
+  beforeAll(async () => {
+    a4Pdf = await createMinimalPdf(1, PageSizes.A4);
+  });
+
+  it('[CAS-01] stops cascading once target is met — does not call GS more times than needed', async () => {
+    mockReadFile(a4Pdf);
+
+    const targetBytes = Math.floor(a4Pdf.length * 0.4); // 40% of original
+    // First call (archive/print preset) returns same size as input — not meeting target
+    // Second call (screen or web) returns smaller than target — cascade stops
+    const smallOutput = makeGsOutput(Math.floor(a4Pdf.length * 0.3)); // 30% — below target
+    const bigOutput   = makeGsOutput(a4Pdf.length);                   // same — not smaller
+
+    let callCount = 0;
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args: unknown) => {
+      if (cmd !== 'compress_pdf') return undefined;
+      callCount++;
+      const typedArgs = args as { preset: string };
+      // First preset tried produces no improvement; second is aggressive and meets target
+      if (callCount === 1) return bigOutput.buffer;
+      return smallOutput.buffer;
+    });
+
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: targetBytes,
+    });
+
+    // Must meet the target
+    expect(result.targetMet).toBe(true);
+    // Cascade must have stopped (not tried all 4 presets unnecessarily)
+    expect(callCount).toBeLessThan(4);
+  });
+
+  it('[CAS-02] wasAlreadyOptimal=true when all cascade presets bloat the file', async () => {
+    mockReadFile(a4Pdf);
+
+    // All GS calls return a bigger file
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd !== 'compress_pdf') return undefined;
+      return makeGsOutput(a4Pdf.length + 10_000).buffer; // always inflated
+    });
+
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: 100, // impossible target
+    });
+
+    expect(result.wasAlreadyOptimal).toBe(true);
+    expect(result.targetMet).toBe(false);
+    expect(result.bestAchievableSizeBytes).toBe(a4Pdf.length); // reverted to source
+  });
+
+  it('[CAS-03] bestAchievableSizeBytes is the smallest non-bloating cascade result', async () => {
+    mockReadFile(a4Pdf);
+
+    // Partial cascade: first preset gives 60%, second gives 40%, third is worse (bloat)
+    const firstOutput  = makeGsOutput(Math.floor(a4Pdf.length * 0.6));
+    const secondOutput = makeGsOutput(Math.floor(a4Pdf.length * 0.4));
+    const bloated      = makeGsOutput(a4Pdf.length + 5000);
+
+    let callCount = 0;
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd !== 'compress_pdf') return undefined;
+      callCount++;
+      if (callCount === 1) return firstOutput.buffer;
+      if (callCount === 2) return secondOutput.buffer;
+      return bloated.buffer;
+    });
+
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: 10, // impossibly small — forces full cascade
+    });
+
+    expect(result.targetMet).toBe(false);
+    // bestAchievableSizeBytes must be the SMALLEST non-bloating result
+    expect(result.bestAchievableSizeBytes).toBe(secondOutput.length);
+  });
+
+  it('[CAS-NOCHANGE] no cascade when targetSizeBytes is null — invoke called exactly once', async () => {
+    mockReadFile(a4Pdf);
+    mockCompressPdf(makeGsOutput(500));
+
+    const result = await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      targetSizeBytes: null, // no target — single preset, no cascade
+    });
+
+    // Exactly 1 GS call — no cascade
+    expect(vi.mocked(invoke)).toHaveBeenCalledTimes(1);
+    expect(result.targetMet).toBe(true);
   });
 });

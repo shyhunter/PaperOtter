@@ -504,6 +504,15 @@ async fn compress_pdf(
                 return Err("CANCELLED".to_string());
             }
             let stderr = stderr_lines.join("\n");
+            // If stderr matches known crash patterns (missing library, dyld, not found),
+            // surface the actionable reinstall message rather than a raw exit-code string.
+            if stderr.contains("Library not loaded")
+                || stderr.contains("dyld")
+                || stderr.contains("not found")
+                || stderr.contains("No such file")
+            {
+                return Err(format_gs_crash_error(&stderr));
+            }
             let details = if stderr.is_empty() {
                 String::new()
             } else {
@@ -1858,6 +1867,54 @@ mod tests {
         let msg = super::format_gs_crash_error("");
         assert!(msg.contains("crashed unexpectedly"), "should use generic message for empty stderr");
         assert!(!msg.contains("Details:"), "should not include Details: for empty stderr");
+    }
+
+    // ─── GS-CRASH-DISC-01 — format_gs_crash_error is used for non-zero exit with crash stderr ──
+    //
+    // When GS exits with a non-zero exit code AND stderr looks like a missing-library
+    // crash (dyld / "Library not loaded"), the error message must contain the crash
+    // guidance text, NOT a raw "exit code N" message.
+    // This is the regression test for the Some(_code) path fix.
+    #[test]
+    fn gs_crash_nonzero_exit_with_dyld_stderr_produces_crash_message() {
+        let dyld_stderr = "dyld[1234]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib";
+        let msg = super::format_gs_crash_error(dyld_stderr);
+        assert!(
+            !msg.contains("exit code"),
+            "crash with missing-library stderr must NOT say 'exit code'"
+        );
+        assert!(
+            msg.contains("missing") || msg.contains("reinstall"),
+            "crash with missing-library stderr must mention missing library or reinstall"
+        );
+    }
+
+    // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────
+    //
+    // Papercut ships Ghostscript as a sidecar binary in src-tauri/binaries/.
+    // This test asserts that at least one file matching "gs-*" exists there,
+    // catching any build step that accidentally strips or skips bundling GS.
+    #[test]
+    fn ghostscript_sidecar_binary_exists_in_binaries_dir() {
+        let binaries_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("binaries");
+        assert!(
+            binaries_dir.exists(),
+            "src-tauri/binaries/ directory must exist"
+        );
+        let gs_binary = std::fs::read_dir(&binaries_dir)
+            .expect("must be able to read binaries dir")
+            .filter_map(|e| e.ok())
+            .any(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with("gs-")
+            });
+        assert!(
+            gs_binary,
+            "at least one Ghostscript sidecar binary (gs-*) must be present in src-tauri/binaries/. \
+             Run the build step or provide the GS binary for the target platform."
+        );
     }
 
     // ─── IM-FIX-01 — Image processing with real committed fixtures ──────────

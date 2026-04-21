@@ -10,8 +10,10 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
+import { PDFDocument } from 'pdf-lib';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
 import { ToolProvider } from '@/context/ToolContext';
+import { EditorView } from '@/components/pdf-editor/EditorView';
 import { EditorTopToolbar } from '@/components/pdf-editor/EditorTopToolbar';
 import { FormattingToolbar } from '@/components/pdf-editor/FormattingToolbar';
 import { ZoomToolbar } from '@/components/pdf-editor/ZoomToolbar';
@@ -45,6 +47,18 @@ vi.mock('@/lib/pdfThumbnail', () => ({
 // Mock the pdfEditor applyAllEdits for SaveController
 vi.mock('@/lib/pdfEditor', () => ({
   applyAllEdits: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+}));
+
+// Mock pdf-lib for EditorView error-state tests (ED-16 to ED-18).
+// load() has no default — each error test overrides with mockRejectedValueOnce.
+vi.mock('pdf-lib', () => ({
+  PDFDocument: {
+    load: vi.fn(),
+    create: vi.fn(),
+  },
+  degrees: (d: number) => d,
+  rgb: () => ({}),
+  StandardFonts: { Helvetica: 'Helvetica', HelveticaBold: 'HelveticaBold' },
 }));
 
 // Stub IntersectionObserver — class syntax required for `new`
@@ -448,5 +462,66 @@ describe('Suite 10 — PDF Editor: Tool Sidebar', () => {
     // Re-open via expand toggle — should remember last tool
     await user.click(screen.getByTitle('Open panel'));
     expect(screen.getByText('Quality Preset')).toBeInTheDocument();
+  });
+});
+
+// ── Suite 10 — PDF Editor: Error State (PR #22 regression) ───────────────────
+//
+// Verifies that EditorView renders the styled error card (with "Unable to open file"
+// heading and "Back to Dashboard" button) when PDFDocument.load throws, and that the
+// displayed message is the friendlyPdfError output — not the raw pdf-lib exception text.
+//
+// Tests: ED-16, ED-17, ED-18
+
+describe('Suite 10 — PDF Editor: Error State', () => {
+  // ED-16 — error heading ─────────────────────────────────────────────────────
+  it('ED-16 — shows "Unable to open file" heading when the PDF file is invalid', async () => {
+    vi.mocked(PDFDocument.load).mockRejectedValueOnce(new Error('No PDF header found'));
+
+    render(
+      <ToolProvider>
+        <EditorView filePath="/bad.pdf" />
+      </ToolProvider>,
+    );
+
+    expect(await screen.findByText('Unable to open file', {}, { timeout: 3000 })).toBeInTheDocument();
+  });
+
+  // ED-17 — friendly error message ────────────────────────────────────────────
+  it('ED-17 — error card shows friendly message, not raw pdf-lib exception text', async () => {
+    vi.mocked(PDFDocument.load).mockRejectedValueOnce(new Error('No PDF header found'));
+
+    render(
+      <ToolProvider>
+        <EditorView filePath="/bad.pdf" />
+      </ToolProvider>,
+    );
+
+    // Friendly message must be shown
+    expect(
+      await screen.findByText(
+        'This file is not a valid PDF document. Please select a valid PDF file.',
+        {},
+        { timeout: 3000 },
+      ),
+    ).toBeInTheDocument();
+
+    // Raw exception text must NOT leak through to the user
+    expect(screen.queryByText('No PDF header found')).not.toBeInTheDocument();
+  });
+
+  // ED-18 — Back to Dashboard button ──────────────────────────────────────────
+  it('ED-18 — error card renders a "Back to Dashboard" button', async () => {
+    vi.mocked(PDFDocument.load).mockRejectedValueOnce(new Error('No PDF header found'));
+
+    render(
+      <ToolProvider>
+        <EditorView filePath="/bad.pdf" />
+      </ToolProvider>,
+    );
+
+    expect(
+      await screen.findByRole('button', { name: /back to dashboard/i }, { timeout: 3000 }),
+    ).toBeInTheDocument();
   });
 });

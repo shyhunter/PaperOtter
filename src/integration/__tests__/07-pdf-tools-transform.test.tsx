@@ -10,6 +10,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { open } from '@tauri-apps/plugin-dialog';
+import { PDFDocument } from 'pdf-lib';
 import App from '@/App';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ vi.mock('@/lib/pdfRotate', () => ({
 
 vi.mock('@/lib/pdfProcessor', () => ({
   processPdf: vi.fn(),
+  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
   getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 0, compressibilityScore: 0.5 }),
 }));
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
@@ -325,5 +327,34 @@ describe('Suite 07c — Rotate PDF', () => {
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Friendly error messages (PR #22 regression)
+// Verifies that PDFDocument.load failures are shown as user-friendly messages
+// (via friendlyPdfError) rather than raw pdf-lib exception text.
+// ══════════════════════════════════════════════════════════════════════════════
+describe('Suite 07d — Friendly PDF Load Errors (PR #22)', () => {
+  // WM-ERROR-01 ───────────────────────────────────────────────────────────────
+  it('WM-ERROR-01 — Watermark flow shows friendly error when PDF has no valid header', async () => {
+    const { user } = await navigateToTool(/watermark/i);
+
+    // Override the success mock for this one load call only
+    vi.mocked(PDFDocument.load).mockRejectedValueOnce(new Error('No PDF header found'));
+
+    await selectPdfFile(user, '/test/not-a-pdf.pdf');
+
+    // Friendly message must appear
+    expect(
+      await screen.findByText(
+        'This file is not a valid PDF document. Please select a valid PDF file.',
+        {},
+        { timeout: 3000 },
+      ),
+    ).toBeInTheDocument();
+
+    // Raw exception text must NOT be shown to the user
+    expect(screen.queryByText('No PDF header found')).not.toBeInTheDocument();
   });
 });

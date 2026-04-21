@@ -16,6 +16,23 @@ const QUALITY_TO_GS_PRESET: Record<PdfQualityLevel, string> = {
   custom:  'screen',    // placeholder — custom must be resolved to a real preset before processing
 };
 
+// Cascade order: from least-aggressive (highest quality) to most-aggressive (smallest output).
+// When a target size is set, processPdf tries presets starting from the recommended one,
+// cascading toward 'web' until the target is met or all presets are exhausted.
+const QUALITY_CASCADE: PdfQualityLevel[] = ['archive', 'print', 'screen', 'web'];
+
+// Estimate ratios at [score=1.0, score=0.0] for each quality level.
+// Ratios represent expected output / input size based on GS preset typical behaviour.
+// score=1.0 = fully image-heavy (maximum compressibility)
+// score=0.0 = text-only (minimal compressibility)
+const ESTIMATE_RATIOS: Record<PdfQualityLevel, [high: number, low: number]> = {
+  web:     [0.15, 0.92],
+  screen:  [0.32, 0.93],
+  print:   [0.68, 0.95],
+  archive: [0.97, 0.99],
+  custom:  [0.32, 0.93], // mirrors screen as a fallback
+};
+
 // PDF points per mm: 1 pt = 1/72 inch = 0.3528 mm
 function mmToPoints(mm: number): number {
   return (mm / 25.4) * 72;
@@ -109,6 +126,24 @@ export function recommendQualityForTarget(
   return 'archive';
 }
 
+/**
+ * Estimate the output size (in bytes) for a given quality level, based on the file's
+ * compressibility score. Uses linear interpolation between the high-compressibility
+ * and low-compressibility ratios from ESTIMATE_RATIOS.
+ * Result is floored at 1 KB to avoid unrealistic sub-kilobyte estimates.
+ */
+export function estimateOutputSizeBytes(
+  quality: PdfQualityLevel,
+  fileSizeBytes: number,
+  compressibilityScore: number,
+): number {
+  const [high, low] = ESTIMATE_RATIOS[quality] ?? ESTIMATE_RATIOS.screen;
+  // Linear interpolation: at score=1.0 use high ratio; at score=0.0 use low ratio
+  const ratio = low + (high - low) * compressibilityScore;
+  const estimate = Math.round(fileSizeBytes * ratio);
+  return Math.max(estimate, 1024); // floor at 1 KB
+}
+
 export async function getPdfImageCount(sourcePath: string): Promise<number> {
   const bytes = await readFile(sourcePath);
   const pdfDoc = await PDFDocument.load(bytes);
@@ -191,8 +226,6 @@ export async function processPdf(
     if (options.qualityLevel === 'custom') {
       throw new Error('Custom quality must be resolved to a preset before processing');
     }
-    // Use Ghostscript for real image recompression
-    const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
 
     // Run pdf-lib resize first (if enabled) — GS must receive the post-resize bytes.
     // IMPORTANT: passing sourceBytes to GS when resize is enabled would silently discard the resize.
@@ -211,25 +244,71 @@ export async function processPdf(
     // NOTE: fs:allow-write-file scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
     await import('@tauri-apps/plugin-fs').then(m => m.writeFile(tempInputPath, pdfLibBytes));
 
-    // Invoke GS compression — returns compressed bytes directly (Rust reads output temp file internally)
-    const gsResult: ArrayBuffer = await invoke('compress_pdf', {
-      sourcePath: tempInputPath,
-      preset,
-    });
+    if (options.targetSizeBytes != null) {
+      // CASCADE MODE: when a target size is set, try presets from the recommended one
+      // down to 'web' (most aggressive), stopping as soon as the target is met.
+      // This fixes the "already optimal" false positive where a single preset bloated
+      // the file but more aggressive presets could still achieve the target.
+      const startIdx = QUALITY_CASCADE.indexOf(options.qualityLevel);
+      const presetsToTry = startIdx >= 0 ? QUALITY_CASCADE.slice(startIdx) : QUALITY_CASCADE;
 
-    processedBytes = new Uint8Array(gsResult);
+      let bestBytes: Uint8Array | null = null;
+      let bestSize = Infinity;
 
-    // Clean up temp input file (ignore errors — OS will clean eventually)
-    // NOTE: fs:allow-remove scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
-    await import('@tauri-apps/plugin-fs').then(m =>
-      m.remove(tempInputPath).catch(() => {})
-    );
+      for (const level of presetsToTry) {
+        const levelPreset = QUALITY_TO_GS_PRESET[level];
+        const gsResult: ArrayBuffer = await invoke('compress_pdf', {
+          sourcePath: tempInputPath,
+          preset: levelPreset,
+        });
+        const gsBytes = new Uint8Array(gsResult);
 
-    // GS bloat guard: if GS produced a larger file than the bytes it received, revert.
-    // This happens for text-only PDFs — GS adds ICC profiles and overhead with no image data to compress.
-    if (processedBytes.byteLength > pdfLibBytes.byteLength) {
-      processedBytes = pdfLibBytes; // pdfLibBytes = post-resize bytes (or sourceBytes when no resize)
-      wasAlreadyOptimal = true;
+        // Skip bloated results — GS added more than it compressed (e.g. ICC profile overhead)
+        if (gsBytes.byteLength > pdfLibBytes.byteLength) continue;
+
+        // Track the best (smallest non-bloating) result
+        if (gsBytes.byteLength < bestSize) {
+          bestBytes = gsBytes;
+          bestSize = gsBytes.byteLength;
+        }
+
+        // Stop early if this preset already meets the target
+        if (gsBytes.byteLength <= options.targetSizeBytes) break;
+      }
+
+      // Clean up temp input file
+      await import('@tauri-apps/plugin-fs').then(m => m.remove(tempInputPath).catch(() => {}));
+
+      if (bestBytes !== null) {
+        processedBytes = bestBytes;
+      } else {
+        // All presets bloated the file — revert to pdfLibBytes
+        processedBytes = pdfLibBytes;
+        wasAlreadyOptimal = true;
+      }
+    } else {
+      // SINGLE PRESET MODE: no target set, run once with the specified quality level.
+      // No cascade — user explicitly chose a quality and just wants it applied.
+      const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
+      const gsResult: ArrayBuffer = await invoke('compress_pdf', {
+        sourcePath: tempInputPath,
+        preset,
+      });
+
+      processedBytes = new Uint8Array(gsResult);
+
+      // Clean up temp input file (ignore errors — OS will clean eventually)
+      // NOTE: fs:allow-remove scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
+      await import('@tauri-apps/plugin-fs').then(m =>
+        m.remove(tempInputPath).catch(() => {})
+      );
+
+      // GS bloat guard: if GS produced a larger file than the bytes it received, revert.
+      // This happens for text-only PDFs — GS adds ICC profiles and overhead with no image data to compress.
+      if (processedBytes.byteLength > pdfLibBytes.byteLength) {
+        processedBytes = pdfLibBytes; // pdfLibBytes = post-resize bytes (or sourceBytes when no resize)
+        wasAlreadyOptimal = true;
+      }
     }
   } else {
     // Structural re-save only (no GS) — pdf-lib useObjectStreams

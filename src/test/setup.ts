@@ -10,11 +10,16 @@ expect.extend(jestDomMatchers);
 // under-limit size for integration tests that navigate through file selection.
 // Individual tests override via vi.mocked(readFile).mockResolvedValue(...) or
 // vi.mocked(getFileSizeBytes).mockResolvedValueOnce(...) as needed.
-vi.mock('@tauri-apps/plugin-fs', () => ({
-  readFile: vi.fn().mockResolvedValue(new Uint8Array(1024 * 1024)), // 1 MB default
-  writeFile: vi.fn(),
-  remove: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock('@tauri-apps/plugin-fs', () => {
+  // 1 MB default bytes starting with %PDF- so the magic-bytes check passes for PDF tests.
+  const defaultFileBytes = new Uint8Array(1024 * 1024);
+  defaultFileBytes.set([0x25, 0x50, 0x44, 0x46, 0x2D]); // %PDF-
+  return {
+    readFile: vi.fn().mockResolvedValue(defaultFileBytes),
+    writeFile: vi.fn(),
+    remove: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 // Mock @tauri-apps/api/path — Tauri path APIs are not available in Node.
 // tempDir returns a mock temp directory; join concatenates with '/' separator.

@@ -28,6 +28,10 @@ interface LandingCardProps {
   /** Non-null when the selected file exceeds the 100 MB limit. Contains the actual file size in bytes. */
   fileSizeLimitBytes?: number | null;
   onFileSizeLimitDismiss?: () => void;
+  /** Non-null when the selected PDF has invalid magic bytes — hard block with Repair PDF CTA. */
+  corruptPdfBlock?: { name: string } | null;
+  onCorruptPdfDismiss?: () => void;
+  onCorruptPdfRepair?: () => void;
 }
 
 /** Format bytes as a rounded MB string, e.g. "105 MB" */
@@ -38,6 +42,9 @@ function formatMB(bytes: number): string {
 export function LandingCard({
   dragState,
   isLoading,
+  corruptPdfBlock,
+  onCorruptPdfDismiss,
+  onCorruptPdfRepair,
   onPickerClick,
   recentDirs,
   onRecentDirClick,
@@ -213,6 +220,46 @@ export function LandingCard({
                 onClick={onFileSizeLimitDismiss}
               >
                 Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Corrupt PDF hard block modal — shown when magic bytes check fails */}
+      {corruptPdfBlock != null && (
+        <div
+          data-testid="corrupt-pdf-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="corrupt-pdf-modal-title"
+        >
+          <div className="bg-background rounded-xl shadow-2xl border border-border w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
+            <div>
+              <h2 id="corrupt-pdf-modal-title" className="text-lg font-semibold text-foreground">
+                Damaged or Invalid PDF
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                "{corruptPdfBlock.name}" could not be opened — it appears to be damaged or not a valid PDF.
+                The Repair PDF tool may be able to recover it.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                data-testid="corrupt-pdf-dismiss"
+                variant="outline"
+                onClick={onCorruptPdfDismiss}
+              >
+                Pick a Different File
+              </Button>
+              <Button
+                type="button"
+                data-testid="corrupt-pdf-repair"
+                onClick={onCorruptPdfRepair}
+              >
+                Repair with Repair PDF →
               </Button>
             </div>
           </div>
