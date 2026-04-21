@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE } from '@/lib/fileValidation';
+import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE, isPdfHeader } from '@/lib/fileValidation';
 
 // ─── getExtension ────────────────────────────────────────────────────────────
 
@@ -252,5 +252,38 @@ describe('getFileSizeBytes', () => {
     vi.mocked(readFile).mockRejectedValue(new Error('Permission denied'));
 
     await expect(getFileSizeBytes('/restricted.pdf')).rejects.toThrow('Permission denied');
+  });
+});
+
+// ─── isPdfHeader ─────────────────────────────────────────────────────────────
+// [COR-01] Magic bytes: first 5 bytes must be %PDF- (0x25 0x50 0x44 0x46 0x2D)
+
+describe('isPdfHeader', () => {
+  it('[COR-01a] returns true for valid %PDF- magic bytes', () => {
+    const valid = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x37]);
+    expect(isPdfHeader(valid)).toBe(true);
+  });
+
+  it('[COR-01b] returns false for a PNG file (wrong magic bytes)', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    expect(isPdfHeader(png)).toBe(false);
+  });
+
+  it('[COR-01c] returns false for a JPEG file', () => {
+    const jpeg = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]);
+    expect(isPdfHeader(jpeg)).toBe(false);
+  });
+
+  it('[COR-01d] returns false for empty bytes', () => {
+    expect(isPdfHeader(new Uint8Array(0))).toBe(false);
+  });
+
+  it('[COR-01e] returns false when fewer than 5 bytes provided', () => {
+    const truncated = new Uint8Array([0x25, 0x50, 0x44]);
+    expect(isPdfHeader(truncated)).toBe(false);
+  });
+
+  it('[COR-01f] returns false for all-zero bytes', () => {
+    expect(isPdfHeader(new Uint8Array(10))).toBe(false);
   });
 });

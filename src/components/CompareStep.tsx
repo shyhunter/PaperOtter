@@ -228,9 +228,16 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             <span className="font-normal">
               best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
               {result.wasAlreadyOptimal
-                ? 'This file is already fully optimised.'
+                ? 'This file is already at maximum compression for all quality settings.'
                 : 'Try a lower quality level to reduce further.'}
-            </span>
+            </span>{' '}
+            <button
+              type="button"
+              onClick={onBack}
+              className="underline hover:no-underline cursor-pointer"
+            >
+              Back and try again
+            </button>
           </p>
         </div>
       )}

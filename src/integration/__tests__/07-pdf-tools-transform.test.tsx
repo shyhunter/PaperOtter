@@ -79,6 +79,7 @@ vi.mock('@/lib/pdfRotate', () => ({
 
 vi.mock('@/lib/pdfProcessor', () => ({
   processPdf: vi.fn(),
+  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
   getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 0, compressibilityScore: 0.5 }),
 }));
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));

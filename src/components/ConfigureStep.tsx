@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { parsePageRange, formatBytes } from '@/lib/pdfUtils';
-import { recommendQualityForTarget } from '@/lib/pdfProcessor';
+import { recommendQualityForTarget, estimateOutputSizeBytes } from '@/lib/pdfProcessor';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 
 export interface ConfigureStepProps {
@@ -79,6 +79,19 @@ export function ConfigureStep({
   const [sliderValue, setSliderValue] = useState(37);
   const qualityLevel = useMemo(() => sliderToQuality(sliderValue), [sliderValue]);
   const activeZone = useMemo(() => getActiveZone(sliderValue), [sliderValue]);
+
+  // Estimated output sizes per zone — shown under each label so users can gauge impact
+  const estimatedZoneSizes = useMemo(
+    () =>
+      ZONES.reduce<Record<PdfQualityLevel, number>>(
+        (acc, z) => ({
+          ...acc,
+          [z.quality]: estimateOutputSizeBytes(z.quality, fileSizeBytes, compressibilityScore),
+        }),
+        {} as Record<PdfQualityLevel, number>,
+      ),
+    [fileSizeBytes, compressibilityScore],
+  );
 
   // Custom target size toggle & state
   const [customMode, setCustomMode] = useState(false);
@@ -188,19 +201,25 @@ export function ConfigureStep({
             </div>
 
             {/* Zone labels above slider */}
-            <div className="relative h-5">
+            <div className="relative h-8">
               {ZONES.map((zone) => (
                 <span
                   key={zone.quality}
                   className={cn(
-                    'absolute text-[10px] -translate-x-1/2 select-none transition-colors',
+                    'absolute flex flex-col items-center -translate-x-1/2 select-none transition-colors',
                     zone.quality === activeZone.quality
                       ? 'text-foreground font-semibold'
                       : 'text-muted-foreground/60',
                   )}
                   style={{ left: `${(zone.min + zone.max) / 2}%` }}
                 >
-                  {zone.label}
+                  <span className="text-[10px]">{zone.label}</span>
+                  <span
+                    data-testid={`zone-estimate-${zone.quality}`}
+                    className="text-[9px] text-muted-foreground/70 font-normal"
+                  >
+                    ~{formatBytes(estimatedZoneSizes[zone.quality])}
+                  </span>
                 </span>
               ))}
             </div>
@@ -295,6 +314,24 @@ export function ConfigureStep({
                 {customError && (
                   <p className="text-xs text-destructive">{customError}</p>
                 )}
+                {/* Pre-estimate warning: show when the entered target is below the minimum achievable size */}
+                {customMode && customSizeValue.trim() !== '' && (() => {
+                  const parsed = parseInt(customSizeValue, 10);
+                  if (isNaN(parsed) || parsed < 1) return null;
+                  const targetBytes = parsed * (customUnit === 'MB' ? 1024 * 1024 : 1024);
+                  const minAchievable = estimatedZoneSizes['web'];
+                  if (targetBytes < minAchievable) {
+                    return (
+                      <div data-testid="target-below-min-warning" className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                          Target may not be achievable — estimated minimum is ~{formatBytes(minAchievable)}.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <p className="text-xs text-muted-foreground">
                   Maximum file size — the best compression preset will be chosen automatically.
                 </p>

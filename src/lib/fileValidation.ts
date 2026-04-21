@@ -59,3 +59,19 @@ export function isFilenameSafe(filePath: string): boolean {
 /** User-facing error message for unsafe filenames (matches Rust-side message). */
 export const UNSAFE_FILENAME_MESSAGE =
   "This filename contains characters that aren't supported. Please rename the file and try again.";
+
+/**
+ * Returns true if the first 5 bytes of the given buffer match the PDF magic bytes: %PDF-
+ * (0x25 0x50 0x44 0x46 0x2D).
+ * Used for early corrupt-file detection before expensive PDF parsing.
+ */
+export function isPdfHeader(bytes: Uint8Array): boolean {
+  if (bytes.length < 5) return false;
+  return (
+    bytes[0] === 0x25 && // %
+    bytes[1] === 0x50 && // P
+    bytes[2] === 0x44 && // D
+    bytes[3] === 0x46 && // F
+    bytes[4] === 0x2D    // -
+  );
+}
