@@ -33,3 +33,4 @@ e2e-output/
 test-fixtures-e2e/large-sparse.pdf
 test-fixtures-e2e/large-sparse.jpg
 .e2e-artifacts/
+.worktrees
