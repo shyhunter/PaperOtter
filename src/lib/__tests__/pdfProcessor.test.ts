@@ -947,10 +947,9 @@ describe('processPdf — cascade compression (targetSizeBytes)', () => {
     const bigOutput   = makeGsOutput(a4Pdf.length);                   // same — not smaller
 
     let callCount = 0;
-    vi.mocked(invoke).mockImplementation(async (cmd: string, args: unknown) => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string, _args: unknown) => {
       if (cmd !== 'compress_pdf') return undefined;
       callCount++;
-      const typedArgs = args as { preset: string };
       // First preset tried produces no improvement; second is aggressive and meets target
       if (callCount === 1) return bigOutput.buffer;
       return smallOutput.buffer;

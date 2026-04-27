@@ -396,8 +396,9 @@ function ToolFlow() {
     if (format === 'pdf') {
       try {
         const { readFile } = await import('@tauri-apps/plugin-fs');
-        // Read only the first 5 bytes — enough for the %PDF- magic number check
-        const headerBytes = await readFile(filePath, { offset: 0, len: 5 });
+        // Read the file and check the first 5 bytes for the %PDF- magic number
+        const allBytes = await readFile(filePath);
+        const headerBytes = allBytes.slice(0, 5);
         if (!isPdfHeader(headerBytes)) {
           setCorruptPdfBlock({ name: getFileName(filePath) });
           return;
