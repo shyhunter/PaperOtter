@@ -39,6 +39,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Version consistency check (tag vs source)
+        run: npm run version:check
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
       - name: TypeScript type check
         run: npx tsc --noEmit
 
@@ -141,3 +146,191 @@ jobs:
           releaseDraft: true
           prerelease: true
           args: --target ${{ matrix.target }}
+
+  # ── Smoke tests: verify each platform artifact launches before publishing ──
+  smoke-test:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            asset: "Papercut_{version}_aarch64.dmg"
+            type: dmg
+          - platform: macos-14
+            asset: "Papercut_{version}_x64.dmg"
+            type: dmg
+          - platform: windows-latest
+            asset: "Papercut_{version}_x64-setup.exe"
+            type: nsis
+          - platform: ubuntu-22.04
+            asset: "Papercut_{version}_amd64.AppImage"
+            type: appimage
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Derive asset filename
+        id: asset
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          ASSET=$(echo "${{ matrix.asset }}" | sed "s/{version}/$VERSION/g")
+          echo "filename=${ASSET}" >> "$GITHUB_OUTPUT"
+          echo "Will download: ${ASSET}"
+
+      - name: Download release artifact
+        shell: bash
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null | grep -q "${{ steps.asset.outputs.filename }}"; then
+            echo "FAIL: Asset ${{ steps.asset.outputs.filename }} not found in release $GITHUB_REF_NAME"
+            echo "Available assets:"
+            gh release view "$GITHUB_REF_NAME" --repo "${{ github.repository }}" --json assets -q ".assets[].name" 2>/dev/null || echo "(release not found)"
+            exit 1
+          fi
+          gh release download "$GITHUB_REF_NAME" \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ steps.asset.outputs.filename }}" \
+            --dir .
+          ls -la "${{ steps.asset.outputs.filename }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── macOS (.dmg) ──
+      - name: "macOS: Mount DMG, verify app launches, check version"
+        if: matrix.type == 'dmg'
+        run: |
+          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
+          test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
+
+          BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
+          if [ ! -x "$BINARY" ]; then
+            BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
+          fi
+          if [ ! -x "$BINARY" ]; then
+            echo "FAIL: No app binary found in Contents/MacOS/"
+            exit 1
+          fi
+
+          "$BINARY" &
+          APP_PID=$!
+          sleep 8
+
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "PASS: Papercut running with PID: $APP_PID"
+          else
+            echo "FAIL: Papercut exited prematurely"
+            exit 1
+          fi
+
+          # Version assertion: Info.plist CFBundleShortVersionString must match tag
+          PLIST="/Volumes/Papercut/Papercut.app/Contents/Info.plist"
+          BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$PLIST" 2>/dev/null || echo "")
+          EXPECTED_VERSION="${{ steps.asset.outputs.version }}"
+          if [ "$BUNDLE_VERSION" != "$EXPECTED_VERSION" ]; then
+            echo "FAIL: Info.plist CFBundleShortVersionString=\"$BUNDLE_VERSION\" expected \"$EXPECTED_VERSION\""
+            kill "$APP_PID" 2>/dev/null || true
+            hdiutil detach /Volumes/Papercut
+            exit 1
+          fi
+          echo "PASS: Version in bundle: $BUNDLE_VERSION ✓"
+
+          kill "$APP_PID" 2>/dev/null || true
+          sleep 2
+          hdiutil detach /Volumes/Papercut
+          echo "=== macOS smoke test PASSED ==="
+
+      # ── Windows (NSIS .exe) ──
+      - name: "Windows: Install, verify app launches, check version"
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $installer = "${{ steps.asset.outputs.filename }}"
+          Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
+
+          $searchPaths = @(
+            "$env:LOCALAPPDATA\Papercut\Papercut.exe",
+            "$env:LOCALAPPDATA\Programs\Papercut\Papercut.exe",
+            "$env:ProgramFiles\Papercut\Papercut.exe"
+          )
+          $binary = $null
+          foreach ($path in $searchPaths) {
+            if (Test-Path $path) { $binary = $path; break }
+          }
+          if (-Not $binary) {
+            $found = Get-ChildItem -Path "$env:LOCALAPPDATA" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 1
+            if ($found) { $binary = $found.FullName }
+          }
+          if (-Not $binary) { Write-Host "FAIL: Papercut.exe not found after install"; exit 1 }
+          Write-Host "Binary found at: $binary"
+
+          $proc = Start-Process -FilePath $binary -PassThru
+          Start-Sleep -Seconds 8
+
+          if (-Not $proc.HasExited) {
+            Write-Host "PASS: Papercut is running (PID: $($proc.Id))"
+          } else {
+            Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
+            exit 1
+          }
+
+          # Version assertion: ProductVersion in binary metadata must match tag
+          $expectedVersion = "${{ steps.asset.outputs.version }}"
+          $fileVersion = (Get-Item $binary).VersionInfo.ProductVersion
+          if ($fileVersion -ne $expectedVersion) {
+            Write-Host "FAIL: ProductVersion='$fileVersion' expected '$expectedVersion'"
+            Stop-Process -Id $proc.Id -Force
+            exit 1
+          }
+          Write-Host "PASS: Version in binary metadata: $fileVersion ✓"
+
+          Stop-Process -Id $proc.Id -Force
+          Write-Host "=== Windows smoke test PASSED ==="
+
+      # ── Linux (AppImage) ──
+      - name: "Linux: Install display dependencies"
+        if: matrix.type == 'appimage'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-0 libfuse2 xvfb
+
+      - name: "Linux: Verify AppImage launches"
+        if: matrix.type == 'appimage'
+        run: |
+          APPIMAGE="${{ steps.asset.outputs.filename }}"
+          chmod +x "$APPIMAGE"
+
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x720x24 &
+          XVFB_PID=$!
+          sleep 2
+
+          ./$APPIMAGE &
+          APP_PID=$!
+          sleep 8
+
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
+          else
+            echo "FAIL: Papercut AppImage exited prematurely"
+            kill "$XVFB_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          kill "$APP_PID" 2>/dev/null || true
+          kill "$XVFB_PID" 2>/dev/null || true
+          echo "=== Linux smoke test PASSED ==="
+          # Note: AppImage format does not expose version metadata; version check skipped.
+
+  # ── Publish: promote draft to live only after all smoke tests pass ─────────
+  publish-release:
+    needs: smoke-test
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Promote draft to published prerelease
+        run: gh release edit "${{ github.ref_name }}" --draft=false --prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

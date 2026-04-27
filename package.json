@@ -14,7 +14,8 @@
     "pretest:e2e": "node src/e2e/fixtures/generate-e2e-fixtures.mjs",
     "test:e2e": "wdio run src/e2e/wdio.conf.ts",
     "test:e2e:pdf": "wdio run src/e2e/wdio.conf.ts --suite pdf",
-    "test:e2e:image": "wdio run src/e2e/wdio.conf.ts --suite image"
+    "test:e2e:image": "wdio run src/e2e/wdio.conf.ts --suite image",
+    "version:check": "node scripts/check-version.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.0",
