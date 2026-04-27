@@ -5,6 +5,19 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.5] - 2026-04-27
+
+### Added
+- Version consistency check script (`npm run version:check`) — validates that `package.json`, `tauri.conf.json`, `Cargo.toml`, and all UI version fallbacks agree; also validates git tag on release builds
+- 9 automated tests for version consistency (VC-01..04) in CI
+- Automated per-platform smoke tests in release pipeline (ST-01..04): macOS arm64, macOS x64, Windows x64, Linux x64 — each platform's release artifact is downloaded, launched, and verified before the release goes live
+- Version displayed in bundle metadata is now asserted against the release tag (macOS `Info.plist`, Windows `ProductVersion`)
+- Release is auto-published only after all 4 platform smoke tests pass
+
+### Fixed
+- Dynamic version display in Dashboard, SplashScreen, and AboutDialog (was hardcoded to `v1.0.0-beta.1`)
+- `Cargo.toml` version was drifted to `beta.3` — corrected to track alongside all other version files
+
 ## [1.0.0-beta.4] - 2026-04-27
 
 ### Fixed

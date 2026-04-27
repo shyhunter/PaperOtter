@@ -4,7 +4,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
 
-const APP_VERSION_FALLBACK = '1.0.0-beta.4';
+const APP_VERSION_FALLBACK = '1.0.0-beta.5';
 
 interface AboutDialogProps {
   open: boolean;
