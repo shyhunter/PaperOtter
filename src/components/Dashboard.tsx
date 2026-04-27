@@ -250,6 +250,14 @@ export function Dashboard() {
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [appVersion, setAppVersion] = useState('1.0.0-beta.4');
+
+  useEffect(() => {
+    import('@tauri-apps/api/app')
+      .then((mod) => mod.getVersion())
+      .then(setAppVersion)
+      .catch(() => {});
+  }, []);
   const groups = groupByCategory();
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -364,7 +372,7 @@ export function Dashboard() {
                   Papercut
                 </h1>
                 <span className="text-[clamp(0.6rem,0.8vw,0.75rem)] text-muted-foreground/50 font-medium">
-                  v1.0.0-beta.1
+                  v{appVersion}
                 </span>
               </div>
               <p className="text-[clamp(0.8rem,1vw,0.95rem)] text-muted-foreground">
