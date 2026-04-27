@@ -1,6 +1,6 @@
 [package]
 name = "tauri-app"
-version = "1.0.0-beta.6"
+version = "1.0.0-beta.7"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -34,4 +34,17 @@ uuid = { version = "1", features = ["v4"] }
 # E2E testing — debug builds only (never ships to end users)
 [target.'cfg(debug_assertions)'.dependencies]
 tauri-plugin-webdriver-automation = "0.1"
+
+# generate_fixtures is a dev-only binary for producing test fixtures.
+# Gating it behind a feature prevents it from being compiled during
+# `cargo tauri build`, which would otherwise bundle it into Contents/MacOS/
+# alongside tauri-app and break the ad-hoc codesign on macOS.
+# To run it: cargo run --bin generate_fixtures --features fixtures
+[features]
+fixtures = []
+
+[[bin]]
+name = "generate_fixtures"
+path = "src/bin/generate_fixtures.rs"
+required-features = ["fixtures"]
 

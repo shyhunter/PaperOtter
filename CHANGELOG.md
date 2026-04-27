@@ -5,6 +5,11 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.7] - 2026-04-27
+
+### Fixed
+- macOS "damaged and can't be opened" error: the `generate_fixtures` dev-only Rust binary was being compiled and bundled into `Contents/MacOS/` during release builds, causing `codesign` to produce an invalid ad-hoc signature (`code has no resources but signature indicates they must be present`). Gated behind a `fixtures` Cargo feature so it is never compiled or bundled in release. To use locally: `cargo run --bin generate_fixtures --features fixtures`.
+
 ## [1.0.0-beta.6] - 2026-04-27
 
 ### Fixed
