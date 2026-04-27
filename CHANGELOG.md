@@ -5,6 +5,11 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.6] - 2026-04-27
+
+### Fixed
+- Windows smoke test in release pipeline: binary search now looks for both `Papercut.exe` and `tauri-app.exe` (Cargo package name) across all install roots (`LOCALAPPDATA`, `ProgramFiles`, `ProgramFiles(x86)`, `APPDATA`) with depth 5; adds diagnostic listing when binary is not found
+
 ## [1.0.0-beta.5] - 2026-04-27
 
 ### Added

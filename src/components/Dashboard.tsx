@@ -250,7 +250,7 @@ export function Dashboard() {
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [appVersion, setAppVersion] = useState('1.0.0-beta.5');
+  const [appVersion, setAppVersion] = useState('1.0.0-beta.6');
 
   useEffect(() => {
     import('@tauri-apps/api/app')

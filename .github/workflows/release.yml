@@ -250,20 +250,33 @@ jobs:
           $installer = "${{ steps.asset.outputs.filename }}"
           Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
 
-          $searchPaths = @(
-            "$env:LOCALAPPDATA\Papercut\Papercut.exe",
-            "$env:LOCALAPPDATA\Programs\Papercut\Papercut.exe",
-            "$env:ProgramFiles\Papercut\Papercut.exe"
+          # Tauri's Cargo package name is "tauri-app"; the NSIS installer may use
+          # either the productName ("Papercut") or the Cargo binary name ("tauri-app")
+          # for the .exe. Search for both in all plausible install locations.
+          $candidateNames = @("Papercut.exe", "tauri-app.exe")
+          $searchRoots = @(
+            $env:LOCALAPPDATA,
+            $env:ProgramFiles,
+            ${env:ProgramFiles(x86)},
+            $env:APPDATA
           )
+
           $binary = $null
-          foreach ($path in $searchPaths) {
-            if (Test-Path $path) { $binary = $path; break }
+          foreach ($root in $searchRoots) {
+            if (-Not $root) { continue }
+            foreach ($name in $candidateNames) {
+              $found = Get-ChildItem -Path $root -Recurse -Filter $name -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
+              if ($found) { $binary = $found.FullName; break }
+            }
+            if ($binary) { break }
           }
+
           if (-Not $binary) {
-            $found = Get-ChildItem -Path "$env:LOCALAPPDATA" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 1
-            if ($found) { $binary = $found.FullName }
+            Write-Host "FAIL: No Papercut binary found after install."
+            Write-Host "--- Listing $env:LOCALAPPDATA (depth 4) ---"
+            Get-ChildItem -Path $env:LOCALAPPDATA -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
+            exit 1
           }
-          if (-Not $binary) { Write-Host "FAIL: Papercut.exe not found after install"; exit 1 }
           Write-Host "Binary found at: $binary"
 
           $proc = Start-Process -FilePath $binary -PassThru
@@ -276,7 +289,9 @@ jobs:
             exit 1
           }
 
-          # Version assertion: ProductVersion in binary metadata must match tag
+          # Version assertion: ProductVersion in binary metadata must match tag.
+          # Note: Windows PE ProductVersion is a string resource set by Tauri from
+          # tauri.conf.json, so it should match the full semver including pre-release.
           $expectedVersion = "${{ steps.asset.outputs.version }}"
           $fileVersion = (Get-Item $binary).VersionInfo.ProductVersion
           if ($fileVersion -ne $expectedVersion) {
