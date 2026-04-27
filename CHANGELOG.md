@@ -5,6 +5,11 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta.8] - 2026-04-27
+
+### Fixed
+- Release build failures on all platforms: the beta.7 fix used Cargo `required-features` to exclude `generate_fixtures` from compilation, but Tauri's bundler still reads `Cargo.toml` metadata and tries to copy every declared `[[bin]]` into the bundle — failing because the binary was never compiled. Fix: moved `generate_fixtures` to a completely independent Cargo crate at `tools/generate-fixtures/` that `tauri build` never sees. To run: `cargo run --manifest-path tools/generate-fixtures/Cargo.toml`.
+
 ## [1.0.0-beta.7] - 2026-04-27
 
 ### Fixed

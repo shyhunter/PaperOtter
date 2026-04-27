@@ -1,0 +1,13 @@
+[package]
+name = "generate-fixtures"
+version = "0.1.0"
+edition = "2021"
+description = "Dev-only tool: generates committed test fixtures in test-fixtures/"
+publish = false
+
+# This crate is intentionally NOT part of the src-tauri Cargo package so that
+# `cargo tauri build` never compiles or bundles it.
+# To run: cargo run --manifest-path tools/generate-fixtures/Cargo.toml
+
+[dependencies]
+image = "0.25"

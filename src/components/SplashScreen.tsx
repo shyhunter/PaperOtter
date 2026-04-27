@@ -5,7 +5,7 @@ interface SplashScreenProps {
   onComplete: () => void;
 }
 
-const APP_VERSION = '1.0.0-beta.7';
+const APP_VERSION = '1.0.0-beta.8';
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [fadeOut, setFadeOut] = useState(false);
