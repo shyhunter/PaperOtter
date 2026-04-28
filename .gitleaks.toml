@@ -1,0 +1,36 @@
+# gitleaks config for Papercut.
+# Whitelists known-safe paths so the security workflow surfaces only real leaks.
+# Source of truth: ~/.claude/rules.md R005, R006, R014.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "False positives: test fixtures, .claude tool manifests (SHA-256 hashes look like tokens), and Tauri-generated assets"
+paths = [
+  # Test files (fixtures intentionally contain fake secret-shaped strings)
+  '''^.*\.test\.[^/]+$''',
+  '''^.*tests?/.*''',
+  '''^.*__tests__/.*''',
+  '''^.*test-fixtures/.*''',
+
+  # Claude Code tool manifests (file checksums, command hashes)
+  '''^\.claude/.*\.json$''',
+  '''^\.claude/.*\.cjs$''',
+
+  # Documentation
+  '''^docs?/.*\.md$''',
+  '''^.*\.planning/.*''',
+  '''^CONTRIBUTING\.md$''',
+  '''^README\.md$''',
+  '''^CHANGELOG\.md$''',
+
+  # Lockfile (npm/yarn) — integrity hashes look like tokens to gitleaks
+  '''^package-lock\.json$''',
+  '''^yarn\.lock$''',
+
+  # Tauri build/cache outputs
+  '''^src-tauri/target/.*''',
+  '''^dist/.*''',
+  '''^node_modules/.*''',
+]

@@ -34,3 +34,27 @@ test-fixtures-e2e/large-sparse.pdf
 test-fixtures-e2e/large-sparse.jpg
 .e2e-artifacts/
 .worktrees
+
+# --- security baseline (managed by ~/.claude/scripts/security/scaffold-project.sh) ---
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.staging
+.env.production
+.env.production.local
+.env.*.local
+!.env.example
+!.env.sample
+# secrets / keys
+*.pem
+*.key
+*.p12
+*.pfx
+*_rsa
+*_rsa.pub
+.aws/credentials
+.npmrc.local
+# --- end security baseline ---

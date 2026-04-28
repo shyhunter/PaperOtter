@@ -1,0 +1,49 @@
+name: Security
+
+# Implements project rule P016 (gitleaks) and P015 (npm audit) — see .claude/project_rules_decisions.md.
+# Independent from ci.yml so a security failure surfaces clearly and never blocks unrelated work.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout (full history for diff scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: only needed for org-level dashboard (optional)
+
+  npm-audit:
+    name: Dependency audit (prod only)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (lockfile, no scripts)
+        run: npm ci --ignore-scripts
+
+      - name: npm audit (prod, fail on high+)
+        run: npm audit --omit=dev --audit-level=high
