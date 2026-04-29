@@ -2,11 +2,44 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, spawnSync, type ChildProcess } from 'child_process';
 import { createConnection } from 'net';
+import { mkdirSync, copyFileSync, readdirSync, statSync } from 'fs';
+import { tmpdir } from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Stage fixtures into Tauri's $TEMP fs scope before specs are imported.
+//
+// Tauri's capability scope (src-tauri/capabilities/default.json) only permits
+// reads from $DOCUMENT/$DOWNLOAD/$DESKTOP/$TEMP. The project's test-fixtures/
+// directory is outside every allowed scope, so reading fixtures directly from
+// there fails the runtime fs check and the UI never advances past step 0.
+//
+// We mirror real fixtures into ${tmpdir}/papercut-e2e/real/ here, and the
+// pretest:e2e script generates error-path fixtures into ${tmpdir}/papercut-e2e/
+// error/. The driver helper picks both up via E2E_*_DIR env vars set below.
+const STAGE_DIR = join(tmpdir(), 'papercut-e2e');
+const STAGE_REAL = join(STAGE_DIR, 'real');
+const STAGE_ERROR = join(STAGE_DIR, 'error');
+const STAGE_OUTPUT = join(STAGE_DIR, 'output');
+mkdirSync(STAGE_REAL, { recursive: true });
+mkdirSync(STAGE_ERROR, { recursive: true });
+mkdirSync(STAGE_OUTPUT, { recursive: true });
+
+const PROJECT_REAL_FIXTURES = join(__dirname, '../../test-fixtures');
+for (const entry of readdirSync(PROJECT_REAL_FIXTURES)) {
+  const src = join(PROJECT_REAL_FIXTURES, entry);
+  if (statSync(src).isFile()) {
+    copyFileSync(src, join(STAGE_REAL, entry));
+  }
+}
+
+process.env.E2E_REAL_FIXTURES_DIR ??= STAGE_REAL;
+process.env.E2E_FIXTURES_DIR ??= STAGE_ERROR;
+process.env.E2E_OUTPUT_DIR ??= STAGE_OUTPUT;
+
 // Resolve the Tauri binary path for the current platform.
-// E2E tests run against a debug build so tauri-plugin-webdriver-automation is compiled in.
+// E2E tests run against a debug build with `--features e2e` so the
+// tauri-plugin-webdriver-automation plugin is registered.
 function getTauriBinaryPath(): string {
   if (process.platform === 'darwin') {
     return join(__dirname, '../../src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/tauri-app');

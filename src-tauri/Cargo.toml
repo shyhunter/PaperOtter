@@ -31,8 +31,13 @@ image = "0.25"
 webp = "0.3"
 uuid = { version = "1", features = ["v4"] }
 
-# E2E testing — debug builds only (never ships to end users)
-[target.'cfg(debug_assertions)'.dependencies]
-tauri-plugin-webdriver-automation = "0.1"
+# E2E automation — opt-in via `--features e2e`. Never enabled in release builds.
+# Previously declared under `[target.'cfg(debug_assertions)'.dependencies]`, which
+# Cargo evaluates against target spec triples (not the rustc debug_assertions
+# flag), so inclusion was non-deterministic and produced an unexpected-cfg warning.
+tauri-plugin-webdriver-automation = { version = "0.1", optional = true }
+
+[features]
+e2e = ["dep:tauri-plugin-webdriver-automation"]
 
 
