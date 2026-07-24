@@ -2,7 +2,7 @@
 
 **Your local document toolkit -- private, fast, offline.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0--beta.2-blue)](https://github.com/shyhunter/Papercut/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0--beta.9-blue)](https://github.com/shyhunter/Papercut/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/shyhunter/Papercut/releases)
 [![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/shyhunter/Papercut/releases)
@@ -49,8 +49,10 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 
 | Tool | Description |
 |------|-------------|
-| Convert | Convert between PDF, DOCX, EPUB, MOBI, and more |
+| Convert | Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline) — plus PDF, EPUB, MOBI and more |
 | Edit PDF | Annotate and modify PDF content |
+
+> **New in beta.9 — structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device — no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
 
 ---
 
@@ -58,7 +60,7 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, Sharp). There is no network communication, no analytics, no tracking. Your documents are yours alone.
+All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, Sharp). There is no network communication, no analytics, no tracking. Your documents are yours alone.
 
 ---
 
@@ -88,10 +90,10 @@ Most tools work out of the box. These are only needed for specific features:
 
 | Dependency | Used For | Install |
 |------------|----------|---------|
-| [LibreOffice](https://www.libreoffice.org/) | DOC/DOCX conversion | [Download](https://www.libreoffice.org/download/) |
+| [LibreOffice](https://www.libreoffice.org/) | DOC, ODT, RTF & PDF-output document conversion | [Download](https://www.libreoffice.org/download/) |
 | [Calibre](https://calibre-ebook.com/) | EPUB/MOBI ebook formats | [Download](https://calibre-ebook.com/download) |
 
-Without these, the corresponding tools will show a prompt to install the missing dependency.
+Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app and needs none of these. The optional tools are only used for the other document formats above — without them, those specific formats simply aren't offered.
 
 ---
 
@@ -130,6 +132,7 @@ npm run lint
 | Frontend | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
 | PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
+| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) + [fflate](https://github.com/101arrowz/fflate) |
 | Image Processing | [Sharp](https://sharp.pixelplumbing.com/) (via Rust sidecar) |
 | PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
 
