@@ -13,6 +13,9 @@ const FORMAT_LABELS: Record<ConvertFormat, string> = {
   azw3: 'AZW3',
   txt: 'TXT',
   rtf: 'RTF',
+  md: 'Markdown',
+  html: 'HTML',
+  json: 'JSON',
 };
 
 function formatBytes(bytes: number): string {
@@ -30,10 +33,10 @@ interface ConvertCompareStepProps {
   onStartOver: () => void;
 }
 
-function getConvertedFileName(sourceFileName: string, outputFormat: ConvertFormat): string {
-  // Remove original extension and add new one
+function getConvertedFileName(sourceFileName: string, outputFormat: ConvertFormat, archive?: boolean): string {
+  // Remove original extension and add new one (or .zip for a per-chapter archive)
   const base = sourceFileName.replace(/\.[^.]+$/, '');
-  return `${base}-converted.${outputFormat}`;
+  return archive ? `${base}-chapters.zip` : `${base}-converted.${outputFormat}`;
 }
 
 export function ConvertCompareStep({
@@ -48,7 +51,7 @@ export function ConvertCompareStep({
     ? Math.round(Math.abs(sizeChange) / result.originalSize * 100)
     : 0;
   const grew = sizeChange < 0;
-  const convertedFileName = getConvertedFileName(sourceFileName, result.outputFormat);
+  const convertedFileName = getConvertedFileName(sourceFileName, result.outputFormat, result.archive);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

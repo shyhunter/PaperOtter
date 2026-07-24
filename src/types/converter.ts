@@ -9,7 +9,10 @@ export type ConvertFormat =
   | 'azw3'
   | 'txt'
   | 'rtf'
-  | 'pdf';
+  | 'pdf'
+  | 'md'
+  | 'html'
+  | 'json';
 
 export type EpubLayout = 'reflowable' | 'fixed';
 
@@ -24,6 +27,8 @@ export interface ConvertOptions {
   lineSpacing?: number;
   paragraphSpacing?: number;
   epubLayout?: EpubLayout;
+  /** Built-in engine only: split output into one file per chapter (H1), packaged as a .zip. */
+  splitByChapter?: boolean;
 }
 
 export interface ConvertResult {
@@ -31,19 +36,31 @@ export interface ConvertResult {
   outputFormat: ConvertFormat;
   originalSize: number;
   outputSize: number;
+  /** True when outputBytes is a .zip of per-chapter files (save with a .zip extension). */
+  archive?: boolean;
 }
 
-/** All converter backends the app can use. */
-export type ConverterEngine = 'textutil' | 'word' | 'libreoffice' | 'calibre' | 'pandoc';
+/** All converter backends the app can use. `builtin` is the in-process engine (always available). */
+export type ConverterEngine = 'builtin' | 'textutil' | 'word' | 'libreoffice' | 'calibre' | 'pandoc';
 
 /** Which backends are available on this system (detected once at startup). */
 export interface ConverterAvailability {
+  /** In-process engine (PDF → md/html/txt/json). Always true — no external tool needed. */
+  builtin: boolean;
   textutil: boolean;
   word: boolean;
   libreoffice: boolean;
   calibre: boolean;
   pandoc: boolean;
 }
+
+/** AI-friendly, structure-preserving formats produced in-process by the built-in engine. */
+export const BUILTIN_OUTPUT_FORMATS: readonly ConvertFormat[] = [
+  'md', 'html', 'json',
+] as const;
+
+/** Input formats the built-in engine can parse in-process. */
+export const BUILTIN_INPUT_FORMATS: readonly ConvertFormat[] = ['pdf', 'docx'] as const;
 
 /** Formats textutil can produce (macOS built-in). */
 export const TEXTUTIL_OUTPUT_FORMATS: readonly ConvertFormat[] = [

@@ -1250,8 +1250,9 @@ async fn convert_with_word(
             r#"
             tell application "Microsoft Word"
                 activate
-                open POSIX file "{}"
-                set theDoc to active document
+                -- Capture the document the open returns; relying on "active document"
+                -- races against Word's open (it can be missing value → -1708 on save as).
+                set theDoc to open POSIX file "{}"
                 save as theDoc file name POSIX file "{}" file format {}
                 close theDoc saving no
             end tell

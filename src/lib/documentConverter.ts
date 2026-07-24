@@ -19,6 +19,8 @@ import type {
   ConverterEngine,
   ConverterAvailability,
 } from '@/types/converter';
+import { BUILTIN_OUTPUT_FORMATS, BUILTIN_INPUT_FORMATS } from '@/types/converter';
+import { convertWithBuiltin, type BuiltinFormat } from '@/lib/documentBuiltin';
 
 // ── Engine detection ────────────────────────────────────────────────────────
 
@@ -35,6 +37,7 @@ export async function detectConverters(): Promise<ConverterAvailability> {
     const json = await invoke<string>('detect_converters');
     const parsed = JSON.parse(json) as Record<string, boolean>;
     cachedAvailability = {
+      builtin: true, // in-process engine — always available, no external tool
       textutil: parsed.textutil ?? false,
       word: parsed.word ?? false,
       libreoffice: parsed.libreoffice ?? false,
@@ -43,6 +46,7 @@ export async function detectConverters(): Promise<ConverterAvailability> {
     };
   } catch {
     cachedAvailability = {
+      builtin: true, // still available even if system-tool detection fails
       textutil: false,
       word: false,
       libreoffice: false,
@@ -67,15 +71,32 @@ export async function checkSidecarAvailability(): Promise<{
 
 /** Format -> supported engines lookup (in priority order). */
 const ENGINE_SUPPORT: Record<ConvertFormat, ConverterEngine[]> = {
-  txt:  ['textutil', 'word', 'libreoffice'],
+  txt:  ['builtin', 'textutil', 'word', 'libreoffice'],
   rtf:  ['textutil', 'word', 'libreoffice'],
   doc:  ['textutil', 'word', 'libreoffice'],
-  docx: ['textutil', 'word', 'libreoffice'],
+  docx: ['builtin', 'textutil', 'word', 'libreoffice'],
   odt:  ['textutil', 'word', 'libreoffice'],
   pdf:  ['word', 'libreoffice', 'calibre'],
   epub: ['calibre'],
   mobi: ['calibre'],
   azw3: ['calibre'],
+  md:   ['builtin'],
+  html: ['builtin'],
+  json: ['builtin'],
+};
+
+/**
+ * Which input formats each engine can *read*. Selection must respect this:
+ * e.g. textutil cannot parse a PDF, so handing it one produces a file full of
+ * raw PDF bytes instead of a real conversion. Output support alone is not enough.
+ */
+const ENGINE_INPUT_SUPPORT: Record<ConverterEngine, ConvertFormat[]> = {
+  builtin:     ['pdf', 'docx'],
+  textutil:    ['txt', 'rtf', 'doc', 'docx', 'odt', 'html'],
+  word:        ['pdf', 'docx', 'doc', 'rtf', 'txt', 'odt', 'html'],
+  libreoffice: ['pdf', 'docx', 'doc', 'odt', 'txt', 'rtf', 'html'],
+  calibre:     ['epub', 'mobi', 'azw3', 'pdf', 'docx', 'odt', 'rtf', 'txt', 'html'],
+  pandoc:      ['docx', 'odt', 'html', 'md', 'rtf', 'txt', 'epub'],
 };
 
 /**
@@ -85,10 +106,14 @@ const ENGINE_SUPPORT: Record<ConvertFormat, ConverterEngine[]> = {
 export function getBestEngine(
   outputFormat: ConvertFormat,
   availability: ConverterAvailability,
+  inputFormat?: ConvertFormat,
 ): ConverterEngine | null {
   const candidates = ENGINE_SUPPORT[outputFormat] ?? [];
   for (const engine of candidates) {
-    if (availability[engine]) return engine;
+    if (!availability[engine]) continue;
+    // The engine must also be able to *read* the source — otherwise it emits garbage.
+    if (inputFormat && !ENGINE_INPUT_SUPPORT[engine].includes(inputFormat)) continue;
+    return engine;
   }
   return null;
 }
@@ -104,6 +129,7 @@ export function getEngineForFormat(format: ConvertFormat): ConverterEngine {
 
 const ALL_FORMATS: ConvertFormat[] = [
   'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf',
+  'md', 'html', 'json',
 ];
 
 /**
@@ -117,9 +143,15 @@ export function getAvailableOutputFormats(
   // All formats except the input format itself
   let candidates = ALL_FORMATS.filter((f) => f !== inputFormat);
 
-  // If we know what's available, filter to only producible formats
+  // Built-in (in-process) formats are only producible from inputs the engine can read.
+  if (!BUILTIN_INPUT_FORMATS.includes(inputFormat)) {
+    candidates = candidates.filter((f) => !BUILTIN_OUTPUT_FORMATS.includes(f));
+  }
+
+  // If we know what's available, filter to only formats some engine can both
+  // read the input as AND produce (input-aware — no dead/garbage options).
   if (availability) {
-    candidates = candidates.filter((fmt) => getBestEngine(fmt, availability) !== null);
+    candidates = candidates.filter((fmt) => getBestEngine(fmt, availability, inputFormat) !== null);
   }
 
   return candidates;
@@ -139,7 +171,8 @@ export function hasAnyConverter(availability: ConverterAvailability): boolean {
  */
 export function getCapabilitySummary(availability: ConverterAvailability): string {
   const engines: string[] = [];
-  if (availability.textutil) engines.push('textutil (built-in)');
+  if (availability.builtin) engines.push('Built-in (Markdown/HTML/JSON)');
+  if (availability.textutil) engines.push('textutil (macOS)');
   if (availability.word) engines.push('Microsoft Word');
   if (availability.libreoffice) engines.push('LibreOffice');
   if (availability.calibre) engines.push('Calibre');
@@ -195,17 +228,37 @@ export function buildCalibreArgs(options: ConvertOptions): string[] {
  */
 export async function convertDocument(
   sourcePath: string,
-  _sourceFormat: ConvertFormat,
+  sourceFormat: ConvertFormat,
   options: ConvertOptions,
 ): Promise<ConvertResult> {
   const availability = await detectConverters();
-  const engine = getBestEngine(options.outputFormat, availability);
+  const engine = getBestEngine(options.outputFormat, availability, sourceFormat);
 
   if (!engine) {
     throw new Error(
-      `No conversion tool available for ${options.outputFormat.toUpperCase()} output. ` +
-      `Install any document converter (LibreOffice, Microsoft Word, etc.) to enable this.`
+      `Cannot convert ${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()} ` +
+      `with the tools available. Install LibreOffice or Microsoft Word to enable this.`
     );
+  }
+
+  const { readFile } = await import('@tauri-apps/plugin-fs');
+
+  // Built-in in-process engine: read the file and convert entirely in JS.
+  if (engine === 'builtin') {
+    const sourceBytes = await readFile(sourcePath);
+    const { bytes, archive } = await convertWithBuiltin(
+      sourceBytes,
+      sourceFormat,
+      options.outputFormat as BuiltinFormat,
+      options.splitByChapter ?? false,
+    );
+    return {
+      outputBytes: bytes,
+      outputFormat: options.outputFormat,
+      originalSize: sourceBytes.byteLength,
+      outputSize: bytes.byteLength,
+      archive,
+    };
   }
 
   let outputBytes: Uint8Array;
@@ -247,7 +300,6 @@ export async function convertDocument(
   }
 
   // Get original file size
-  const { readFile } = await import('@tauri-apps/plugin-fs');
   const sourceBytes = await readFile(sourcePath);
   const originalSize = sourceBytes.byteLength;
 

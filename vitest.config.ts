@@ -21,6 +21,7 @@ export default defineConfig({
         'src/lib/__tests__/**',
         'src/test/**',
         'src/lib/pdfThumbnail.ts', // browser-only (DOM canvas + pdfjs worker)
+        'src/lib/pdfOutline.ts', // extractPdfOutline is browser-only (pdfjs worker); pure logic tested via outlineToBoundaries
       ],
     },
   },

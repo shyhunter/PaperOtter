@@ -28,6 +28,9 @@ const FORMAT_LABELS: Record<ConvertFormat, string> = {
   azw3: 'AZW3',
   txt: 'TXT',
   rtf: 'RTF',
+  md: 'Markdown',
+  html: 'HTML',
+  json: 'JSON',
 };
 
 const FONT_FAMILIES = [
@@ -69,6 +72,7 @@ export function ConvertConfigStep({
   const [linkMargins, setLinkMargins] = useState(true);
   const [lineSpacing, setLineSpacing] = useState(1.15);
   const [epubLayout, setEpubLayout] = useState<EpubLayout>('reflowable');
+  const [splitByChapter, setSplitByChapter] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
 
@@ -98,9 +102,11 @@ export function ConvertConfigStep({
   }, [availability, availableFormats, outputFormat]);
 
   // Which engine will handle the current format
-  const currentEngine = availability ? getBestEngine(outputFormat, availability) : null;
+  const currentEngine = availability ? getBestEngine(outputFormat, availability, sourceFormat) : null;
   const showTypographyControls = currentEngine === 'calibre';
   const showEpubLayoutToggle = outputFormat === 'epub';
+  // Splitting operates on the built-in engine's document model (per top-level heading).
+  const showSplitToggle = currentEngine === 'builtin';
   const canConvert = !isDetecting && availability && currentEngine !== null;
 
   // When link margins is on, propagate changes from any margin to all
@@ -129,6 +135,7 @@ export function ConvertConfigStep({
         marginLeft,
         lineSpacing,
         epubLayout: outputFormat === 'epub' ? epubLayout : undefined,
+        splitByChapter: showSplitToggle ? splitByChapter : undefined,
       };
       const result = await convertDocument(filePath, sourceFormat, options);
       onConvertComplete(result);
@@ -138,7 +145,7 @@ export function ConvertConfigStep({
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, sourceFormat, outputFormat, fontFamily, fontSize, marginTop, marginRight, marginBottom, marginLeft, lineSpacing, epubLayout, onConvertComplete]);
+  }, [filePath, sourceFormat, outputFormat, fontFamily, fontSize, marginTop, marginRight, marginBottom, marginLeft, lineSpacing, epubLayout, showSplitToggle, splitByChapter, onConvertComplete]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -218,6 +225,45 @@ export function ConvertConfigStep({
               >
                 <span className="font-medium block">Fixed Layout</span>
                 <span className="text-[10px] text-muted-foreground mt-0.5 block">Preserves exact page layout</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Split option -- built-in engine only (splits at top-level headings) */}
+        {showSplitToggle && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Output</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSplitByChapter(false)}
+                disabled={isProcessing}
+                className={cn(
+                  'rounded-md border px-3 py-2 text-xs transition-colors',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  !splitByChapter
+                    ? 'border-primary bg-primary/5 text-foreground'
+                    : 'border-border text-muted-foreground hover:border-primary/50',
+                )}
+              >
+                <span className="font-medium block">Whole document</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">One file</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSplitByChapter(true)}
+                disabled={isProcessing}
+                className={cn(
+                  'rounded-md border px-3 py-2 text-xs transition-colors',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                  splitByChapter
+                    ? 'border-primary bg-primary/5 text-foreground'
+                    : 'border-border text-muted-foreground hover:border-primary/50',
+                )}
+              >
+                <span className="font-medium block">By chapter</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">.zip, one file per heading</span>
               </button>
             </div>
           </div>

@@ -69,7 +69,10 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
           Select a document to convert between formats.
         </p>
         <p className="text-xs text-muted-foreground">
-          Supported: PDF, DOCX, DOC, ODT, EPUB, TXT, RTF
+          Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more
         </p>
 
         {error && (

@@ -32,6 +32,9 @@ const FORMAT_LABELS: Record<ConvertFormat, string> = {
   azw3: 'AZW3',
   txt: 'TXT',
   rtf: 'RTF',
+  md: 'Markdown',
+  html: 'HTML',
+  json: 'JSON',
 };
 
 const FONT_FAMILIES = [

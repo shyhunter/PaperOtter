@@ -8,12 +8,16 @@ import { useToolContext } from '@/context/ToolContext';
 import { getFileName } from '@/lib/fileValidation';
 import type { ConvertFormat, ConvertResult } from '@/types/converter';
 
-function buildSaveName(sourceFileName: string, outputFormat: ConvertFormat): string {
+function buildSaveName(sourceFileName: string, outputFormat: ConvertFormat, archive?: boolean): string {
   const base = sourceFileName.replace(/\.[^.]+$/, '');
-  return `${base}-converted.${outputFormat}`;
+  return archive ? `${base}-chapters.zip` : `${base}-converted.${outputFormat}`;
 }
 
-function buildSaveFilters(outputFormat: ConvertFormat): Array<{ name: string; extensions: string[] }> {
+function buildSaveFilters(
+  outputFormat: ConvertFormat,
+  archive?: boolean,
+): Array<{ name: string; extensions: string[] }> {
+  if (archive) return [{ name: 'ZIP Archive', extensions: ['zip'] }];
   const labels: Record<ConvertFormat, string> = {
     pdf: 'PDF Document',
     docx: 'Word Document',
@@ -24,6 +28,9 @@ function buildSaveFilters(outputFormat: ConvertFormat): Array<{ name: string; ex
     azw3: 'AZW3 Ebook',
     txt: 'Plain Text',
     rtf: 'Rich Text Format',
+    md: 'Markdown',
+    html: 'HTML',
+    json: 'JSON',
   };
   return [{ name: labels[outputFormat] ?? outputFormat.toUpperCase(), extensions: [outputFormat] }];
 }
@@ -140,8 +147,8 @@ export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
         <SaveStep
           processedBytes={convertResult.outputBytes}
           sourceFileName={fileName}
-          defaultSaveName={buildSaveName(fileName, convertResult.outputFormat)}
-          saveFilters={buildSaveFilters(convertResult.outputFormat)}
+          defaultSaveName={buildSaveName(fileName, convertResult.outputFormat, convertResult.archive)}
+          saveFilters={buildSaveFilters(convertResult.outputFormat, convertResult.archive)}
           savedFilePath={savedFilePath}
           onDismissSaveConfirmation={() => setSavedFilePath(null)}
           onSaveComplete={(path) => setSavedFilePath(path)}
