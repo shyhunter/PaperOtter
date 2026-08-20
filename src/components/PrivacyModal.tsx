@@ -53,8 +53,8 @@ export function PrivacyModal({ open, onClose }: PrivacyModalProps) {
               Technical details
             </summary>
             <ul className="mt-2 space-y-2 text-xs text-muted-foreground list-disc list-inside">
-              <li>No network permissions — the app has zero ability to make HTTP calls (enforced by Tauri capability config)</li>
-              <li>Content Security Policy blocks all external connections</li>
+              <li>Network access is scoped to exactly two read-only endpoints — checking for app updates and fetching the feedback contact address — enforced by Tauri capability config. No other network access is possible.</li>
+              <li>Content Security Policy blocks all external connections from the app's UI</li>
               <li>No analytics SDK or tracking code is included</li>
               <li>All file processing runs locally via Rust, Ghostscript, LibreOffice, and Calibre</li>
               <li>Temporary files are created during processing and automatically deleted afterwards</li>
