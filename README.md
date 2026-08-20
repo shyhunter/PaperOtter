@@ -10,7 +10,6 @@
   <a href="#download"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
   <a href="https://github.com/users/shyhunter/projects/9"><img src="https://img.shields.io/badge/-Roadmap-0969da?style=for-the-badge" alt="Roadmap"></a>
   <a href="https://github.com/shyhunter/Papercut/wiki"><img src="https://img.shields.io/badge/-Wiki-8A2BE2?style=for-the-badge" alt="Wiki"></a>
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/-Changelog-e67700?style=for-the-badge" alt="Changelog"></a>
 </p>
 
 <br>

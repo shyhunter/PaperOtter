@@ -15,5 +15,4 @@ This wiki covers the details that don't fit in the [README](https://github.com/s
 ## Quick links
 
 - [Download the latest release](https://github.com/shyhunter/Papercut/releases/latest)
-- [Changelog](https://github.com/shyhunter/Papercut/blob/main/CHANGELOG.md)
 - [Report a bug or request a feature](https://github.com/shyhunter/Papercut/issues/new/choose)
