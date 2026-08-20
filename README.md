@@ -97,6 +97,39 @@ Without these, the corresponding tools will show a prompt to install the missing
 
 ---
 
+## Troubleshooting
+
+<details>
+<summary>See details</summary>
+
+### Ghostscript issues
+
+Ghostscript ships bundled with Papercut, so PDF compression should work out of
+the box. If you see a "Ghostscript is not installed" message or a crash
+instead, try:
+
+- **macOS:** `brew install ghostscript`
+- **Linux:** `sudo apt install ghostscript` (or your package manager's equivalent)
+- **Windows / manual install:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html) and make sure it's on your PATH
+
+If it still crashes with a missing-library error, try reinstalling Papercut
+first -- that usually fixes a corrupted bundled copy.
+
+### LibreOffice / Calibre not found
+
+DOC/DOCX conversion and EPUB/MOBI tools need LibreOffice or Calibre installed
+and on your PATH. Papercut will show a prompt naming the missing dependency
+if one isn't found.
+
+### Still stuck?
+
+[Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) and
+include the error message.
+
+</details>
+
+---
+
 ## Development
 
 ```bash
