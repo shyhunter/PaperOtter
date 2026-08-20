@@ -4,6 +4,7 @@
 
 [![Version](https://img.shields.io/github/v/release/shyhunter/Papercut?label=version)](https://github.com/shyhunter/Papercut/releases)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue)](CHANGELOG.md)
+[![Wiki](https://img.shields.io/badge/wiki-docs-8A2BE2)](https://github.com/shyhunter/Papercut/wiki)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/shyhunter/Papercut/releases)
 [![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/shyhunter/Papercut/releases)
@@ -122,10 +123,14 @@ DOC/DOCX conversion and EPUB/MOBI tools need LibreOffice or Calibre installed
 and on your PATH. Papercut will show a prompt naming the missing dependency
 if one isn't found.
 
+See the [Required Dependencies](https://github.com/shyhunter/Papercut/wiki/Required-Dependencies)
+wiki page for full per-platform detail.
+
 ### Still stuck?
 
-[Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) and
-include the error message.
+Check the [Troubleshooting wiki page](https://github.com/shyhunter/Papercut/wiki/Troubleshooting)
+for more error messages, or [open an issue](https://github.com/shyhunter/Papercut/issues/new/choose)
+and include the exact error message.
 
 </details>
 
@@ -168,6 +173,15 @@ npm run lint
 | PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
 | Image Processing | [Sharp](https://sharp.pixelplumbing.com/) (via Rust sidecar) |
 | PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
+
+---
+
+## Acknowledgements
+
+Papercut is built on top of the open-source tools listed in Tech Stack above,
+plus optional support for [LibreOffice](https://www.libreoffice.org/) and
+[Calibre](https://calibre-ebook.com/) for document/ebook conversion. Thanks
+to all their maintainers.
 
 ---
 
