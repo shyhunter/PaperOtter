@@ -82,6 +82,8 @@ Everything you need is included -- just install and go. Ghostscript is bundled w
 > ```
 > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate.
 
+> **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate — it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
+
 ### Optional Dependencies
 
 Most tools work out of the box. These are only needed for specific features:
