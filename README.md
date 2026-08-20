@@ -53,8 +53,10 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 
 | Tool | Description |
 |------|-------------|
-| Convert | Convert between PDF, DOCX, EPUB, MOBI, and more |
+| Convert | Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline) — plus PDF, EPUB, MOBI and more |
 | Edit PDF | Annotate and modify PDF content |
+
+> **New in beta.9 — structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device — no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
 
 ---
 
@@ -74,7 +76,7 @@ Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
 
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, Sharp). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
+All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, Sharp). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ---
 
@@ -106,10 +108,10 @@ Most tools work out of the box. These are only needed for specific features:
 
 | Dependency | Used For | Install |
 |------------|----------|---------|
-| [LibreOffice](https://www.libreoffice.org/) | DOC/DOCX conversion | [Download](https://www.libreoffice.org/download/) |
+| [LibreOffice](https://www.libreoffice.org/) | DOC, ODT, RTF & PDF-output document conversion | [Download](https://www.libreoffice.org/download/) |
 | [Calibre](https://calibre-ebook.com/) | EPUB/MOBI ebook formats | [Download](https://calibre-ebook.com/download) |
 
-Without these, the corresponding tools will show a prompt to install the missing dependency.
+Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app and needs none of these. The optional tools are only used for the other document formats above — without them, those specific formats simply aren't offered.
 
 ---
 
@@ -185,6 +187,7 @@ npm run lint
 | Frontend | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
 | PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
+| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) + [fflate](https://github.com/101arrowz/fflate) |
 | Image Processing | [Sharp](https://sharp.pixelplumbing.com/) (via Rust sidecar) |
 | PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
 
