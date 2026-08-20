@@ -146,3 +146,7 @@ npm run lint
 ## Contributing
 
 Contributions are welcome! Please see the [pull request template](.github/pull_request_template.md) for the submission checklist. Open an issue first for major changes.
+
+---
+
+If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter) -- it helps keep development going.
