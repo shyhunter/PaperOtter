@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfig';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
 
@@ -13,6 +14,7 @@ interface AboutDialogProps {
 
 export function AboutDialog({ open, onClose }: AboutDialogProps) {
   const [version, setVersion] = useState(APP_VERSION_FALLBACK);
+  const [feedbackEmail, setFeedbackEmail] = useState(FALLBACK_FEEDBACK_EMAIL);
 
   useEffect(() => {
     if (!open) return;
@@ -20,6 +22,11 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
       .then((mod) => mod.getVersion())
       .then(setVersion)
       .catch(() => setVersion(APP_VERSION_FALLBACK));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetchFeedbackEmail().then(setFeedbackEmail);
   }, [open]);
 
   const handleBackdropClick = useCallback(
@@ -99,7 +106,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <button
             type="button"
             onClick={() =>
-              openUrl(`${GITHUB_REPO_URL}/issues/new?labels=feedback`).catch(() => {})
+              openUrl(`mailto:${feedbackEmail}?subject=Papercut%20Feedback`).catch(() => {})
             }
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >

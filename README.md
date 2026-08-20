@@ -60,7 +60,7 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, Sharp). There is no analytics and no tracking, and your documents never leave your machine. The one exception: on launch, Papercut makes a single request to GitHub's public API to check whether a newer version is available — no data about you or your files is sent, and this is the only network call the app ever makes.
+All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, Sharp). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ---
 

@@ -9,15 +9,19 @@ import type { ImageProcessingOptions } from '@/types/file';
 // ─── Static config assertion ──────────────────────────────────────────────────
 //
 // Reads the real capabilities/default.json from disk and asserts that any
-// "http:" permission is scoped to exactly the one disclosed, read-only
-// endpoint used by the update checker (GitHub's public releases API) — never
-// a bare/unscoped grant, never any other host. This is a structural guarantee
+// "http:" permission is scoped to exactly the disclosed, read-only endpoints
+// used by the update checker (GitHub's public releases API) and the feedback
+// contact lookup (a JSON file on the repo's main branch) — never a
+// bare/unscoped grant, never any other host. This is a structural guarantee
 // that the Tauri capability config cannot grant broader outbound HTTP access
 // than what's disclosed in the README's Privacy section.
 //
 // Path: src/lib/__tests__/ -> ../../../ -> project root -> src-tauri/capabilities/default.json
 
-const ALLOWED_HTTP_URL = 'https://api.github.com/repos/shyhunter/Papercut/releases/latest';
+const ALLOWED_HTTP_URLS = [
+  'https://api.github.com/repos/shyhunter/Papercut/releases/latest',
+  'https://raw.githubusercontent.com/shyhunter/Papercut/main/feedback-config.json',
+];
 
 describe('Privacy — Tauri capability config', () => {
   // capabilities/default.json — read once for the whole describe block
@@ -43,7 +47,7 @@ describe('Privacy — Tauri capability config', () => {
       expect(perm.allow).toBeDefined();
       expect(perm.allow!.length).toBeGreaterThan(0);
       for (const rule of perm.allow!) {
-        expect(rule.url).toBe(ALLOWED_HTTP_URL);
+        expect(ALLOWED_HTTP_URLS).toContain(rule.url);
       }
     }
   });
