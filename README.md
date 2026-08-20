@@ -2,17 +2,31 @@
 
 ## Your local document toolkit -> private, fast, offline.
 
-[![Version](https://img.shields.io/github/v/release/shyhunter/Papercut?label=version)](https://github.com/shyhunter/Papercut/releases)
-[![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue)](CHANGELOG.md)
-[![Wiki](https://img.shields.io/badge/wiki-docs-8A2BE2)](https://github.com/shyhunter/Papercut/wiki)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/shyhunter/Papercut/releases)
-[![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/shyhunter/Papercut/releases)
-[![Linux](https://img.shields.io/badge/Linux-x64-orange)](https://github.com/shyhunter/Papercut/releases)
+<p align="center">
+  <img src="docs/screenshots/hero-logo.png" alt="Papercut logo" width="600">
+</p>
 
 <p align="center">
-  <img src="docs/screenshots/hero-logo.png" alt="Papercut logo" width="160">
+  <a href="#download"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
+  <a href="https://github.com/users/shyhunter/projects/9"><img src="https://img.shields.io/badge/-Roadmap-0969da?style=for-the-badge" alt="Roadmap"></a>
+  <a href="https://github.com/shyhunter/Papercut/wiki"><img src="https://img.shields.io/badge/-Wiki-8A2BE2?style=for-the-badge" alt="Wiki"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/-Changelog-e67700?style=for-the-badge" alt="Changelog"></a>
 </p>
+
+<br>
+
+---
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-dark.png" alt="Papercut dashboard showing PDF, image, and document tools" width="560">
+</p>
+<p align="center">
+  <img src="docs/screenshots/dashboard-light.png" alt="Papercut dashboard in light mode" width="280">
+  <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF tool - pick a file to open or drop" width="280">
+</p>
+
+Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
+-- and the whole app supports both light and dark mode.
 
 ---
 
@@ -22,70 +36,43 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 
 ### PDF Tools
 
-| Tool | Description |
-|------|-------------|
-| Compress | Reduce PDF file size using Ghostscript presets |
-| Resize | Scale pages to standard or custom dimensions |
-| Merge | Combine multiple PDFs into one |
-| Split | Extract page ranges into separate files |
-| Rotate | Rotate individual or all pages |
-| Page Numbers | Add page numbers with position/format control |
-| Watermark | Overlay text or image watermarks |
-| Crop | Trim page margins |
-| Organize | Reorder, delete, or duplicate pages |
-| Sign | Add handwritten, typed, or drawn signatures |
-| Redact | Permanently remove sensitive content |
-| PDF/A | Convert to archival PDF/A format |
-| Repair | Fix corrupted or damaged PDFs |
-| Protect | Add password encryption to PDFs |
-| Unlock | Remove password protection from PDFs |
+- 🗜️ **Compress** — Reduce PDF file size using Ghostscript presets
+- 📐 **Resize** — Scale pages to standard or custom dimensions
+- 🔗 **Merge** — Combine multiple PDFs into one
+- ✂️ **Split** — Extract page ranges into separate files
+- 🔄 **Rotate** — Rotate individual or all pages
+- 🔢 **Page Numbers** — Add page numbers with position/format control
+- 💧 **Watermark** — Overlay text or image watermarks
+- 🖼️ **Crop** — Trim page margins
+- 🗂️ **Organize** — Reorder, delete, or duplicate pages
+- ✍️ **Sign** — Add handwritten, typed, or drawn signatures
+- ⬛ **Redact** — Permanently remove sensitive content
+- 🗄️ **PDF/A** — Convert to archival PDF/A format
+- 🛠️ **Repair** — Fix corrupted or damaged PDFs
+- 🔒 **Protect** — Add password encryption to PDFs
+- 🔓 **Unlock** — Remove password protection from PDFs
 
 ### Image Tools
 
-| Tool | Description |
-|------|-------------|
-| Compress | Reduce image file size with quality control |
-| Resize | Scale images to specific dimensions |
-| Convert | Convert between JPG, PNG, and WebP formats |
-| Rotate | Rotate images by any angle |
+- 🗜️ **Compress** — Reduce image file size with quality control
+- 📐 **Resize** — Scale images to specific dimensions
+- 🔁 **Convert** — Convert between JPG, PNG, and WebP formats
+- 🔄 **Rotate** — Rotate images by any angle
 
 ### Document Tools
 
-| Tool | Description |
-|------|-------------|
-| Convert | Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline) — plus PDF, EPUB, MOBI and more |
-| Edit PDF | Annotate and modify PDF content |
+- 🔀 **Convert** — Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline) — plus PDF, EPUB, MOBI and more
+- 📝 **Edit PDF** — Annotate and modify PDF content
 
 > **New in beta.9 — structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device — no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
 
 ---
 
-## Screenshots
+## Download
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-dark.png" alt="Papercut dashboard showing PDF, image, and document tools" width="49%">
-  <img src="docs/screenshots/dashboard-light.png" alt="Papercut dashboard in light mode" width="49%">
+  <a href="https://github.com/shyhunter/Papercut/releases/latest"><img src="https://img.shields.io/github/v/release/shyhunter/Papercut?label=version&style=for-the-badge" alt="Latest version"></a>
 </p>
-<p align="center">
-  <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF tool - pick a file to open or drop" width="49%">
-</p>
-
-Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
--- and the whole app supports both light and dark mode.
-
----
-
-## Privacy
-
-**Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
-
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, Sharp). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
-
----
-
-## Install
-
-Download the latest release for your platform:
 
 | Platform | Installer | Download |
 |----------|-----------|----------|
@@ -95,7 +82,7 @@ Download the latest release for your platform:
 | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 
-Everything you need is included -- just install and go. Ghostscript is bundled with the app.
+The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included -- just install and go. Ghostscript is bundled with the app.
 
 > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
 > ```
@@ -115,6 +102,14 @@ Most tools work out of the box. These are only needed for specific features:
 | [Calibre](https://calibre-ebook.com/) | EPUB/MOBI ebook formats | [Download](https://calibre-ebook.com/download) |
 
 Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app and needs none of these. The optional tools are only used for the other document formats above — without them, those specific formats simply aren't offered.
+
+---
+
+## Privacy
+
+**Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
+
+All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, Sharp). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ---
 
