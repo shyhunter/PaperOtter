@@ -1,6 +1,6 @@
 # Papercut
 
-**Your local document toolkit -> private, fast, offline.**
+** Your local document toolkit -> private, fast, offline.**
 
 [![Version](https://img.shields.io/github/v/release/shyhunter/Papercut?label=version)](https://github.com/shyhunter/Papercut/releases)
 [![Changelog](https://img.shields.io/badge/changelog-CHANGELOG.md-blue)](CHANGELOG.md)
