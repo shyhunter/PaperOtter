@@ -8,11 +8,16 @@ import type { ImageProcessingOptions } from '@/types/file';
 
 // ─── Static config assertion ──────────────────────────────────────────────────
 //
-// Reads the real capabilities/default.json from disk and asserts that no
-// permission identifier starts with "http:".  This is a structural guarantee
-// that the Tauri capability config cannot grant outbound HTTP access.
+// Reads the real capabilities/default.json from disk and asserts that any
+// "http:" permission is scoped to exactly the one disclosed, read-only
+// endpoint used by the update checker (GitHub's public releases API) — never
+// a bare/unscoped grant, never any other host. This is a structural guarantee
+// that the Tauri capability config cannot grant broader outbound HTTP access
+// than what's disclosed in the README's Privacy section.
 //
 // Path: src/lib/__tests__/ -> ../../../ -> project root -> src-tauri/capabilities/default.json
+
+const ALLOWED_HTTP_URL = 'https://api.github.com/repos/shyhunter/Papercut/releases/latest';
 
 describe('Privacy — Tauri capability config', () => {
   // capabilities/default.json — read once for the whole describe block
@@ -22,21 +27,25 @@ describe('Privacy — Tauri capability config', () => {
     capPath = path.join(__dirname, '../../../src-tauri/capabilities/default.json');
   });
 
-  it('capabilities grant no HTTP access', () => {
+  it('capabilities grant HTTP access only to the disclosed update-check endpoint', () => {
     const raw = readFileSync(capPath, 'utf-8');
     const config = JSON.parse(raw) as {
-      permissions: Array<string | { identifier: string; allow?: unknown[] }>;
+      permissions: Array<string | { identifier: string; allow?: Array<{ url?: string }> }>;
     };
 
-    // Normalize: permission entries may be plain strings or objects with an
-    // `identifier` field.  Extract the identifier string from both forms.
-    const identifiers = config.permissions.map((entry) => {
-      if (typeof entry === 'string') return entry;
-      return entry.identifier;
-    });
+    const httpPerms = config.permissions.filter(
+      (entry): entry is { identifier: string; allow?: Array<{ url?: string }> } =>
+        typeof entry !== 'string' && entry.identifier.startsWith('http:')
+    );
 
-    const httpPerms = identifiers.filter((id) => id.startsWith('http:'));
-    expect(httpPerms).toHaveLength(0);
+    for (const perm of httpPerms) {
+      // Every http: permission must be scoped (no bare "http:default" with no allow-list).
+      expect(perm.allow).toBeDefined();
+      expect(perm.allow!.length).toBeGreaterThan(0);
+      for (const rule of perm.allow!) {
+        expect(rule.url).toBe(ALLOWED_HTTP_URL);
+      }
+    }
   });
 });
 

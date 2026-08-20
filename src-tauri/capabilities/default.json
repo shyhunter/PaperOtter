@@ -56,6 +56,10 @@
       ]
     },
     "shell:allow-open",
-    "opener:default"
+    "opener:default",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://api.github.com/repos/shyhunter/Papercut/releases/latest" }]
+    }
   ]
 }

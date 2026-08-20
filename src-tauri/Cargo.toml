@@ -27,6 +27,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
+tauri-plugin-http = "2"
 image = "0.25"
 webp = "0.3"
 uuid = { version = "1", features = ["v4"] }

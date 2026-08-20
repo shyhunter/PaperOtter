@@ -78,12 +78,18 @@ describe('Security — Tauri config', () => {
     expect(conf.app.security.csp).toContain("script-src 'self'");
   });
 
-  it('no HTTP permissions in capabilities', () => {
+  it('HTTP permissions in capabilities are scoped to the disclosed update-check endpoint only', () => {
     const capPath = path.join(__dirname, '../../../src-tauri/capabilities/default.json');
     const config = JSON.parse(readFileSync(capPath, 'utf-8'));
-    const ids = config.permissions.map((e: string | { identifier: string }) =>
-      typeof e === 'string' ? e : e.identifier
-    );
-    expect(ids.filter((id: string) => id.startsWith('http:'))).toHaveLength(0);
+    const httpPerms = config.permissions.filter(
+      (e: string | { identifier: string }) => typeof e !== 'string' && e.identifier.startsWith('http:')
+    ) as Array<{ identifier: string; allow?: Array<{ url?: string }> }>;
+
+    for (const perm of httpPerms) {
+      expect(perm.allow?.length).toBeGreaterThan(0);
+      for (const rule of perm.allow!) {
+        expect(rule.url).toBe('https://api.github.com/repos/shyhunter/Papercut/releases/latest');
+      }
+    }
   });
 });
