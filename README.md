@@ -2,7 +2,7 @@
 
 **Your local document toolkit -- private, fast, offline.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0--beta.2-blue)](https://github.com/shyhunter/Papercut/releases)
+[![Version](https://img.shields.io/github/v/release/shyhunter/Papercut?label=version)](https://github.com/shyhunter/Papercut/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black)](https://github.com/shyhunter/Papercut/releases)
 [![Windows](https://img.shields.io/badge/Windows-x64-blue)](https://github.com/shyhunter/Papercut/releases)
