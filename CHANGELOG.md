@@ -5,6 +5,16 @@ All notable changes to Papercut will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-08-20
+
+### Changed
+- First stable release — version bumped from `1.0.0-beta.9` to `1.0.0` across `package.json`, `tauri.conf.json`, `Cargo.toml`, and all UI version fallbacks (verified via `npm run version:check`)
+- Replaced the in-app "Feedback" (GitHub issue) button with a "Buy me a coffee" button in the dashboard toolbar
+- Release workflow now publishes non-beta versions as full GitHub releases instead of always marking them as pre-releases
+
+### Removed
+- Stray screenshots in `feedback-screenshots/` (unreferenced dev artifacts)
+
 ## [1.0.0-beta.8] - 2026-04-27
 
 ### Fixed

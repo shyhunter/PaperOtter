@@ -9,6 +9,7 @@ import { join } from 'path';
 import { describe, it, expect } from 'vitest';
 // Legacy build: main-thread, no worker — the only pdfjs entry that runs under vitest's node env.
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { inferDocModel } from '@/lib/docModel';
 import { renderMarkdown } from '@/lib/renderers/markdown';
@@ -25,7 +26,7 @@ async function extractFixture(name: string): Promise<ExtractedTextItem[][]> {
     const page = await doc.getPage(p);
     const { items } = await page.getTextContent();
     const rows: ExtractedTextItem[] = [];
-    for (const it of items as any[]) {
+    for (const it of items as TextItem[]) {
       if (typeof it.str !== 'string' || !it.str.trim()) continue;
       const t = it.transform as number[];
       rows.push({

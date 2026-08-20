@@ -104,7 +104,14 @@ jobs:
 
       - name: Derive version from tag
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -144,7 +151,7 @@ jobs:
             The **Assets** section below is GitHub's automatic list of the same installer files from the table above. You don't need to use it — the download links in the table are the same files. The `Source code` entries are the raw project code and are only useful for developers.
             </details>
           releaseDraft: true
-          prerelease: true
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
           args: --target ${{ matrix.target }}
 
   # ── Smoke tests: verify each platform artifact launches before publishing ──
@@ -348,7 +355,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Promote draft to published prerelease
-        run: gh release edit "${{ github.ref_name }}" --draft=false --prerelease
+      - name: Promote draft to published release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *-* ]]; then
+            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
+          else
+            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

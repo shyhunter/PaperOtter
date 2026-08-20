@@ -41,7 +41,7 @@ import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useDependencies } from '@/hooks/useDependencies';
 import { AboutDialog } from '@/components/AboutDialog';
-import { FeedbackButton } from '@/components/FeedbackButton';
+import { BuyMeACoffeeButton } from '@/components/BuyMeACoffeeButton';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -250,7 +250,7 @@ export function Dashboard() {
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [appVersion, setAppVersion] = useState('1.0.0-beta.9');
+  const [appVersion, setAppVersion] = useState('1.0.0');
 
   useEffect(() => {
     import('@tauri-apps/api/app')
@@ -388,7 +388,7 @@ export function Dashboard() {
               >
                 <Info className="h-4 w-4" />
               </button>
-              <FeedbackButton />
+              <BuyMeACoffeeButton />
               <ThemeToggle />
               {/* Recent Folder */}
               {recentDirs.length > 0 && (
