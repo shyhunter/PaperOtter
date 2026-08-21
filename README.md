@@ -23,6 +23,10 @@
   <img src="docs/screenshots/dashboard-light.png" alt="Papercut dashboard in light mode" width="49%">
   <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF tool - pick a file to open or drop" width="49%">
 </p>
+<p align="center">
+  <img src="docs/screenshots/tool-configure-step.png" alt="Compress PDF tool - configure compression level and options" width="49%">
+  <img src="docs/screenshots/tool-select-pages.png" alt="Split PDF tool - select page ranges from a thumbnail grid" width="49%">
+</p>
 
 Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
 -- and the whole app supports both light and dark mode.
