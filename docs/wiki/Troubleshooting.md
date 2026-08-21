@@ -40,3 +40,7 @@ Try re-exporting the source PDF and protecting it again.
 
 [Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) and
 include the exact error message -- happy to help.
+
+---
+
+See also: [Required Dependencies](Required-Dependencies) · [FAQ](FAQ)

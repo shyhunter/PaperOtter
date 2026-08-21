@@ -1,18 +1,31 @@
-# Papercut Wiki
+<div align="center">
+<img alt="Papercut logo" width="200px" src="img/logo.png"/>
 
-Papercut is a local desktop toolkit for compressing, resizing, converting, and
-editing PDFs, images, and documents. Everything runs on your machine -- no
-uploads, no cloud, no telemetry.
+**_Welcome to the Papercut Wiki!_**
+</div>
 
-This wiki covers the details that don't fit in the [README](https://github.com/shyhunter/Papercut#readme).
+Papercut is a local desktop toolkit for compressing, resizing, converting,
+and editing PDFs, images, and documents. Everything runs on your machine --
+no uploads, no cloud, no telemetry.
 
-## Pages
+If you're here, you're probably looking for detail that doesn't fit in the
+[README](https://github.com/shyhunter/Papercut#readme). This wiki is the
+right place for that.
 
-- [Required Dependencies](Required-Dependencies) -- what Ghostscript, LibreOffice,
-  and Calibre are used for, and how to install them per platform
-- [Troubleshooting](Troubleshooting) -- fixes for the most common errors
+***
 
-## Quick links
+For your convenience, the wiki is divided into a few sections:
 
-- [Download the latest release](https://github.com/shyhunter/Papercut/releases/latest)
-- [Report a bug or request a feature](https://github.com/shyhunter/Papercut/issues/new/choose)
+- [**_Getting Started_**](Required-Dependencies): what Ghostscript, LibreOffice, and Calibre are for, and how to install them per platform
+- [**_Using Papercut_**](Using-Papercut): the four-step workflow every tool follows, and what each tool category covers
+- [**_Troubleshooting_**](Troubleshooting): fixes for the most common errors
+
+There's also an [**_FAQ_**](FAQ) page answering common questions about
+privacy, dependencies, and installation.
+
+***
+
+<p align="center">
+<a href="https://github.com/shyhunter/Papercut/releases/latest"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
+<a href="https://github.com/shyhunter/Papercut/issues/new/choose"><img src="https://img.shields.io/badge/-Report%20an%20issue-e67700?style=for-the-badge" alt="Report an issue"></a>
+</p>
