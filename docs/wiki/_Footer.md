@@ -1,4 +1,5 @@
 [**_Home 🏠_**](Home) |
+[**_Common Tasks 🎯_**](Common-Tasks) |
 [**_Required Dependencies_**](Required-Dependencies) |
 [**_Using Papercut_**](Using-Papercut) |
 [**_Troubleshooting_**](Troubleshooting) |

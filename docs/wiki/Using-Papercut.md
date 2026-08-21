@@ -1,5 +1,8 @@
 # Using Papercut
 
+Looking for a tool by what you're trying to *do*, not its name? See
+[Common Tasks](Common-Tasks) instead.
+
 ## The four-step workflow
 
 Every tool in Papercut follows the same flow, so once you've used one you

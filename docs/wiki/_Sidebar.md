@@ -2,6 +2,8 @@
 
 ### [Home 🏠](Home)
 
+### [Common Tasks 🎯](Common-Tasks)
+
 ***
 
 ### Getting Started
