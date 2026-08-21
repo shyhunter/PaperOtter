@@ -207,7 +207,7 @@ to all their maintainers.
 
 ## Contributing
 
-Contributions are welcome! Please see the [pull request template](.github/pull_request_template.md) for the submission checklist. Open an issue first for major changes.
+Contributions are welcome! Please see the [pull request template](.github/pull_request_template.md) for the submission checklist. Open an issue first for major changes. By participating, you're expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
