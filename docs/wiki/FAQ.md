@@ -3,7 +3,8 @@
 ### Does Papercut send my files anywhere?
 
 No. All processing happens locally using native binaries (Ghostscript,
-LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, Sharp).
+LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, and
+the Rust `image` crate).
 Your files never leave your machine -- see the
 [Privacy section](https://github.com/shyhunter/Papercut#privacy) of the
 README for the full statement.
