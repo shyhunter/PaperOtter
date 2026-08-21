@@ -17,7 +17,7 @@ right place for that.
 For your convenience, the wiki is divided into a few sections:
 
 - [**_Getting Started_**](Required-Dependencies): what Ghostscript, LibreOffice, and Calibre are for, and how to install them per platform
-- [**_Using Papercut_**](Using-Papercut): the four-step workflow every tool follows, and what each tool category covers
+- [**_Using Papercut_**](Using-Papercut): the four-step workflow every tool follows, with a dedicated guide for each of the 21 tools -- how it works, what its settings do, and why it might not behave the way you expect
 - [**_Troubleshooting_**](Troubleshooting): fixes for the most common errors
 
 There's also an [**_FAQ_**](FAQ) page answering common questions about

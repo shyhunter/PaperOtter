@@ -18,9 +18,17 @@ already know how to use them all:
 
 The dashboard is where every tool lives, organized into three categories:
 
-- **PDF Tools** -- compress, resize, merge, split, rotate, page numbers, watermark, crop, organize, sign, redact, PDF/A, repair, protect, unlock
-- **Image Tools** -- compress, resize, convert (JPG/PNG/WebP), rotate
-- **Document Tools** -- convert (PDF, DOCX, EPUB, MOBI, Markdown, HTML, JSON, plain text), edit PDF
+**PDF Tools**
+[Compress](Compress-PDF) · [Merge](Merge-PDFs) · [Split](Split-PDF) · [Rotate](Rotate-PDF) · [PDF to JPG](PDF-to-JPG) · [JPG to PDF](JPG-to-PDF) · [Page Numbers](Page-Numbers) · [Watermark](Watermark) · [Crop](Crop-PDF) · [Organize](Organize-PDF) · [Sign](Sign-PDF) · [Redact](Redact-PDF) · [PDF/A Convert](PDF-A-Convert) · [Repair](Repair-PDF) · [Protect](Protect-PDF) · [Unlock](Unlock-PDF) · [Edit PDF](Edit-PDF)
+
+**Image Tools**
+[Compress](Compress-Image) · [Rotate](Rotate-Image) · [Convert](Convert-Image)
+
+**Document Tools**
+[Convert](Convert-Document) (PDF, DOCX, EPUB, MOBI, Markdown, HTML, JSON, plain text)
+
+Each linked page walks through how that specific tool works, what its
+settings actually do, and why it might not behave the way you expect.
 
 Use the search bar to jump straight to a tool, or star any tool to pin it to
 **My Favorites** at the top -- favorites can be reordered by dragging.
@@ -36,4 +44,4 @@ from the icon in the top-right corner of the dashboard.
 
 ---
 
-See also: [Required Dependencies](Required-Dependencies) · [Troubleshooting](Troubleshooting)
+See also: [Required Dependencies](Required-Dependencies) · [Troubleshooting](Troubleshooting) · [FAQ](FAQ)

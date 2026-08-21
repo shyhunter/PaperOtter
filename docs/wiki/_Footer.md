@@ -3,3 +3,5 @@
 [**_Using Papercut_**](Using-Papercut) |
 [**_Troubleshooting_**](Troubleshooting) |
 [**_FAQ ❓_**](FAQ)
+
+Feature guides: see the sidebar for a page-by-page walkthrough of every tool.
