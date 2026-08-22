@@ -36,14 +36,27 @@ vi.mock('@tauri-apps/plugin-store', () => ({
   },
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
-vi.mock('@/lib/pdfThumbnail', () => ({ renderAllPdfPages: vi.fn().mockResolvedValue([]) }));
-vi.mock('@/lib/pdfProcessor', () => ({
-  processPdf: vi.fn(),
-  recommendQualityForTarget: vi.fn().mockReturnValue('screen'),
-  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
-  getPdfImageCount: vi.fn().mockResolvedValue(0),
-  getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 5, compressibilityScore: 0.5 }),
+vi.mock('@/lib/pdfThumbnail', () => ({
+  openPdfForLazyRender: vi.fn().mockResolvedValue({
+    numPages: 0,
+    pageAspectRatios: [],
+    renderPage: vi.fn().mockResolvedValue(''),
+    destroy: vi.fn(),
+  }),
 }));
+vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfProcessor')>();
+  return {
+    ...actual, // keep real isPredictablyNonCompressible/getNonCompressibleReason/nonCompressibleMessage
+    processPdf: vi.fn(),
+    recommendQualityForTarget: vi.fn().mockReturnValue('screen'),
+    estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
+    getPdfImageCount: vi.fn().mockResolvedValue(0),
+    getPdfCompressibility: vi.fn().mockResolvedValue({
+      pageCount: 3, fileSizeBytes: 2_400_000, imageCount: 5, compressibilityScore: 0.5, jpxByteShare: 0,
+    }),
+  };
+});
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
 // save() must never resolve so SaveStep stays in 'dialog-open' state (see 03-pdf-compare.test.tsx).

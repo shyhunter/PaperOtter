@@ -2,7 +2,7 @@ import type { SupportedFormat } from '@/types/file';
 
 const SUPPORTED_EXTENSIONS = new Set([
   'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif',
-  'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf',
+  'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
 ]);
 
 /** Hard limit: 100 MB in bytes */
@@ -35,7 +35,7 @@ export function detectFormat(filePath: string): SupportedFormat | null {
   const ext = getExtension(filePath);
   if (ext === 'pdf') return 'pdf';
   if (['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif'].includes(ext)) return 'image';
-  if (['docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf'].includes(ext)) return 'document';
+  if (['docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html'].includes(ext)) return 'document';
   return null;
 }
 

@@ -123,7 +123,26 @@ vi.mock('@/lib/pdfProcessor', () => ({
 }));
 
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
-vi.mock('@/lib/pdfThumbnail', () => ({ renderAllPdfPages: vi.fn().mockResolvedValue([]) }));
+vi.mock('@/lib/pdfThumbnail', () => ({
+  renderAllPdfPages: vi.fn().mockResolvedValue([]),
+  openPdfForLazyRender: vi.fn().mockResolvedValue({
+    numPages: 0,
+    pageAspectRatios: [],
+    renderPage: vi.fn().mockResolvedValue('blob:fake-thumb'),
+    destroy: vi.fn(),
+  }),
+  // 2-page document with standard letter dimensions — matches the pdfjs-dist
+  // mock below so EditorCanvas exits its loading state.
+  acquireSharedPdfDocument: vi.fn().mockResolvedValue({
+    numPages: 2,
+    getPage: vi.fn().mockResolvedValue({
+      getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),
+      render: vi.fn().mockReturnValue({ promise: Promise.resolve() }),
+    }),
+    destroy: vi.fn(),
+  }),
+  releaseSharedPdfDocument: vi.fn(),
+}));
 
 // Stub ResizeObserver — jsdom does not implement this browser API.
 vi.stubGlobal('ResizeObserver', class {

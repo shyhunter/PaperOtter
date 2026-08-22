@@ -9,6 +9,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
+import { diagLog } from '@/lib/diagLog';
 
 /** Hook to forward pinch-to-zoom from an overlay div to the editor zoom.
  *  Needed because WKWebView gesture events don't always bubble through overlays. */
@@ -142,15 +143,19 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
         return;
       }
 
+      diagLog(`textExtract.start idx=${pageIndex}`);
+      const t0 = performance.now();
       try {
         const items = await extractPageText(pdfBytes, pageIndex);
+        diagLog(`textExtract.done idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)} items=${items.length}`);
         const blocks = items.map((item) => extractedToBlock(item, pageIndex));
         extractionCache.set(cacheKey, blocks);
         if (!cancelled) {
           setPageTextBlocks(pageIndex, blocks);
           setIsExtracted(true);
         }
-      } catch {
+      } catch (err) {
+        diagLog(`textExtract.threw idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)} ${err}`);
         // Text extraction failed — non-fatal, page just has no editable text
         if (!cancelled) setIsExtracted(true);
       }

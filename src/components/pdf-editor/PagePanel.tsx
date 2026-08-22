@@ -46,6 +46,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
   const insertMenuRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLDivElement>(null);
   const lastClickedRef = useRef<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Custom drag state (replaces HTML5 DnD for WKWebView reliability)
   const [dragSource, setDragSource] = useState<number | null>(null);
@@ -166,31 +167,48 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
     dragStartYRef.current = e.clientY;
     isDraggingRef.current = false;
 
+    // The closest-thumbnail scan below queries every thumbnail element and calls
+    // getBoundingClientRect() on each — a layout-forcing operation. Raw mousemove
+    // events can fire far more often than the display refresh rate (especially on
+    // high-polling-rate trackpads/mice), so without throttling, a large document
+    // (hundreds of thumbnails) turns a simple drag into hundreds of full-layout
+    // scans per second, pinning the main thread and starving other input handling
+    // for as long as the mouse keeps moving — reproduced on a real 688-page PDF.
+    let rafId: number | null = null;
+    let latestClientY = e.clientY;
+
+    const computeDragOver = () => {
+      rafId = null;
+      const thumbEls = document.querySelectorAll('[data-page-thumb-idx]');
+      let closestIdx = pageIndex;
+      let closestDist = Infinity;
+      thumbEls.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const dist = Math.abs(latestClientY - centerY);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestIdx = Number(el.getAttribute('data-page-thumb-idx'));
+        }
+      });
+      setDragOverTarget(closestIdx);
+      dragOverRef.current = closestIdx;
+    };
+
     const handleMouseMove = (ev: MouseEvent) => {
+      latestClientY = ev.clientY;
       const dy = Math.abs(ev.clientY - dragStartYRef.current);
       if (dy > 5 && !isDraggingRef.current) {
         isDraggingRef.current = true;
         setDragSource(pageIndex);
       }
-      if (isDraggingRef.current) {
-        const thumbEls = document.querySelectorAll('[data-page-thumb-idx]');
-        let closestIdx = pageIndex;
-        let closestDist = Infinity;
-        thumbEls.forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          const centerY = rect.top + rect.height / 2;
-          const dist = Math.abs(ev.clientY - centerY);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestIdx = Number(el.getAttribute('data-page-thumb-idx'));
-          }
-        });
-        setDragOverTarget(closestIdx);
-        dragOverRef.current = closestIdx;
+      if (isDraggingRef.current && rafId === null) {
+        rafId = requestAnimationFrame(computeDragOver);
       }
     };
 
     const handleMouseUp = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       const target = dragOverRef.current;
       if (isDraggingRef.current && target !== null && target !== pageIndex) {
         reorderPages(pageIndex, target);
@@ -254,7 +272,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       </div>
 
       {/* Thumbnail list */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {Array.from({ length: pageCount }, (_, i) => (
           <div
             key={i}
@@ -273,6 +291,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
               isCurrent={i === currentPage}
               isDragSource={dragSource === i}
               onClick={(e) => handleThumbnailClick(i, e)}
+              scrollContainerRef={scrollContainerRef}
             />
           </div>
         ))}

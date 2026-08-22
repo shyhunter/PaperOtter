@@ -1,9 +1,17 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Ban, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
+import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
+
+// Pages within this margin (relative to the scroll container's own height, each
+// side) are rendered ahead of being scrolled into view and kept slightly after
+// leaving view, to avoid render/evict thrashing right at the viewport edge.
+const RENDER_ROOT_MARGIN = '150% 0px';
+// A4-ish fallback used only if a page's real aspect ratio isn't available yet.
+const DEFAULT_PAGE_ASPECT_RATIO = 841.89 / 595.28;
 
 export interface CompareStepProps {
   result?: PdfProcessingResult;    // optional — not present when isCancelled=true
@@ -49,7 +57,8 @@ function getAfterRenderScale(qualityLevel?: PdfQualityLevel): number {
 interface PreviewPanelProps {
   label: string;
   sizeLabel: string;
-  pageUrls: string[];
+  handle: LazyPdfHandle | null;
+  scale: number;
   isRendering: boolean;
   hasError: boolean;
   zoomWrapperClass: string;
@@ -60,13 +69,82 @@ interface PreviewPanelProps {
 function PreviewPanel({
   label,
   sizeLabel,
-  pageUrls,
+  handle,
+  scale,
   isRendering,
   hasError,
   zoomWrapperClass,
   scrollRef,
   onScroll,
 }: PreviewPanelProps) {
+  // pageIndex -> rendered data URL. Pages are rendered on demand as they approach
+  // the viewport and evicted once they leave it, so memory stays bounded even
+  // for documents with hundreds of pages.
+  const [renderedPages, setRenderedPages] = useState<Map<number, string>>(new Map());
+  const renderingRef = useRef<Set<number>>(new Set());
+  const pageElsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // New document (or new render scale) — drop any previously rendered pages.
+  useEffect(() => {
+    setRenderedPages(new Map());
+    renderingRef.current = new Set();
+  }, [handle, scale]);
+
+  const renderPage = useCallback((pageIndex: number) => {
+    if (!handle || renderingRef.current.has(pageIndex)) return;
+    renderingRef.current.add(pageIndex);
+    handle.renderPage(pageIndex, scale)
+      .then((url) => {
+        setRenderedPages((prev) => new Map(prev).set(pageIndex, url));
+      })
+      .catch(() => {
+        // Leave this one page unrendered rather than failing the whole panel.
+      })
+      .finally(() => {
+        renderingRef.current.delete(pageIndex);
+      });
+  }, [handle, scale]);
+
+  const evictPage = useCallback((pageIndex: number) => {
+    setRenderedPages((prev) => {
+      if (!prev.has(pageIndex)) return prev;
+      const next = new Map(prev);
+      next.delete(pageIndex);
+      return next;
+    });
+  }, []);
+
+  // Observe each page placeholder: render pages as they approach the viewport,
+  // evict pages once they've scrolled well out of view.
+  useEffect(() => {
+    if (!handle || !scrollRef?.current) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      // No IO support (e.g. some test environments) — fall back to rendering
+      // everything up front rather than showing nothing.
+      for (let i = 0; i < handle.numPages; i++) renderPage(i);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const pageIndex = Number((entry.target as HTMLElement).dataset.pageIndex);
+          if (Number.isNaN(pageIndex)) continue;
+          if (entry.isIntersecting) {
+            renderPage(pageIndex);
+          } else {
+            evictPage(pageIndex);
+          }
+        }
+      },
+      { root: scrollRef.current, rootMargin: RENDER_ROOT_MARGIN },
+    );
+
+    for (const el of pageElsRef.current.values()) observer.observe(el);
+    return () => observer.disconnect();
+  }, [handle, scrollRef, renderPage, evictPage]);
+
   return (
     <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
       {/* Panel header */}
@@ -85,21 +163,37 @@ function PreviewPanel({
           <div className="flex h-full min-h-[300px] items-center justify-center">
             <span className="text-sm text-muted-foreground">Preview unavailable</span>
           </div>
-        ) : isRendering ? (
+        ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
             <span className="text-sm text-muted-foreground">Rendering preview…</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
-            {pageUrls.map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt={`${label} page ${i + 1}`}
-                className="w-full h-auto block border-b border-border/30 last:border-b-0"
-              />
-            ))}
+            {Array.from({ length: handle.numPages }, (_, pageIndex) => {
+              const url = renderedPages.get(pageIndex);
+              const aspectRatio = handle.pageAspectRatios[pageIndex] ?? DEFAULT_PAGE_ASPECT_RATIO;
+              return (
+                <div
+                  key={pageIndex}
+                  data-page-index={pageIndex}
+                  ref={(el) => {
+                    if (el) pageElsRef.current.set(pageIndex, el);
+                    else pageElsRef.current.delete(pageIndex);
+                  }}
+                  style={{ aspectRatio: `1 / ${aspectRatio}` }}
+                  className="w-full border-b border-border/30 last:border-b-0 bg-muted/10"
+                >
+                  {url && (
+                    <img
+                      src={url}
+                      alt={`${label} page ${pageIndex + 1}`}
+                      className="w-full h-full block"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -108,8 +202,8 @@ function PreviewPanel({
 }
 
 export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack, onStartOver, onRetry }: CompareStepProps) {
-  const [originalUrls, setOriginalUrls] = useState<string[]>([]);
-  const [processedUrls, setProcessedUrls] = useState<string[]>([]);
+  const [originalHandle, setOriginalHandle] = useState<LazyPdfHandle | null>(null);
+  const [processedHandle, setProcessedHandle] = useState<LazyPdfHandle | null>(null);
   const [originalRendering, setOriginalRendering] = useState(true);
   const [processedRendering, setProcessedRendering] = useState(true);
   const [originalError, setOriginalError] = useState(false);
@@ -136,18 +230,20 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
     requestAnimationFrame(() => { isSyncing.current = false; });
   }, []);
 
-  // Render original (Before)
+  // Open original (Before) for lazy per-page rendering
   useEffect(() => {
     if (!result) return;
     let cancelled = false;
-    setOriginalUrls([]);
+    let handle: LazyPdfHandle | null = null;
+    setOriginalHandle(null);
     setOriginalRendering(true);
     setOriginalError(false);
 
-    renderAllPdfPages(result.sourceBytes, RENDER_SCALE)
-      .then((urls) => {
-        if (cancelled) return;
-        setOriginalUrls(urls);
+    openPdfForLazyRender(result.sourceBytes)
+      .then((h) => {
+        if (cancelled) { h.destroy(); return; }
+        handle = h;
+        setOriginalHandle(h);
         setOriginalRendering(false);
       })
       .catch(() => {
@@ -155,21 +251,23 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         setOriginalError(true);
         setOriginalRendering(false);
       });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; handle?.destroy(); };
   }, [result]);
 
-  // Render processed (After)
+  // Open processed (After) for lazy per-page rendering
   useEffect(() => {
     if (!result) return;
     let cancelled = false;
-    setProcessedUrls([]);
+    let handle: LazyPdfHandle | null = null;
+    setProcessedHandle(null);
     setProcessedRendering(true);
     setProcessedError(false);
 
-    renderAllPdfPages(result.bytes, getAfterRenderScale(qualityLevel))
-      .then((urls) => {
-        if (cancelled) return;
-        setProcessedUrls(urls);
+    openPdfForLazyRender(result.bytes)
+      .then((h) => {
+        if (cancelled) { h.destroy(); return; }
+        handle = h;
+        setProcessedHandle(h);
         setProcessedRendering(false);
       })
       .catch(() => {
@@ -177,7 +275,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         setProcessedError(true);
         setProcessedRendering(false);
       });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; handle?.destroy(); };
   }, [result, qualityLevel]);
 
   // ── Cancelled state ─────────────────────────────────────────────────────────
@@ -207,6 +305,10 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
 
   if (!result) return null;
 
+  // Same canonical reason/message pdfProcessor.ts and ConfigureStep use — the JPX
+  // wording never differs between screens.
+  const nonCompressibleReason = getNonCompressibleReason(result.compressibilityScore, result.jpxByteShare);
+
   const savingsBytes = result.inputSizeBytes - result.outputSizeBytes;
   const savingsPct = result.inputSizeBytes > 0
     ? Math.round((savingsBytes / result.inputSizeBytes) * 100)
@@ -228,7 +330,9 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             <span className="font-normal">
               best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
               {result.wasAlreadyOptimal
-                ? 'This file is already at maximum compression for all quality settings.'
+                ? nonCompressibleReason === 'jpx'
+                  ? nonCompressibleMessage(nonCompressibleReason, result.imageCount)
+                  : 'This file is already at maximum compression for all quality settings.'
                 : 'Try a lower quality level to reduce further.'}
             </span>{' '}
             <button
@@ -274,7 +378,9 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>
         )}
         {result.wasAlreadyOptimal && (
-          <span className="text-muted-foreground hidden sm:inline">File already optimal</span>
+          <span className="text-muted-foreground hidden sm:inline">
+            {nonCompressibleReason === 'jpx' ? "Images already JPEG2000-encoded — can't compress further" : 'File already optimal'}
+          </span>
         )}
         <div className="flex-1" />
         <button
@@ -299,7 +405,8 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         <PreviewPanel
           label="Before"
           sizeLabel={formatBytes(result.inputSizeBytes)}
-          pageUrls={originalUrls}
+          handle={originalHandle}
+          scale={RENDER_SCALE}
           isRendering={originalRendering}
           hasError={originalError}
           zoomWrapperClass={zoomWrapperClass}
@@ -309,7 +416,8 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         <PreviewPanel
           label="After"
           sizeLabel={formatBytes(result.outputSizeBytes)}
-          pageUrls={processedUrls}
+          handle={processedHandle}
+          scale={getAfterRenderScale(qualityLevel)}
           isRendering={processedRendering}
           hasError={processedError}
           zoomWrapperClass={zoomWrapperClass}

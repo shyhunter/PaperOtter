@@ -37,6 +37,34 @@ vi.mock('@/lib/pdfThumbnail', () => ({
   renderPdfThumbnail: vi.fn().mockResolvedValue('blob:preview'),
 }));
 
+// pdfjs-dist — used directly by LazyPageThumbnail (Rotate page grid)
+vi.mock('pdfjs-dist', () => {
+  const mockPage = {
+    getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),
+    render: vi.fn().mockReturnValue({ promise: Promise.resolve() }),
+  };
+  const mockPdfDoc = {
+    numPages: 3,
+    getPage: vi.fn().mockResolvedValue(mockPage),
+    destroy: vi.fn(),
+  };
+  return {
+    getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve(mockPdfDoc) }),
+    GlobalWorkerOptions: { workerSrc: '' },
+  };
+});
+
+// Stub IntersectionObserver — LazyPageThumbnail uses it for lazy rendering
+vi.stubGlobal(
+  'IntersectionObserver',
+  class IntersectionObserver {
+    observe = vi.fn();
+    disconnect = vi.fn();
+    unobserve = vi.fn();
+    constructor(_cb: IntersectionObserverCallback, _opts?: IntersectionObserverInit) {}
+  },
+);
+
 // pdf-lib — mock PDFDocument.load to succeed without real PDF bytes
 vi.mock('pdf-lib', () => ({
   PDFDocument: {
@@ -56,6 +84,7 @@ vi.mock('pdf-lib', () => ({
 // Watermark lib — mock addWatermark to return fake processed bytes
 vi.mock('@/lib/pdfWatermark', () => ({
   addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+  addWatermarkSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   DEFAULT_WATERMARK_OPTIONS: {
     text: 'DRAFT',
     fontSize: 48,
@@ -68,6 +97,7 @@ vi.mock('@/lib/pdfWatermark', () => ({
 // Page numbers lib — mock addPageNumbers
 vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+  addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   formatNumber: vi.fn().mockImplementation((n: number) => String(n)),
 }));
 

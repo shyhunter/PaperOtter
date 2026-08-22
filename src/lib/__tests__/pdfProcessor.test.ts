@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { PageSizes } from 'pdf-lib';
 import { processPdf, estimateOutputSizeBytes } from '@/lib/pdfProcessor';
-import { createMinimalPdf, createContentPdf, getPageDimensions } from '@/test/fixtures';
+import { createMinimalPdf, createContentPdf, createPdfWithJpxImage, createPdfWithImage, createPdfWithSharedAndUniqueImages, getPageDimensions } from '@/test/fixtures';
 import type { PdfProcessingOptions } from '@/types/file';
 
 // Convenience: base options that can be overridden per-test with spread
@@ -695,6 +695,45 @@ describe('processPdf — pre-scan result fields', () => {
     expect(result.imageCount).toBe(0);
     expect(result.compressibilityScore).toBe(0);
   });
+
+  // [JPX-SCAN-01] Bug: a real-world PDF whose images were JPEG2000-encoded showed
+  // "File already optimal" with no explanation, at every quality level — Ghostscript's
+  // pdfwrite presets don't meaningfully re-encode JPXDecode-filtered images. The
+  // pre-scan now flags this so the UI can explain the real reason.
+  it('[JPX-SCAN-01] jpxByteShare is 1.0 when the only image is JPXDecode-filtered', async () => {
+    const pdf = await createPdfWithJpxImage(1);
+    mockReadFile(pdf);
+    mockCompressPdf(makeGsOutput(100));
+    const result = await processPdf('/test.pdf', { ...baseOpts });
+    expect(result.jpxByteShare).toBe(1);
+    expect(result.imageCount).toBe(1);
+  });
+
+  it('[JPX-SCAN-02] jpxByteShare is 0 for a text-only PDF with no images', async () => {
+    const pdf = await createMinimalPdf(1, PageSizes.A4);
+    mockReadFile(pdf);
+    mockCompressPdf(makeGsOutput(100));
+    const result = await processPdf('/test.pdf', { ...baseOpts });
+    expect(result.jpxByteShare).toBe(0);
+  });
+
+  // [JPX-SCAN-03] Bug: a real 688-page, 1322-image PDF that (per its console warnings)
+  // was clearly JPX-heavy still measured jpxByteShare=0.14 — because a single shared
+  // image referenced by every page (a repeated header/logo) was counted once PER PAGE
+  // it appeared on, diluting the true JPX share far below reality. Deduping by the
+  // XObject's indirect reference fixes this: a shared image counts once regardless
+  // of how many pages reference it.
+  it('[JPX-SCAN-03] a large shared non-JPX image is not double-counted per page', async () => {
+    const pdf = await createPdfWithSharedAndUniqueImages(5);
+    mockReadFile(pdf);
+    mockCompressPdf(makeGsOutput(100));
+    const result = await processPdf('/test.pdf', { ...baseOpts });
+
+    // Shared image: 1000 bytes, counted once. Unique JPX images: 5 × 100 bytes.
+    // jpxByteShare = 500 / (1000 + 500) = 1/3 — NOT the ~0.09 a per-page double-count would give.
+    expect(result.imageCount).toBe(6); // 1 shared (deduped) + 5 unique
+    expect(result.jpxByteShare).toBeCloseTo(1 / 3, 2);
+  });
 });
 
 // ─── Regression: text-only PDF + GS compression ──────────────────────────────
@@ -759,7 +798,10 @@ describe('processPdf — cancellation behaviour', () => {
   let a4Pdf: Uint8Array;
 
   beforeAll(async () => {
-    a4Pdf = await createMinimalPdf(1, PageSizes.A4);
+    // Must have a real (non-JPX) image so isPredictablyNonCompressible doesn't
+    // skip Ghostscript entirely — these tests are specifically about GS's
+    // cancel/crash behavior, which only runs when GS is actually invoked.
+    a4Pdf = await createPdfWithImage(1);
   });
 
   // [PC-CANCEL-01] cancel_processing invoke mock can be set up and invoked independently.
@@ -934,7 +976,10 @@ describe('processPdf — cascade compression (targetSizeBytes)', () => {
   let a4Pdf: Uint8Array;
 
   beforeAll(async () => {
-    a4Pdf = await createMinimalPdf(1, PageSizes.A4);
+    // Must have a real (non-JPX) image so isPredictablyNonCompressible doesn't
+    // skip Ghostscript entirely — these tests are specifically about the cascade
+    // logic across GS invocations, which only runs when GS is actually invoked.
+    a4Pdf = await createPdfWithImage(1);
   });
 
   it('[CAS-01] stops cascading once target is met — does not call GS more times than needed', async () => {

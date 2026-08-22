@@ -53,6 +53,34 @@ vi.mock('@/lib/pdfThumbnail', () => ({
   renderPdfThumbnail: vi.fn().mockResolvedValue('blob:page-preview'),
 }));
 
+// pdfjs-dist — used directly by LazyPageThumbnail (Split/Organize page grids)
+vi.mock('pdfjs-dist', () => {
+  const mockPage = {
+    getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),
+    render: vi.fn().mockReturnValue({ promise: Promise.resolve() }),
+  };
+  const mockPdfDoc = {
+    numPages: 3,
+    getPage: vi.fn().mockResolvedValue(mockPage),
+    destroy: vi.fn(),
+  };
+  return {
+    getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve(mockPdfDoc) }),
+    GlobalWorkerOptions: { workerSrc: '' },
+  };
+});
+
+// Stub IntersectionObserver — LazyPageThumbnail uses it for lazy rendering
+vi.stubGlobal(
+  'IntersectionObserver',
+  class IntersectionObserver {
+    observe = vi.fn();
+    disconnect = vi.fn();
+    unobserve = vi.fn();
+    constructor(_cb: IntersectionObserverCallback, _opts?: IntersectionObserverInit) {}
+  },
+);
+
 // Merge lib — mock loading and merging
 vi.mock('@/lib/pdfMerge', () => ({
   loadPdfForMerge: vi.fn().mockImplementation((filePath: string) =>

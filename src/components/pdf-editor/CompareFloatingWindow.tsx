@@ -1,8 +1,13 @@
 // Full comparison overlay: side-by-side Before (original) / After (current edited)
 // with synced scrolling, zoom controls — mirrors the CompareStep UX.
+//
+// CRITICAL: Pages are rendered lazily (on-demand as they approach the viewport,
+// evicted once they leave it) rather than all up front. Rasterizing every page of
+// both documents synchronously froze the app solid on large PDFs (e.g. 688 pages) —
+// see openPdfForLazyRender in pdfThumbnail.ts, same pattern used by CompareStep.
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +21,8 @@ const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
 ];
 const DEFAULT_ZOOM_INDEX = 2; // 100%
 const RENDER_SCALE = 2.0;
+const RENDER_ROOT_MARGIN = '150% 0px';
+const DEFAULT_PAGE_ASPECT_RATIO = 841.89 / 595.28;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -27,7 +34,7 @@ function formatBytes(bytes: number): string {
 interface PreviewPanelProps {
   label: string;
   sizeLabel: string;
-  pageUrls: string[];
+  handle: LazyPdfHandle | null;
   isRendering: boolean;
   hasError: boolean;
   zoomWrapperClass: string;
@@ -38,13 +45,76 @@ interface PreviewPanelProps {
 function PreviewPanel({
   label,
   sizeLabel,
-  pageUrls,
+  handle,
   isRendering,
   hasError,
   zoomWrapperClass,
   scrollRef,
   onScroll,
 }: PreviewPanelProps) {
+  // pageIndex -> rendered data URL. Pages are rendered on demand as they approach
+  // the viewport and evicted once they leave it, so memory stays bounded even
+  // for documents with hundreds of pages.
+  const [renderedPages, setRenderedPages] = useState<Map<number, string>>(new Map());
+  const renderingRef = useRef<Set<number>>(new Set());
+  const pageElsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    setRenderedPages(new Map());
+    renderingRef.current = new Set();
+  }, [handle]);
+
+  const renderPage = useCallback((pageIndex: number) => {
+    if (!handle || renderingRef.current.has(pageIndex)) return;
+    renderingRef.current.add(pageIndex);
+    handle.renderPage(pageIndex, RENDER_SCALE)
+      .then((url) => {
+        setRenderedPages((prev) => new Map(prev).set(pageIndex, url));
+      })
+      .catch(() => {
+        // Leave this one page unrendered rather than failing the whole panel.
+      })
+      .finally(() => {
+        renderingRef.current.delete(pageIndex);
+      });
+  }, [handle]);
+
+  const evictPage = useCallback((pageIndex: number) => {
+    setRenderedPages((prev) => {
+      if (!prev.has(pageIndex)) return prev;
+      const next = new Map(prev);
+      next.delete(pageIndex);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!handle || !scrollRef?.current) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      for (let i = 0; i < handle.numPages; i++) renderPage(i);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const pageIndex = Number((entry.target as HTMLElement).dataset.pageIndex);
+          if (Number.isNaN(pageIndex)) continue;
+          if (entry.isIntersecting) {
+            renderPage(pageIndex);
+          } else {
+            evictPage(pageIndex);
+          }
+        }
+      },
+      { root: scrollRef.current, rootMargin: RENDER_ROOT_MARGIN },
+    );
+
+    for (const el of pageElsRef.current.values()) observer.observe(el);
+    return () => observer.disconnect();
+  }, [handle, scrollRef, renderPage, evictPage]);
+
   return (
     <div className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
       {/* Panel header */}
@@ -63,21 +133,37 @@ function PreviewPanel({
           <div className="flex h-full min-h-[300px] items-center justify-center">
             <span className="text-sm text-muted-foreground">Preview unavailable</span>
           </div>
-        ) : isRendering ? (
+        ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
             <span className="text-sm text-muted-foreground">Rendering preview...</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
-            {pageUrls.map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt={`${label} page ${i + 1}`}
-                className="w-full h-auto block border-b border-border/30 last:border-b-0"
-              />
-            ))}
+            {Array.from({ length: handle.numPages }, (_, pageIndex) => {
+              const url = renderedPages.get(pageIndex);
+              const aspectRatio = handle.pageAspectRatios[pageIndex] ?? DEFAULT_PAGE_ASPECT_RATIO;
+              return (
+                <div
+                  key={pageIndex}
+                  data-page-index={pageIndex}
+                  ref={(el) => {
+                    if (el) pageElsRef.current.set(pageIndex, el);
+                    else pageElsRef.current.delete(pageIndex);
+                  }}
+                  style={{ aspectRatio: `1 / ${aspectRatio}` }}
+                  className="w-full border-b border-border/30 last:border-b-0 bg-muted/10"
+                >
+                  {url && (
+                    <img
+                      src={url}
+                      alt={`${label} page ${pageIndex + 1}`}
+                      className="w-full h-full block"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -89,8 +175,8 @@ export function CompareFloatingWindow() {
   const { state, setCompareMode } = useEditorContext();
   const { originalPdfBytes, pdfBytes } = state;
 
-  const [originalUrls, setOriginalUrls] = useState<string[]>([]);
-  const [currentUrls, setCurrentUrls] = useState<string[]>([]);
+  const [originalHandle, setOriginalHandle] = useState<LazyPdfHandle | null>(null);
+  const [currentHandle, setCurrentHandle] = useState<LazyPdfHandle | null>(null);
   const [originalRendering, setOriginalRendering] = useState(true);
   const [currentRendering, setCurrentRendering] = useState(true);
   const [originalError, setOriginalError] = useState(false);
@@ -116,18 +202,20 @@ export function CompareFloatingWindow() {
     requestAnimationFrame(() => { isSyncing.current = false; });
   }, []);
 
-  // Render original (Before)
+  // Open original (Before) for lazy per-page rendering
   useEffect(() => {
     if (originalPdfBytes.byteLength === 0) return;
     let cancelled = false;
-    setOriginalUrls([]);
+    let handle: LazyPdfHandle | null = null;
+    setOriginalHandle(null);
     setOriginalRendering(true);
     setOriginalError(false);
 
-    renderAllPdfPages(originalPdfBytes, RENDER_SCALE)
-      .then((urls) => {
-        if (cancelled) return;
-        setOriginalUrls(urls);
+    openPdfForLazyRender(originalPdfBytes)
+      .then((h) => {
+        if (cancelled) { h.destroy(); return; }
+        handle = h;
+        setOriginalHandle(h);
         setOriginalRendering(false);
       })
       .catch(() => {
@@ -135,21 +223,23 @@ export function CompareFloatingWindow() {
         setOriginalError(true);
         setOriginalRendering(false);
       });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; handle?.destroy(); };
   }, [originalPdfBytes]);
 
-  // Render current (After)
+  // Open current (After) for lazy per-page rendering
   useEffect(() => {
     if (pdfBytes.byteLength === 0) return;
     let cancelled = false;
-    setCurrentUrls([]);
+    let handle: LazyPdfHandle | null = null;
+    setCurrentHandle(null);
     setCurrentRendering(true);
     setCurrentError(false);
 
-    renderAllPdfPages(pdfBytes, RENDER_SCALE)
-      .then((urls) => {
-        if (cancelled) return;
-        setCurrentUrls(urls);
+    openPdfForLazyRender(pdfBytes)
+      .then((h) => {
+        if (cancelled) { h.destroy(); return; }
+        handle = h;
+        setCurrentHandle(h);
         setCurrentRendering(false);
       })
       .catch(() => {
@@ -157,7 +247,7 @@ export function CompareFloatingWindow() {
         setCurrentError(true);
         setCurrentRendering(false);
       });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; handle?.destroy(); };
   }, [pdfBytes]);
 
   // Close on Escape key
@@ -213,7 +303,7 @@ export function CompareFloatingWindow() {
         <PreviewPanel
           label="Original"
           sizeLabel={formatBytes(originalSize)}
-          pageUrls={originalUrls}
+          handle={originalHandle}
           isRendering={originalRendering}
           hasError={originalError}
           zoomWrapperClass={zoomWrapperClass}
@@ -223,7 +313,7 @@ export function CompareFloatingWindow() {
         <PreviewPanel
           label="Current"
           sizeLabel={formatBytes(currentSize)}
-          pageUrls={currentUrls}
+          handle={currentHandle}
           isRendering={currentRendering}
           hasError={currentError}
           zoomWrapperClass={zoomWrapperClass}

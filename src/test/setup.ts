@@ -25,6 +25,7 @@ vi.mock('@tauri-apps/plugin-fs', () => {
 // tempDir returns a mock temp directory; join concatenates with '/' separator.
 vi.mock('@tauri-apps/api/path', () => ({
   tempDir: vi.fn().mockResolvedValue('/tmp/'),
+  desktopDir: vi.fn().mockResolvedValue('/tmp/'),
   join: vi.fn().mockImplementation((...parts: string[]) => Promise.resolve(parts.join('/'))),
 }));
 

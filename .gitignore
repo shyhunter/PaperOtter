@@ -28,6 +28,11 @@ coverage
 # Placeholder stubs for other platforms are committed so Tauri's externalBin check passes.
 src-tauri/binaries/gs-aarch64-apple-darwin
 
+# Bench harness artifacts — the large stress PDF is regenerated locally via
+# `node bench/make-large-fixture.mjs`, not committed (~40 MB).
+bench/dist/
+bench/fixtures/
+
 # E2E test artifacts
 e2e-output/
 test-fixtures-e2e/large-sparse.pdf

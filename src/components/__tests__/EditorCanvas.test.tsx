@@ -16,6 +16,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, act, waitFor } from '@testing-library/react';
 import { useEffect, useRef } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
 import { EditorCanvas } from '@/components/pdf-editor/EditorCanvas';
 import {
   EditorProvider,
@@ -175,6 +176,28 @@ describe('EditorCanvas — virtualization', () => {
     const page5Placeholder = screen.getByText('5');
     expect(page5Placeholder.tagName).not.toBe('CANVAS');
   });
+
+  it('EC-09: multiple simultaneously-visible pages share one parsed document, not one each', async () => {
+    // Regression: PageCanvasRenderer called pdfjsLib.getDocument() (a full parse,
+    // including a full-size copy of the document's bytes) independently for every
+    // single visible page. With the ±3 virtualization window, that alone meant
+    // several concurrent full-document re-parses at once — and again every time
+    // the visible window shifted while scrolling. For a large, image-heavy real
+    // document this was expensive enough, repeated often enough, to make the app
+    // unresponsive to clicks for extended stretches. Pages 0-3 (4 pages) are
+    // within the default virtualization window around page 0 and render at once.
+    vi.mocked(pdfjsLib.getDocument).mockClear();
+
+    renderWithProvider(10, () => {});
+
+    await waitFor(() => expect(screen.getByText('8')).toBeInTheDocument());
+    // Let all four in-window pages finish their (debounced) render.
+    await new Promise((r) => setTimeout(r, 250));
+
+    // One parse for placeholder dimensions + one shared parse reused by every
+    // visible page's canvas render — never one per visible page.
+    expect(vi.mocked(pdfjsLib.getDocument).mock.calls.length).toBeLessThanOrEqual(2);
+  });
 });
 
 // ── Navigation tests ──────────────────────────────────────────────────────────
@@ -265,5 +288,44 @@ describe('EditorCanvas — scrollToPageRef navigation', () => {
     });
 
     expect(latestCtx!.state.currentPage).toBe(9);
+  });
+});
+
+describe('EditorCanvas — large PDF page-dimension loading', () => {
+  it('EC-07: for docs over 50 pages, only page 1 is fetched for placeholder dimensions', async () => {
+    // Regression: fetching every page's real dimensions up front — even one page
+    // at a time with a yield in between — meant hundreds of sequential pdf.js
+    // calls that starved click handling for the whole loading window on a real
+    // 688-page PDF. Placeholder sizing now uses page 1's dimensions for every
+    // page; PageCanvasRenderer still renders each page at its own real size once
+    // it's actually scrolled into view.
+    const mockPage = {
+      getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),
+      render: vi.fn().mockReturnValue({ promise: Promise.resolve() }),
+    };
+    const mockPdfDoc = {
+      numPages: 60,
+      getPage: vi.fn().mockResolvedValue(mockPage),
+      destroy: vi.fn(),
+    };
+    vi.mocked(pdfjsLib.getDocument).mockReturnValue({
+      promise: Promise.resolve(mockPdfDoc),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    let latestCtx: EditorCtx | null = null;
+    renderWithProvider(60, (ctx) => { latestCtx = ctx; });
+
+    await waitFor(() => expect(latestCtx?.state.pageCount).toBe(60));
+    // Let any pending effects/microtasks (e.g. PageCanvasRenderer's own renders
+    // for the virtualization window) settle.
+    await new Promise((r) => setTimeout(r, 50));
+
+    const requestedPages = mockPdfDoc.getPage.mock.calls.map((call) => call[0]);
+    expect(requestedPages).toContain(1);
+    // Nothing beyond the virtualization window around page 0 (±3, i.e. pages
+    // 1-4) should ever be requested — never all the way through 60.
+    expect(requestedPages).not.toContain(10);
+    expect(requestedPages).not.toContain(60);
   });
 });

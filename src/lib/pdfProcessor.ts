@@ -2,7 +2,7 @@
 // CRITICAL: Never use useCompression: true with pdf-lib (issue #1445 — corrupts output).
 // For real compression, GS sidecar is invoked via invoke('compress_pdf').
 import { readFile } from '@tauri-apps/plugin-fs';
-import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream } from 'pdf-lib';
+import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream, PDFArray, PDFRef } from 'pdf-lib';
 import { invoke } from '@tauri-apps/api/core';
 import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset, PdfQualityLevel } from '@/types/file';
 
@@ -20,6 +20,57 @@ const QUALITY_TO_GS_PRESET: Record<PdfQualityLevel, string> = {
 // When a target size is set, processPdf tries presets starting from the recommended one,
 // cascading toward 'web' until the target is met or all presets are exhausted.
 const QUALITY_CASCADE: PdfQualityLevel[] = ['archive', 'print', 'screen', 'web'];
+
+// Above this share of image bytes being JPXDecode (JPEG2000), Ghostscript's compression
+// presets are treated as unable to help — GS doesn't meaningfully re-encode JPX images.
+const JPX_BYTE_SHARE_THRESHOLD = 0.9;
+
+// NOTE: no absolute file-size floor here (e.g. "under 50 KB"). GS's own output overhead
+// is real, but it's already handled reactively by the bloat guard below (processedBytes
+// reverts to the original when GS's output is larger) — an upfront predictive threshold
+// isn't needed on top of that, and picking one without solid data on real GS overhead
+// risks being wrong in both directions (blocking small files that would still compress,
+// or missing larger files that still don't).
+
+/**
+ * Whether compression is predictably futile for this file, based on the pre-scan alone —
+ * used to disable the compression UI and to skip Ghostscript entirely rather than making
+ * the user wait through a pass we already know won't help.
+ */
+export function isPredictablyNonCompressible(
+  compressibilityScore: number,
+  jpxByteShare: number,
+): boolean {
+  return compressibilityScore < 0.1 || jpxByteShare > JPX_BYTE_SHARE_THRESHOLD;
+}
+
+export type NonCompressibleReason = 'text-only' | 'jpx' | null;
+
+/** Which specific reason (if any) compression is predictably futile — drives the UI message. */
+export function getNonCompressibleReason(
+  compressibilityScore: number,
+  jpxByteShare: number,
+): NonCompressibleReason {
+  if (compressibilityScore < 0.1) return 'text-only';
+  if (jpxByteShare > JPX_BYTE_SHARE_THRESHOLD) return 'jpx';
+  return null;
+}
+
+/**
+ * The single canonical explanation for a NonCompressibleReason — reused verbatim by
+ * ConfigureStep and CompareStep so the same file never shows differently-worded
+ * explanations of the same fact in different places.
+ */
+export function nonCompressibleMessage(reason: NonCompressibleReason, imageCount: number): string | null {
+  switch (reason) {
+    case 'text-only':
+      return 'This file is mostly text with no embedded images — compression has minimal effect on text-only PDFs.';
+    case 'jpx':
+      return `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''}, already JPEG2000-encoded — Ghostscript can't compress them further.`;
+    case null:
+      return null;
+  }
+}
 
 // Estimate ratios at [score=1.0, score=0.0] for each quality level.
 // Ratios represent expected output / input size based on GS preset typical behaviour.
@@ -55,8 +106,16 @@ function getTargetPageSize(preset: PdfPagePreset, widthMm: number | null, height
 // Count image XObjects in the PDF using pdf-lib metadata.
 // This is a best-effort scan — counts embedded XObject entries with Subtype=Image.
 // Uses pdf-lib's type-safe lookupMaybe API to traverse the page resource dictionary.
-async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number; compressibilityScore: number }> {
+async function scanPdfImages(
+  pdfDoc: PDFDocument,
+): Promise<{ imageCount: number; compressibilityScore: number; jpxByteShare: number }> {
   let imageCount = 0;
+  let totalImageBytes = 0;
+  let jpxImageBytes = 0;
+  // Same image XObject (e.g. a repeated header/logo) is often referenced by every
+  // page via the same indirect object — count it once, not once per page, or a
+  // large shared non-JPX image can dilute jpxByteShare far below the real figure.
+  const seenImageRefs = new Set<string>();
   const pages = pdfDoc.getPages();
 
   for (const page of pages) {
@@ -70,6 +129,13 @@ async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number;
       if (!xObjectDict) continue;
 
       for (const key of xObjectDict.keys()) {
+        // get() (unresolved) lets us dedupe by indirect reference before resolving.
+        const rawEntry = xObjectDict.get(key);
+        if (rawEntry instanceof PDFRef) {
+          if (seenImageRefs.has(rawEntry.tag)) continue;
+          seenImageRefs.add(rawEntry.tag);
+        }
+
         // Each XObject entry is typically a PDFStream (possibly via a ref).
         // lookupMaybe(key) resolves refs and returns the object without type checking.
         // We get the Subtype from either PDFStream.dict or the PDFDict itself.
@@ -78,8 +144,10 @@ async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number;
 
         // Extract the dict — PDFStream has .dict, PDFDict is its own dict
         let dict: PDFDict | undefined;
+        let contentSize = 0;
         if (xObj instanceof PDFStream) {
           dict = xObj.dict;
+          try { contentSize = xObj.getContentsSize(); } catch { contentSize = 0; }
         } else if (xObj instanceof PDFDict) {
           dict = xObj;
         }
@@ -88,6 +156,27 @@ async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number;
         const subtype = dict.lookupMaybe(PDFName.of('Subtype'), PDFName);
         if (subtype?.toString() === '/Image') {
           imageCount++;
+          totalImageBytes += contentSize;
+
+          // Filter may be a single Name or an Array of Names (chained filters).
+          // JPXDecode (JPEG2000) is not meaningfully re-encoded by Ghostscript's
+          // pdfwrite compression presets — track its share of image bytes so the
+          // UI can explain a "0% smaller" result accurately instead of just
+          // "already optimal", based on how much of the content it actually is
+          // (not just whether any JPX image exists at all).
+          const filter = dict.lookup(PDFName.of('Filter'));
+          const filterNames: string[] = [];
+          if (filter instanceof PDFName) {
+            filterNames.push(filter.toString());
+          } else if (filter instanceof PDFArray) {
+            for (let i = 0; i < filter.size(); i++) {
+              const f = filter.lookup(i);
+              if (f instanceof PDFName) filterNames.push(f.toString());
+            }
+          }
+          if (filterNames.includes('/JPXDecode')) {
+            jpxImageBytes += contentSize;
+          }
         }
       }
     } catch {
@@ -98,8 +187,9 @@ async function scanPdfImages(pdfDoc: PDFDocument): Promise<{ imageCount: number;
   // compressibilityScore: images per page, saturating at 2 images/page → 1.0
   const imagesPerPage = pages.length > 0 ? imageCount / pages.length : 0;
   const compressibilityScore = Math.min(1.0, imagesPerPage / 2);
+  const jpxByteShare = totalImageBytes > 0 ? jpxImageBytes / totalImageBytes : 0;
 
-  return { imageCount, compressibilityScore };
+  return { imageCount, compressibilityScore, jpxByteShare };
 }
 
 // Given a target size (bytes), input size (bytes), and estimated compressibility,
@@ -131,15 +221,22 @@ export function recommendQualityForTarget(
  * compressibility score. Uses linear interpolation between the high-compressibility
  * and low-compressibility ratios from ESTIMATE_RATIOS.
  * Result is floored at 1 KB to avoid unrealistic sub-kilobyte estimates.
+ *
+ * jpxByteShare (0–1, optional) diminishes the effective compressibility score —
+ * JPX-encoded image bytes don't actually shrink under Ghostscript's presets, so a
+ * JPX-heavy PDF shouldn't get the same optimistic estimate as a JPEG-heavy one just
+ * because both have a high image-per-page count.
  */
 export function estimateOutputSizeBytes(
   quality: PdfQualityLevel,
   fileSizeBytes: number,
   compressibilityScore: number,
+  jpxByteShare = 0,
 ): number {
+  const effectiveScore = compressibilityScore * (1 - jpxByteShare);
   const [high, low] = ESTIMATE_RATIOS[quality] ?? ESTIMATE_RATIOS.screen;
   // Linear interpolation: at score=1.0 use high ratio; at score=0.0 use low ratio
-  const ratio = low + (high - low) * compressibilityScore;
+  const ratio = low + (high - low) * effectiveScore;
   const estimate = Math.round(fileSizeBytes * ratio);
   return Math.max(estimate, 1024); // floor at 1 KB
 }
@@ -151,10 +248,27 @@ export async function getPdfImageCount(sourcePath: string): Promise<number> {
   return imageCount;
 }
 
-export async function getPdfCompressibility(sourcePath: string): Promise<{ imageCount: number; compressibilityScore: number }> {
+/**
+ * Loads and scans a PDF once for everything the Configure step needs: page count,
+ * file size, and compressibility. Previously the caller (App.tsx) separately loaded
+ * and parsed the same file again just for page count/size — for a large PDF with a
+ * complex xref table, parsing it twice noticeably slowed the Pick→Configure transition.
+ */
+export async function getPdfCompressibility(sourcePath: string): Promise<{
+  pageCount: number;
+  fileSizeBytes: number;
+  imageCount: number;
+  compressibilityScore: number;
+  jpxByteShare: number;
+}> {
   const bytes = await readFile(sourcePath);
-  const pdfDoc = await PDFDocument.load(bytes);
-  return scanPdfImages(pdfDoc);
+  const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  const scan = await scanPdfImages(pdfDoc);
+  return {
+    pageCount: pdfDoc.getPageCount(),
+    fileSizeBytes: bytes.byteLength,
+    ...scan,
+  };
 }
 
 export async function processPdf(
@@ -170,7 +284,7 @@ export async function processPdf(
   const pageCount = pdfDoc.getPageCount();
 
   // 3. Pre-scan: count image XObjects to populate compressibility metadata
-  const { imageCount, compressibilityScore } = await scanPdfImages(pdfDoc);
+  const { imageCount, compressibilityScore, jpxByteShare } = await scanPdfImages(pdfDoc);
 
   // 4. Apply per-page resize if enabled
   if (options.resizeEnabled && options.selectedPageIndices.length > 0) {
@@ -233,81 +347,89 @@ export async function processPdf(
       ? await pdfDoc.save({ useObjectStreams: false }) // save post-resize state
       : sourceBytes; // no resize — pass original bytes to GS directly
 
-    // Build temp paths using @tauri-apps/api/path join() to avoid separator bugs.
-    const { tempDir } = await import('@tauri-apps/api/path');
-    const tmpBase = await tempDir(); // e.g. "/var/folders/.../T/"
-    const ts = Date.now();
-    const { join } = await import('@tauri-apps/api/path');
-    const tempInputPath = await join(tmpBase, `papercut_gs_input_${ts}.pdf`);
+    if (isPredictablyNonCompressible(compressibilityScore, jpxByteShare)) {
+      // The pre-scan already tells us Ghostscript can't help here (text-only, JPX-dominated,
+      // or too small for GS's own overhead to be worth it) — skip the slow GS pass entirely
+      // rather than making the user wait for a result we can already predict.
+      processedBytes = pdfLibBytes;
+      wasAlreadyOptimal = true;
+    } else {
+      // Build temp paths using @tauri-apps/api/path join() to avoid separator bugs.
+      const { tempDir } = await import('@tauri-apps/api/path');
+      const tmpBase = await tempDir(); // e.g. "/var/folders/.../T/"
+      const ts = Date.now();
+      const { join } = await import('@tauri-apps/api/path');
+      const tempInputPath = await join(tmpBase, `papercut_gs_input_${ts}.pdf`);
 
-    // Write post-resize bytes to temp path (NOT sourceBytes — resizeEnabled may have changed them)
-    // NOTE: fs:allow-write-file scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
-    await import('@tauri-apps/plugin-fs').then(m => m.writeFile(tempInputPath, pdfLibBytes));
+      // Write post-resize bytes to temp path (NOT sourceBytes — resizeEnabled may have changed them)
+      // NOTE: fs:allow-write-file scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
+      await import('@tauri-apps/plugin-fs').then(m => m.writeFile(tempInputPath, pdfLibBytes));
 
-    if (options.targetSizeBytes != null) {
-      // CASCADE MODE: when a target size is set, try presets from the recommended one
-      // down to 'web' (most aggressive), stopping as soon as the target is met.
-      // This fixes the "already optimal" false positive where a single preset bloated
-      // the file but more aggressive presets could still achieve the target.
-      const startIdx = QUALITY_CASCADE.indexOf(options.qualityLevel);
-      const presetsToTry = startIdx >= 0 ? QUALITY_CASCADE.slice(startIdx) : QUALITY_CASCADE;
+      if (options.targetSizeBytes != null) {
+        // CASCADE MODE: when a target size is set, try presets from the recommended one
+        // down to 'web' (most aggressive), stopping as soon as the target is met.
+        // This fixes the "already optimal" false positive where a single preset bloated
+        // the file but more aggressive presets could still achieve the target.
+        const startIdx = QUALITY_CASCADE.indexOf(options.qualityLevel);
+        const presetsToTry = startIdx >= 0 ? QUALITY_CASCADE.slice(startIdx) : QUALITY_CASCADE;
 
-      let bestBytes: Uint8Array | null = null;
-      let bestSize = Infinity;
+        let bestBytes: Uint8Array | null = null;
+        let bestSize = Infinity;
 
-      for (const level of presetsToTry) {
-        const levelPreset = QUALITY_TO_GS_PRESET[level];
-        const gsResult: ArrayBuffer = await invoke('compress_pdf', {
-          sourcePath: tempInputPath,
-          preset: levelPreset,
-        });
-        const gsBytes = new Uint8Array(gsResult);
+        for (const level of presetsToTry) {
+          const levelPreset = QUALITY_TO_GS_PRESET[level];
+          const gsResult: ArrayBuffer = await invoke('compress_pdf', {
+            sourcePath: tempInputPath,
+            preset: levelPreset,
+          });
+          const gsBytes = new Uint8Array(gsResult);
 
-        // Skip bloated results — GS added more than it compressed (e.g. ICC profile overhead)
-        if (gsBytes.byteLength > pdfLibBytes.byteLength) continue;
+          // Skip bloated results — GS added more than it compressed (e.g. ICC profile overhead)
+          if (gsBytes.byteLength > pdfLibBytes.byteLength) continue;
 
-        // Track the best (smallest non-bloating) result
-        if (gsBytes.byteLength < bestSize) {
-          bestBytes = gsBytes;
-          bestSize = gsBytes.byteLength;
+          // Track the best (smallest non-bloating) result
+          if (gsBytes.byteLength < bestSize) {
+            bestBytes = gsBytes;
+            bestSize = gsBytes.byteLength;
+          }
+
+          // Stop early if this preset already meets the target
+          if (gsBytes.byteLength <= options.targetSizeBytes) break;
         }
 
-        // Stop early if this preset already meets the target
-        if (gsBytes.byteLength <= options.targetSizeBytes) break;
-      }
+        // Clean up temp input file
+        await import('@tauri-apps/plugin-fs').then(m => m.remove(tempInputPath).catch(() => {}));
 
-      // Clean up temp input file
-      await import('@tauri-apps/plugin-fs').then(m => m.remove(tempInputPath).catch(() => {}));
-
-      if (bestBytes !== null) {
-        processedBytes = bestBytes;
+        if (bestBytes !== null) {
+          processedBytes = bestBytes;
+        } else {
+          // All presets bloated the file — revert to pdfLibBytes
+          processedBytes = pdfLibBytes;
+          wasAlreadyOptimal = true;
+        }
       } else {
-        // All presets bloated the file — revert to pdfLibBytes
-        processedBytes = pdfLibBytes;
-        wasAlreadyOptimal = true;
-      }
-    } else {
-      // SINGLE PRESET MODE: no target set, run once with the specified quality level.
-      // No cascade — user explicitly chose a quality and just wants it applied.
-      const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
-      const gsResult: ArrayBuffer = await invoke('compress_pdf', {
-        sourcePath: tempInputPath,
-        preset,
-      });
+        // SINGLE PRESET MODE: no target set, run once with the specified quality level.
+        // No cascade — user explicitly chose a quality and just wants it applied.
+        const preset = QUALITY_TO_GS_PRESET[options.qualityLevel];
+        const gsResult: ArrayBuffer = await invoke('compress_pdf', {
+          sourcePath: tempInputPath,
+          preset,
+        });
 
-      processedBytes = new Uint8Array(gsResult);
+        processedBytes = new Uint8Array(gsResult);
 
-      // Clean up temp input file (ignore errors — OS will clean eventually)
-      // NOTE: fs:allow-remove scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
-      await import('@tauri-apps/plugin-fs').then(m =>
-        m.remove(tempInputPath).catch(() => {})
-      );
+        // Clean up temp input file (ignore errors — OS will clean eventually)
+        // NOTE: fs:allow-remove scoped to $TEMP/** is in capabilities/default.json (added in Plan 01 Task 1)
+        await import('@tauri-apps/plugin-fs').then(m =>
+          m.remove(tempInputPath).catch(() => {})
+        );
 
-      // GS bloat guard: if GS produced a larger file than the bytes it received, revert.
-      // This happens for text-only PDFs — GS adds ICC profiles and overhead with no image data to compress.
-      if (processedBytes.byteLength > pdfLibBytes.byteLength) {
-        processedBytes = pdfLibBytes; // pdfLibBytes = post-resize bytes (or sourceBytes when no resize)
-        wasAlreadyOptimal = true;
+        // GS bloat guard: if GS produced a larger file than the bytes it received, revert.
+        // This happens for text-only PDFs — GS adds ICC profiles and overhead with no image data to compress.
+        if (processedBytes.byteLength > pdfLibBytes.byteLength) {
+          processedBytes = pdfLibBytes; // pdfLibBytes = post-resize bytes (or sourceBytes when no resize)
+          wasAlreadyOptimal = true;
+        }
       }
     }
   } else {
@@ -350,5 +472,6 @@ export async function processPdf(
     wasAlreadyOptimal,
     imageCount,
     compressibilityScore,
+    jpxByteShare,
   };
 }

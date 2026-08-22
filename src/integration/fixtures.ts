@@ -20,6 +20,7 @@ export const FAKE_PDF_RESULT: PdfProcessingResult = {
   wasAlreadyOptimal: false,
   imageCount: 2,
   compressibilityScore: 0.5,
+  jpxByteShare: 0,
 };
 
 export const FAKE_PDF_RESULT_TARGET_UNMET: PdfProcessingResult = {

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { organizePdf } from '@/lib/pdfOrganize';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
 
 interface PageEntry {
@@ -38,8 +38,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [originalPageCount, setOriginalPageCount] = useState(0);
   const [fileName, setFileName] = useState('');
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isLoadingThumbs, setIsLoadingThumbs] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<PageEntry[]>([]);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -80,17 +79,6 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     if (initialFile) loadFile(initialFile);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Load thumbnails when PDF loaded
-  useEffect(() => {
-    if (!pdfBytes) return;
-    let cancelled = false;
-    setIsLoadingThumbs(true);
-    renderAllPdfPages(pdfBytes, 0.3)
-      .then((urls) => { if (!cancelled) { setThumbnails(urls); setIsLoadingThumbs(false); } })
-      .catch(() => { if (!cancelled) setIsLoadingThumbs(false); });
-    return () => { cancelled = true; };
-  }, [pdfBytes]);
 
   const handleSelectFile = useCallback(async () => {
     try {
@@ -205,14 +193,8 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               </Button>
             </div>
 
-            {/* Page grid */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {isLoadingThumbs ? (
-                <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  <p className="text-xs">Loading page thumbnails...</p>
-                </div>
-              ) : (
+            {/* Page grid — each thumbnail renders lazily as it scrolls into view */}
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {pages.map((entry, index) => (
                     <div
@@ -221,13 +203,14 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                     >
                       {/* Thumbnail */}
                       <div className="relative aspect-[3/4] bg-muted">
-                        {thumbnails[entry.sourceIndex] && (
-                          <img
-                            src={thumbnails[entry.sourceIndex]}
-                            alt={`Page ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+                        <LazyPageThumbnail
+                          pdfBytes={pdfBytes}
+                          pageIndex={entry.sourceIndex}
+                          scale={0.3}
+                          scrollContainerRef={scrollContainerRef}
+                          className="w-full h-full"
+                          canvasClassName="w-full h-full object-cover"
+                        />
                         {/* Page number badge */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5 text-center">
                           <span className="text-[10px] text-white font-medium">
@@ -295,7 +278,6 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                     </div>
                   ))}
                 </div>
-              )}
 
               {processError && (
                 <div className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2">

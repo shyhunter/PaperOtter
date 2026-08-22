@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { parsePageRange, formatBytes } from '@/lib/pdfUtils';
-import { recommendQualityForTarget, estimateOutputSizeBytes } from '@/lib/pdfProcessor';
+import {
+  recommendQualityForTarget,
+  estimateOutputSizeBytes,
+  getNonCompressibleReason,
+  nonCompressibleMessage,
+} from '@/lib/pdfProcessor';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 
 export interface ConfigureStepProps {
@@ -14,6 +19,8 @@ export interface ConfigureStepProps {
   fileSizeBytes: number;    // original file size — shown in header so users know what target to set
   compressibilityScore: number;  // 0.0–1.0 from pre-scan (0 = text-only, 1 = image-heavy)
   imageCount: number;            // number of image XObjects found
+  jpxByteShare: number;          // 0.0–1.0 share of image bytes that are JPEG2000-encoded —
+                                 // Ghostscript won't meaningfully re-encode these
   isProcessing: boolean;
   progress: { current: number; total: number } | null;
   error: string | null;
@@ -66,6 +73,7 @@ export function ConfigureStep({
   fileSizeBytes,
   compressibilityScore,
   imageCount,
+  jpxByteShare,
   isProcessing,
   progress,
   error,
@@ -86,11 +94,11 @@ export function ConfigureStep({
       ZONES.reduce<Record<PdfQualityLevel, number>>(
         (acc, z) => ({
           ...acc,
-          [z.quality]: estimateOutputSizeBytes(z.quality, fileSizeBytes, compressibilityScore),
+          [z.quality]: estimateOutputSizeBytes(z.quality, fileSizeBytes, compressibilityScore, jpxByteShare),
         }),
         {} as Record<PdfQualityLevel, number>,
       ),
-    [fileSizeBytes, compressibilityScore],
+    [fileSizeBytes, compressibilityScore, jpxByteShare],
   );
 
   // Custom target size toggle & state
@@ -155,8 +163,16 @@ export function ConfigureStep({
     onGeneratePreview(options);
   }
 
-  // Block progression for text-only PDFs unless resize is enabled
-  const isNonCompressible = compressibilityScore < 0.1 && !resizeEnabled;
+  // A single source of truth for "compression is predictably futile" — text-only or
+  // JPX-dominated. Drives the warning message, the disabled controls below, and (in
+  // pdfProcessor.ts) skipping the Ghostscript pass entirely, all from the same
+  // threshold. Gated on fileSizeBytes > 0 (the pre-scan hasn't resolved yet before
+  // that, same signal already used for the file-size line above) — otherwise the
+  // default compressibilityScore=0 briefly reads as "text-only" for every file.
+  const preScanLoaded = fileSizeBytes > 0;
+  const nonCompressibleReason = preScanLoaded ? getNonCompressibleReason(compressibilityScore, jpxByteShare) : null;
+  const nonCompressibleMsg = nonCompressibleMessage(nonCompressibleReason, imageCount);
+  const isNonCompressible = nonCompressibleReason !== null && !resizeEnabled;
 
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
@@ -180,12 +196,12 @@ export function ConfigureStep({
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
           <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Optimise file size</h2>
 
-          {/* Non-compressible warning — shown prominently at top */}
-          {compressibilityScore < 0.1 && (
+          {/* Non-compressible warning — shown prominently at top, at most once */}
+          {nonCompressibleMsg && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-none mt-0.5" />
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                This file is mostly text with no embedded images. Compression has minimal effect on text-only PDFs.
+                {nonCompressibleMsg}
                 {!resizeEnabled && ' Enable page resize below to still process this file.'}
               </p>
             </div>
@@ -252,7 +268,7 @@ export function ConfigureStep({
                   setSliderValue(Number(e.target.value));
                   if (customMode) setCustomMode(false);
                 }}
-                disabled={isProcessing}
+                disabled={isProcessing || isNonCompressible}
                 aria-label="Compression level"
                 data-testid="compression-slider"
                 className="relative w-full h-6 appearance-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent"
@@ -270,7 +286,7 @@ export function ConfigureStep({
             <button
               type="button"
               onClick={() => setCustomMode((v) => !v)}
-              disabled={isProcessing}
+              disabled={isProcessing || isNonCompressible}
               className={cn(
                 'flex items-center gap-2 rounded-md border px-3 py-2 text-xs w-full transition-colors',
                 customMode
@@ -299,13 +315,13 @@ export function ConfigureStep({
                     value={customSizeValue}
                     onChange={(e) => { setCustomSizeValue(e.target.value); setCustomError(null); }}
                     placeholder="e.g. 2"
-                    disabled={isProcessing}
+                    disabled={isProcessing || isNonCompressible}
                     className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                   />
                   <button
                     type="button"
                     onClick={() => setCustomUnit((u) => u === 'MB' ? 'KB' : 'MB')}
-                    disabled={isProcessing}
+                    disabled={isProcessing || isNonCompressible}
                     className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-50 min-w-[3.5rem]"
                   >
                     {customUnit}
@@ -339,17 +355,18 @@ export function ConfigureStep({
             )}
           </div>
 
-          {/* Compressibility guidance */}
-          <div className="flex items-start gap-1.5">
-            <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              {compressibilityScore >= 0.5
-                ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — compression will reduce file size significantly.`
-                : compressibilityScore >= 0.1
-                  ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — moderate compression savings expected.`
-                  : 'This PDF is mostly text — compression savings will be minimal.'}
-            </p>
-          </div>
+          {/* Compressibility guidance — only shown when the banner above isn't already
+              covering the reason, so the same fact is never stated twice on this screen. */}
+          {!nonCompressibleMsg && (
+            <div className="flex items-start gap-1.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                {compressibilityScore >= 0.5
+                  ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — compression will reduce file size significantly.`
+                  : `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — moderate compression savings expected.`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Resize pages section — always visible, toggled via switch */}

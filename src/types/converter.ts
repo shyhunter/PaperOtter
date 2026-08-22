@@ -41,7 +41,7 @@ export interface ConvertResult {
 }
 
 /** All converter backends the app can use. `builtin` is the in-process engine (always available). */
-export type ConverterEngine = 'builtin' | 'textutil' | 'word' | 'libreoffice' | 'calibre' | 'pandoc';
+export type ConverterEngine = 'builtin' | 'textutil' | 'word' | 'libreoffice' | 'calibre' | 'pandoc' | 'webview';
 
 /** Which backends are available on this system (detected once at startup). */
 export interface ConverterAvailability {
@@ -52,6 +52,8 @@ export interface ConverterAvailability {
   libreoffice: boolean;
   calibre: boolean;
   pandoc: boolean;
+  /** Native OS webview HTML → PDF export (WKWebView createPDF). macOS only for now. */
+  webview: boolean;
 }
 
 /** AI-friendly, structure-preserving formats produced in-process by the built-in engine. */

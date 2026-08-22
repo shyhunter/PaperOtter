@@ -43,6 +43,7 @@ export async function detectConverters(): Promise<ConverterAvailability> {
       libreoffice: parsed.libreoffice ?? false,
       calibre: parsed.calibre ?? false,
       pandoc: parsed.pandoc ?? false,
+      webview: parsed.webview ?? false,
     };
   } catch {
     cachedAvailability = {
@@ -52,6 +53,7 @@ export async function detectConverters(): Promise<ConverterAvailability> {
       libreoffice: false,
       calibre: false,
       pandoc: false,
+      webview: false,
     };
   }
 
@@ -76,7 +78,9 @@ const ENGINE_SUPPORT: Record<ConvertFormat, ConverterEngine[]> = {
   doc:  ['textutil', 'word', 'libreoffice'],
   docx: ['builtin', 'textutil', 'word', 'libreoffice'],
   odt:  ['textutil', 'word', 'libreoffice'],
-  pdf:  ['word', 'libreoffice', 'calibre'],
+  // webview first: for an HTML source it renders like a real browser and needs
+  // no external app — falls through to word/libreoffice/calibre for other inputs.
+  pdf:  ['webview', 'word', 'libreoffice', 'calibre'],
   epub: ['calibre'],
   mobi: ['calibre'],
   azw3: ['calibre'],
@@ -97,6 +101,8 @@ const ENGINE_INPUT_SUPPORT: Record<ConverterEngine, ConvertFormat[]> = {
   libreoffice: ['pdf', 'docx', 'doc', 'odt', 'txt', 'rtf', 'html'],
   calibre:     ['epub', 'mobi', 'azw3', 'pdf', 'docx', 'odt', 'rtf', 'txt', 'html'],
   pandoc:      ['docx', 'odt', 'html', 'md', 'rtf', 'txt', 'epub'],
+  // Renders the source itself, not a converted copy — only a real browser page (HTML) applies.
+  webview:     ['html'],
 };
 
 /**
@@ -172,6 +178,7 @@ export function hasAnyConverter(availability: ConverterAvailability): boolean {
 export function getCapabilitySummary(availability: ConverterAvailability): string {
   const engines: string[] = [];
   if (availability.builtin) engines.push('Built-in (Markdown/HTML/JSON)');
+  if (availability.webview) engines.push('Browser export (HTML→PDF)');
   if (availability.textutil) engines.push('textutil (macOS)');
   if (availability.word) engines.push('Microsoft Word');
   if (availability.libreoffice) engines.push('LibreOffice');
@@ -264,6 +271,12 @@ export async function convertDocument(
   let outputBytes: Uint8Array;
 
   switch (engine) {
+    case 'webview':
+      outputBytes = await invoke<Uint8Array>('convert_html_to_pdf_native', {
+        sourcePath,
+      });
+      break;
+
     case 'textutil':
       outputBytes = await invoke<Uint8Array>('convert_with_textutil', {
         sourcePath,

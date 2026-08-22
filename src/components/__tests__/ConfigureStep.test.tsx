@@ -26,6 +26,7 @@ function makeProps(overrides: Partial<ConfigureStepProps> = {}): ConfigureStepPr
     fileSizeBytes: 6_650_000,   // ~6.34 MB
     compressibilityScore: 1.0,  // fully image-heavy
     imageCount: 100,
+    jpxByteShare: 0,
     isProcessing: false,
     progress: null,
     error: null,
@@ -103,5 +104,74 @@ describe('ConfigureStep — custom target pre-estimate warning (Phase C)', () =>
 
     // No warning
     expect(screen.queryByTestId('target-below-min-warning')).not.toBeInTheDocument();
+  });
+});
+
+// ─── JPEG2000 images — warn before processing, not just after ────────────────
+//
+// Bug: a real-world PDF whose images were JPEG2000-encoded showed "File already
+// optimal" only *after* the user waited through Generate Preview + Ghostscript,
+// with three redundantly-worded messages across the flow. The pre-scan already
+// knows this before any processing starts. Design settled through real-file
+// testing: jpxByteShare alone (any JPX image present) must NOT block compression
+// — a file can have some JPX images and still shrink from other content — but
+// once JPX images make up the overwhelming majority of image bytes (>90%,
+// isPredictablyNonCompressible), compression really is futile and should be
+// disabled exactly like the text-only case, with exactly one explanation shown.
+
+describe('ConfigureStep — JPEG2000 images (below the futility threshold)', () => {
+  it('[JPX-CFG-01] does NOT warn or disable anything when jpxByteShare is low', () => {
+    render(<ConfigureStep {...makeProps({ jpxByteShare: 0.2 })} />);
+    expect(screen.queryByText(/jpeg2000-encoded/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId('generate-preview-btn')).not.toBeDisabled();
+    expect(screen.getByTestId('compression-slider')).not.toBeDisabled();
+  });
+});
+
+describe('ConfigureStep — JPX-dominated PDFs are treated as non-compressible', () => {
+  it('[JPX-CFG-02] shows exactly one JPEG2000 message when jpxByteShare > 0.9', () => {
+    render(<ConfigureStep {...makeProps({ jpxByteShare: 0.95, imageCount: 420 })} />);
+    expect(screen.getAllByText(/already jpeg2000-encoded/i)).toHaveLength(1);
+    expect(screen.getByText(/420 images, already jpeg2000-encoded/i)).toBeInTheDocument();
+  });
+
+  it('[JPX-CFG-03] disables Generate Preview and the compression slider', () => {
+    render(<ConfigureStep {...makeProps({ jpxByteShare: 0.95 })} />);
+    expect(screen.getByTestId('generate-preview-btn')).toBeDisabled();
+    expect(screen.getByTestId('generate-preview-btn')).toHaveTextContent(/compression not available/i);
+    expect(screen.getByTestId('compression-slider')).toBeDisabled();
+  });
+
+  it('[JPX-CFG-04] re-enables the controls once resize is turned on', async () => {
+    render(<ConfigureStep {...makeProps({ jpxByteShare: 0.95 })} />);
+    await userEvent.click(screen.getByTestId('resize-toggle'));
+    expect(screen.getByTestId('generate-preview-btn')).not.toBeDisabled();
+    expect(screen.getByTestId('compression-slider')).not.toBeDisabled();
+  });
+});
+
+// ─── Genuinely non-compressible PDFs disable the actual controls ─────────────
+//
+// Bug: for a text-only PDF, only the Generate Preview button was disabled — the
+// compression slider and custom-target-size controls stayed fully interactive
+// even though adjusting them does nothing. When compression is truly not
+// possible, those controls should be disabled too, not just the final button.
+
+describe('ConfigureStep — non-compressible PDFs disable the compression controls', () => {
+  it('[CFG-DISABLE-01] disables the compression slider for a text-only PDF', () => {
+    render(<ConfigureStep {...makeProps({ compressibilityScore: 0.05, imageCount: 0 })} />);
+    expect(screen.getByTestId('compression-slider')).toBeDisabled();
+  });
+
+  it('[CFG-DISABLE-02] disables the custom-target-size toggle for a text-only PDF', () => {
+    render(<ConfigureStep {...makeProps({ compressibilityScore: 0.05, imageCount: 0 })} />);
+    expect(screen.getByText(/custom target size/i).closest('button')).toBeDisabled();
+  });
+
+  it('[CFG-DISABLE-03] re-enables the controls once resize is turned on', async () => {
+    render(<ConfigureStep {...makeProps({ compressibilityScore: 0.05, imageCount: 0 })} />);
+    await userEvent.click(screen.getByTestId('resize-toggle'));
+    expect(screen.getByTestId('compression-slider')).not.toBeDisabled();
+    expect(screen.getByText(/custom target size/i).closest('button')).not.toBeDisabled();
   });
 });

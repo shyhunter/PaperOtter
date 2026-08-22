@@ -38,7 +38,7 @@ describe('getExtension', () => {
 // ─── isSupportedFile ─────────────────────────────────────────────────────────
 
 describe('isSupportedFile', () => {
-  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp', 'scan.tiff', 'scan.tif', 'diagram.bmp', 'animation.gif', 'report.docx'])(
+  it.each(['document.pdf', 'photo.jpg', 'image.jpeg', 'pic.png', 'graphic.webp', 'scan.tiff', 'scan.tif', 'diagram.bmp', 'animation.gif', 'report.docx', 'page.html'])(
     'accepts supported file: %s',
     (path) => {
       expect(isSupportedFile(path)).toBe(true);
@@ -108,6 +108,10 @@ describe('detectFormat', () => {
 
   it('detects document format for docx', () => {
     expect(detectFormat('document.docx')).toBe('document');
+  });
+
+  it('[CR-BUG-03] detects document format for html (regression: html was not selectable for Convert Document)', () => {
+    expect(detectFormat('page.html')).toBe('document');
   });
 
   it('returns null for unsupported extensions', () => {

@@ -15,6 +15,9 @@ export default tseslint.config(
       '.worktrees',
       'test-fixtures',
       'test-fixtures-e2e',
+      // Local repro harness for large-document testing — deliberately uses
+      // loose typing and monkey-patching. See bench/README.md.
+      'bench',
     ],
   },
   {

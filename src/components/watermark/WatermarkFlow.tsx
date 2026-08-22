@@ -9,7 +9,7 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
-import { addWatermark, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
+import { addWatermark, addWatermarkSinglePage, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
@@ -116,7 +116,9 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     }
   }, [loadFile]);
 
-  // Generate preview thumbnail with current options (debounced)
+  // Generate preview thumbnail with current options (debounced).
+  // Only processes the first page — running the full watermark pass on every
+  // option change freezes the UI on large documents (hundreds of pages).
   const generatePreview = useCallback(async () => {
     if (!pdfBytes || !text.trim()) {
       setPreviewUrl(null);
@@ -126,7 +128,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     setIsGeneratingPreview(true);
     try {
       const options: WatermarkOptions = { text, fontSize, opacity, rotation, color };
-      const watermarked = await addWatermark(pdfBytes, options);
+      const watermarked = await addWatermarkSinglePage(pdfBytes, options, 0);
       const url = await renderPdfThumbnail(watermarked, 0.5);
       setPreviewUrl(url);
     } catch {

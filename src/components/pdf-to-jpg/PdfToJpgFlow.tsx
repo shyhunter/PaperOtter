@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import { friendlyPdfError } from '@/lib/pdfUtils';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { convertDocument, checkSidecarAvailability } from '@/lib/documentConverter';
 import type { MultiFileOutput } from '@/components/SaveStep';
 import type { ConvertFormat } from '@/types/converter';
@@ -154,8 +154,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   const [fileName, setFileName] = useState('');
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [pageCount, setPageCount] = useState(0);
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isLoadingThumbs, setIsLoadingThumbs] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Page selection
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
@@ -213,15 +212,6 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
       const allPages = new Set<number>();
       for (let i = 0; i < pages; i++) allPages.add(i);
       setSelectedPages(allPages);
-
-      // Load thumbnails
-      setIsLoadingThumbs(true);
-      renderAllPdfPages(pdfBytesArray, 0.25)
-        .then((urls) => {
-          setThumbnails(urls);
-          setIsLoadingThumbs(false);
-        })
-        .catch(() => setIsLoadingThumbs(false));
 
       goToStep(1);
     } catch (err) {
@@ -383,7 +373,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
         {/* Step 1: Configure */}
         {step === 1 && pdfBytes && (
-          <div className="flex flex-1 flex-col overflow-y-auto p-6">
+          <div ref={scrollContainerRef} className="flex flex-1 flex-col overflow-y-auto p-6">
             <div className="w-full max-w-2xl mx-auto space-y-4">
               {/* File info */}
               <div className="text-center">
@@ -491,7 +481,6 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                     setFileName('');
                     setPdfBytes(null);
                     setPageCount(0);
-                    setThumbnails([]);
                     setSelectedPages(new Set());
                   }}
                   disabled={isProcessing}
@@ -543,48 +532,46 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   </div>
                 </div>
 
-                {isLoadingThumbs ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {thumbnails.map((url, i) => {
-                      const isSelected = selectedPages.has(i);
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => handleTogglePage(i)}
-                          className={cn(
-                            'relative aspect-[3/4] rounded-md border overflow-hidden cursor-pointer transition-all',
-                            isSelected
-                              ? 'border-primary ring-2 ring-primary/30'
-                              : 'border-border hover:border-primary/50 opacity-50',
-                          )}
-                        >
-                          <img
-                            src={url}
-                            alt={`Page ${i + 1}`}
-                            className="w-full h-full object-contain bg-muted/30"
-                          />
-                          <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center py-0.5">
-                            {i + 1}
-                          </span>
-                          {/* Selection indicator */}
-                          <span className={cn(
-                            'absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
-                            isSelected
-                              ? 'bg-primary border-primary text-primary-foreground'
-                              : 'bg-background/70 border-border text-transparent',
-                          )}>
-                            {isSelected && '✓'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                {/* Each thumbnail renders lazily as it scrolls into view */}
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                  {Array.from({ length: pageCount }, (_, i) => {
+                    const isSelected = selectedPages.has(i);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleTogglePage(i)}
+                        className={cn(
+                          'relative aspect-[3/4] rounded-md border overflow-hidden cursor-pointer transition-all',
+                          isSelected
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-border hover:border-primary/50 opacity-50',
+                        )}
+                      >
+                        <LazyPageThumbnail
+                          pdfBytes={pdfBytes}
+                          pageIndex={i}
+                          scale={0.25}
+                          scrollContainerRef={scrollContainerRef}
+                          className="w-full h-full bg-muted/30"
+                          canvasClassName="w-full h-full object-contain"
+                        />
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                          {i + 1}
+                        </span>
+                        {/* Selection indicator */}
+                        <span className={cn(
+                          'absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
+                          isSelected
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : 'bg-background/70 border-border text-transparent',
+                        )}>
+                          {isSelected && '✓'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@ import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader } from '@/lib/fileValidation';
+import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -66,15 +67,6 @@ function buildImageSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: s
   }
 }
 
-// Lazily load pdf-lib only when needed (avoids parsing the full lib on startup)
-async function getPdfMeta(filePath: string): Promise<{ pageCount: number; fileSizeBytes: number }> {
-  const { readFile } = await import('@tauri-apps/plugin-fs');
-  const { PDFDocument } = await import('pdf-lib');
-  const bytes = await readFile(filePath);
-  const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-  return { pageCount: doc.getPageCount(), fileSizeBytes: bytes.byteLength };
-}
-
 function ToolFlow() {
   const { activeTool, goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
@@ -84,7 +76,7 @@ function ToolFlow() {
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
   const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
-  const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number }>({ imageCount: 0, compressibilityScore: 0 });
+  const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number; jpxByteShare: number }>({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
 
   const pdfProcessor = usePdfProcessor();
   const imageProcessor = useImageProcessor();
@@ -130,7 +122,7 @@ function ToolFlow() {
     setDedicatedFlowStep(0);
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
-    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
     setCorruptPdfBlock(null);
@@ -158,7 +150,7 @@ function ToolFlow() {
     setCurrentStep(0);
     setSourcePdfPageCount(1);
     setSourcePdfFileSizeBytes(0);
-    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 });
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
     setCorruptPdfBlock(null);
@@ -430,18 +422,25 @@ function ToolFlow() {
 
   // Load source PDF page count, file size, and compressibility when a PDF is selected
   useEffect(() => {
-    if (fileEntry?.format === 'pdf') {
-      getPdfMeta(fileEntry.path)
-        .then(({ pageCount, fileSizeBytes }) => {
-          setSourcePdfPageCount(pageCount);
-          setSourcePdfFileSizeBytes(fileSizeBytes);
-        })
-        .catch(() => setSourcePdfPageCount(1)); // fallback; will validate on processing
+    if (fileEntry?.format !== 'pdf') return;
+    let cancelled = false;
 
-      getPdfCompressibility(fileEntry.path)
-        .then((result) => setPdfCompressibility(result))
-        .catch(() => setPdfCompressibility({ imageCount: 0, compressibilityScore: 0 }));
-    }
+    // Single load+scan for page count, file size, and compressibility — previously two
+    // separate PDFDocument.load() calls parsed the same file twice.
+    getPdfCompressibility(fileEntry.path)
+      .then(({ pageCount, fileSizeBytes, ...compressibility }) => {
+        if (cancelled) return;
+        setSourcePdfPageCount(pageCount);
+        setSourcePdfFileSizeBytes(fileSizeBytes);
+        setPdfCompressibility(compressibility);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSourcePdfPageCount(1); // fallback; will validate on processing
+        setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
+      });
+
+    return () => { cancelled = true; };
   }, [fileEntry]);
 
   // Advance to Compare step when PDF processing completes with a result
@@ -471,11 +470,18 @@ function ToolFlow() {
     }
   }, [imageProcessor.result, imageProcessor.isProcessing, currentStep]);
 
-  // Navigate back to landing when PDF processing fails (corrupt file)
+  // Navigate back to landing when PDF processing fails.
+  // Only relabel this as a "corrupt file" when the error actually looks like a
+  // load/parse failure — a Ghostscript/processing error already carries its own
+  // actionable message and showing "file is corrupt" instead would hide the real cause.
   useEffect(() => {
     if (pdfProcessor.error && currentStep === 1 && fileEntry?.format === 'pdf') {
       handleStartOver();
-      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setCorruptFileError(
+        isPdfLoadError(pdfProcessor.error)
+          ? friendlyPdfError(pdfProcessor.error)
+          : pdfProcessor.error
+      );
       setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -613,6 +619,7 @@ function ToolFlow() {
             fileSizeBytes={sourcePdfFileSizeBytes}
             compressibilityScore={pdfCompressibility.compressibilityScore}
             imageCount={pdfCompressibility.imageCount}
+            jpxByteShare={pdfCompressibility.jpxByteShare}
             isProcessing={pdfProcessor.isProcessing}
             progress={pdfProcessor.progress}
             error={pdfProcessor.error}

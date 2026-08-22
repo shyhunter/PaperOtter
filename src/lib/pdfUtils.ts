@@ -22,6 +22,16 @@ export function friendlyPdfError(err: unknown): string {
   return 'Failed to load PDF. The file may be corrupted or not a valid PDF document.';
 }
 
+/**
+ * Whether a raw error looks like a PDF load/parse failure (bad file) as opposed
+ * to a processing failure (e.g. a Ghostscript compression error) — which already
+ * carries its own actionable message and should not be relabeled as a corrupt file.
+ */
+export function isPdfLoadError(err: unknown): boolean {
+  const raw = err instanceof Error ? err.message : String(err);
+  return /no pdf header|not a pdf|password|encrypted|failed to parse|invalid pdf/i.test(raw);
+}
+
 /** Parse "2 MB", "500 KB", "1.5 GB" into bytes. No unit defaults to MB. Returns null on invalid input. */
 export function parseSizeInput(input: string): number | null {
   const match = input.trim().match(/^(\d+(?:\.\d+)?)\s*(KB|MB|GB)?$/i);

@@ -68,6 +68,7 @@ export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
       const formatMap: Record<string, ConvertFormat> = {
         pdf: 'pdf', docx: 'docx', doc: 'doc', odt: 'odt',
         epub: 'epub', mobi: 'mobi', azw3: 'azw3', txt: 'txt', rtf: 'rtf',
+        html: 'html',
       };
       const fmt = formatMap[ext];
       if (fmt) {

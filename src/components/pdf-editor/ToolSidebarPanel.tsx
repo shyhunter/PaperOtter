@@ -9,9 +9,10 @@ import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
-import { addPageNumbers, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { cropPdf, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
+import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
+import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { diagLog } from '@/lib/diagLog';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -37,16 +38,21 @@ function useDebouncedPreview(
     setIsProcessing(true);
 
     const runId = ++runIdRef.current;
+    diagLog(`useDebouncedPreview.scheduled runId=${runId}`);
 
     timeoutRef.current = setTimeout(async () => {
+      diagLog(`useDebouncedPreview.runTool.start runId=${runId}`);
+      const t0 = performance.now();
       try {
         const result = await runTool(pdfBytes);
+        diagLog(`useDebouncedPreview.runTool.done runId=${runId} ms=${(performance.now() - t0).toFixed(0)} stale=${runIdRef.current !== runId}`);
         // Only update if this is still the latest run
         if (runIdRef.current === runId) {
           setPreviewBytes(result);
           setIsProcessing(false);
         }
       } catch {
+        diagLog(`useDebouncedPreview.runTool.threw runId=${runId} ms=${(performance.now() - t0).toFixed(0)}`);
         if (runIdRef.current === runId) {
           setPreviewBytes(null);
           setIsProcessing(false);
@@ -429,30 +435,53 @@ const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegre
 ];
 
 function RotatePanel() {
+  diagLog('RotatePanel.render');
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [rotation, setRotation] = useState<RotationDegrees | 0>(0);
   const [applyToAll, setApplyToAll] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
-  const runTool = useCallback(async (bytes: Uint8Array) => {
-    if (rotation === 0) return bytes; // No rotation
-    const pageIndices = applyToAll
-      ? Array.from({ length: state.pageCount }, (_, i) => i)
-      : [state.currentPage];
+  // Preview: a pure CSS rotation of the already-rendered page, not a real edit.
+  // Computing a real rotated preview means loading the document into pdf-lib on
+  // every direction change — pdf-lib builds a full mutable object graph of the
+  // whole document and never yields to the event loop while doing it, which
+  // measured over two minutes with no sign of finishing on a real
+  // 30MB/688-page/1300+-image PDF, freezing the app solid.
+  // The "After" thumbnail is the same unrotated render as "Before"; only Apply
+  // (an explicit, one-time action) does the real pdf-lib rotation.
+  const previewBytes = rotation !== 0 ? state.pdfBytes : null;
+  const isProcessing = false;
 
-    const result = await rotatePdf(
-      bytes,
-      pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
-    );
-    return result.bytes;
-  }, [rotation, applyToAll, state.currentPage, state.pageCount]);
-
-  const { previewBytes, isProcessing } = useDebouncedPreview(
-    state.pdfBytes,
-    runTool,
-    [rotation, applyToAll, state.currentPage],
-  );
-
-  const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
+  // Apply rotation to the requested pages (full processing, runs only on
+  // explicit user action).
+  const handleApply = useCallback(async () => {
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(false);
+    diagLog('rotate.apply.start');
+    const t0 = performance.now();
+    try {
+      const pageIndices = applyToAll
+        ? Array.from({ length: state.pageCount }, (_, i) => i)
+        : [state.currentPage];
+      const result = await rotatePdf(
+        state.pdfBytes,
+        pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
+      );
+      diagLog(`rotate.apply.done ms=${(performance.now() - t0).toFixed(0)}`);
+      updatePdfBytes(result.bytes);
+      markDirty();
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 2000);
+    } catch (err) {
+      diagLog(`rotate.apply.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [applyToAll, rotation, state.pdfBytes, state.pageCount, state.currentPage, updatePdfBytes, markDirty]);
 
   return (
     <div className="space-y-3">
@@ -466,7 +495,7 @@ function RotatePanel() {
             <button
               type="button"
               key={dir.degrees}
-              onClick={() => setRotation(dir.degrees)}
+              onClick={() => { diagLog(`rotate.click deg=${dir.degrees}`); setRotation(dir.degrees); }}
               className={`flex items-center gap-1.5 py-1.5 px-2 text-[11px] rounded border transition-colors ${
                 rotation === dir.degrees
                   ? 'border-primary bg-primary/10 font-medium'
@@ -493,14 +522,16 @@ function RotatePanel() {
         originalBytes={state.pdfBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
+        previewPageIndex={state.currentPage}
+        afterImageStyle={rotation !== 0 ? { transform: `rotate(${rotation}deg)` } : undefined}
       />
 
       <ApplyButton
-        onClick={() => apply()}
+        onClick={handleApply}
         disabled={rotation === 0 || !previewBytes}
         isApplying={isApplying}
-        success={success}
-        error={error}
+        success={applySuccess}
+        error={applyError}
       />
     </div>
   );
@@ -654,18 +685,40 @@ function PageNumbersPanel() {
     startNumber: 1,
     margin: 30,
   });
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
-  const runTool = useCallback(async (bytes: Uint8Array) => {
-    return addPageNumbers(bytes, options);
-  }, [options]);
+  // Preview: only process the current page for fast before/after comparison.
+  // Avoids buffering all pages on every option change, which freezes the UI
+  // for large documents (hundreds of pages) — see addPageNumbersSinglePage.
+  const runPreview = useCallback(async (bytes: Uint8Array) => {
+    return addPageNumbersSinglePage(bytes, options, state.currentPage);
+  }, [options, state.currentPage]);
 
   const { previewBytes, isProcessing } = useDebouncedPreview(
     state.pdfBytes,
-    runTool,
-    [options.position, options.format, options.fontSize, options.startNumber, options.margin],
+    runPreview,
+    [options.position, options.format, options.fontSize, options.startNumber, options.margin, state.currentPage],
   );
 
-  const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
+  // Apply page numbers to ALL pages (full processing, runs only on explicit user action).
+  const handleApply = useCallback(async () => {
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(false);
+    try {
+      const result = await addPageNumbers(state.pdfBytes, options);
+      updatePdfBytes(result);
+      markDirty();
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 2000);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
 
   return (
     <div className="space-y-3">
@@ -730,14 +783,15 @@ function PageNumbersPanel() {
         originalBytes={state.pdfBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
+        previewPageIndex={0}
       />
 
       <ApplyButton
-        onClick={() => apply()}
+        onClick={handleApply}
         disabled={!previewBytes}
         isApplying={isApplying}
-        success={success}
-        error={error}
+        success={applySuccess}
+        error={applyError}
       />
     </div>
   );
@@ -749,6 +803,9 @@ function CropPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [margins, setMargins] = useState({ top: 10, bottom: 10, left: 10, right: 10 });
   const [linked, setLinked] = useState(true);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const handleMarginChange = useCallback((side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
     if (linked) {
@@ -758,23 +815,49 @@ function CropPanel() {
     }
   }, [linked]);
 
-  const runTool = useCallback(async (bytes: Uint8Array) => {
+  // Preview: only process the current page for fast before/after comparison.
+  // Avoids buffering all pages on every margin change, which freezes the UI
+  // for large documents (hundreds of pages) — see cropPdfSinglePage.
+  const runPreview = useCallback(async (bytes: Uint8Array) => {
     const cropMargins: CropMargins = {
       top: mmToPoints(margins.top),
       bottom: mmToPoints(margins.bottom),
       left: mmToPoints(margins.left),
       right: mmToPoints(margins.right),
     };
-    return cropPdf(bytes, cropMargins);
-  }, [margins]);
+    return cropPdfSinglePage(bytes, cropMargins, state.currentPage);
+  }, [margins, state.currentPage]);
 
   const { previewBytes, isProcessing } = useDebouncedPreview(
     state.pdfBytes,
-    runTool,
-    [margins.top, margins.bottom, margins.left, margins.right],
+    runPreview,
+    [margins.top, margins.bottom, margins.left, margins.right, state.currentPage],
   );
 
-  const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
+  // Apply crop to the full document (full processing, runs only on explicit
+  // user action).
+  const handleApply = useCallback(async () => {
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(false);
+    try {
+      const cropMargins: CropMargins = {
+        top: mmToPoints(margins.top),
+        bottom: mmToPoints(margins.bottom),
+        left: mmToPoints(margins.left),
+        right: mmToPoints(margins.right),
+      };
+      const result = await cropPdf(state.pdfBytes, cropMargins);
+      updatePdfBytes(result);
+      markDirty();
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 2000);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [margins, state.pdfBytes, updatePdfBytes, markDirty]);
 
   return (
     <div className="space-y-3">
@@ -831,14 +914,15 @@ function CropPanel() {
         originalBytes={state.pdfBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
+        previewPageIndex={0}
       />
 
       <ApplyButton
-        onClick={() => apply()}
+        onClick={handleApply}
         disabled={!previewBytes}
         isApplying={isApplying}
-        success={success}
-        error={error}
+        success={applySuccess}
+        error={applyError}
       />
     </div>
   );

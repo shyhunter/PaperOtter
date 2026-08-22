@@ -54,6 +54,8 @@ export interface PdfProcessingResult {
   // Pre-scan results (always populated, even for text-only PDFs)
   imageCount: number;           // number of image XObjects found in the PDF
   compressibilityScore: number; // 0.0–1.0: 0 = text-only (not very compressible), 1.0 = mostly images (highly compressible)
+  jpxByteShare: number;         // 0.0–1.0: share of image bytes that are JPXDecode (JPEG2000) encoded —
+                                 // Ghostscript's pdfwrite presets don't meaningfully re-encode these
 }
 
 // Image Processing types

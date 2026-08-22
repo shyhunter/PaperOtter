@@ -1,4 +1,4 @@
-import { PDFDocument, PageSizes, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PageSizes, StandardFonts, PDFName, PDFRawStream } from 'pdf-lib';
 
 // ─── Image fixtures ───────────────────────────────────────────────────────────
 // These are synthetic byte arrays with the correct format magic bytes.
@@ -73,6 +73,115 @@ export async function createContentPdf(pageCount = 3): Promise<Uint8Array> {
     );
   }
   return doc.save({ useObjectStreams: true });
+}
+
+/**
+ * Creates a minimal PDF whose page(s) each reference one image XObject filtered
+ * with JPXDecode (JPEG2000) — the pixel data is a throwaway placeholder, only
+ * the /Filter entry matters, since this fixture exists solely to exercise the
+ * JPX-detection pre-scan (Ghostscript doesn't meaningfully re-encode JPXDecode
+ * images, so the app flags this to explain a "0% smaller" compression result).
+ */
+export async function createPdfWithJpxImage(pageCount = 1): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const context = pdfDoc.context;
+
+  const contents = new Uint8Array([0, 0, 0, 0]);
+  const imageDict = context.obj({
+    Type: 'XObject',
+    Subtype: 'Image',
+    Width: 4,
+    Height: 4,
+    ColorSpace: 'DeviceRGB',
+    BitsPerComponent: 8,
+    Filter: 'JPXDecode',
+    Length: contents.length,
+  });
+  const imageRef = context.register(PDFRawStream.of(imageDict, contents));
+
+  for (let i = 0; i < pageCount; i++) {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    page.node.set(
+      PDFName.of('Resources'),
+      context.obj({ XObject: { Im0: imageRef } }),
+    );
+  }
+
+  return pdfDoc.save();
+}
+
+/**
+ * Creates a minimal PDF whose page(s) each reference one image XObject filtered
+ * with DCTDecode (plain JPEG, not JPEG2000) — used where a test needs the
+ * pre-scan to see "has real, non-JPX images" (compressibilityScore high enough,
+ * jpxByteShare low enough) so Ghostscript actually gets invoked, as opposed to
+ * createMinimalPdf's text-only content which the app now predicts as futile and
+ * skips Ghostscript for entirely.
+ */
+export async function createPdfWithImage(pageCount = 1): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const context = pdfDoc.context;
+
+  const contents = new Uint8Array([0, 0, 0, 0]);
+  const imageDict = context.obj({
+    Type: 'XObject',
+    Subtype: 'Image',
+    Width: 4,
+    Height: 4,
+    ColorSpace: 'DeviceRGB',
+    BitsPerComponent: 8,
+    Filter: 'DCTDecode',
+    Length: contents.length,
+  });
+  const imageRef = context.register(PDFRawStream.of(imageDict, contents));
+
+  for (let i = 0; i < pageCount; i++) {
+    const page = pdfDoc.addPage(PageSizes.A4);
+    page.node.set(
+      PDFName.of('Resources'),
+      context.obj({ XObject: { Im0: imageRef } }),
+    );
+  }
+
+  return pdfDoc.save();
+}
+
+/**
+ * Creates a PDF where every page shares ONE large non-JPX image (e.g. a repeated
+ * header/logo, referenced by the same indirect object on every page) plus its own
+ * unique, small JPX image. Regression fixture for a real bug: scanning naively
+ * counted the shared image's bytes once per page it appeared on, which diluted
+ * jpxByteShare far below the real figure for documents with a shared non-JPX
+ * asset (e.g. 688 pages sharing one letterhead graphic). With correct dedup by
+ * indirect reference, the shared image counts once regardless of page count.
+ */
+export async function createPdfWithSharedAndUniqueImages(pageCount: number): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const context = pdfDoc.context;
+
+  const sharedContents = new Uint8Array(1000); // large — dominates totals if double-counted
+  const sharedDict = context.obj({
+    Type: 'XObject', Subtype: 'Image', Width: 4, Height: 4,
+    ColorSpace: 'DeviceRGB', BitsPerComponent: 8, Filter: 'DCTDecode', Length: sharedContents.length,
+  });
+  const sharedRef = context.register(PDFRawStream.of(sharedDict, sharedContents));
+
+  for (let i = 0; i < pageCount; i++) {
+    const uniqueContents = new Uint8Array(100);
+    const uniqueDict = context.obj({
+      Type: 'XObject', Subtype: 'Image', Width: 4, Height: 4,
+      ColorSpace: 'DeviceRGB', BitsPerComponent: 8, Filter: 'JPXDecode', Length: uniqueContents.length,
+    });
+    const uniqueRef = context.register(PDFRawStream.of(uniqueDict, uniqueContents));
+
+    const page = pdfDoc.addPage(PageSizes.A4);
+    page.node.set(
+      PDFName.of('Resources'),
+      context.obj({ XObject: { Shared: sharedRef, Unique: uniqueRef } }),
+    );
+  }
+
+  return pdfDoc.save();
 }
 
 /**

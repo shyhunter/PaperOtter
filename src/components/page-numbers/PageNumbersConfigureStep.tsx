@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
-import { addPageNumbers, formatNumber } from '@/lib/pdfPageNumbers';
+import { addPageNumbersSinglePage, formatNumber } from '@/lib/pdfPageNumbers';
 import { cn } from '@/lib/utils';
 import type { NumberPosition, NumberFormat, PageNumberOptions } from '@/lib/pdfPageNumbers';
 
@@ -52,14 +52,16 @@ export function PageNumbersConfigureStep({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
-  // Generate preview of first page with current settings
+  // Generate preview of first page with current settings.
+  // Only processes that one page — running the full pass on every option
+  // change freezes the UI on large documents (hundreds of pages).
   useEffect(() => {
     let cancelled = false;
     setIsLoadingPreview(true);
 
     const opts: PageNumberOptions = { position, format, fontSize, startNumber, margin: 30 };
 
-    addPageNumbers(pdfBytes, opts)
+    addPageNumbersSinglePage(pdfBytes, opts, 0)
       .then((numbered) => renderPdfThumbnail(numbered, 0.5))
       .then((url) => { if (!cancelled) setPreviewUrl(url); })
       .catch(() => { if (!cancelled) setPreviewUrl(null); })

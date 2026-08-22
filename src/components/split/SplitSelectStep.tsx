@@ -1,9 +1,9 @@
 // SplitSelectStep: Page selection with 3 modes — by range, every N pages, extract all.
 // Visual page grid + text input with bidirectional sync.
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
 
@@ -27,8 +27,7 @@ export function SplitSelectStep({
   isProcessing,
 }: SplitSelectStepProps) {
   const [mode, setMode] = useState<TabMode>('range');
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isLoadingThumbs, setIsLoadingThumbs] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Range mode state
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
@@ -37,23 +36,6 @@ export function SplitSelectStep({
 
   // Every-N mode state
   const [everyN, setEveryN] = useState(1);
-
-  // Load thumbnails
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingThumbs(true);
-    renderAllPdfPages(pdfBytes, 0.3)
-      .then((urls) => {
-        if (!cancelled) {
-          setThumbnails(urls);
-          setIsLoadingThumbs(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setIsLoadingThumbs(false);
-      });
-    return () => { cancelled = true; };
-  }, [pdfBytes]);
 
   // Sync: grid selection → range text
   const updateTextFromSelection = useCallback((pages: Set<number>) => {
@@ -176,7 +158,7 @@ export function SplitSelectStep({
 
   return (
     <div className="flex flex-1 flex-col p-6">
-      <div className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">Select Pages</h2>
           <p className="text-sm text-muted-foreground">{fileName} — {pageCount} page{pageCount !== 1 ? 's' : ''}</p>
@@ -217,39 +199,40 @@ export function SplitSelectStep({
               {rangeError && <p className="text-xs text-destructive mt-1">{rangeError}</p>}
             </div>
 
-            {/* Page grid */}
-            {isLoadingThumbs ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                {thumbnails.map((url, i) => {
-                  const pageNum = i + 1;
-                  const isSelected = selectedPages.has(pageNum);
-                  return (
-                    <button
-                      key={pageNum}
-                      type="button"
-                      onClick={() => togglePage(pageNum)}
-                      className={`relative aspect-[3/4] rounded-lg border overflow-hidden cursor-pointer transition-all ${
-                        isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <img src={url} alt={`Page ${pageNum}`} className="w-full h-full object-cover" />
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
-                        {pageNum}
-                      </span>
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                          <svg viewBox="0 0 12 12" className="w-3 h-3 text-primary-foreground"><path d="M2 6l3 3 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {/* Page grid — each thumbnail renders lazily as it scrolls into view */}
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+              {Array.from({ length: pageCount }, (_, i) => {
+                const pageNum = i + 1;
+                const isSelected = selectedPages.has(pageNum);
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => togglePage(pageNum)}
+                    className={`relative aspect-[3/4] rounded-lg border overflow-hidden cursor-pointer transition-all ${
+                      isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <LazyPageThumbnail
+                      pdfBytes={pdfBytes}
+                      pageIndex={i}
+                      scale={0.3}
+                      scrollContainerRef={scrollContainerRef}
+                      className="w-full h-full"
+                      canvasClassName="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                      {pageNum}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                        <svg viewBox="0 0 12 12" className="w-3 h-3 text-primary-foreground"><path d="M2 6l3 3 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

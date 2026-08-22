@@ -1,10 +1,10 @@
 // RotateStep: Page grid with selection + rotation controls.
 // Click to select/deselect pages, then rotate selected or all pages left/right.
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { RotateCw, RotateCcw, Loader2, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cycleRotation } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
 
@@ -26,8 +26,7 @@ interface RotateStepProps {
 }
 
 export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessing }: RotateStepProps) {
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isLoadingThumbs, setIsLoadingThumbs] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [rotations, setRotations] = useState<Map<number, RotationDegrees>>(() => {
     const map = new Map<number, RotationDegrees>();
     for (let i = 0; i < pageCount; i++) map.set(i, 0);
@@ -37,23 +36,6 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
 
   // Use higher thumbnail quality for low page counts since they render larger
   const thumbScale = pageCount <= 4 ? 0.5 : 0.3;
-
-  // Load thumbnails
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingThumbs(true);
-    renderAllPdfPages(pdfBytes, thumbScale)
-      .then((urls) => {
-        if (!cancelled) {
-          setThumbnails(urls);
-          setIsLoadingThumbs(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setIsLoadingThumbs(false);
-      });
-    return () => { cancelled = true; };
-  }, [pdfBytes, thumbScale]);
 
   const rotatedCount = Array.from(rotations.values()).filter((r) => r !== 0).length;
   const selectedCount = selected.size;
@@ -117,7 +99,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
 
   return (
     <div className="flex flex-1 flex-col p-6">
-      <div className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">Rotate Pages</h2>
           <p className="text-sm text-muted-foreground">
@@ -185,71 +167,66 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           </div>
         </div>
 
-        {/* Page grid */}
-        {isLoadingThumbs ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className={
-            pageCount <= 1
-              ? 'grid grid-cols-1 gap-4 max-w-[220px] mx-auto'
-              : pageCount <= 2
-                ? 'grid grid-cols-2 gap-4 max-w-sm mx-auto'
-                : pageCount <= 4
-                  ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-lg mx-auto'
-                  : pageCount <= 6
-                    ? 'grid grid-cols-3 sm:grid-cols-4 gap-3 max-w-lg mx-auto'
-                    : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3'
-          }>
-            {thumbnails.map((url, i) => {
-              const rotation = rotations.get(i) ?? 0;
-              const isRotated = rotation !== 0;
-              const isSelected = selected.has(i);
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleToggleSelect(i)}
-                  className={`relative aspect-[3/4] rounded-lg border overflow-hidden cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-primary ring-2 ring-primary/30'
-                      : isRotated
-                        ? 'border-blue-400 ring-1 ring-blue-200'
-                        : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className="w-full h-full flex items-center justify-center bg-muted/30">
-                    <img
-                      src={url}
-                      alt={`Page ${i + 1}`}
-                      className="max-w-full max-h-full object-contain transition-transform duration-200"
-                      style={{ transform: `rotate(${rotation}deg)` }}
-                    />
-                  </div>
-                  {/* Page number */}
-                  <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
-                    {i + 1}
+        {/* Page grid — each thumbnail renders lazily as it scrolls into view */}
+        <div className={
+          pageCount <= 1
+            ? 'grid grid-cols-1 gap-4 max-w-[220px] mx-auto'
+            : pageCount <= 2
+              ? 'grid grid-cols-2 gap-4 max-w-sm mx-auto'
+              : pageCount <= 4
+                ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-lg mx-auto'
+                : pageCount <= 6
+                  ? 'grid grid-cols-3 sm:grid-cols-4 gap-3 max-w-lg mx-auto'
+                  : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3'
+        }>
+          {Array.from({ length: pageCount }, (_, i) => {
+            const rotation = rotations.get(i) ?? 0;
+            const isRotated = rotation !== 0;
+            const isSelected = selected.has(i);
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleToggleSelect(i)}
+                className={`relative aspect-[3/4] rounded-lg border overflow-hidden cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-primary ring-2 ring-primary/30'
+                    : isRotated
+                      ? 'border-blue-400 ring-1 ring-blue-200'
+                      : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <LazyPageThumbnail
+                  pdfBytes={pdfBytes}
+                  pageIndex={i}
+                  scale={thumbScale}
+                  scrollContainerRef={scrollContainerRef}
+                  className="w-full h-full flex items-center justify-center bg-muted/30"
+                  canvasClassName="max-w-full max-h-full object-contain transition-transform duration-200"
+                  canvasStyle={{ transform: `rotate(${rotation}deg)` }}
+                />
+                {/* Page number */}
+                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                  {i + 1}
+                </span>
+                {/* Selection checkbox indicator */}
+                <span className={`absolute top-1 left-1 w-4 h-4 rounded-sm border flex items-center justify-center text-[10px] transition-colors ${
+                  isSelected
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : 'bg-background/70 border-border text-transparent'
+                }`}>
+                  {isSelected && '✓'}
+                </span>
+                {/* Rotation badge */}
+                {isRotated && (
+                  <span className="absolute top-1 right-1 bg-blue-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
+                    {rotation}°
                   </span>
-                  {/* Selection checkbox indicator */}
-                  <span className={`absolute top-1 left-1 w-4 h-4 rounded-sm border flex items-center justify-center text-[10px] transition-colors ${
-                    isSelected
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : 'bg-background/70 border-border text-transparent'
-                  }`}>
-                    {isSelected && '✓'}
-                  </span>
-                  {/* Rotation badge */}
-                  {isRotated && (
-                    <span className="absolute top-1 right-1 bg-blue-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
-                      {rotation}°
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Bottom bar */}

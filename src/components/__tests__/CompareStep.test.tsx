@@ -1,16 +1,23 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CompareStep } from '@/components/CompareStep';
+import { openPdfForLazyRender } from '@/lib/pdfThumbnail';
 import type { PdfProcessingResult } from '@/types/file';
 
 afterEach(cleanup);
 
 // Mock pdfThumbnail — PDF.js requires canvas + worker, unavailable in jsdom.
-// Component tests verify UI rendering and interaction only.
+// Component tests verify UI rendering and interaction only, with a zero-page
+// handle (matching the old renderAllPdfPages([]) mock's behavior).
 vi.mock('@/lib/pdfThumbnail', () => ({
-  renderAllPdfPages: vi.fn().mockResolvedValue([]),
+  openPdfForLazyRender: vi.fn().mockResolvedValue({
+    numPages: 0,
+    pageAspectRatios: [],
+    renderPage: vi.fn().mockResolvedValue(''),
+    destroy: vi.fn(),
+  }),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -28,6 +35,7 @@ function makeResult(overrides: Partial<PdfProcessingResult> = {}): PdfProcessing
     wasAlreadyOptimal: false,
     imageCount: 0,
     compressibilityScore: 0,
+    jpxByteShare: 0,
     ...overrides,
   };
 }
@@ -212,6 +220,34 @@ describe('CompareStep — BUG-01 regression (wasAlreadyOptimal messaging)', () =
     />);
     expect(screen.getByText(/already at maximum compression/i)).toBeInTheDocument();
   });
+
+  // Bug: a real-world PDF whose images were JPEG2000-encoded showed "File already
+  // optimal" at every quality level, including the most aggressive one — Ghostscript
+  // genuinely can't re-encode JPXDecode-filtered images, so the generic message was
+  // misleading. When the pre-scan detects JPX images, explain the real reason instead.
+  it('[JPX-01] stats bar explains JPEG2000 when wasAlreadyOptimal=true and jpxByteShare is high', () => {
+    render(<CompareStep
+      result={makeResult({
+        wasAlreadyOptimal: true, outputSizeBytes: 100_000, imageCount: 5, compressibilityScore: 0.5, jpxByteShare: 1,
+      })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    expect(screen.getByText(/already jpeg2000-encoded/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^File already optimal$/)).not.toBeInTheDocument();
+  });
+
+  it('[JPX-02] target-not-met banner explains JPEG2000 when wasAlreadyOptimal=true and jpxByteShare is high', () => {
+    render(<CompareStep
+      result={makeResult({
+        wasAlreadyOptimal: true, targetMet: false, bestAchievableSizeBytes: 100_000,
+        imageCount: 5, compressibilityScore: 0.5, jpxByteShare: 1,
+      })}
+      onSave={onSave} onBack={onBack} onStartOver={onStartOver}
+    />);
+    const banner = within(screen.getByTestId('target-not-met-banner'));
+    expect(banner.getByText(/jpeg2000-encoded/i)).toBeInTheDocument();
+    expect(banner.queryByText(/already at maximum compression for all quality settings/i)).not.toBeInTheDocument();
+  });
 });
 
 // ─── Phase E: recovery button and updated "already optimal" message ───────────
@@ -241,5 +277,117 @@ describe('CompareStep — Phase E: recovery CTA and message update', () => {
     />);
     expect(screen.getByText(/already at maximum compression for all quality settings/i)).toBeInTheDocument();
     expect(screen.queryByText(/fully optimis/i)).not.toBeInTheDocument();
+  });
+});
+
+// ─── Lazy page rendering ──────────────────────────────────────────────────────
+//
+// Bug: CompareStep rendered every page of the document (both Before and After
+// panels) synchronously up front via renderAllPdfPages, regardless of how many
+// pages were actually visible. For a real-world 256-page PDF this made Generate
+// Preview extremely slow and memory-heavy. Pages are now rendered on demand as
+// they approach the viewport (via IntersectionObserver) and evicted once they
+// leave it, so cost and memory stay bounded regardless of document size.
+
+class FakeIntersectionObserver {
+  static instances: FakeIntersectionObserver[] = [];
+  observed: Element[] = [];
+  callback: IntersectionObserverCallback;
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    FakeIntersectionObserver.instances.push(this);
+  }
+  observe(el: Element) { this.observed.push(el); }
+  unobserve() {}
+  disconnect() {}
+  trigger(target: Element, isIntersecting: boolean) {
+    this.callback(
+      [{ target, isIntersecting } as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    );
+  }
+}
+
+describe('CompareStep — lazy page rendering', () => {
+  let originalIO: typeof IntersectionObserver | undefined;
+
+  beforeEach(() => {
+    FakeIntersectionObserver.instances = [];
+    originalIO = globalThis.IntersectionObserver;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).IntersectionObserver = FakeIntersectionObserver;
+  });
+
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).IntersectionObserver = originalIO;
+  });
+
+  function findObserverFor(el: Element): FakeIntersectionObserver {
+    const observer = FakeIntersectionObserver.instances.find((o) => o.observed.includes(el));
+    if (!observer) throw new Error('No observer found for element');
+    return observer;
+  }
+
+  it('[LAZY-01] does not render any page before it intersects the viewport', async () => {
+    const renderPage = vi.fn().mockResolvedValue('data:image/png;base64,AAA');
+    vi.mocked(openPdfForLazyRender).mockResolvedValue({
+      numPages: 5,
+      pageAspectRatios: [1.4, 1.4, 1.4, 1.4, 1.4],
+      renderPage,
+      destroy: vi.fn(),
+    });
+
+    render(<CompareStep result={makeResult({ pageCount: 5 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />);
+    await waitFor(() => expect(FakeIntersectionObserver.instances.length).toBeGreaterThan(0));
+
+    expect(renderPage).not.toHaveBeenCalled();
+  });
+
+  it('[LAZY-02] renders a page once it intersects the viewport', async () => {
+    const renderPage = vi.fn().mockResolvedValue('data:image/png;base64,AAA');
+    vi.mocked(openPdfForLazyRender).mockResolvedValue({
+      numPages: 3,
+      pageAspectRatios: [1.4, 1.4, 1.4],
+      renderPage,
+      destroy: vi.fn(),
+    });
+
+    const { container } = render(
+      <CompareStep result={makeResult({ pageCount: 3 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />,
+    );
+    await waitFor(() => expect(FakeIntersectionObserver.instances.length).toBeGreaterThan(0));
+
+    const page0 = container.querySelector('[data-page-index="0"]')!;
+    const observer = findObserverFor(page0);
+    observer.trigger(page0, true);
+
+    await waitFor(() => expect(renderPage).toHaveBeenCalledWith(0, expect.any(Number)));
+    await waitFor(() => expect(screen.getAllByAltText(/page 1/).length).toBeGreaterThan(0));
+  });
+
+  it('[LAZY-03] evicts a rendered page once it leaves the viewport', async () => {
+    const renderPage = vi.fn().mockResolvedValue('data:image/png;base64,AAA');
+    vi.mocked(openPdfForLazyRender).mockResolvedValue({
+      numPages: 3,
+      pageAspectRatios: [1.4, 1.4, 1.4],
+      renderPage,
+      destroy: vi.fn(),
+    });
+
+    const { container } = render(
+      <CompareStep result={makeResult({ pageCount: 3 })} onSave={onSave} onBack={onBack} onStartOver={onStartOver} />,
+    );
+    await waitFor(() => expect(FakeIntersectionObserver.instances.length).toBeGreaterThan(0));
+
+    const page0 = container.querySelector('[data-page-index="0"]')!;
+    const observer = findObserverFor(page0);
+
+    observer.trigger(page0, true);
+    await waitFor(() => expect(screen.getAllByAltText(/page 1/).length).toBeGreaterThan(0));
+
+    observer.trigger(page0, false);
+    await waitFor(() => expect(screen.queryByAltText(/page 1/)).not.toBeInTheDocument());
   });
 });

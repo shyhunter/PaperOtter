@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError } from '@/lib/pdfUtils';
+import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 
 // ─── parseSizeInput ───────────────────────────────────────────────────────────
 
@@ -196,5 +196,39 @@ describe('friendlyPdfError', () => {
     expect(friendlyPdfError('string error')).toBe(
       'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
     );
+  });
+});
+
+// ─── isPdfLoadError ───────────────────────────────────────────────────────────
+//
+// Bug: any pdfProcessor error (including real Ghostscript/processing failures,
+// which already carry their own actionable message) was being relabeled as
+// "This file appears to be corrupt" in App.tsx — hiding the real cause. This
+// classifier lets the caller show the real message for processing errors and
+// only use the friendly corrupt-file wording for genuine load/parse failures.
+
+describe('isPdfLoadError', () => {
+  it('is true for "No PDF header found" errors', () => {
+    expect(isPdfLoadError(new Error('No PDF header found'))).toBe(true);
+  });
+
+  it('is true for password/encrypted errors', () => {
+    expect(isPdfLoadError(new Error('PDF is encrypted with a password'))).toBe(true);
+  });
+
+  it('is true for generic parse failures', () => {
+    expect(isPdfLoadError(new Error('Failed to parse PDF structure'))).toBe(true);
+  });
+
+  it('is false for a Ghostscript crash error', () => {
+    expect(
+      isPdfLoadError(
+        'Ghostscript crashed unexpectedly. Try reinstalling the application or installing Ghostscript manually.',
+      ),
+    ).toBe(false);
+  });
+
+  it('is false for a Ghostscript exit-code error', () => {
+    expect(isPdfLoadError('Ghostscript compression failed (exit code 1). Details: some stderr')).toBe(false);
   });
 });

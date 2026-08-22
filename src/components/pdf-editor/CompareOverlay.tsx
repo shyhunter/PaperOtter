@@ -1,9 +1,14 @@
 // CompareOverlay: full-page before/after comparison that overlays the editor canvas.
 // Features: side-by-side or overlay mode, zoom, scroll sync, closable, minimizable.
 // Opens from ToolSidebarPreview when user wants a closer look.
-import { useState, useEffect, useRef, useCallback } from 'react';
+//
+// CRITICAL: Pages are rendered lazily (on-demand as they approach the viewport,
+// evicted once they leave it) rather than all up front. Rasterizing every page of
+// both documents synchronously froze the app solid on large PDFs (e.g. 688 pages) —
+// see openPdfForLazyRender in pdfThumbnail.ts, same pattern used by CompareStep.
+import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 import { X, Minimize2, Maximize2, Columns2, Layers, ZoomIn, ZoomOut } from 'lucide-react';
-import { renderAllPdfPages } from '@/lib/pdfThumbnail';
+import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 
 export type CompareMode = 'overlay' | 'side-by-side';
 
@@ -12,6 +17,79 @@ interface CompareOverlayProps {
   previewBytes: Uint8Array;
   onClose: () => void;
   initialPage?: number;
+}
+
+const RENDER_SCALE = 1.5;
+const RENDER_ROOT_MARGIN = '150% 0px';
+const DEFAULT_PAGE_ASPECT_RATIO = 841.89 / 595.28;
+
+/** Renders only the pages of `handle` that are near `scrollRef`'s viewport, evicting
+ *  pages once they scroll out of view — keeps large documents from all rendering at once. */
+function usePageRenderer(
+  handle: LazyPdfHandle | null,
+  scrollRef: RefObject<HTMLDivElement | null>,
+) {
+  const [renderedPages, setRenderedPages] = useState<Map<number, string>>(new Map());
+  const renderingRef = useRef<Set<number>>(new Set());
+  const pageElsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    setRenderedPages(new Map());
+    renderingRef.current = new Set();
+  }, [handle]);
+
+  const renderPage = useCallback((pageIndex: number) => {
+    if (!handle || renderingRef.current.has(pageIndex)) return;
+    renderingRef.current.add(pageIndex);
+    handle.renderPage(pageIndex, RENDER_SCALE)
+      .then((url) => {
+        setRenderedPages((prev) => new Map(prev).set(pageIndex, url));
+      })
+      .catch(() => {
+        // Leave this one page unrendered rather than failing the whole panel.
+      })
+      .finally(() => {
+        renderingRef.current.delete(pageIndex);
+      });
+  }, [handle]);
+
+  const evictPage = useCallback((pageIndex: number) => {
+    setRenderedPages((prev) => {
+      if (!prev.has(pageIndex)) return prev;
+      const next = new Map(prev);
+      next.delete(pageIndex);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!handle || !scrollRef.current) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      for (let i = 0; i < handle.numPages; i++) renderPage(i);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const pageIndex = Number((entry.target as HTMLElement).dataset.pageIndex);
+          if (Number.isNaN(pageIndex)) continue;
+          if (entry.isIntersecting) {
+            renderPage(pageIndex);
+          } else {
+            evictPage(pageIndex);
+          }
+        }
+      },
+      { root: scrollRef.current, rootMargin: RENDER_ROOT_MARGIN },
+    );
+
+    for (const el of pageElsRef.current.values()) observer.observe(el);
+    return () => observer.disconnect();
+  }, [handle, scrollRef, renderPage, evictPage]);
+
+  return { renderedPages, pageElsRef };
 }
 
 export function CompareOverlay({
@@ -23,33 +101,48 @@ export function CompareOverlay({
   const [mode, setMode] = useState<CompareMode>('side-by-side');
   const [isMinimized, setIsMinimized] = useState(false);
   const [zoom, setZoom] = useState(1.0);
-  const [beforeUrls, setBeforeUrls] = useState<string[]>([]);
-  const [afterUrls, setAfterUrls] = useState<string[]>([]);
+  const [originalHandle, setOriginalHandle] = useState<LazyPdfHandle | null>(null);
+  const [previewHandle, setPreviewHandle] = useState<LazyPdfHandle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // For overlay mode: slider position (0-100%)
   const [sliderPos, setSliderPos] = useState(50);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
+  const overlayScrollRef = useRef<HTMLDivElement>(null);
 
-  // Render all pages
+  const { renderedPages: beforeSideBySide, pageElsRef: beforeSideBySideEls } = usePageRenderer(originalHandle, leftRef);
+  const { renderedPages: afterSideBySide, pageElsRef: afterSideBySideEls } = usePageRenderer(previewHandle, rightRef);
+  const { renderedPages: beforeOverlay, pageElsRef: beforeOverlayEls } = usePageRenderer(originalHandle, overlayScrollRef);
+  const { renderedPages: afterOverlay, pageElsRef: afterOverlayEls } = usePageRenderer(previewHandle, overlayScrollRef);
+
+  // Open both documents for lazy, per-page rendering.
   useEffect(() => {
     let cancelled = false;
+    let oHandle: LazyPdfHandle | null = null;
+    let pHandle: LazyPdfHandle | null = null;
     setIsLoading(true);
+    setOriginalHandle(null);
+    setPreviewHandle(null);
 
     Promise.all([
-      renderAllPdfPages(originalBytes, 1.5),
-      renderAllPdfPages(previewBytes, 1.5),
-    ]).then(([before, after]) => {
-      if (!cancelled) {
-        setBeforeUrls(before);
-        setAfterUrls(after);
-        setIsLoading(false);
-      }
+      openPdfForLazyRender(originalBytes),
+      openPdfForLazyRender(previewBytes),
+    ]).then(([oh, ph]) => {
+      if (cancelled) { oh.destroy(); ph.destroy(); return; }
+      oHandle = oh;
+      pHandle = ph;
+      setOriginalHandle(oh);
+      setPreviewHandle(ph);
+      setIsLoading(false);
     }).catch(() => {
       if (!cancelled) setIsLoading(false);
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      oHandle?.destroy();
+      pHandle?.destroy();
+    };
   }, [originalBytes, previewBytes]);
 
   // Scroll both panels in sync (side-by-side mode)
@@ -65,11 +158,11 @@ export function CompareOverlay({
 
   // Scroll to initial page on load
   useEffect(() => {
-    if (beforeUrls.length > 0 && initialPage > 0) {
+    if (originalHandle && initialPage > 0) {
       const target = leftRef.current?.children[initialPage] as HTMLElement;
       target?.scrollIntoView({ block: 'start' });
     }
-  }, [beforeUrls, initialPage]);
+  }, [originalHandle, initialPage]);
 
   // Pinch/wheel zoom
   useEffect(() => {
@@ -155,16 +248,30 @@ export function CompareOverlay({
               onScroll={() => handleScroll('left')}
               style={{ backgroundColor: '#e5e5e5' }}
             >
-              <div className="flex flex-col items-center gap-4">
-                {beforeUrls.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Before page ${i + 1}`}
-                    className="shadow-md"
-                    style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-                  />
-                ))}
+              <div className="flex flex-col items-center gap-4 max-w-[560px] mx-auto">
+                {originalHandle && Array.from({ length: originalHandle.numPages }, (_, i) => {
+                  const url = beforeSideBySide.get(i);
+                  const aspectRatio = originalHandle.pageAspectRatios[i] ?? DEFAULT_PAGE_ASPECT_RATIO;
+                  return (
+                    <div
+                      key={i}
+                      data-page-index={i}
+                      ref={(el) => {
+                        if (el) beforeSideBySideEls.current.set(i, el);
+                        else beforeSideBySideEls.current.delete(i);
+                      }}
+                      className="shadow-md bg-white flex-none"
+                      style={{
+                        width: `${zoom * 100}%`,
+                        aspectRatio: `1 / ${aspectRatio}`,
+                      }}
+                    >
+                      {url && (
+                        <img src={url} alt={`Before page ${i + 1}`} className="w-full h-full block" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -179,42 +286,82 @@ export function CompareOverlay({
               onScroll={() => handleScroll('right')}
               style={{ backgroundColor: '#e5e5e5' }}
             >
-              <div className="flex flex-col items-center gap-4">
-                {afterUrls.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`After page ${i + 1}`}
-                    className="shadow-md"
-                    style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-                  />
-                ))}
+              <div className="flex flex-col items-center gap-4 max-w-[560px] mx-auto">
+                {previewHandle && Array.from({ length: previewHandle.numPages }, (_, i) => {
+                  const url = afterSideBySide.get(i);
+                  const aspectRatio = previewHandle.pageAspectRatios[i] ?? DEFAULT_PAGE_ASPECT_RATIO;
+                  return (
+                    <div
+                      key={i}
+                      data-page-index={i}
+                      ref={(el) => {
+                        if (el) afterSideBySideEls.current.set(i, el);
+                        else afterSideBySideEls.current.delete(i);
+                      }}
+                      className="shadow-md bg-white flex-none"
+                      style={{
+                        width: `${zoom * 100}%`,
+                        aspectRatio: `1 / ${aspectRatio}`,
+                      }}
+                    >
+                      {url && (
+                        <img src={url} alt={`After page ${i + 1}`} className="w-full h-full block" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
       ) : (
         /* Overlay slider mode */
-        <div className="flex-1 overflow-auto p-4 relative" style={{ backgroundColor: '#e5e5e5' }}>
-          <div className="flex flex-col items-center gap-4">
-            {beforeUrls.map((beforeUrl, i) => (
-              <div key={i} className="relative shadow-md overflow-hidden" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-                {/* After (full) */}
-                <img src={afterUrls[i] || beforeUrl} alt={`After page ${i + 1}`} className="block" />
-                {/* Before (clipped) */}
+        <div ref={overlayScrollRef} className="flex-1 overflow-auto p-4 relative" style={{ backgroundColor: '#e5e5e5' }}>
+          <div className="flex flex-col items-center gap-4 max-w-[560px] mx-auto">
+            {originalHandle && Array.from({ length: originalHandle.numPages }, (_, i) => {
+              const beforeUrl = beforeOverlay.get(i);
+              const afterUrl = afterOverlay.get(i);
+              const aspectRatio = originalHandle.pageAspectRatios[i] ?? DEFAULT_PAGE_ASPECT_RATIO;
+              return (
                 <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ width: `${sliderPos}%` }}
+                  key={i}
+                  data-page-index={i}
+                  ref={(el) => {
+                    if (el) { beforeOverlayEls.current.set(i, el); afterOverlayEls.current.set(i, el); }
+                    else { beforeOverlayEls.current.delete(i); afterOverlayEls.current.delete(i); }
+                  }}
+                  className="relative shadow-md overflow-hidden bg-white flex-none"
+                  style={{
+                    width: `${zoom * 100}%`,
+                    aspectRatio: `1 / ${aspectRatio}`,
+                  }}
                 >
-                  <img src={beforeUrl} alt={`Before page ${i + 1}`} className="block" style={{ width: `${100 / (sliderPos / 100)}%`, maxWidth: 'none' }} />
+                  {/* After (full) */}
+                  {(afterUrl || beforeUrl) && (
+                    <img src={afterUrl || beforeUrl} alt={`After page ${i + 1}`} className="absolute inset-0 w-full h-full block" />
+                  )}
+                  {/* Before (clipped) */}
+                  <div
+                    className="absolute inset-0 overflow-hidden"
+                    style={{ width: `${sliderPos}%` }}
+                  >
+                    {beforeUrl && (
+                      <img
+                        src={beforeUrl}
+                        alt={`Before page ${i + 1}`}
+                        className="absolute inset-0 h-full block"
+                        style={{ width: `${100 / (sliderPos / 100)}%`, maxWidth: 'none' }}
+                      />
+                    )}
+                  </div>
+                  {/* Slider line */}
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-primary cursor-ew-resize z-10"
+                    style={{ left: `${sliderPos}%` }}
+                  />
                 </div>
-                {/* Slider line */}
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-primary cursor-ew-resize z-10"
-                  style={{ left: `${sliderPos}%` }}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
           {/* Slider control at bottom */}
           <div className="sticky bottom-4 flex justify-center mt-4">

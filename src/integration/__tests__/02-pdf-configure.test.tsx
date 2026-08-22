@@ -40,13 +40,19 @@ vi.mock('@tauri-apps/plugin-store', () => ({
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
 vi.mock('@/lib/pdfThumbnail', () => ({ renderAllPdfPages: vi.fn().mockResolvedValue([]) }));
-vi.mock('@/lib/pdfProcessor', () => ({
-  processPdf: vi.fn(),
-  recommendQualityForTarget: vi.fn().mockReturnValue('web'),
-  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
-  getPdfImageCount: vi.fn().mockResolvedValue(0),
-  getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 0, compressibilityScore: 0.5 }),
-}));
+vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfProcessor')>();
+  return {
+    ...actual, // keep real isPredictablyNonCompressible/getNonCompressibleReason/nonCompressibleMessage
+    processPdf: vi.fn(),
+    recommendQualityForTarget: vi.fn().mockReturnValue('web'),
+    estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
+    getPdfImageCount: vi.fn().mockResolvedValue(0),
+    getPdfCompressibility: vi.fn().mockResolvedValue({
+      pageCount: 3, fileSizeBytes: 2_400_000, imageCount: 0, compressibilityScore: 0.5, jpxByteShare: 0,
+    }),
+  };
+});
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
 
@@ -116,12 +122,11 @@ describe('Suite 02 — PDF Configure Step', () => {
 
   // PC-05 ────────────────────────────────────────────────────────────────────
   it('PC-05 — entering a target size shows auto-selected preset message', async () => {
-    // Two readFile calls occur during navigation:
-    // 1. getFileSizeBytes (in handleFileSelected) — needs any valid bytes
-    // 2. getPdfMeta (in App.tsx useEffect) — needs real PDF bytes so fileSizeBytes > 0
-    //    and recommendQualityForTarget is called with a valid file size
+    // One real readFile call occurs during navigation: getFileSizeBytes (in
+    // handleFileSelected) — needs any valid bytes. getPdfCompressibility (which
+    // now also supplies pageCount/fileSizeBytes) is fully mocked above, so it
+    // doesn't touch readFile itself.
     vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getFileSizeBytes
-    vi.mocked(readFile).mockResolvedValueOnce(SAMPLE_PDF_BYTES); // getPdfMeta
     const { user } = await setup();
     await navigateToPdfConfigure(user);
     // Click the "Custom target size" toggle to reveal the input

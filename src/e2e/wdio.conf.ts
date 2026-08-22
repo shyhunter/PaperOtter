@@ -101,7 +101,13 @@ export const config: WebdriverIO.Config = {
   bail: 3, // stop suite after 3 consecutive failures to prevent timeout cascade
   waitforTimeout: 15000,
   connectionRetryTimeout: 60000,
-  connectionRetryCount: 3,
+  // Session initialisation polls GET /window before any hook of ours can run,
+  // and the Tauri window does not exist the instant the plugin announces its
+  // port. On a CI runner (debug build under xvfb) the app takes ~25 s just to
+  // announce that port, and the window follows some time after; 3 retries only
+  // covers ~1.5 s, so the session failed with "no window" before the window had
+  // any chance to appear. Locally the window turns up on the 4th attempt.
+  connectionRetryCount: 30,
 
   framework: 'mocha',
   reporters: ['spec'],

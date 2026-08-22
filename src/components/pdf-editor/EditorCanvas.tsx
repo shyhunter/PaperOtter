@@ -2,9 +2,10 @@
 // Each page renders itself independently via PageCanvasRenderer.
 // CRITICAL: Uses pdfBytes.slice() for React StrictMode safety.
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
+import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { TextEditingLayer } from './TextEditingLayer';
+import { diagLog } from '@/lib/diagLog';
 
 const PAGE_GAP = 16; // px between pages
 const ZOOM_DEBOUNCE_MS = 150;
@@ -48,24 +49,26 @@ const PageCanvasRenderer = memo(function PageCanvasRenderer({
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     const doRender = async () => {
+      const t0 = performance.now();
+      diagLog(`canvas.render.start idx=${pageIndex} zoom=${zoom}`);
+      let acquired = false;
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        const pdfDoc = await loadingTask.promise;
-        try {
-          if (renderIdRef.current !== currentId) return;
-          const page = await pdfDoc.getPage(pageIndex + 1);
-          if (renderIdRef.current !== currentId) return;
+        const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
+        acquired = true;
+        if (renderIdRef.current !== currentId) return;
+        const page = await pdfDoc.getPage(pageIndex + 1);
+        if (renderIdRef.current !== currentId) return;
 
-          const viewport = page.getViewport({ scale: zoom });
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
+        const viewport = page.getViewport({ scale: zoom });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-          await page.render({ canvas, viewport }).promise;
-        } finally {
-          pdfDoc.destroy();
-        }
-      } catch {
-        // Non-fatal: page render failure
+        await page.render({ canvas, viewport }).promise;
+        diagLog(`canvas.render.done idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)}`);
+      } catch (err) {
+        diagLog(`canvas.render.threw idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)} ${err}`);
+      } finally {
+        if (acquired) releaseSharedPdfDocument(pdfBytes);
       }
     };
 
@@ -110,43 +113,32 @@ export function EditorCanvas() {
   zoomRef.current = zoom;
 
   // Load page dimensions on mount / when pdfBytes change
-  // For large PDFs, sample first page dimensions and apply to all initially,
-  // then load real dimensions in batches to avoid blocking.
   useEffect(() => {
     let cancelled = false;
 
     async function loadPageInfos() {
       if (pdfBytes.byteLength === 0) return;
 
-      const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-      const pdfDoc = await loadingTask.promise;
+      const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
 
       try {
         const numPages = pdfDoc.numPages;
 
-        // For large PDFs (50+ pages), load first page dimensions immediately
-        // and estimate the rest to avoid blocking
+        // For large PDFs (50+ pages), use page 1's dimensions as a placeholder
+        // estimate for every page rather than fetching each page's real size.
+        // Fetching all of them — even one at a time with a yield in between —
+        // meant hundreds of sequential pdf.js calls that starved click handling
+        // for the whole loading window (reproduced on a real 688-page file: the
+        // app was unresponsive for as long as the loop ran). This estimate only
+        // affects placeholder sizing before a page is actually scrolled into
+        // view; PageCanvasRenderer renders each page at its own real size once
+        // it does.
         if (numPages > 50) {
           const firstPage = await pdfDoc.getPage(1);
           const vp = firstPage.getViewport({ scale: 1 });
           const defaultInfo = { width: vp.width, height: vp.height };
           const infos = Array.from({ length: numPages }, () => ({ ...defaultInfo }));
           if (!cancelled) setPageInfos(infos);
-
-          // Then load real dimensions in batches (non-blocking)
-          const BATCH_SIZE = 20;
-          for (let start = 2; start <= numPages; start += BATCH_SIZE) {
-            if (cancelled) break;
-            const end = Math.min(start + BATCH_SIZE, numPages + 1);
-            for (let i = start; i < end; i++) {
-              const page = await pdfDoc.getPage(i);
-              const pageVp = page.getViewport({ scale: 1 });
-              infos[i - 1] = { width: pageVp.width, height: pageVp.height };
-            }
-            if (!cancelled) setPageInfos([...infos]);
-            // Yield to main thread between batches
-            await new Promise((r) => requestAnimationFrame(r));
-          }
         } else {
           const infos: PageInfo[] = [];
           for (let i = 1; i <= numPages; i++) {
@@ -157,7 +149,7 @@ export function EditorCanvas() {
           if (!cancelled) setPageInfos(infos);
         }
       } finally {
-        pdfDoc.destroy();
+        releaseSharedPdfDocument(pdfBytes);
       }
     }
 
@@ -186,7 +178,10 @@ export function EditorCanvas() {
     }
 
     return () => observer.disconnect();
-  }, [pageInfos, setFitWidthZoom]);
+    // Depends on page 1's width value, not the pageInfos array reference, so this
+    // doesn't re-run every time an unrelated page's placeholder size is corrected.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageInfos[0]?.width, setFitWidthZoom]);
 
   // IntersectionObserver to track which page is most visible
   useEffect(() => {
@@ -215,8 +210,11 @@ export function EditorCanvas() {
 
     pageRefs.current.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
+    // Deliberately depends on pageInfos.length, not pageInfos itself, so this
+    // doesn't tear down and recreate the observer every time an unrelated page's
+    // placeholder size is corrected.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageInfos, pageCount, setCurrentPage]);
+  }, [pageInfos.length, pageCount, setCurrentPage]);
 
   // Register page div refs
   const setPageRef = useCallback((idx: number, el: HTMLDivElement | null) => {

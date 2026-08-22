@@ -200,6 +200,32 @@ fn format_gs_crash_error(stderr: &str) -> String {
     }
 }
 
+/// Build a user-friendly error message for Word AppleScript automation failures.
+/// AppleScript errors -1708 ("doesn't understand the X message") and -2753
+/// ("variable ... is not defined") both surface when a document opened via
+/// `open POSIX file` isn't fully wired into Word's scriptable document interface —
+/// the file opens, but save/close commands are rejected. Seen on some Word for
+/// Mac builds regardless of source format; not something Papercut can work around.
+/// Only called from the macOS Word-automation path, but deliberately left
+/// compiled on every platform so its unit tests keep running in CI (which is
+/// Linux). Without this, `cargo clippy -- -D warnings` fails there on dead_code.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn format_word_automation_error(stderr: &str) -> String {
+    const HINT: &str =
+        "Microsoft Word's automation interface isn't responding correctly on this Mac \
+         (a known issue on some Word builds — opened documents don't stay scriptable). \
+         Conversions through Word can't complete right now. Try quitting and reopening \
+         Word, or install LibreOffice for reliable offline conversion.";
+
+    if stderr.contains("(-1708)") || stderr.contains("(-2753)") {
+        HINT.to_string()
+    } else if stderr.is_empty() {
+        "Word conversion failed with no error output.".to_string()
+    } else {
+        format!("Word conversion failed: {}", stderr)
+    }
+}
+
 /// Managed cancellation state — holds the running GS child process.
 /// cancel_processing() takes the child out and kills it, which signals
 /// compress_pdf's event loop to exit with a CANCELLED error.
@@ -396,6 +422,40 @@ fn cancel_processing(state: tauri::State<ProcessState>) {
 /// Spawns GS as a child process, stores the child in ProcessState so it can be
 /// killed by cancel_processing(). Waits for the Terminated event.
 /// Returns Err("CANCELLED") if killed before completion.
+/// Builds the Ghostscript argument list for compress_pdf's chosen preset.
+///
+/// PDFSETTINGS presets only recompress an image if GS decides it needs
+/// *downsampling* (its resolution exceeds the preset's target DPI). An image
+/// already at or below that resolution is passed through in its original
+/// filter untouched — even if it's losslessly encoded (FlateDecode) and would
+/// shrink significantly just by re-encoding as JPEG. For every preset except
+/// prepress (archive — meant to stay lossless), force that re-encoding
+/// explicitly rather than relying on the resolution-based auto-detection.
+fn build_compress_pdf_args(preset: &str, tmp_path_str: &str, source_path: &str) -> Vec<String> {
+    let mut gs_args = vec![
+        "-sDEVICE=pdfwrite".to_string(),
+        "-dNOPAUSE".to_string(),
+        "-dBATCH".to_string(),
+        "-dQUIET".to_string(),
+        format!("-dPDFSETTINGS=/{}", preset),
+    ];
+
+    if preset != "prepress" {
+        gs_args.extend([
+            "-dAutoFilterColorImages=false".to_string(),
+            "-dColorImageFilter=/DCTEncode".to_string(),
+            "-dEncodeColorImages=true".to_string(),
+            "-dAutoFilterGrayImages=false".to_string(),
+            "-dGrayImageFilter=/DCTEncode".to_string(),
+            "-dEncodeGrayImages=true".to_string(),
+        ]);
+    }
+
+    gs_args.push(format!("-sOutputFile={}", tmp_path_str));
+    gs_args.push(source_path.to_string());
+    gs_args
+}
+
 #[tauri::command]
 async fn compress_pdf(
     app: tauri::AppHandle,
@@ -421,16 +481,10 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
+    let gs_args = build_compress_pdf_args(&preset, &tmp_path_str, &source_path);
+
     // Spawn GS process (sidecar first, then system PATH fallback)
-    let (mut rx, child) = spawn_gs(&app, vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-dPDFSETTINGS=/{}", preset),
-        format!("-sOutputFile={}", tmp_path_str),
-        source_path.clone(),
-    ])?;
+    let (mut rx, child) = spawn_gs(&app, gs_args)?;
 
     // Store the child so cancel_processing() can kill it
     {
@@ -1161,6 +1215,9 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     let gs_ok = is_ghostscript_available(&app);
     results.insert("ghostscript", gs_ok);
 
+    // Native webview HTML → PDF export (WKWebView createPDF) — macOS only for now.
+    results.insert("webview", cfg!(target_os = "macos"));
+
     serde_json::to_string(&results)
         .map_err(|e| format!("Failed to serialize converter status: {}", e))
 }
@@ -1269,7 +1326,7 @@ async fn convert_with_word(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Word conversion failed: {}", stderr));
+            return Err(format_word_automation_error(&stderr));
         }
     }
 
@@ -1327,6 +1384,393 @@ async fn convert_with_word(
             .map_err(|e| format!("Failed to read Word output: {}", e))?;
 
         let _ = std::fs::remove_file(&output_path);
+
+        Ok(tauri::ipc::Response::new(bytes))
+    }
+}
+
+/// Convert an HTML file to PDF by rendering it in a hidden native webview and
+/// exporting the rendered page — the same mechanism as a browser's "Save as
+/// PDF". Used instead of driving Word/LibreOffice for HTML specifically:
+/// renders modern CSS/JS the way a browser would, and needs no external app
+/// installed.
+#[tauri::command]
+async fn convert_html_to_pdf_native(
+    app: tauri::AppHandle,
+    source_path: String,
+) -> Result<tauri::ipc::Response, String> {
+    validate_source_path(&source_path)?;
+
+    #[cfg(target_os = "macos")]
+    {
+        convert_html_to_pdf_macos(app, source_path).await
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = app;
+        let _ = source_path;
+        Err("Native HTML to PDF export is only available on macOS right now.".to_string())
+    }
+}
+
+#[cfg(target_os = "macos")]
+async fn convert_html_to_pdf_macos(
+    app: tauri::AppHandle,
+    source_path: String,
+) -> Result<tauri::ipc::Response, String> {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Arc, Mutex};
+
+    let source = std::path::Path::new(&source_path);
+    let dir_path_str = source
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| source_path.clone());
+
+    let window_label = format!("html2pdf-{}", Uuid::new_v4());
+
+    // Signalled once the real HTML content (not the initial blank page) finishes loading.
+    let (load_tx, load_rx) = tokio::sync::oneshot::channel::<()>();
+    let load_tx = Arc::new(Mutex::new(Some(load_tx)));
+    let armed = Arc::new(AtomicBool::new(false));
+
+    let load_tx_for_hook = load_tx.clone();
+    let armed_for_hook = armed.clone();
+
+    // WKWebViewConfiguration is main-thread-only to construct, so the whole
+    // window (config + builder + build()) has to happen inside one
+    // run_on_main_thread dispatch rather than being built on this (tokio
+    // worker) thread the way the rest of this function's `with_webview`
+    // calls operate against an *existing* webview.
+    //
+    // The configuration turns on `allowFileAccessFromFileURLs` — by default
+    // WKWebView treats every `file://` URL as its own isolated, opaque
+    // origin, so a same-origin <iframe> in a saved-page bundle (e.g.
+    // `page_files/resource.html`, referenced by a relative path) can't reach
+    // its own parent's DOM even with `sandbox="allow-same-origin"` — the
+    // sandbox attribute can only grant what the WebView's base policy
+    // already allows. This is an official, if undocumented (KVC-only) WebKit
+    // preference key, not a private/unstable API surface.
+    let (window_tx, window_rx) = tokio::sync::oneshot::channel::<Result<tauri::WebviewWindow, String>>();
+    let window_tx = Arc::new(Mutex::new(Some(window_tx)));
+    let window_tx_for_main = window_tx.clone();
+    let app_for_main = app.clone();
+    let window_label_for_main = window_label.clone();
+
+    let main_thread_dispatch = app.run_on_main_thread(move || {
+        let result = (|| -> Result<tauri::WebviewWindow, String> {
+            let mtm = objc2::MainThreadMarker::new()
+                .ok_or_else(|| "Window creation did not run on the main thread.".to_string())?;
+            let configuration = unsafe {
+                use objc2_foundation::NSObjectNSKeyValueCoding;
+                let configuration = objc2_web_kit::WKWebViewConfiguration::new(mtm);
+                let preferences = configuration.preferences();
+                let key = objc2_foundation::NSString::from_str("allowFileAccessFromFileURLs");
+                let value = objc2_foundation::NSNumber::numberWithBool(true);
+                preferences.setValue_forKey(Some(value.as_ref()), &key);
+                configuration
+            };
+
+            tauri::WebviewWindowBuilder::new(
+                &app_for_main,
+                &window_label_for_main,
+                tauri::WebviewUrl::External(url::Url::parse("about:blank").unwrap()),
+            )
+            .visible(false)
+            .inner_size(1024.0, 1400.0)
+            .with_webview_configuration(configuration)
+            .on_page_load(move |_win, payload| {
+                if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+                    && armed_for_hook.load(Ordering::SeqCst)
+                {
+                    if let Some(tx) = load_tx_for_hook.lock().unwrap().take() {
+                        let _ = tx.send(());
+                    }
+                }
+            })
+            .build()
+            .map_err(|e| format!("Failed to create render surface: {}", e))
+        })();
+
+        if let Some(tx) = window_tx_for_main.lock().unwrap().take() {
+            let _ = tx.send(result);
+        }
+    });
+
+    if let Err(e) = main_thread_dispatch {
+        return Err(format!("Failed to dispatch window creation: {}", e));
+    }
+
+    let webview_window = tokio::time::timeout(std::time::Duration::from_secs(10), window_rx)
+        .await
+        .map_err(|_| "Timed out creating render surface.".to_string())?
+        .map_err(|_| "Render surface creation channel closed unexpectedly.".to_string())??;
+
+    // Load the real HTML file directly through WKWebView (bypasses Tauri's URL
+    // builder, which only accepts http/https) then arm the "finished" signal —
+    // safe to do last since no navigation callback can fire until this closure
+    // returns control to the main thread's run loop.
+    let armed_for_load = armed.clone();
+    let source_path_for_load = source_path.clone();
+    let load_dispatch = webview_window.with_webview(move |webview| unsafe {
+        let raw = webview.inner() as *mut objc2_web_kit::WKWebView;
+        let wk: &objc2_web_kit::WKWebView = &*raw;
+        let file_ns_url = objc2_foundation::NSURL::fileURLWithPath(
+            &objc2_foundation::NSString::from_str(&source_path_for_load),
+        );
+        let dir_ns_url = objc2_foundation::NSURL::fileURLWithPath(
+            &objc2_foundation::NSString::from_str(&dir_path_str),
+        );
+        wk.loadFileURL_allowingReadAccessToURL(&file_ns_url, &dir_ns_url);
+        armed_for_load.store(true, Ordering::SeqCst);
+    });
+
+    if let Err(e) = load_dispatch {
+        let _ = webview_window.close();
+        return Err(format!("Failed to load HTML into render surface: {}", e));
+    }
+
+    if tokio::time::timeout(std::time::Duration::from_secs(20), load_rx)
+        .await
+        .is_err()
+    {
+        let _ = webview_window.close();
+        return Err("Timed out rendering the HTML file.".to_string());
+    }
+
+    // Measure the page's real content height (not just the initial viewport) so
+    // the render surface can be expanded to match before exporting — otherwise
+    // createPDF only captures what's currently on screen, truncating anything
+    // that required scrolling to reach.
+    //
+    // A plain top-level scrollHeight misses two common cases:
+    //  - Pages that pre-compute a "true" content height into a CSS custom
+    //    property for print tooling (seen on saved single-file HTML pages
+    //    with an app-shell layout, e.g. "--frame-print-h").
+    //  - Content that actually lives inside a same-origin-accessible <iframe>
+    //    (e.g. a "Save Page As" bundle) rather than the top document itself —
+    //    a position:absolute shell around such an iframe reports its own
+    //    small viewport height, not the iframe's real content height.
+    // Check all three signals and take the largest each poll. The top
+    // document's own "finished loading" event (which gates the earlier wait)
+    // fires for the main frame only — a same-origin iframe can still be
+    // loading its own content after that, and also reports readyState so we
+    // know whether to keep polling for it. (WKWebView's older
+    // evaluateJavaScript:completionHandler: does not await a returned
+    // promise, so this stays synchronous and the polling loop lives in Rust
+    // instead of JS.)
+    const MEASURE_JS: &str = r#"(function() {
+        function docHeight(doc) {
+            var d = doc.documentElement, b = doc.body;
+            return Math.max(
+                d ? d.scrollHeight : 0,
+                b ? b.scrollHeight : 0,
+                d ? d.offsetHeight : 0
+            );
+        }
+        var best = docHeight(document);
+        try {
+            var hinted = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--frame-print-h'));
+            if (!isNaN(hinted) && hinted > best) best = hinted;
+        } catch (e) {}
+        try {
+            var frames = document.querySelectorAll('iframe');
+            for (var i = 0; i < frames.length; i++) {
+                try {
+                    var inner = frames[i].contentDocument;
+                    if (inner) {
+                        var h = docHeight(inner);
+                        if (h > best) best = h;
+                    }
+                } catch (e) {}
+            }
+        } catch (e) {}
+        return best;
+    })()"#;
+
+    let measure_once = |webview_window: &tauri::WebviewWindow| -> tokio::sync::oneshot::Receiver<f64> {
+        let (height_tx, height_rx) = tokio::sync::oneshot::channel::<f64>();
+        let height_tx = Arc::new(Mutex::new(Some(height_tx)));
+        let height_tx_for_block = height_tx.clone();
+
+        let dispatch = webview_window.with_webview(move |webview| unsafe {
+            let raw = webview.inner() as *mut objc2_web_kit::WKWebView;
+            let wk: &objc2_web_kit::WKWebView = &*raw;
+            let js = objc2_foundation::NSString::from_str(MEASURE_JS);
+
+            let block = block2::RcBlock::new(
+                move |result: *mut objc2::runtime::AnyObject, _error: *mut objc2_foundation::NSError| {
+                    let height = if result.is_null() {
+                        0.0
+                    } else {
+                        (*result)
+                            .downcast_ref::<objc2_foundation::NSNumber>()
+                            .map(|n| n.doubleValue())
+                            .unwrap_or(0.0)
+                    };
+                    if let Some(tx) = height_tx_for_block.lock().unwrap().take() {
+                        let _ = tx.send(height);
+                    }
+                },
+            );
+
+            wk.evaluateJavaScript_completionHandler(&js, Some(&block));
+        });
+        if dispatch.is_err() {
+            if let Some(tx) = height_tx.lock().unwrap().take() {
+                let _ = tx.send(0.0);
+            }
+        }
+        height_rx
+    };
+
+    // Poll for up to ~2s: a same-origin iframe (e.g. a saved-page bundle)
+    // typically finishes its own load within a couple hundred ms of the
+    // outer page, but there's no event to await for that specifically.
+    let mut measured_height: f64 = 0.0;
+    for _ in 0..14 {
+        let sample = tokio::time::timeout(std::time::Duration::from_secs(5), measure_once(&webview_window))
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+            .unwrap_or(0.0);
+        if sample > measured_height {
+            measured_height = sample;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+    }
+
+    // Capture as letter-proportioned page-sized slices and merge them into one
+    // multi-page PDF, instead of one createPDF call over the whole (now very
+    // tall) render surface. WebKit silently re-splits any single PDF page
+    // taller than ~14,400pt at an arbitrary pixel boundary — not a paragraph
+    // or section break — which is what produced odd-looking 1-2-page output
+    // for tall documents. Slicing ourselves at a normal page height gives a
+    // page count and thumbnail strip that looks like a real printed document.
+    const PAGE_WIDTH_PX: f64 = 1024.0;
+    const PAGE_HEIGHT_PX: f64 = 1325.0; // letter aspect ratio (11/8.5) at PAGE_WIDTH_PX
+
+    // Clamp to a sane range: never shrink below one page, never grow past a
+    // size that would make export pathologically slow.
+    let target_height = measured_height.clamp(PAGE_HEIGHT_PX, 50_000.0);
+
+    if target_height > PAGE_HEIGHT_PX {
+        let _ = webview_window.set_size(tauri::LogicalSize::new(PAGE_WIDTH_PX, target_height));
+        // Resizing doesn't fire a page-load event we can await, so give WebKit
+        // a short, fixed window to relayout before capturing.
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    }
+
+    let total_height = target_height;
+    // Round rather than ceil, and re-divide height evenly across that many
+    // pages — a fixed PAGE_HEIGHT_PX chunk size leaves a near-empty sliver of
+    // a final page whenever content is just over a page boundary (e.g. 1400px
+    // of content into 1325px pages). Rounding keeps content that's basically
+    // "one page's worth" as one (slightly taller) page instead.
+    let num_pages = ((total_height / PAGE_HEIGHT_PX).round() as usize).max(1);
+    let page_height = total_height / num_pages as f64;
+
+    let capture_page = |webview_window: &tauri::WebviewWindow, y: f64, h: f64| -> tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>> {
+        let (tx, rx) = tokio::sync::oneshot::channel::<Result<Vec<u8>, String>>();
+        let tx = Arc::new(Mutex::new(Some(tx)));
+        let tx_for_block = tx.clone();
+
+        let dispatch = webview_window.with_webview(move |webview| unsafe {
+            let raw = webview.inner() as *mut objc2_web_kit::WKWebView;
+            let wk: &objc2_web_kit::WKWebView = &*raw;
+
+            let mtm = match objc2::MainThreadMarker::new() {
+                Some(m) => m,
+                None => {
+                    if let Some(tx) = tx_for_block.lock().unwrap().take() {
+                        let _ = tx.send(Err("Page capture did not run on the main thread.".to_string()));
+                    }
+                    return;
+                }
+            };
+            let config = objc2_web_kit::WKPDFConfiguration::new(mtm);
+            config.setRect(objc2_core_foundation::CGRect {
+                origin: objc2_core_foundation::CGPoint { x: 0.0, y },
+                size: objc2_core_foundation::CGSize { width: PAGE_WIDTH_PX, height: h },
+            });
+
+            let block = block2::RcBlock::new(
+                move |data: *mut objc2_foundation::NSData, error: *mut objc2_foundation::NSError| {
+                    let result = if !error.is_null() {
+                        Err(format!("Page export failed: {}", &*error))
+                    } else if !data.is_null() {
+                        Ok((*data).to_vec())
+                    } else {
+                        Err("Page export returned no data.".to_string())
+                    };
+                    if let Some(tx) = tx_for_block.lock().unwrap().take() {
+                        let _ = tx.send(result);
+                    }
+                },
+            );
+
+            wk.createPDFWithConfiguration_completionHandler(Some(&config), &block);
+        });
+        if dispatch.is_err() {
+            if let Some(tx) = tx.lock().unwrap().take() {
+                let _ = tx.send(Err("Failed to dispatch page export.".to_string()));
+            }
+        }
+        rx
+    };
+
+    let mut page_datas: Vec<Vec<u8>> = Vec::with_capacity(num_pages);
+    for i in 0..num_pages {
+        let y = i as f64 * page_height;
+        let h = (total_height - y).min(page_height);
+        let outcome = tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            capture_page(&webview_window, y, h),
+        )
+        .await;
+        match outcome {
+            Ok(Ok(Ok(bytes))) => page_datas.push(bytes),
+            Ok(Ok(Err(e))) => {
+                let _ = webview_window.close();
+                return Err(e);
+            }
+            Ok(Err(_)) => {
+                let _ = webview_window.close();
+                return Err("Page export channel closed unexpectedly.".to_string());
+            }
+            Err(_) => {
+                let _ = webview_window.close();
+                return Err(format!("Timed out exporting page {} of {}.", i + 1, num_pages));
+            }
+        }
+    }
+
+    let _ = webview_window.close();
+
+    // PDFDocument/PDFPage aren't main-thread-restricted, so this merge can
+    // run right here on the async command's own thread.
+    unsafe {
+        use objc2::AnyThread;
+
+        let combined = objc2_pdf_kit::PDFDocument::new();
+        for (i, data) in page_datas.iter().enumerate() {
+            let ns_data = objc2_foundation::NSData::with_bytes(data);
+            let doc = objc2_pdf_kit::PDFDocument::initWithData(
+                objc2_pdf_kit::PDFDocument::alloc(),
+                &ns_data,
+            )
+            .ok_or_else(|| format!("Failed to parse exported page {}.", i + 1))?;
+            let page = doc
+                .pageAtIndex(0)
+                .ok_or_else(|| format!("Missing content on page {}.", i + 1))?;
+            combined.insertPage_atIndex(&page, i);
+        }
+
+        let bytes = combined
+            .dataRepresentation()
+            .ok_or_else(|| "Failed to assemble the final PDF.".to_string())?
+            .to_vec();
 
         Ok(tauri::ipc::Response::new(bytes))
     }
@@ -1427,7 +1871,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, detect_converters, reveal_in_finder]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -1833,6 +2277,58 @@ mod tests {
         assert!(!valid.contains(&"best"), "old name 'best' must not pass the allow-list");
     }
 
+    // ─── build_compress_pdf_args — forced re-encoding for non-archive presets ──
+    //
+    // Bug: a real 32MB/688-page PDF, 63% of whose image bytes were losslessly
+    // FlateDecode-encoded (not the JPEG2000 initially suspected), compressed to
+    // exactly 0% at every quality level. Ghostscript's presets only re-encode an
+    // image when its resolution exceeds the target DPI — an already-low-resolution
+    // FlateDecode image is passed through untouched even though converting it to
+    // JPEG would shrink it regardless of resolution. These flags force that
+    // conversion explicitly for every preset except prepress (archive), which is
+    // meant to stay lossless.
+
+    #[test]
+    fn compress_pdf_args_force_reencode_for_screen_preset() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        assert!(args.contains(&"-dAutoFilterColorImages=false".to_string()));
+        assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
+        assert!(args.contains(&"-dEncodeColorImages=true".to_string()));
+        assert!(args.contains(&"-dAutoFilterGrayImages=false".to_string()));
+        assert!(args.contains(&"-dGrayImageFilter=/DCTEncode".to_string()));
+        assert!(args.contains(&"-dEncodeGrayImages=true".to_string()));
+    }
+
+    #[test]
+    fn compress_pdf_args_force_reencode_for_ebook_and_printer_presets() {
+        for preset in ["ebook", "printer"] {
+            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf");
+            assert!(
+                args.contains(&"-dColorImageFilter=/DCTEncode".to_string()),
+                "preset '{}' must force color image re-encoding",
+                preset
+            );
+        }
+    }
+
+    #[test]
+    fn compress_pdf_args_prepress_preset_does_not_force_reencode() {
+        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf");
+        assert!(
+            !args.iter().any(|a| a.contains("DCTEncode")),
+            "prepress (archive) must stay lossless — no forced JPEG re-encoding"
+        );
+    }
+
+    #[test]
+    fn compress_pdf_args_include_output_and_source_paths() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        assert!(args.contains(&"-sOutputFile=/tmp/out.pdf".to_string()));
+        assert!(args.contains(&"/tmp/in.pdf".to_string()));
+        // Source path must be last (GS positional input argument)
+        assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
+    }
+
     // ─── format_gs_crash_error — user-friendly GS error messages ──────────────
 
     #[test]
@@ -1891,6 +2387,42 @@ mod tests {
             msg.contains("missing") || msg.contains("reinstall"),
             "crash with missing-library stderr must mention missing library or reinstall"
         );
+    }
+
+    // ─── format_word_automation_error — friendly Word AppleScript error messages ──
+
+    /// [CR-BUG-04] -2753 "variable is not defined" (the raw error Word conversions
+    /// surfaced to the user) must produce the friendly automation-broken message,
+    /// not the cryptic AppleScript line/column text.
+    #[test]
+    fn word_automation_error_detects_undefined_variable() {
+        let stderr = "386:392: execution error: The variable theDoc is not defined. (-2753)";
+        let msg = super::format_word_automation_error(stderr);
+        assert!(msg.contains("automation"), "should explain it's an automation issue");
+        assert!(msg.contains("LibreOffice"), "should suggest LibreOffice as an alternative");
+        assert!(!msg.contains("386:392"), "should not leak the raw AppleScript line:column");
+    }
+
+    #[test]
+    fn word_automation_error_detects_doesnt_understand() {
+        let stderr = "68:244: execution error: Microsoft Word got an error: document \"x.docx\" doesn\u{2019}t understand the \u{201c}save as\u{201d} message. (-1708)";
+        let msg = super::format_word_automation_error(stderr);
+        assert!(msg.contains("automation"), "should explain it's an automation issue");
+        assert!(msg.contains("LibreOffice"), "should suggest LibreOffice as an alternative");
+    }
+
+    #[test]
+    fn word_automation_error_generic_fallback() {
+        let stderr = "some other AppleScript failure";
+        let msg = super::format_word_automation_error(stderr);
+        assert!(msg.contains(stderr), "unrecognized errors should still include raw stderr");
+        assert!(!msg.contains("automation isn't responding"), "should not claim automation is broken for unrelated errors");
+    }
+
+    #[test]
+    fn word_automation_error_empty_stderr() {
+        let msg = super::format_word_automation_error("");
+        assert!(msg.contains("no error output"));
     }
 
     // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────

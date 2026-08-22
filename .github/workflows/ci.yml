@@ -14,8 +14,11 @@ permissions:
   pull-requests: read
 
 jobs:
-  # Detect which areas of the codebase changed to enable smart E2E triggering
-  # Runs on all events, but only applies filtering on PRs (other events always show as changed)
+  # Detect which areas of the codebase changed to enable smart E2E triggering.
+  # Runs on all events, but only applies filtering on PRs (other events always show as changed).
+  # Currently no job consumes these outputs: the e2e jobs no longer run on
+  # pull_request (see the note on e2e-pdf). Kept so path-based gating can be
+  # wired straight back up when those suites are revived.
   detect-changes:
     runs-on: ubuntu-22.04
     outputs:
@@ -131,9 +134,17 @@ jobs:
 
   e2e-pdf:
     runs-on: ubuntu-22.04
-    needs: [validate, rust-checks, detect-changes]
+    needs: [validate, rust-checks]
+    # NOTE: deliberately NOT run on pull_request. These WebDriver suites are
+    # blocked by an upstream panic in tauri-plugin-webdriver-automation 0.1.3:
+    # `resolve()` does `.remove(&id).expect("no pending script with that id")`
+    # while holding the pending-scripts Mutex, so a late or duplicate script
+    # result poisons that Mutex and every later request fails with
+    # "lock poisoned" — the session never recovers. They have not passed in any
+    # recent CI run. PR coverage for these flows comes from rust-integration.
+    # Still runnable on demand via the Actions "Run workflow" button, and on
+    # release. See .planning/TEST_PLAN.md.
     if: |
-      (github.event_name == 'pull_request' && needs.detect-changes.outputs.pdf-changed == 'true') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'release'
 
@@ -181,7 +192,7 @@ jobs:
           echo "GS sidecar wrapper created successfully"
 
       - name: Build Tauri app (debug, for webdriver-automation plugin)
-        run: npx tauri build --debug
+        run: npx tauri build --debug --features e2e --no-bundle
         env:
           RUSTC_WRAPPER: sccache
 
@@ -211,9 +222,17 @@ jobs:
 
   e2e-image:
     runs-on: ubuntu-22.04
-    needs: [validate, rust-checks, detect-changes]
+    needs: [validate, rust-checks]
+    # NOTE: deliberately NOT run on pull_request. These WebDriver suites are
+    # blocked by an upstream panic in tauri-plugin-webdriver-automation 0.1.3:
+    # `resolve()` does `.remove(&id).expect("no pending script with that id")`
+    # while holding the pending-scripts Mutex, so a late or duplicate script
+    # result poisons that Mutex and every later request fails with
+    # "lock poisoned" — the session never recovers. They have not passed in any
+    # recent CI run. PR coverage for these flows comes from rust-integration.
+    # Still runnable on demand via the Actions "Run workflow" button, and on
+    # release. See .planning/TEST_PLAN.md.
     if: |
-      (github.event_name == 'pull_request' && needs.detect-changes.outputs.image-changed == 'true') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'release'
 
@@ -252,7 +271,7 @@ jobs:
           RUSTC_WRAPPER: sccache
 
       - name: Build Tauri app (debug, for webdriver-automation plugin)
-        run: npx tauri build --debug
+        run: npx tauri build --debug --features e2e --no-bundle
         env:
           RUSTC_WRAPPER: sccache
 

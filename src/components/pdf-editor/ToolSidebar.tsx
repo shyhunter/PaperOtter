@@ -21,6 +21,7 @@ import {
 import type { ToolId } from '@/types/tools';
 import { EDITOR_SIDEBAR_TOOLS, TOOL_REGISTRY } from '@/types/tools';
 import { ToolSidebarPanel } from './ToolSidebarPanel';
+import { diagLog } from '@/lib/diagLog';
 
 // Map icon names from TOOL_REGISTRY to Lucide components
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -54,6 +55,7 @@ export function ToolSidebar() {
   );
 
   function handleIconClick(toolId: ToolId) {
+    diagLog(`toolSidebar.click toolId=${toolId} current=${activeTool}`);
     if (activeTool === toolId) {
       setActiveTool(null); // collapse panel
     } else {

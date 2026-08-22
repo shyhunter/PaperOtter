@@ -6,7 +6,7 @@ import { getExtension } from '@/lib/fileValidation';
 import type { ConvertFormat } from '@/types/converter';
 
 const DOC_EXTENSIONS = [
-  'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf',
+  'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
 ];
 
 /** Maps file extension to ConvertFormat. Returns null if unsupported. */
@@ -21,6 +21,7 @@ function extToFormat(ext: string): ConvertFormat | null {
     azw3: 'azw3',
     txt: 'txt',
     rtf: 'rtf',
+    html: 'html',
   };
   return map[ext] ?? null;
 }
@@ -48,7 +49,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
       const ext = getExtension(result);
       const format = extToFormat(ext);
       if (!format) {
-        setError('Unsupported file format. Please use PDF, DOCX, DOC, ODT, EPUB, TXT, or RTF.');
+        setError('Unsupported file format. Please use PDF, DOCX, DOC, ODT, EPUB, TXT, RTF, or HTML.');
         setIsLoading(false);
         return;
       }
@@ -69,7 +70,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
           Select a document to convert between formats.
         </p>
         <p className="text-xs text-muted-foreground">
-          Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF
+          Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML
         </p>
         <p className="text-xs text-muted-foreground">
           Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more

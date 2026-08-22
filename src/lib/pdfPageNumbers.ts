@@ -69,3 +69,43 @@ export async function addPageNumbers(
 
   return new Uint8Array(await doc.save({ useObjectStreams: true }));
 }
+
+/**
+ * Numbers a single page, extracted into its own minimal document, for fast live
+ * previews. Numbering the full document on every option change (position, format,
+ * font size, start number) freezes the UI on large documents — pdf-lib has to
+ * reparse and re-save every page and embedded image just to preview one page.
+ */
+export async function addPageNumbersSinglePage(
+  pdfBytes: Uint8Array,
+  options: PageNumberOptions,
+  pageIndex = 0,
+): Promise<Uint8Array> {
+  const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+  const previewDoc = await PDFDocument.create();
+
+  const clampedIndex = Math.min(Math.max(pageIndex, 0), srcDoc.getPageCount() - 1);
+  const [copiedPage] = await previewDoc.copyPages(srcDoc, [clampedIndex]);
+  previewDoc.addPage(copiedPage);
+
+  const font = await previewDoc.embedFont(StandardFonts.Helvetica);
+  const page = previewDoc.getPages()[0];
+  const { width, height } = page.getSize();
+  const text = formatNumber(options.startNumber + clampedIndex, options.format);
+  const textWidth = font.widthOfTextAtSize(text, options.fontSize);
+
+  let x: number, y: number;
+  const m = options.margin;
+  switch (options.position) {
+    case 'bottom-center': x = (width - textWidth) / 2; y = m; break;
+    case 'bottom-left':   x = m; y = m; break;
+    case 'bottom-right':  x = width - textWidth - m; y = m; break;
+    case 'top-center':    x = (width - textWidth) / 2; y = height - m - options.fontSize; break;
+    case 'top-left':      x = m; y = height - m - options.fontSize; break;
+    case 'top-right':     x = width - textWidth - m; y = height - m - options.fontSize; break;
+  }
+
+  page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(0, 0, 0) });
+
+  return new Uint8Array(await previewDoc.save({ useObjectStreams: true }));
+}

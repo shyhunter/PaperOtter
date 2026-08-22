@@ -52,13 +52,19 @@ vi.mock('@/lib/pdfThumbnail', () => ({
 }));
 
 // ── Processing (prevents errors when hovering into Configure step) ────────────
-vi.mock('@/lib/pdfProcessor', () => ({
-  processPdf: vi.fn(),
-  recommendQualityForTarget: vi.fn().mockReturnValue('screen'),
-  estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
-  getPdfImageCount: vi.fn().mockResolvedValue(0),
-  getPdfCompressibility: vi.fn().mockResolvedValue({ imageCount: 0, compressibilityScore: 0.5 }),
-}));
+vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfProcessor')>();
+  return {
+    ...actual, // keep real isPredictablyNonCompressible/getNonCompressibleReason/nonCompressibleMessage
+    processPdf: vi.fn(),
+    recommendQualityForTarget: vi.fn().mockReturnValue('screen'),
+    estimateOutputSizeBytes: vi.fn().mockReturnValue(500 * 1024),
+    getPdfImageCount: vi.fn().mockResolvedValue(0),
+    getPdfCompressibility: vi.fn().mockResolvedValue({
+      pageCount: 3, fileSizeBytes: 2_400_000, imageCount: 0, compressibilityScore: 0.5, jpxByteShare: 0,
+    }),
+  };
+});
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
 
 // ── Blob URL (ImageCompareStep) ───────────────────────────────────────────────

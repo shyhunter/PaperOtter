@@ -15,6 +15,7 @@ function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
     libreoffice: false,
     calibre: false,
     pandoc: false,
+    webview: false,
     ...partial,
   };
 }
@@ -46,6 +47,25 @@ describe('input-aware engine selection', () => {
 
   it('DOCX → PDF still works via a document engine', () => {
     expect(getBestEngine('pdf', avail({ libreoffice: true }), 'docx')).toBe('libreoffice');
+  });
+
+  it('[CR-BUG-03] HTML → PDF works via a document engine (regression: .html files could not be selected as source)', () => {
+    expect(getBestEngine('pdf', avail({ libreoffice: true }), 'html')).toBe('libreoffice');
+    expect(getBestEngine('pdf', avail({ word: true }), 'html')).toBe('word');
+    expect(getBestEngine('pdf', avail({ calibre: true }), 'html')).toBe('calibre');
+  });
+
+  it('[CR-05] HTML → PDF prefers the native webview export over Word/LibreOffice/Calibre', () => {
+    // webview renders like a real browser and needs no external app, so it wins
+    // even when Word/LibreOffice/Calibre are also available.
+    expect(
+      getBestEngine('pdf', avail({ webview: true, word: true, libreoffice: true, calibre: true }), 'html'),
+    ).toBe('webview');
+  });
+
+  it('[CR-05] webview is never selected for non-HTML sources (it can only render a real page, not convert one)', () => {
+    expect(getBestEngine('pdf', avail({ webview: true }), 'docx')).not.toBe('webview');
+    expect(getBestEngine('pdf', avail({ webview: true }), 'odt')).not.toBe('webview');
   });
 });
 

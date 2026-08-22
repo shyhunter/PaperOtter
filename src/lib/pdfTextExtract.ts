@@ -6,6 +6,7 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import { acquireSharedPdfDocument, releaseSharedPdfDocument } from './pdfThumbnail';
 
 /** A single extracted text item with position, size, and font data. */
 export interface ExtractedTextItem {
@@ -39,8 +40,7 @@ export async function extractPageText(
   pdfBytes: Uint8Array,
   pageIndex: number,
 ): Promise<ExtractedTextItem[]> {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-  const pdfDoc = await loadingTask.promise;
+  const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
 
   try {
     const pageNum = pageIndex + 1; // pdfjs is 1-indexed
@@ -92,7 +92,7 @@ export async function extractPageText(
 
     return items;
   } finally {
-    pdfDoc.destroy();
+    releaseSharedPdfDocument(pdfBytes);
   }
 }
 

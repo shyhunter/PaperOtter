@@ -23,6 +23,38 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
+// Keyed by the exact pdfBytes reference — parsing a document (including the
+// pdfBytes.slice() copy) is not free, and the editor renders many single-page
+// components (page-panel thumbnails, main-canvas pages) against the same
+// document at once. Without sharing, a large, image-heavy document (e.g. a
+// 688-page/30MB PDF) gets re-parsed from scratch by every single one of them,
+// concurrently, on every scroll — enough to starve the UI thread indefinitely.
+// Callers must NOT call .destroy() on a document obtained this way; it's shared
+// and is released via releaseSharedPdfDocument once every caller is done with it.
+const sharedDocCache = new Map<Uint8Array, { promise: Promise<pdfjsLib.PDFDocumentProxy>; refCount: number }>();
+
+/** Acquire a shared, parsed document for `pdfBytes`. Pair with releaseSharedPdfDocument. */
+export function acquireSharedPdfDocument(pdfBytes: Uint8Array): Promise<pdfjsLib.PDFDocumentProxy> {
+  let entry = sharedDocCache.get(pdfBytes);
+  if (!entry) {
+    entry = { promise: pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise, refCount: 0 };
+    sharedDocCache.set(pdfBytes, entry);
+  }
+  entry.refCount++;
+  return entry.promise;
+}
+
+/** Release a document obtained via acquireSharedPdfDocument; destroys it once unused. */
+export function releaseSharedPdfDocument(pdfBytes: Uint8Array): void {
+  const entry = sharedDocCache.get(pdfBytes);
+  if (!entry) return;
+  entry.refCount--;
+  if (entry.refCount <= 0) {
+    sharedDocCache.delete(pdfBytes);
+    entry.promise.then((doc) => doc.destroy()).catch(() => {});
+  }
+}
+
 /**
  * Renders the first page of a PDF (provided as Uint8Array) to a PNG data URL.
  * @param pdfBytes - The processed PDF bytes (from pdfProcessor.ts result.bytes)
@@ -33,8 +65,7 @@ export async function renderPdfThumbnail(
   pdfBytes: Uint8Array,
   scale = 0.5,
 ): Promise<string> {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-  const pdfDoc = await loadingTask.promise;
+  const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
 
   try {
     const page = await pdfDoc.getPage(1); // first page only
@@ -48,8 +79,7 @@ export async function renderPdfThumbnail(
 
     return canvas.toDataURL('image/png');
   } finally {
-    // Always destroy to free pdfjs-dist internal memory
-    pdfDoc.destroy();
+    releaseSharedPdfDocument(pdfBytes);
   }
 }
 
@@ -65,8 +95,7 @@ export async function renderPdfPageThumbnail(
   pageIndex: number,
   scale = 1.0,
 ): Promise<string> {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-  const pdfDoc = await loadingTask.promise;
+  const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
 
   try {
     const pageNum = Math.min(Math.max(pageIndex + 1, 1), pdfDoc.numPages);
@@ -81,13 +110,12 @@ export async function renderPdfPageThumbnail(
 
     return canvas.toDataURL('image/png');
   } finally {
-    pdfDoc.destroy();
+    releaseSharedPdfDocument(pdfBytes);
   }
 }
 
 /**
  * Renders ALL pages of a PDF to an array of PNG data URLs.
- * Used by CompareStep for the full before/after preview.
  * @param pdfBytes - PDF bytes (source or processed)
  * @param scale    - Render scale factor. 2.0 gives crisp display at full panel width.
  * @returns        - Array of PNG data URL strings, one per page (page 1 first)
@@ -120,4 +148,56 @@ export async function renderAllPdfPages(
     // Always destroy to free pdfjs-dist internal memory
     pdfDoc.destroy();
   }
+}
+
+/** A PDF document opened for on-demand, per-page rendering (see openPdfForLazyRender). */
+export interface LazyPdfHandle {
+  numPages: number;
+  /** height/width ratio for each page (0-indexed), fetched cheaply without rasterizing. */
+  pageAspectRatios: number[];
+  /** Rasterize a single page (0-indexed) to a PNG data URL. */
+  renderPage(pageIndex: number, scale: number): Promise<string>;
+  /** Free pdfjs-dist internal memory. Must be called when the handle is no longer needed. */
+  destroy(): void;
+}
+
+/**
+ * Opens a PDF for lazy, per-page rendering instead of rasterizing every page up front.
+ * Used by CompareStep so large documents (hundreds of pages) don't block on rendering
+ * pages the user may never scroll to, and don't hold every rendered page in memory at once.
+ *
+ * Page aspect ratios are fetched for all pages immediately (cheap — page geometry only,
+ * no rasterization) so callers can lay out correctly-sized placeholders before any page
+ * is actually rendered.
+ */
+export async function openPdfForLazyRender(pdfBytes: Uint8Array): Promise<LazyPdfHandle> {
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+  const pdfDoc = await loadingTask.promise;
+  const numPages = pdfDoc.numPages;
+
+  const pageAspectRatios: number[] = [];
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1 });
+    pageAspectRatios.push(viewport.height / viewport.width);
+  }
+
+  return {
+    numPages,
+    pageAspectRatios,
+    async renderPage(pageIndex: number, scale: number): Promise<string> {
+      const page = await pdfDoc.getPage(pageIndex + 1);
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvas, viewport }).promise;
+      return canvas.toDataURL('image/png');
+    },
+    destroy(): void {
+      pdfDoc.destroy();
+    },
+  };
 }

@@ -1,8 +1,9 @@
 // PagePanelThumbnail: renders a single page thumbnail for the PagePanel.
 // Uses IntersectionObserver for lazy rendering and pdfBytes.slice() for StrictMode safety.
-import { useEffect, useRef, useState, memo } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
+import { useEffect, useRef, useState, memo, type RefObject } from 'react';
+import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThumbnail';
 import { Check } from 'lucide-react';
+import { diagLog } from '@/lib/diagLog';
 
 interface PagePanelThumbnailProps {
   pdfBytes: Uint8Array;
@@ -14,6 +15,9 @@ interface PagePanelThumbnailProps {
   /** Is this thumbnail currently being dragged? */
   isDragSource?: boolean;
   onClick: (e: React.MouseEvent) => void;
+  /** Scrollable thumbnail list container — used as the IntersectionObserver root so
+   *  off-screen thumbnails aren't all treated as visible at once. */
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
 }
 
 const THUMB_SCALE = 0.3;
@@ -25,6 +29,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
   isCurrent,
   isDragSource = false,
   onClick,
+  scrollContainerRef,
 }: PagePanelThumbnailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,7 +48,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
           observer.disconnect();
         }
       },
-      { rootMargin: '200px' },
+      { root: scrollContainerRef.current, rootMargin: '200px' },
     );
 
     observer.observe(el);
@@ -54,12 +59,14 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
   useEffect(() => {
     if (!isVisible || rendered) return;
     let cancelled = false;
-    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+    let acquired = false;
 
     async function render() {
+      const t0 = performance.now();
+      diagLog(`thumb.render.start idx=${pageIndex}`);
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        pdfDoc = await loadingTask.promise;
+        const pdfDoc = await acquireSharedPdfDocument(pdfBytes);
+        acquired = true;
         if (cancelled) return;
 
         const page = await pdfDoc.getPage(pageIndex + 1);
@@ -73,11 +80,12 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
         canvas.height = viewport.height;
 
         await page.render({ canvas, viewport }).promise;
+        diagLog(`thumb.render.done idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)}`);
         if (!cancelled) setRendered(true);
-      } catch {
-        // Thumbnail rendering is non-critical
+      } catch (err) {
+        diagLog(`thumb.render.threw idx=${pageIndex} ms=${(performance.now() - t0).toFixed(0)} ${err}`);
       } finally {
-        pdfDoc?.destroy();
+        if (acquired) releaseSharedPdfDocument(pdfBytes);
       }
     }
 

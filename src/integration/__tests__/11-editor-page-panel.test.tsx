@@ -32,14 +32,22 @@ vi.mock('pdfjs-dist', () => {
   };
 });
 
-// Stub IntersectionObserver — class syntax required
+// Stub IntersectionObserver — class syntax required.
+// Captures constructor options so tests can assert thumbnails scope their
+// "is this visible" check to the panel's own scroll container, not the
+// whole window (root: null historically caused every thumbnail in a large
+// PDF to be treated as visible at once, rendering all of them simultaneously
+// and freezing the app — see PagePanelThumbnail.tsx).
+const intersectionObserverOptions: (IntersectionObserverInit | undefined)[] = [];
 vi.stubGlobal(
   'IntersectionObserver',
   class IntersectionObserver {
     observe = vi.fn();
     disconnect = vi.fn();
     unobserve = vi.fn();
-    constructor(_cb: IntersectionObserverCallback, _opts?: IntersectionObserverInit) {}
+    constructor(_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) {
+      intersectionObserverOptions.push(opts);
+    }
   },
 );
 
@@ -60,6 +68,7 @@ beforeEach(() => {
     writable: true,
     value: vi.fn(),
   });
+  intersectionObserverOptions.length = 0;
 });
 
 afterEach(cleanup);
@@ -283,5 +292,20 @@ describe('Suite 11 — PDF Editor: Page Panel', () => {
 
     // After reorder, page count stays the same
     expect(latestCtx!.state.pageCount).toBe(3);
+  });
+
+  it('PP-11 — Thumbnail visibility is scoped to the panel scroll container, not the whole window', async () => {
+    render(<PagePanelHarness pageCount={5} />);
+    await screen.findByText('5 pages');
+
+    // Every thumbnail's IntersectionObserver must be rooted in the panel's
+    // own scrollable list, not the implicit window viewport (root: null/undefined).
+    // Without an explicit root, WKWebView can report every thumbnail in a large
+    // PDF as simultaneously "visible", forcing all of them to render at once
+    // and freezing the app on big documents (688-page reproduction case).
+    expect(intersectionObserverOptions.length).toBeGreaterThan(0);
+    for (const opts of intersectionObserverOptions) {
+      expect(opts?.root).toBeInstanceOf(HTMLElement);
+    }
   });
 });

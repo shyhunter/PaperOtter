@@ -31,12 +31,47 @@ tauri-plugin-http = "2"
 image = "0.25"
 webp = "0.3"
 uuid = { version = "1", features = ["v4"] }
+url = "2"
+tokio = { version = "1", features = ["sync", "time"] }
 
 # E2E automation — opt-in via `--features e2e`. Never enabled in release builds.
-# Previously declared under `[target.'cfg(debug_assertions)'.dependencies]`, which
-# Cargo evaluates against target spec triples (not the rustc debug_assertions
-# flag), so inclusion was non-deterministic and produced an unexpected-cfg warning.
+# MUST stay in this table: everything below the `[target.'cfg(target_os = "macos")'
+# .dependencies]` header belongs to that table, so declaring it there made the
+# crate macOS-only and broke `--features e2e` builds on Linux CI with
+# "unresolved module or unlinked crate". It was moved out of a
+# `[target.'cfg(debug_assertions)'.dependencies]` table once before for the same
+# class of reason — Cargo evaluates those against target spec triples.
 tauri-plugin-webdriver-automation = { version = "0.1", optional = true }
+
+# Native HTML → PDF export via the OS webview (WKWebView), used instead of
+# driving Word/LibreOffice for this one conversion — renders HTML the way a
+# browser would and needs no external app installed. Measures the page's real
+# content height via JS first and expands the render surface to match before
+# exporting, so normal long/scrolling documents are captured in full instead
+# of just the initial viewport. (NSPrintOperation — the pipeline that would
+# also honor @media print — was tried and reliably produced blank pages for
+# WKWebView in headless/non-modal mode; createPDF is what's proven to work.)
+# Export is sliced into letter-proportioned page-sized chunks and merged with
+# PDFKit, rather than one oversized page — WebKit silently re-splits any
+# single page taller than ~14,400pt at an arbitrary pixel boundary, which is
+# what produced the "2 pages that look wrong" report.
+# Versions match what wry (Tauri's webview runtime) already pulls in, so
+# these resolve to the same crate instances rather than a duplicate copy.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = [
+    "std", "NSString", "NSURL", "NSData", "NSError", "NSObject", "NSValue", "NSKeyValueCoding",
+] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = [
+    "std", "WKWebView", "WKNavigation", "WKPDFConfiguration", "block2",
+    "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
+] }
+objc2-pdf-kit = { version = "0.3", default-features = false, features = [
+    "std", "PDFDocument", "PDFPage",
+] }
+
 
 [features]
 e2e = ["dep:tauri-plugin-webdriver-automation"]

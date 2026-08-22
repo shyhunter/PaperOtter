@@ -7,11 +7,14 @@
  * Each test opens the panel and verifies its controls render correctly.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
 import { ToolSidebar } from '@/components/pdf-editor/ToolSidebar';
+import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
+import { rotatePdf } from '@/lib/pdfRotate';
+import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +37,12 @@ vi.mock('pdfjs-dist', () => {
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderPdfPageThumbnail: vi.fn().mockResolvedValue('blob:fake-thumb'),
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
+  openPdfForLazyRender: vi.fn().mockResolvedValue({
+    numPages: 0,
+    pageAspectRatios: [],
+    renderPage: vi.fn().mockResolvedValue('blob:fake-thumb'),
+    destroy: vi.fn(),
+  }),
 }));
 
 // Mock pdf-lib page operations used by rotate/crop/watermark/page-numbers panels
@@ -48,10 +57,12 @@ vi.mock('@/lib/pdfWatermark', () => ({
 
 vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+  addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
 }));
 
 vi.mock('@/lib/pdfCrop', () => ({
   cropPdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+  cropPdfSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   mmToPoints: vi.fn((mm: number) => mm * 2.835),
 }));
 
@@ -238,6 +249,32 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Apply')).toBeInTheDocument();
   });
 
+  it('TP-02c — Rotate preview never touches pdf-lib; Apply processes the full document', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Rotate PDF'));
+    await user.click(screen.getByText('Turn Right'));
+
+    // Regression: computing a rotated preview via pdf-lib (even scoped to a
+    // single extracted page) meant loading the whole document into pdf-lib on
+    // every direction change. pdf-lib builds a full mutable object graph and
+    // never yields to the event loop while doing it — measured hanging for
+    // over two minutes with no sign of finishing on a real
+    // 30MB/688-page/1300+-image PDF. The preview must be pure CSS: pdf-lib is
+    // only ever invoked once, on explicit Apply.
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
+    expect(rotatePdf).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1));
+  });
+
   // TP-03: Watermark Panel
   it('TP-03 — Watermark panel shows text input, font size, rotation, opacity, and color', async () => {
     const user = userEvent.setup();
@@ -309,6 +346,30 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(posSelect).toBeInTheDocument();
   });
 
+  it('TP-04b — Page Numbers preview processes only the current page; Apply processes the full document', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+
+    // The live preview must only ever touch a single page — never the full-document
+    // function — no matter how many options change. Regression: the preview used to
+    // run addPageNumbers() on the entire document on every option change, freezing
+    // the app on large PDFs (reproduced on a real 688-page file).
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
+    expect(addPageNumbersSinglePage).toHaveBeenCalled();
+    expect(addPageNumbers).not.toHaveBeenCalled();
+
+    // Apply commits the full document — only once, only on explicit user action.
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(1));
+  });
+
   // TP-05: Crop Panel
   it('TP-05 — Crop panel shows margins controls with linked "All equal" toggle', async () => {
     const user = userEvent.setup();
@@ -350,6 +411,27 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('bottom')).toBeInTheDocument();
     expect(screen.getByText('left')).toBeInTheDocument();
     expect(screen.getByText('right')).toBeInTheDocument();
+  });
+
+  it('TP-05c — Crop preview processes only the current page; Apply processes the full document', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Crop PDF'));
+
+    // Regression: cropping used to reload and re-save the entire document on
+    // every margin change, freezing the app on large PDFs (a real 688-page file).
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
+    expect(cropPdfSinglePage).toHaveBeenCalled();
+    expect(cropPdf).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(cropPdf).toHaveBeenCalledTimes(1));
   });
 
   // TP-06: Sign Panel

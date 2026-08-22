@@ -6,6 +6,7 @@ import { useEditorContext } from '@/context/EditorContext';
 import { useToolContext } from '@/context/ToolContext';
 import { useSaveActions } from './SaveController';
 import { FormattingToolbar } from './FormattingToolbar';
+import { diagLog } from '@/lib/diagLog';
 
 export function EditorTopToolbar() {
   const { state, setCompareMode } = useEditorContext();
@@ -22,12 +23,15 @@ export function EditorTopToolbar() {
   }, [save]);
 
   const handleBackToDashboard = useCallback(async () => {
+    diagLog(`dashboard.click isDirty=${state.isDirty}`);
     if (state.isDirty) {
       // Three-choice dialog: Save / Don't Save / Cancel
       // Using confirm for simplicity (two choices: save and leave, or cancel)
+      diagLog('dashboard.confirm.before');
       const shouldSave = window.confirm(
         'You have unsaved changes. Click OK to save before leaving, or Cancel to stay.',
       );
+      diagLog(`dashboard.confirm.after shouldSave=${shouldSave}`);
       if (shouldSave) {
         const saved = await save();
         if (!saved) return; // Save was cancelled or failed, stay in editor
@@ -35,6 +39,7 @@ export function EditorTopToolbar() {
       // If user clicked Cancel on confirm, we still navigate away (Don't Save behavior)
       // To give a proper 3-choice UX, we use a different approach:
     }
+    diagLog('dashboard.goToDashboard');
     goToDashboard();
   }, [state.isDirty, save, goToDashboard]);
 

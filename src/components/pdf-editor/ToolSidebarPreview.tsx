@@ -7,6 +7,7 @@ import { renderPdfPageThumbnail } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { Loader2, Expand } from 'lucide-react';
 import { CompareOverlay } from './CompareOverlay';
+import { diagLog } from '@/lib/diagLog';
 
 interface ToolSidebarPreviewProps {
   originalBytes: Uint8Array;
@@ -16,6 +17,9 @@ interface ToolSidebarPreviewProps {
    *  current page. Pass 0 when previewBytes is a single-page preview PDF so
    *  the thumbnail always shows the correct page. */
   previewPageIndex?: number;
+  /** Inline style applied to the "After" image — e.g. a CSS transform to
+   *  simulate an edit (rotation) visually without re-processing the PDF. */
+  afterImageStyle?: React.CSSProperties;
 }
 
 export function ToolSidebarPreview({
@@ -23,6 +27,7 @@ export function ToolSidebarPreview({
   previewBytes,
   isProcessing = false,
   previewPageIndex,
+  afterImageStyle,
 }: ToolSidebarPreviewProps) {
   const { state } = useEditorContext();
   const [beforeUrl, setBeforeUrl] = useState<string | null>(null);
@@ -37,11 +42,15 @@ export function ToolSidebarPreview({
     let cancelled = false;
     const id = ++renderIdRef.current;
 
+    diagLog(`sidebarPreview.before.start page=${state.currentPage}`);
+    const t0 = performance.now();
     renderPdfPageThumbnail(originalBytes, state.currentPage, 0.5)
       .then((url) => {
+        diagLog(`sidebarPreview.before.done ms=${(performance.now() - t0).toFixed(0)}`);
         if (!cancelled && renderIdRef.current === id) setBeforeUrl(url);
       })
-      .catch(() => {
+      .catch((err) => {
+        diagLog(`sidebarPreview.before.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
         if (!cancelled) setBeforeUrl(null);
       });
 
@@ -60,11 +69,15 @@ export function ToolSidebarPreview({
     let cancelled = false;
 
     const pageIdx = previewPageIndex ?? state.currentPage;
+    diagLog(`sidebarPreview.after.start page=${pageIdx}`);
+    const t0 = performance.now();
     renderPdfPageThumbnail(previewBytes, pageIdx, 0.5)
       .then((url) => {
+        diagLog(`sidebarPreview.after.done ms=${(performance.now() - t0).toFixed(0)}`);
         if (!cancelled) setAfterUrl(url);
       })
-      .catch(() => {
+      .catch((err) => {
+        diagLog(`sidebarPreview.after.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
         if (!cancelled) setAfterUrl(null);
       });
 
@@ -96,7 +109,7 @@ export function ToolSidebarPreview({
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : afterUrl ? (
-                <img src={afterUrl} alt="After" className="w-full h-full object-contain" />
+                <img src={afterUrl} alt="After" className="w-full h-full object-contain" style={afterImageStyle} />
               ) : beforeUrl ? (
                 <img src={beforeUrl} alt="Pending" className="w-full h-full object-contain opacity-30" />
               ) : (

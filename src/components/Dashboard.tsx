@@ -101,7 +101,7 @@ function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
 }
 
 
-function ToolCard({
+export function ToolCard({
   tool,
   onClick,
   isFavorite,
@@ -142,14 +142,10 @@ function ToolCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className={`absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 ${
-            isFavorite
-              ? 'text-yellow-500 opacity-100'
-              : 'text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500'
-          }`}
+          className="absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
           title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
-          <Star className={`h-4 w-4 ${isFavorite ? 'fill-yellow-500' : ''}`} />
+          <Star className="h-4 w-4" />
         </button>
       )}
     </div>

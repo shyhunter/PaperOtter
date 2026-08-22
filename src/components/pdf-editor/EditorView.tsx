@@ -12,6 +12,7 @@ import {
 } from '@/context/EditorContext';
 import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
+import { diagLog } from '@/lib/diagLog';
 import { Button } from '@/components/ui/button';
 import { EditorTopToolbar } from './EditorTopToolbar';
 import { EditorCanvas } from './EditorCanvas';
@@ -58,23 +59,28 @@ function EditorViewInner({ filePath }: EditorViewProps) {
         if (cancelled) return;
 
         const unlisten = await win.onCloseRequested(async (event) => {
+          diagLog(`closeRequested isDirty=${isDirtyRef.current}`);
           event.preventDefault();
 
           if (!isDirtyRef.current) {
+            diagLog('closeRequested.destroy.notDirty');
             await win.destroy();
             return;
           }
 
           try {
             const { ask } = await import('@tauri-apps/plugin-dialog');
+            diagLog('closeRequested.ask.before');
             const confirmed = await ask(
               'You have unsaved changes. Close without saving?',
               { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
             );
+            diagLog(`closeRequested.ask.after confirmed=${confirmed}`);
             if (confirmed) {
               await win.destroy();
             }
-          } catch {
+          } catch (err) {
+            diagLog(`closeRequested.ask.threw ${err}`);
             await win.destroy();
           }
         });

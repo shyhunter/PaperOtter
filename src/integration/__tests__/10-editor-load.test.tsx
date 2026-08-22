@@ -42,6 +42,12 @@ vi.mock('pdfjs-dist', () => {
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderPdfPageThumbnail: vi.fn().mockResolvedValue('blob:fake-thumb'),
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
+  openPdfForLazyRender: vi.fn().mockResolvedValue({
+    numPages: 0,
+    pageAspectRatios: [],
+    renderPage: vi.fn().mockResolvedValue('blob:fake-thumb'),
+    destroy: vi.fn(),
+  }),
 }));
 
 // Mock the pdfEditor applyAllEdits for SaveController
