@@ -2,29 +2,51 @@
 # Pinning actions to a commit SHA closes the mutable-tag supply-chain hole, but
 # it also means they stop receiving upstream fixes on their own; Dependabot is
 # what keeps those pins moving. Do not remove one without the other.
+#
+# Tuned for cost. The first run opened 17 PRs at once, and with a private repo
+# every one of those burns billable Actions minutes. So: monthly rather than
+# weekly, a hard cap per ecosystem, and minor/patch bundled into a single PR.
+# Majors are deliberately left ungrouped — they need reading, not a merge button.
+#
+# Note security updates ignore these limits by design, which is what we want.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
     groups:
-      # Test tooling churns constantly and never ships to users — one PR is enough.
+      # Test tooling churns constantly and never ships to users.
       dev-tooling:
         dependency-type: development
+        update-types: ["minor", "patch"]
+      prod-minor-patch:
+        dependency-type: production
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: cargo
     directory: "/src-tauri"
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      cargo-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

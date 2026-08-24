@@ -1,13 +1,27 @@
 name: CI
 
 on:
+  # Deliberately NOT `push: ['**']`. With pull_request also enabled, every push
+  # to a branch that has an open PR ran this whole workflow TWICE — that was
+  # roughly half of all Actions minutes. PRs are covered by pull_request; main
+  # keeps a post-merge safety net, minus docs-only commits.
   push:
-    branches: ['**']
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.planning/**'
+      - '.claude/**'
   pull_request:
     branches: ['**']
   workflow_dispatch:
   release:
     types: [created]
+
+# A new push to the same branch supersedes the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

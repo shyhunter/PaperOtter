@@ -4,11 +4,17 @@ name: Security
 # Independent from ci.yml so a security failure surfaces clearly and never blocks unrelated work.
 
 on:
+  # Same duplication fix as ci.yml — see the note there. Secret scanning still
+  # sees every PR, and every commit that lands on main.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
     branches: ['**']
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
