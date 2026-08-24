@@ -7,7 +7,7 @@
  * Each test opens the panel and verifies its controls render correctly.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
@@ -273,6 +273,65 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByText('Apply'));
     await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1));
+  });
+
+  // TP-02d: Rotate applies to every selected page, not just the current one.
+  it('TP-02d — Rotate applies to all selected pages', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+    vi.mocked(rotatePdf).mockClear(); // earlier TP-02 tests also call it
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    // Select pages 1 and 3 (indices 0 and 2) the way PagePanel does on Cmd+click.
+    await waitFor(() => expect(ctx).toBeDefined());
+    act(() => {
+      ctx!.togglePageSelection(0, true);
+      ctx!.togglePageSelection(2, true);
+    });
+    await waitFor(() => expect(ctx!.selectedPages.size).toBe(2));
+
+    await user.click(screen.getByTitle('Rotate PDF'));
+    await user.click(screen.getByText('Turn Right'));
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
+    await user.click(screen.getByText('Apply'));
+
+    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1));
+    // Regression: the panel used state.currentPage only, so a multi-page
+    // selection silently rotated just the first page.
+    const rotations = vi.mocked(rotatePdf).mock.calls[0][1];
+    expect(rotations.map((r) => r.pageIndex).sort()).toEqual([0, 2]);
+    expect(rotations.every((r) => r.rotation === 90)).toBe(true);
+  });
+
+  // TP-02e: "Apply to all pages" reflects itself in the page panel selection.
+  it('TP-02e — "Apply to all pages" selects every page in the Pages panel', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Rotate PDF'));
+    await waitFor(() => expect(ctx).toBeDefined());
+    expect(ctx!.selectedPages.size).toBe(0);
+
+    await user.click(screen.getByLabelText(/apply to all pages/i));
+
+    // The checkbox promised "all pages"; the Pages panel must agree.
+    await waitFor(() => expect(ctx!.selectedPages.size).toBe(3));
+    expect(Array.from(ctx!.selectedPages).sort()).toEqual([0, 1, 2]);
+
+    // Unchecking releases the selection again.
+    await user.click(screen.getByLabelText(/apply to all pages/i));
+    await waitFor(() => expect(ctx!.selectedPages.size).toBe(0));
   });
 
   // TP-03: Watermark Panel

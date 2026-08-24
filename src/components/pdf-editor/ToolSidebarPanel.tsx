@@ -1,7 +1,7 @@
 // ToolSidebarPanel: renders inline tool settings for the selected tool.
 // Each tool shows: title + description, settings form, before/after preview, Apply button.
 // Preview pipeline: settings change (debounced 500ms) -> run tool -> update previewBytes.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { ToolId } from '@/types/tools';
 import { TOOL_REGISTRY } from '@/types/tools';
@@ -436,7 +436,14 @@ const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegre
 
 function RotatePanel() {
   diagLog('RotatePanel.render');
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const {
+    state,
+    updatePdfBytes,
+    markDirty,
+    selectedPages,
+    selectPageRange,
+    clearPageSelection,
+  } = useEditorContext();
   const [rotation, setRotation] = useState<RotationDegrees | 0>(0);
   const [applyToAll, setApplyToAll] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -454,6 +461,26 @@ function RotatePanel() {
   const previewBytes = rotation !== 0 ? state.pdfBytes : null;
   const isProcessing = false;
 
+  // Which pages Apply will actually rotate. A selection in the Pages panel is
+  // what the user pointed at, so it wins over the scroll position; without this
+  // a multi-page selection silently rotated only the current page.
+  const targetPages = useMemo(() => {
+    if (applyToAll) return Array.from({ length: state.pageCount }, (_, i) => i);
+    if (selectedPages.size > 0) return Array.from(selectedPages).sort((a, b) => a - b);
+    return [state.currentPage];
+  }, [applyToAll, selectedPages, state.pageCount, state.currentPage]);
+
+  // Keep the Pages panel honest about what "Apply to all pages" means: ticking
+  // it highlights every page, unticking releases them again.
+  const handleApplyToAllChange = useCallback(
+    (checked: boolean) => {
+      setApplyToAll(checked);
+      if (checked) selectPageRange(0, state.pageCount - 1);
+      else clearPageSelection();
+    },
+    [selectPageRange, clearPageSelection, state.pageCount],
+  );
+
   // Apply rotation to the requested pages (full processing, runs only on
   // explicit user action).
   const handleApply = useCallback(async () => {
@@ -463,9 +490,7 @@ function RotatePanel() {
     diagLog('rotate.apply.start');
     const t0 = performance.now();
     try {
-      const pageIndices = applyToAll
-        ? Array.from({ length: state.pageCount }, (_, i) => i)
-        : [state.currentPage];
+      const pageIndices = targetPages;
       const result = await rotatePdf(
         state.pdfBytes,
         pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
@@ -481,7 +506,7 @@ function RotatePanel() {
     } finally {
       setIsApplying(false);
     }
-  }, [applyToAll, rotation, state.pdfBytes, state.pageCount, state.currentPage, updatePdfBytes, markDirty]);
+  }, [targetPages, rotation, state.pdfBytes, updatePdfBytes, markDirty]);
 
   return (
     <div className="space-y-3">
@@ -513,10 +538,18 @@ function RotatePanel() {
         <input
           type="checkbox"
           checked={applyToAll}
-          onChange={(e) => setApplyToAll(e.target.checked)}
+          onChange={(e) => handleApplyToAllChange(e.target.checked)}
         />
         Apply to all pages
       </label>
+
+      <p className="text-[10px] text-muted-foreground">
+        {applyToAll
+          ? `Rotating all ${state.pageCount} pages`
+          : targetPages.length > 1
+            ? `Rotating ${targetPages.length} selected pages`
+            : `Rotating page ${targetPages[0] + 1}`}
+      </p>
 
       <ToolSidebarPreview
         originalBytes={state.pdfBytes}

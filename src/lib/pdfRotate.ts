@@ -25,7 +25,15 @@ export function cycleRotation(current: RotationDegrees): RotationDegrees {
 
 /**
  * Apply per-page rotations to a PDF.
- * Only pages with non-zero rotation are modified.
+ *
+ * Rotations are RELATIVE: each value is added to whatever /Rotate the page
+ * already carries. Both callers treat their value as a delta on the page as it
+ * currently looks — the editor's RotatePanel previews with a CSS
+ * `transform: rotate(Ndeg)` over the rendered page, and RotateStep starts every
+ * page at 0 and cycles with cycleRotation(). Setting an absolute angle here
+ * made an already-rotated page disagree with its own Before/After preview.
+ *
+ * Only pages with a non-zero delta are modified.
  */
 export async function rotatePdf(
   pdfBytes: Uint8Array,
@@ -40,7 +48,10 @@ export async function rotatePdf(
     }
     if (rotation !== 0) {
       const page = doc.getPage(pageIndex);
-      page.setRotation(degrees(rotation));
+      const current = page.getRotation().angle;
+      // Normalise into [0, 360) — existing /Rotate may be negative or ≥ 360.
+      const next = (((current + rotation) % 360) + 360) % 360;
+      page.setRotation(degrees(next));
     }
   }
 

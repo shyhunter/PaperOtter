@@ -7,7 +7,7 @@
  * delete, duplicate, move up/down, and page count display.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
@@ -136,6 +136,81 @@ function Initialiser({
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('Suite 11 — PDF Editor: Page Panel', () => {
+  // PP-13: the Shift anchor must stay put across successive range clicks.
+  // Reported: "I select first three pages, when I shift+click the fourth
+  // suddenly the first is unselected."
+  it('PP-13 — Shift+click keeps extending from the original anchor', async () => {
+    const user = userEvent.setup();
+    let latestCtx: EditorCtx | null = null;
+    const realPdf = await createRealPdf(6);
+    render(<PagePanelHarness pageCount={6} pdfBytes={realPdf} onContextReady={(ctx) => { latestCtx = ctx; }} />);
+    await waitFor(() => expect(latestCtx).not.toBeNull());
+    const ctx = () => latestCtx as unknown as EditorCtx;
+
+    const shiftClick = async (label: string) => {
+      await user.keyboard('{Shift>}');
+      await user.click(screen.getByLabelText(label));
+      await user.keyboard('{/Shift}');
+    };
+
+    // Plain click sets the anchor.
+    await user.click(screen.getByLabelText('Page 1'));
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(1));
+
+    // Extend to page 3 — anchor stays on page 1.
+    await shiftClick('Page 3');
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(3));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([0, 1, 2]);
+
+    // Extending again must grow the range, not restart it from page 3.
+    // Regression: the anchor was reassigned on every click including range
+    // clicks, so this collapsed the selection to {2, 3}.
+    await shiftClick('Page 4');
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(4));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([0, 1, 2, 3]);
+
+    // Shrinking back toward the anchor works too.
+    await shiftClick('Page 2');
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(2));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([0, 1]);
+
+    // A plain click moves the anchor and starts over.
+    await user.click(screen.getByLabelText('Page 5'));
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(1));
+    await shiftClick('Page 6');
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(2));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([4, 5]);
+  });
+
+  // PP-12: multi-selection has no cap — reported as "I can not choose more
+  // than 2 pages together". Cmd/Ctrl+click accumulates and Shift+click takes a
+  // whole range; both must scale past two pages.
+  it('PP-12 — Cmd+click accumulates and Shift+click takes a range, beyond two pages', async () => {
+    let latestCtx: EditorCtx | null = null;
+    const realPdf = await createRealPdf(6);
+    render(<PagePanelHarness pageCount={6} pdfBytes={realPdf} onContextReady={(ctx) => { latestCtx = ctx; }} />);
+    await waitFor(() => expect(latestCtx).not.toBeNull());
+    const ctx = () => latestCtx as unknown as EditorCtx;
+
+    act(() => {
+      ctx().togglePageSelection(0, true);
+      ctx().togglePageSelection(2, true);
+      ctx().togglePageSelection(4, true);
+      ctx().togglePageSelection(5, true);
+    });
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(4));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([0, 2, 4, 5]);
+
+    // Cmd+click again on a selected page removes just that one.
+    act(() => ctx().togglePageSelection(2, true));
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(3));
+
+    // Shift+click range replaces the selection with a contiguous span.
+    act(() => ctx().selectPageRange(1, 5));
+    await waitFor(() => expect(ctx().selectedPages.size).toBe(5));
+    expect(Array.from(ctx().selectedPages).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it('PP-01 — Page panel header shows "Pages" and page count', async () => {
     render(<PagePanelHarness pageCount={5} />);
 

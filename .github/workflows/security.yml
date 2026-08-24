@@ -17,6 +17,15 @@ jobs:
   gitleaks:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-22.04
+    # gitleaks-action reads the PR's commit list via the API on pull_request
+    # events. That endpoint needed no scope while this repo was public, so the
+    # workflow-level `contents: read` was enough; once the repo went private it
+    # started returning 403 "Resource not accessible by integration" and the job
+    # crashed — silently disabling the P016 gate on every PR. Granted here at job
+    # level rather than workflow level so npm-audit keeps the narrower scope.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Checkout (full history for diff scan)
         uses: actions/checkout@v4

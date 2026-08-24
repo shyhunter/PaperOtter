@@ -80,8 +80,17 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       const isRange = e.shiftKey;
 
       if (isRange && lastClickedRef.current !== null) {
+        // Extend from the anchor and LEAVE IT WHERE IT IS. Moving it here walked
+        // it forward on every Shift+click, so a third one restarted the range
+        // from the previous target: click p1, Shift p3 -> {1,2,3}, Shift p4 ->
+        // {3,4} instead of {1,2,3,4}. Finder/VS Code keep the anchor on the last
+        // plain click, which is what lets Shift+click both grow and shrink a
+        // range.
         selectPageRange(lastClickedRef.current, pageIndex);
-      } else if (isMulti) {
+        return;
+      }
+
+      if (isMulti) {
         togglePageSelection(pageIndex, true);
       } else {
         // Single click: clear selection, select this, scroll to it
