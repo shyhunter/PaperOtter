@@ -1,17 +1,16 @@
 name: CI
 
 on:
-  # Deliberately NOT `push: ['**']`. With pull_request also enabled, every push
-  # to a branch that has an open PR ran this whole workflow TWICE — that was
-  # roughly half of all Actions minutes. PRs are covered by pull_request; main
-  # keeps a post-merge safety net, minus docs-only commits.
-  push:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.planning/**'
-      - '.claude/**'
+  # No `push:` trigger at all, deliberately.
+  #
+  # Branch protection requires the PR branch to be up to date with main before
+  # merging, so the pull_request run already tested the exact tree that lands.
+  # Re-running the whole suite on the merge commit paid for the same result
+  # twice. Combined with dropping `push: ['**']` earlier, a change now costs one
+  # CI pass instead of three.
+  #
+  # Cover for the gap: nothing runs if someone pushes straight to main (admins
+  # can, by design). Use `workflow_dispatch` if that ever needs checking.
   pull_request:
     branches: ['**']
   workflow_dispatch:
