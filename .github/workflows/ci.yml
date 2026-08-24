@@ -68,7 +68,8 @@ jobs:
             # tauri.conf.json and Cargo.toml, so src-tauri counts too. What is
             # left out is only prose — docs, .planning, .claude, loose markdown.
             code:
-              - '.github/**'
+              - '.github/workflows/**'
+              - '.github/dependabot.yml'
               - 'src/**'
               - 'src-tauri/**'
               - 'scripts/**'
