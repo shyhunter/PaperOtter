@@ -1,0 +1,30 @@
+# Keeps dependencies and — importantly — the SHA-pinned GitHub Actions current.
+# Pinning actions to a commit SHA closes the mutable-tag supply-chain hole, but
+# it also means they stop receiving upstream fixes on their own; Dependabot is
+# what keeps those pins moving. Do not remove one without the other.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(ci)"
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Test tooling churns constantly and never ships to users — one PR is enough.
+      dev-tooling:
+        dependency-type: development
+
+  - package-ecosystem: cargo
+    directory: "/src-tauri"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
