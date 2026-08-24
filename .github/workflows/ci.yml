@@ -37,6 +37,7 @@ jobs:
     outputs:
       pdf-changed: ${{ steps.filter.outputs.pdf }}
       image-changed: ${{ steps.filter.outputs.image }}
+      rust-changed: ${{ steps.filter.outputs.rust }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -58,6 +59,9 @@ jobs:
               - 'src/e2e/tests/image-flows.test.ts'
               - 'src/lib/imageProcessor*'
               - 'src-tauri/src/lib.rs'
+            rust:
+              - '.github/workflows/ci.yml'
+              - 'src-tauri/**'
 
   validate:
     runs-on: ubuntu-22.04
@@ -86,61 +90,82 @@ jobs:
 
   rust-checks:
     runs-on: ubuntu-22.04
+    needs: [detect-changes]
+    # The job always RUNS so its required status check reports; the steps below
+    # are what get skipped. A job-level `if` would report "skipped", which a
+    # required check treats as never-satisfied, wedging the PR forever.
+    # `!= 'false'` rather than `== 'true'` so non-PR events, where paths-filter
+    # produces no output, still run everything.
 
     steps:
       - name: Checkout
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Rust stable
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
 
       - name: Install sccache
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: mozilla-actions/sccache-action@89e9040de88b577a072e3760aaf59f585da083af # v0.0.5
 
       - name: Rust cache
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri -> target
 
       - name: Install Linux system dependencies
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Cargo check
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         run: cd src-tauri && cargo check
         env:
           RUSTC_WRAPPER: sccache
 
       - name: Clippy lint
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         run: cd src-tauri && cargo clippy -- -D warnings
         env:
           RUSTC_WRAPPER: sccache
 
   rust-integration:
     runs-on: ubuntu-22.04
+    needs: [detect-changes]
+    # See the note on rust-checks.
 
     steps:
       - name: Checkout
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Rust stable
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
 
       - name: Install sccache
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: mozilla-actions/sccache-action@89e9040de88b577a072e3760aaf59f585da083af # v0.0.5
 
       - name: Rust cache
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri -> target
 
       - name: Install system dependencies
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libssl-dev
 
       - name: Run Rust integration tests
+        if: needs.detect-changes.outputs.rust-changed != 'false'
         run: cd src-tauri && cargo test --lib -- --test-threads=4
         env:
           RUSTC_WRAPPER: sccache
