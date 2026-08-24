@@ -1,0 +1,14 @@
+# Keeps the issue chooser to the two templates, and routes security reports away
+# from public issues.
+#
+# Both links point at things that exist TODAY. Two better destinations are worth
+# adding once the repo is public at MVP:
+#   - GitHub Discussions (currently disabled) for questions
+#   - Security → "Report a vulnerability" (private vulnerability reporting is not
+#     available on a private repository)
+# Revisit this file at the same time as the rest of the visibility flip.
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/shyhunter/Papercut/blob/main/SECURITY.md
+    about: Read this first. Please do not open a public issue for a security problem.
