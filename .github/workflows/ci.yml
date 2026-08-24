@@ -38,6 +38,7 @@ jobs:
       pdf-changed: ${{ steps.filter.outputs.pdf }}
       image-changed: ${{ steps.filter.outputs.image }}
       rust-changed: ${{ steps.filter.outputs.rust }}
+      code-changed: ${{ steps.filter.outputs.code }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -62,30 +63,57 @@ jobs:
             rust:
               - '.github/workflows/ci.yml'
               - 'src-tauri/**'
+            # Anything that can change what validate asserts. Deliberately wider
+            # than "frontend": version:check compares package.json against
+            # tauri.conf.json and Cargo.toml, so src-tauri counts too. What is
+            # left out is only prose — docs, .planning, .claude, loose markdown.
+            code:
+              - '.github/**'
+              - 'src/**'
+              - 'src-tauri/**'
+              - 'scripts/**'
+              - 'test-fixtures/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig*.json'
+              - 'vite.config.ts'
+              - 'vitest.config.ts'
+              - 'eslint.config.js'
+              - 'index.html'
 
   validate:
     runs-on: ubuntu-22.04
+    needs: [detect-changes]
+    # Steps are gated, not the job — a job-level `if` reports "skipped", which a
+    # required status check never accepts, and the PR would be unmergeable.
+    # See the same note on rust-checks.
 
     steps:
       - name: Checkout
+        if: needs.detect-changes.outputs.code-changed != 'false'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
+        if: needs.detect-changes.outputs.code-changed != 'false'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 20
           cache: npm
 
       - name: Install frontend dependencies
+        if: needs.detect-changes.outputs.code-changed != 'false'
         run: npm ci
 
       - name: Version consistency check
+        if: needs.detect-changes.outputs.code-changed != 'false'
         run: npm run version:check
 
       - name: TypeScript type check
+        if: needs.detect-changes.outputs.code-changed != 'false'
         run: npx tsc --noEmit
 
       - name: Unit tests
+        if: needs.detect-changes.outputs.code-changed != 'false'
         run: npm run test
 
   rust-checks:
