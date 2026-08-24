@@ -36,6 +36,9 @@ jobs:
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Custom ruleset — the default one cannot see base64-wrapped secrets.
+          # See .gitleaks.toml for why that matters here.
+          GITLEAKS_CONFIG: .gitleaks.toml
           # GITLEAKS_LICENSE: only needed for org-level dashboard (optional)
 
   npm-audit:

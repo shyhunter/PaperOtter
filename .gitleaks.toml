@@ -1,36 +1,45 @@
-# gitleaks config for Papercut.
-# Whitelists known-safe paths so the security workflow surfaces only real leaks.
-# Source of truth: ~/.claude/rules.md R005, R006, R014.
+# Gitleaks configuration for Papercut.
+#
+# Why this file exists: a GitHub PAT was committed in 64079f8 base64-encoded,
+# with the commit message stating the encoding was chosen to "avoid plain-text
+# grep matches". The default gitleaks ruleset never flagged it, because every
+# built-in GitHub rule matches the literal `ghp_` / `github_pat_` prefix. Base64
+# defeats all of them.
+#
+# The two rules below close that gap. Keep useDefault so all upstream rules stay
+# active — these are additions, not a replacement.
 
 [extend]
 useDefault = true
 
+[[rules]]
+id = "base64-encoded-github-token"
+description = "GitHub token that has been base64-encoded to evade secret scanning"
+# Base64 of a GitHub token prefix at each of the three byte alignments, so the
+# match holds wherever the token starts inside the encoded blob. A real 40-char
+# token encodes to ~56 base64 chars, hence the length floor.
+regex = '''(?:Z2hw|docF|naHB|Z2hv|dob1|naG9|Z2hz|doc1|naHN|Z2h1|dodV|naHV|Z2hy|docl|naHJ|Z2l0aHViX3BhdF|dpdGh1Yl9wYXRf|naXRodWJfcGF0X)[A-Za-z0-9+/]{30,}={0,2}'''
+keywords = ["Z2hw", "docF", "naHB", "Z2hv", "Z2hz", "Z2h1", "Z2hy", "Z2l0aHViX3BhdF"]
+
+[[rules]]
+id = "obfuscated-secret-literal"
+description = "Long base64 literal assigned to a secret-looking identifier"
+# Catches the general shape of this incident — `const ENCODED_TOKEN = '<b64>'` —
+# independently of what the decoded value turns out to be.
+regex = '''(?i)\b(?:token|secret|passwd|password|api[_-]?key|apikey|pat|credential)[a-z0-9_]*\s*[:=]\s*['"`]([A-Za-z0-9+/]{40,}={0,2})['"`]'''
+secretGroup = 1
+keywords = ["token", "secret", "password", "apikey", "api_key", "credential"]
+
 [allowlist]
-description = "False positives: test fixtures, .claude tool manifests (SHA-256 hashes look like tokens), and Tauri-generated assets"
+description = "Paths that legitimately contain long base64-looking strings"
 paths = [
-  # Test files (fixtures intentionally contain fake secret-shaped strings)
-  '''^.*\.test\.[^/]+$''',
-  '''^.*tests?/.*''',
-  '''^.*__tests__/.*''',
-  '''^.*test-fixtures/.*''',
-
-  # Claude Code tool manifests (file checksums, command hashes)
-  '''^\.claude/.*\.json$''',
-  '''^\.claude/.*\.cjs$''',
-
-  # Documentation
-  '''^docs?/.*\.md$''',
-  '''^.*\.planning/.*''',
-  '''^CONTRIBUTING\.md$''',
-  '''^README\.md$''',
-  '''^CHANGELOG\.md$''',
-
-  # Lockfile (npm/yarn) — integrity hashes look like tokens to gitleaks
-  '''^package-lock\.json$''',
-  '''^yarn\.lock$''',
-
-  # Tauri build/cache outputs
-  '''^src-tauri/target/.*''',
-  '''^dist/.*''',
-  '''^node_modules/.*''',
+  '''package-lock\.json''',
+  '''src-tauri/Cargo\.lock''',
+  '''src-tauri/gen/schemas/.*''',
+  '''test-fixtures/.*''',
+  # Vendored GSD tooling, verified by hand as false positives:
+  #   gsd-tools.test.cjs  — assertion text about "JWT tokens", no credential
+  #   gsd-file-manifest.json — SHA file hashes that match the Discord token shape
+  '''\.claude/get-shit-done/bin/gsd-tools\.test\.cjs''',
+  '''\.claude/gsd-file-manifest\.json''',
 ]
