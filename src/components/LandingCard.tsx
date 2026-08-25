@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { DragState } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
+import { t } from '@/i18n';
 
 interface LandingCardProps {
   dragState: DragState;
@@ -79,7 +80,7 @@ export function LandingCard({
 
         {/* Tagline — prominent, above the card */}
         <p className="text-[clamp(1rem,1.5vw,1.25rem)] font-medium text-foreground text-center">
-          Compress, resize, convert — stays on your device
+          {t('landingCard.compressResizeConvertStaysOn')}
         </p>
 
         <Card className={cardClass}>
@@ -110,8 +111,8 @@ export function LandingCard({
                   <FolderOpen className="h-[clamp(2rem,3vw,3rem)] w-[clamp(2rem,3vw,3rem)]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-medium text-foreground">Open file</p>
-                  <p className="text-sm text-muted-foreground mt-1">PDF, JPG, PNG, WebP</p>
+                  <p className="text-base font-medium text-foreground">{t('landingCard.openFile')}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('landingCard.pdfJpgPngWebp')}</p>
                 </div>
               </button>
 
@@ -159,7 +160,7 @@ export function LandingCard({
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div className="h-full w-2/3 bg-primary rounded-full animate-pulse" />
                 </div>
-                <p className="text-sm text-muted-foreground text-center mt-2">Loading file...</p>
+                <p className="text-sm text-muted-foreground text-center mt-2">{t('landingCard.loadingFile')}</p>
               </div>
             )}
           </CardContent>
@@ -205,7 +206,7 @@ export function LandingCard({
           <div className="bg-background rounded-xl shadow-2xl border border-border w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
             <div>
               <h2 id="file-size-modal-title" className="text-lg font-semibold text-foreground">
-                File too large
+                {t('landingCard.fileTooLarge')}
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
                 This file is {formatMB(fileSizeLimitBytes)}.{' '}
@@ -219,7 +220,7 @@ export function LandingCard({
                 variant="outline"
                 onClick={onFileSizeLimitDismiss}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -238,7 +239,7 @@ export function LandingCard({
           <div className="bg-background rounded-xl shadow-2xl border border-border w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
             <div>
               <h2 id="corrupt-pdf-modal-title" className="text-lg font-semibold text-foreground">
-                Damaged or Invalid PDF
+                {t('landingCard.damagedOrInvalidPdf')}
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
                 "{corruptPdfBlock.name}" could not be opened — it appears to be damaged or not a valid PDF.
@@ -252,14 +253,14 @@ export function LandingCard({
                 variant="outline"
                 onClick={onCorruptPdfDismiss}
               >
-                Pick a Different File
+                {t('landingCard.pickADifferentFile')}
               </Button>
               <Button
                 type="button"
                 data-testid="corrupt-pdf-repair"
                 onClick={onCorruptPdfRepair}
               >
-                Repair with Repair PDF →
+                {t('landingCard.repairWithRepairPdf')}
               </Button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { StepBar } from '@/components/StepBar';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 interface ToolHeaderProps {
   currentStep: number;
@@ -25,10 +26,10 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
           type="button"
           onClick={onBackToDashboard}
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Back to Dashboard"
+          aria-label={t('pdfEditor.backToDashboard')}
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="text-[clamp(0.75rem,0.9vw,0.9rem)]">Dashboard</span>
+          <span className="text-[clamp(0.75rem,0.9vw,0.9rem)]">{t('pdfEditor.dashboard')}</span>
         </button>
         <span className="text-muted-foreground/50 text-[clamp(0.75rem,0.9vw,0.9rem)]">/</span>
         <span className="text-[clamp(0.75rem,0.9vw,0.9rem)] text-foreground font-medium">

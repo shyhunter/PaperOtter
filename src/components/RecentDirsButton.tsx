@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface RecentDirButtonProps {
   dirs: string[];
@@ -34,11 +35,11 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
           aria-label="Recent folders"
         >
           <Clock className="h-3.5 w-3.5" />
-          <span className="text-xs">Recent</span>
+          <span className="text-xs">{t('recentDirsButton.recent')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-1" align="start">
-        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Recent folders</p>
+        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{t('recentDirsButton.recentFolders')}</p>
         <div className="space-y-0.5">
           {dirs.map((dir) => {
             // Show only the last path segment as the label, full path as tooltip

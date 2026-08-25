@@ -1,5 +1,6 @@
 import { Coffee } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { t } from '@/i18n';
 
 const BMC_URL = 'https://buymeacoffee.com/shyhunter';
 
@@ -15,7 +16,7 @@ export function BuyMeACoffeeButton() {
       title="Buy me a coffee"
     >
       <Coffee className="h-3.5 w-3.5 fill-[#FFDD00] text-[#FFDD00]" />
-      <span>Buy me a coffee</span>
+      <span>{t('buyMeAcoffeeButton.buyMeACoffee')}</span>
     </button>
   );
 }

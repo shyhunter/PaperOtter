@@ -531,6 +531,68 @@ export const en = {
   'pdfEditor.zoomInCmd': 'Zoom in (Cmd+=)',
   'pdfEditor.zoomOutCmd': 'Zoom out (Cmd+-)',
   'pdfEditor.zoomPresets': 'Zoom presets',
+
+  // ── app ─────────────────────────────────────────────────────────────────
+  'app.couldNotOpenFilePicker': 'Could not open file picker',
+  'app.thisFileAppearsToBe': 'This file appears to be corrupt. Please try a different file.',
+
+  // ── aboutDialog ─────────────────────────────────────────────────────────
+  'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
+  'aboutDialog.builtWith': 'Built with',
+  'aboutDialog.license': 'License',
+  'aboutDialog.sendFeedback': 'Send Feedback',
+  'common.yourLocalDocumentToolkitPrivate': 'Your local document toolkit — private, fast, offline.',
+
+  // ── buyMeAcoffeeButton ──────────────────────────────────────────────────
+  'buyMeAcoffeeButton.buyMeACoffee': 'Buy me a coffee',
+
+  // ── colorPicker ─────────────────────────────────────────────────────────
+  'colorPicker.customColour': 'Custom colour',
+
+  // ── crashReporter ───────────────────────────────────────────────────────
+  'crashReporter.anUnexpectedErrorOccurredYou': 'An unexpected error occurred. You can send a crash report to help us fix it.',
+  'crashReporter.sendCrashReport': 'Send Crash Report',
+  'crashReporter.somethingWentWrong': 'Something went wrong',
+  'crashReporter.theReportOpensAsA': 'The report opens as a draft email. Nothing is sent until you send it yourself.',
+  'crashReporter.thisWillOpenInYour': 'This will open in your email app:',
+
+  // ── dashboard ───────────────────────────────────────────────────────────
+  'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder &middot; Click &#9733; on any tool to add',
+  'dashboard.dropFileToGetStarted': 'Drop file to get started',
+  'dashboard.myFavorites': 'My Favorites',
+  'dashboard.readyToProcessChooseA': 'Ready to process — choose a tool below',
+  'dashboard.removeFromFavorites': 'Remove from favorites',
+  'dashboard.searchTools': 'Search tools...',
+  'dashboard.swapHere': 'Swap here',
+
+  // ── firstLaunchBanner ───────────────────────────────────────────────────
+  'firstLaunchBanner.dismissPrivacyBanner': 'Dismiss privacy banner',
+  'firstLaunchBanner.learnMore': 'Learn more',
+
+  // ── landingCard ─────────────────────────────────────────────────────────
+  'landingCard.compressResizeConvertStaysOn': 'Compress, resize, convert — stays on your device',
+  'landingCard.damagedOrInvalidPdf': 'Damaged or Invalid PDF',
+  'landingCard.fileTooLarge': 'File too large',
+  'landingCard.loadingFile': 'Loading file...',
+  'landingCard.openFile': 'Open file',
+  'landingCard.pdfJpgPngWebp': 'PDF, JPG, PNG, WebP',
+  'landingCard.pickADifferentFile': 'Pick a Different File',
+  'landingCard.repairWithRepairPdf': 'Repair with Repair PDF →',
+
+  // ── privacyFooter ───────────────────────────────────────────────────────
+  'privacyFooter.processedLocallyPrivacy': 'Processed locally · Privacy',
+
+  // ── recentDirsButton ────────────────────────────────────────────────────
+  'recentDirsButton.recent': 'Recent',
+  'recentDirsButton.recentFolders': 'Recent folders',
+
+  // ── splashScreen ────────────────────────────────────────────────────────
+  'splashScreen.papercutLogo': 'Papercut logo',
+  'splashScreen.yourLocalDocumentToolkitPrivate': 'Your local document toolkit — private, fast, offline',
+
+  // ── updateChecker ───────────────────────────────────────────────────────
+  'updateChecker.dismissUpdateBanner': 'Dismiss update banner',
+  'updateChecker.download': 'Download',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

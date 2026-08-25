@@ -39,6 +39,7 @@ import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useDependencies } from '@/hooks/useDependencies';
+import { t } from '@/i18n';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -219,7 +220,7 @@ function FavoriteCard({
           onClick={() => onSwapTarget(index)}
           className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl z-10 cursor-pointer"
         >
-          <span className="text-xs font-medium text-primary bg-background/80 px-3 py-1 rounded-md">Swap here</span>
+          <span className="text-xs font-medium text-primary bg-background/80 px-3 py-1 rounded-md">{t('dashboard.swapHere')}</span>
         </button>
       )}
       {/* Remove star */}
@@ -228,7 +229,7 @@ function FavoriteCard({
           type="button"
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
-          title="Remove from favorites"
+          title={t('dashboard.removeFromFavorites')}
         >
           <Star className="h-4 w-4 fill-yellow-500" />
         </button>
@@ -376,7 +377,7 @@ export function Dashboard() {
                 </span>
               </div>
               <p className="text-[clamp(0.8rem,1vw,0.95rem)] text-muted-foreground">
-                Your local document toolkit — private, fast, offline.
+                {t('common.yourLocalDocumentToolkitPrivate')}
               </p>
             </div>
             {/* Theme, About and Buy me a coffee moved to AppChrome, which is on
@@ -407,7 +408,7 @@ export function Dashboard() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tools..."
+              placeholder={t('dashboard.searchTools')}
               className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             />
           </div>
@@ -423,14 +424,14 @@ export function Dashboard() {
                 <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium mr-1.5">
                   {FORMAT_LABELS[stagedFile.format]}
                 </span>
-                Ready to process — choose a tool below
+                {t('dashboard.readyToProcessChooseA')}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setStagedFile(null)}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-              title="Dismiss"
+              title={t('common.dismiss')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -442,10 +443,10 @@ export function Dashboard() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                My Favorites
+                {t('dashboard.myFavorites')}
               </h2>
               <p className="text-[10px] text-muted-foreground/50">
-                Click ⠿ to reorder &middot; Click &#9733; on any tool to add
+                {t('dashboard.clickToReorderMiddotClick')}
               </p>
             </div>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
@@ -530,7 +531,7 @@ export function Dashboard() {
       {isDragOver && (
         <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary/40 rounded-xl flex items-center justify-center z-40 pointer-events-none">
           <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg">
-            <p className="text-lg font-medium text-foreground">Drop file to get started</p>
+            <p className="text-lg font-medium text-foreground">{t('dashboard.dropFileToGetStarted')}</p>
           </div>
         </div>
       )}

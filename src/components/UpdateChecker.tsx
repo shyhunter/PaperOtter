@@ -3,6 +3,7 @@ import { Sparkles, X } from 'lucide-react';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { fetchLatestRelease, isNewerVersion, type LatestRelease } from '@/lib/checkForUpdate';
+import { t } from '@/i18n';
 
 const store = new LazyStore('papercut-settings.json');
 
@@ -57,14 +58,14 @@ export function UpdateChecker() {
           onClick={() => openUrl(release.url).catch(() => {})}
           className="text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
         >
-          Download
+          {t('updateChecker.download')}
         </button>
       </div>
       <button
         type="button"
         onClick={handleDismiss}
         className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded shrink-0"
-        aria-label="Dismiss update banner"
+        aria-label={t('updateChecker.dismissUpdateBanner')}
       >
         <X className="h-3.5 w-3.5" />
       </button>

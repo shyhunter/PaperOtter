@@ -437,7 +437,7 @@ export function ImageConfigureStep({
       {/* Sticky bottom action bar */}
       <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         {isProcessing && onCancel && (
@@ -446,7 +446,7 @@ export function ImageConfigureStep({
             onClick={onCancel}
             className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <Button

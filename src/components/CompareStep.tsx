@@ -394,7 +394,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             });
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          title="Copy processing stats to clipboard"
+          title={t('compare.copyStats')}
         >
           {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
           <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
@@ -433,7 +433,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom out"
+            aria-label={t('common.zoomOut')}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
@@ -445,7 +445,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom in"
+            aria-label={t('common.zoomIn')}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
@@ -455,7 +455,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {/* Bottom strip — simplified: Back | spacer | Start Over | Save */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
 
         <div className="flex-1" />
@@ -466,11 +466,11 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Start Over
+          {t('common.startOver')}
         </button>
 
         <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
-          Save…
+          {t('common.saveEllipsis')}
         </Button>
       </div>
     </div>

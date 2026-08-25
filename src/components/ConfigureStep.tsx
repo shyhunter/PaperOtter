@@ -276,7 +276,7 @@ export function ConfigureStep({
                   if (customMode) setCustomMode(false);
                 }}
                 disabled={isProcessing || isNonCompressible}
-                aria-label="Compression level"
+                aria-label={t('configure.compressionLevel')}
                 data-testid="compression-slider"
                 className="relative w-full h-6 appearance-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent"
               />
@@ -536,7 +536,7 @@ export function ConfigureStep({
       {/* Sticky bottom action bar */}
       <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         {isProcessing && onCancel && (
@@ -546,7 +546,7 @@ export function ConfigureStep({
             onClick={onCancel}
             className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <Button

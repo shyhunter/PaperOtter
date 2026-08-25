@@ -28,7 +28,7 @@ export function PrivacyModal({ open, onClose }: PrivacyModalProps) {
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="h-4 w-4" />
           </button>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lock } from 'lucide-react';
 import { PrivacyModal } from '@/components/PrivacyModal';
+import { t } from '@/i18n';
 
 export function PrivacyFooter() {
   const [showModal, setShowModal] = useState(false);
@@ -13,7 +14,7 @@ export function PrivacyFooter() {
         onClick={() => setShowModal(true)}
         className="text-xs hover:text-foreground transition-colors"
       >
-        Processed locally · Privacy
+        {t('privacyFooter.processedLocallyPrivacy')}
       </button>
       <PrivacyModal open={showModal} onClose={() => setShowModal(false)} />
     </footer>

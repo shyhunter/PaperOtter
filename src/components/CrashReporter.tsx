@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { fetchFeedbackEmail } from '@/lib/feedbackConfig';
 import { getSystemInfo } from '@/lib/systemInfo';
+import { t } from '@/i18n';
 
 interface CrashReporterProps {
   error: Error | null;
@@ -107,9 +108,9 @@ export function CrashReporter({
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-6 w-6 text-destructive flex-none" />
           <div>
-            <p className="text-sm font-semibold text-foreground">Something went wrong</p>
+            <p className="text-sm font-semibold text-foreground">{t('crashReporter.somethingWentWrong')}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              An unexpected error occurred. You can send a crash report to help us fix it.
+              {t('crashReporter.anUnexpectedErrorOccurredYou')}
             </p>
           </div>
         </div>
@@ -158,7 +159,7 @@ export function CrashReporter({
           </button>
           {showPreview && (
             <div className="mt-2 rounded bg-muted p-3 text-xs text-muted-foreground overflow-auto max-h-48">
-              <p className="font-medium text-foreground mb-1">This will open in your email app:</p>
+              <p className="font-medium text-foreground mb-1">{t('crashReporter.thisWillOpenInYour')}</p>
               <pre className="whitespace-pre-wrap break-words">
                 {`## Crash Report\n\n### Error\n\`\`\`\n${errorMessage}\n\`\`\`${
                   truncatedStack
@@ -167,7 +168,7 @@ export function CrashReporter({
                 }\n\n### System Info\n- App Version: (auto-detected)\n- OS: ${systemInfo}\n- Theme: ${document.documentElement.classList.contains('dark') ? 'dark' : 'light'}`}
               </pre>
               <p className="mt-2 text-[10px] text-muted-foreground/60 italic">
-                The report opens as a draft email. Nothing is sent until you send it yourself.
+                {t('crashReporter.theReportOpensAsA')}
               </p>
             </div>
           )}
@@ -182,7 +183,7 @@ export function CrashReporter({
             className="gap-1.5"
           >
             <Send className="h-3.5 w-3.5" />
-            Send Crash Report
+            {t('crashReporter.sendCrashReport')}
           </Button>
           <Button variant="ghost" size="sm" onClick={onRecover}>
             <X className="h-3.5 w-3.5 mr-1" />

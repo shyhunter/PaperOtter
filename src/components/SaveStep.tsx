@@ -309,7 +309,7 @@ function MultiFileSave({
         <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleMultiFileSave}>
@@ -342,7 +342,7 @@ function MultiFileSave({
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-              Back
+              {t('common.back')}
             </Button>
             <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
               {t('common.tryAgain')}
@@ -395,10 +395,10 @@ function MultiFileSave({
 
         <div className="flex gap-3">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-            Save
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -515,7 +515,7 @@ function SingleFileSave({
         <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleSave}>

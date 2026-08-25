@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import logoSvg from '@/assets/logo.svg';
+import { t } from '@/i18n';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -53,7 +54,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         Papercut
       </h1>
       <p className="splash-text-in-delayed mt-2 text-sm text-muted-foreground">
-        Your local document toolkit — private, fast, offline
+        {t('splashScreen.yourLocalDocumentToolkitPrivate')}
       </p>
       <p className="splash-text-in-delayed mt-1 text-xs text-muted-foreground/50">
         v{version}
@@ -67,7 +68,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         <img
           src={logoSvg}
-          alt="Papercut logo"
+          alt={t('splashScreen.papercutLogo')}
           className="h-28 w-28 dark:invert"
         />
       </div>

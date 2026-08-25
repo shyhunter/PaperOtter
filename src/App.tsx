@@ -47,6 +47,7 @@ import { UpdateChecker } from '@/components/UpdateChecker';
 import { EditorView } from '@/components/pdf-editor/EditorView';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -409,14 +410,14 @@ function StandardToolFlow() {
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
     if (!filePath) {
-      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
       return;
     }
 
     const format = detectFormat(filePath);
     if (!format) {
-      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
       return;
     }
@@ -435,7 +436,7 @@ function StandardToolFlow() {
       sizeBytes = await getFileSizeBytes(filePath);
     } catch {
       // Could not read the file at all — treat as corrupt
-      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setCorruptFileError(t('app.thisFileAppearsToBe'));
       setTimeout(() => setCorruptFileError(null), 2500);
       return;
     }
@@ -559,7 +560,7 @@ function StandardToolFlow() {
   useEffect(() => {
     if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
       handleStartOver();
-      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setCorruptFileError(t('app.thisFileAppearsToBe'));
       setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -588,7 +589,7 @@ function StandardToolFlow() {
       }
       // null = user cancelled — do nothing
     } catch {
-      toast.error('Could not open file picker', {
+      toast.error(t('app.couldNotOpenFilePicker'), {
         description: 'Please try again.',
       });
     }
