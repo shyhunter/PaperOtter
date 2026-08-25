@@ -33,6 +33,17 @@ vi.mock('@/lib/pdfThumbnail', () => ({
   openPdfForLazyRender: vi.fn().mockResolvedValue({
     numPages: 1, pageAspectRatios: [], renderPage: vi.fn(), destroy: vi.fn(),
   }),
+  // EditorCanvas reaches for these on mount. Omitting them threw out of an
+  // effect, which vitest counts as an unhandled error rather than a test
+  // failure -- the suite still reported every test passing.
+  acquireSharedPdfDocument: vi.fn().mockResolvedValue({
+    numPages: 1,
+    getPage: vi.fn().mockResolvedValue({
+      getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),
+      render: vi.fn().mockReturnValue({ promise: Promise.resolve() }),
+    }),
+  }),
+  releaseSharedPdfDocument: vi.fn(),
 }));
 
 vi.stubGlobal('IntersectionObserver', class {
