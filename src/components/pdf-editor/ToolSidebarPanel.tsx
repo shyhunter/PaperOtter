@@ -10,8 +10,18 @@ import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
+import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import {
+  getPdfCompressibilityFromBytes,
+  estimateOutputSizeBytes,
+  getNonCompressibleReason,
+  nonCompressibleMessage,
+  type PdfCompressibility,
+} from '@/lib/pdfProcessor';
+import type { PdfQualityLevel } from '@/types/file';
+import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 
 interface ToolSidebarPanelProps {
@@ -62,7 +72,12 @@ function useDebouncedPreview(
 
     return () => {
       clearTimeout(timeoutRef.current);
-      // If cleanup fires (unmount or re-run), ensure processing flag is cleared
+      // If cleanup fires (unmount or re-run), ensure processing flag is cleared.
+      // Reading runIdRef.current *at cleanup time* is the point: it tells us
+      // whether a newer run has superseded this one. Copying it into a variable
+      // inside the effect, as react-hooks/exhaustive-deps suggests, would freeze
+      // it at the captured value and make this comparison always true.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (runIdRef.current === runId) {
         setIsProcessing(false);
       }
@@ -213,14 +228,14 @@ function formatBytes(bytes: number): string {
 
 /** Quality zones matching the full compress tool */
 const QUALITY_ZONES = [
-  { value: 'screen', label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
-  { value: 'ebook', label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
-  { value: 'printer', label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
-  { value: 'prepress', label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+  { value: 'screen', quality: 'web' as PdfQualityLevel, label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
+  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
+  { value: 'printer', quality: 'print' as PdfQualityLevel, label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
 ] as const;
 
 function CompressPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
 
   // Target file size mode
@@ -229,7 +244,6 @@ function CompressPanel() {
   const [targetUnit, setTargetUnit] = useState<'MB' | 'KB'>('MB');
 
   // Additional options
-  const [stripMetadata, setStripMetadata] = useState(false);
   const [downsampleImages, setDownsampleImages] = useState(true);
 
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
@@ -237,24 +251,95 @@ function CompressPanel() {
   const [compressionResult, setCompressionResult] = useState<{
     originalSize: number;
     compressedSize: number;
+    /** The target this run was judged against, frozen at apply time so later
+     *  edits to the field cannot rewrite the verdict. */
+    targetBytes: number | null;
   } | null>(null);
+  const [analysis, setAnalysis] = useState<PdfCompressibility | null>(null);
+
+  // The bytes this panel compresses from. Ghostscript is lossy, so compressing
+  // its own output bakes in both lots of loss -- trying Screen, deciding it is
+  // too soft and switching to eBook has to re-derive from the document as it
+  // was, not stack eBook on top of Screen.
+  const [baseline, setBaseline] = useState<Uint8Array | null>(null);
+  // The last result this panel produced, so a change from anywhere else is
+  // distinguishable from its own.
+  const ownResultRef = useRef<Uint8Array | null>(null);
+
+  useEffect(() => {
+    // Revert, or another tool applying, leaves the baseline describing a
+    // document that no longer exists; compressing from it would undo them.
+    if (state.pdfBytes !== ownResultRef.current) setBaseline(null);
+  }, [state.pdfBytes]);
+
+  const baseBytes = baseline ?? state.pdfBytes;
+
+  // What this document can actually give up, read once per version of the bytes.
+  // Without it the panel offers four presets and no way to tell them apart.
+  useEffect(() => {
+    let cancelled = false;
+    setAnalysis(null);
+    getPdfCompressibilityFromBytes(baseBytes)
+      .then((result) => { if (!cancelled) setAnalysis(result); })
+      // An unreadable document simply means no estimates; the panel still works.
+      .catch(() => { if (!cancelled) setAnalysis(null); });
+    return () => { cancelled = true; };
+  }, [baseBytes]);
+
+  // Estimates predict what each preset yields from the baseline, since that is
+  // what Apply will actually compress.
+  const currentSize = baseBytes.byteLength;
+
+  const estimates = useMemo(() => {
+    if (!analysis) return null;
+    return QUALITY_ZONES.reduce((acc, zone) => {
+      acc[zone.value] = estimateOutputSizeBytes(
+        zone.quality,
+        currentSize,
+        analysis.compressibilityScore,
+        analysis.jpxByteShare,
+      );
+      return acc;
+    }, {} as Record<string, number>);
+  }, [analysis, currentSize]);
+
+  const nonCompressibleReason = analysis
+    ? getNonCompressibleReason(analysis.compressibilityScore, analysis.jpxByteShare)
+    : null;
+
+  // Asking for a size is only meaningful if the document can shrink at all.
+  const canTargetSize = analysis !== null && nonCompressibleReason === null;
+  const targetActive = canTargetSize && useTargetSize;
+
+  const targetBytes = useMemo(() => {
+    const parsed = parseInt(targetSizeValue, 10);
+    if (isNaN(parsed) || parsed < 1) return null;
+    return parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
+  }, [targetSizeValue, targetUnit]);
+
+  // The most aggressive preset's estimate is the floor: nothing here goes below it.
+  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
+  const targetUnreachable =
+    targetActive && targetBytes !== null && floorBytes !== null && targetBytes < floorBytes;
+  const nonCompressibleMsg = analysis
+    ? nonCompressibleMessage(nonCompressibleReason, analysis.imageCount)
+    : null;
 
   const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
 
   // Auto-select best preset for target size
   const resolvedPreset = useCallback((): string => {
-    if (!useTargetSize || !targetSizeValue.trim()) return preset;
+    if (!targetActive || !targetSizeValue.trim()) return preset;
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return preset;
     const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
-    const originalSize = state.pdfBytes.byteLength;
-    const ratio = targetBytes / originalSize;
+    const ratio = targetBytes / baseBytes.byteLength;
     // Pick the most aggressive preset that might meet the target
     if (ratio < 0.3) return 'screen';
     if (ratio < 0.5) return 'ebook';
     if (ratio < 0.8) return 'printer';
     return 'prepress';
-  }, [useTargetSize, targetSizeValue, targetUnit, state.pdfBytes.byteLength, preset]);
+  }, [targetActive, targetSizeValue, targetUnit, baseBytes, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -266,22 +351,27 @@ function CompressPanel() {
       const tempInputPath = await join(tmpBase, `papercut_sidebar_${ts}.pdf`);
 
       const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      const originalSize = state.pdfBytes.byteLength;
-      await writeFile(tempInputPath, state.pdfBytes);
+      const source = baseline ?? state.pdfBytes;
+      setBaseline(source);
+      const originalSize = source.byteLength;
+      await writeFile(tempInputPath, source);
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
         preset: resolvedPreset(),
+        downsampleImages,
       });
 
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(gsResult);
+      ownResultRef.current = result;
       setPreviewBytes(result);
       setIsProcessing(false);
       setCompressionResult({
         originalSize,
         compressedSize: result.byteLength,
+        targetBytes: targetActive ? targetBytes : null,
       });
 
       updatePdfBytes(result);
@@ -290,7 +380,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, resolvedPreset, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -305,6 +395,13 @@ function CompressPanel() {
         <span className="text-muted-foreground">Current size</span>
         <span className="font-medium">{formatBytes(state.pdfBytes.byteLength)}</span>
       </div>
+
+      {/* Why this file may not shrink — the same wording the standalone tool uses */}
+      {nonCompressibleMsg && (
+        <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[10px] leading-relaxed text-foreground/80">
+          {nonCompressibleMsg}
+        </div>
+      )}
 
       {/* Quality presets */}
       <div className="space-y-1.5">
@@ -324,15 +421,30 @@ function CompressPanel() {
               onChange={() => { setPreset(p.value); setUseTargetSize(false); }}
               className="mt-0.5"
             />
-            <div>
+            <div className="min-w-0">
               <div className="font-medium">{p.label}</div>
               <div className="text-[10px] text-muted-foreground">{p.dpi} — {p.desc}</div>
+              {estimates && (
+                <div data-testid="preset-estimate" className="text-[10px] font-medium text-foreground/80 mt-0.5">
+                  ≈ {formatBytes(estimates[p.value])}
+                  <span className="text-muted-foreground font-normal">
+                    {' · '}
+                    {currentSize > 0
+                      ? `−${Math.max(0, Math.round((1 - estimates[p.value] / currentSize) * 100))}%`
+                      : '0%'}
+                  </span>
+                </div>
+              )}
             </div>
           </label>
         ))}
       </div>
 
-      {/* Target file size */}
+      {/* Target file size — only where a size can actually be aimed at. On a
+          text-only or JPEG2000-dominated document no number below the current
+          size is reachable, so the field would be a trap; the banner above
+          already says why. */}
+      {canTargetSize && (
       <div className="space-y-1.5">
         <label className="flex items-center gap-2 text-[11px] cursor-pointer">
           <input
@@ -351,40 +463,58 @@ function CompressPanel() {
               placeholder="e.g. 5"
               title="Target file size"
               min={1}
-              className="flex-1 px-2 py-1 text-xs border rounded bg-background"
+              // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
+              // and a number input's intrinsic width is wider than the 232px
+              // sidebar, so without it the field pushes MB/KB out of view.
+              className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
             />
             <select
               value={targetUnit}
               onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
               title="Size unit"
-              className="px-1.5 py-1 text-xs border rounded bg-background"
+              className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
             >
               <option value="MB">MB</option>
               <option value="KB">KB</option>
             </select>
           </div>
         )}
+        {targetUnreachable && floorBytes !== null && (
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            Smallest achievable is about {formatBytes(floorBytes)} — compression
+            cannot go below this for this file.
+          </p>
+        )}
       </div>
+      )}
 
       {/* Advanced options */}
       <div className="space-y-1.5 border-t pt-2">
         <span className="text-[10px] font-medium text-muted-foreground">Options</span>
-        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={downsampleImages}
-            onChange={(e) => setDownsampleImages(e.target.checked)}
-          />
-          Downsample images
-        </label>
-        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={stripMetadata}
-            onChange={(e) => setStripMetadata(e.target.checked)}
-          />
-          Strip metadata
-        </label>
+        {/* Only meaningful when there are images to keep the resolution of.
+            Phrased as the thing the user wants, not the mechanism they must
+            switch off to get it: the presets bundle resolution reduction with
+            JPEG re-encoding, and this is the only way to have the second
+            without the first — the right answer for screenshots and line art,
+            where downsampling is what makes small text unreadable. */}
+        {(analysis?.imageCount ?? 0) > 0 && (
+          <>
+            <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!downsampleImages}
+                onChange={(e) => setDownsampleImages(!e.target.checked)}
+              />
+              Keep image resolution
+            </label>
+            {!downsampleImages && (
+              <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
+                Images are still re-encoded, just not shrunk. Estimates assume
+                downsampling — actual sizes will be larger.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       {/* Compression result feedback */}
@@ -398,6 +528,22 @@ function CompressPanel() {
             <span className="text-muted-foreground">Compressed</span>
             <span className="font-medium">{formatBytes(compressionResult.compressedSize)}</span>
           </div>
+          {compressionResult.targetBytes !== null && (
+            <div className="flex justify-between text-[10px] pt-1 border-t">
+              <span className="text-muted-foreground">Target</span>
+              <span
+                className={`font-semibold ${
+                  compressionResult.compressedSize <= compressionResult.targetBytes
+                    ? 'text-green-500'
+                    : 'text-amber-500'
+                }`}
+              >
+                {compressionResult.compressedSize <= compressionResult.targetBytes
+                  ? 'met'
+                  : `not met (${formatBytes(compressionResult.targetBytes)})`}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-[10px] pt-1 border-t">
             <span className="text-muted-foreground">Reduction</span>
             <span className={`font-semibold ${reductionPct! > 0 ? 'text-green-500' : 'text-orange-500'}`}>
@@ -407,11 +553,19 @@ function CompressPanel() {
         </div>
       )}
 
-      <ToolSidebarPreview
-        originalBytes={state.pdfBytes}
-        previewBytes={previewBytes}
-        isProcessing={isProcessing}
-      />
+      {/* Compression damage lives in image detail — ringing at edges, blocking in
+          gradients, softened text. None of that is visible in a 100px page
+          thumbnail at any size that fits a 232px sidebar, so the sidebar carries
+          the figures and the comparison happens in the canvas, which is large
+          and zoomable. */}
+      <button
+        type="button"
+        onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed transition-colors"
+      >
+        <Expand className="h-3 w-3" />
+        Compare full size
+      </button>
 
       <ApplyButton
         onClick={handleApply}
@@ -710,14 +864,21 @@ function WatermarkPanel() {
 // ── Page Numbers Panel ───────────────────────────────────────────────
 
 function PageNumbersPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const { state, applyPageNumbers, removePageNumbers } = useEditorContext();
   const [options, setOptions] = useState<PageNumberOptions>({
     position: 'bottom-center',
     format: 'numeric',
     fontSize: 12,
     startNumber: 1,
     margin: 30,
+    color: DEFAULT_NUMBER_COLOR,
   });
+
+  // Everything derives from the bytes as they were before numbering. Once numbers
+  // are applied, state.pdfBytes already carries them -- deriving from that would
+  // show, and then bake in, a second overlapping set.
+  const baseBytes = state.pageNumberBase ?? state.pdfBytes;
+  const hasApplied = state.pageNumberBase !== null;
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -730,9 +891,9 @@ function PageNumbersPanel() {
   }, [options, state.currentPage]);
 
   const { previewBytes, isProcessing } = useDebouncedPreview(
-    state.pdfBytes,
+    baseBytes,
     runPreview,
-    [options.position, options.format, options.fontSize, options.startNumber, options.margin, state.currentPage],
+    [options.position, options.format, options.fontSize, options.startNumber, options.margin, options.color, state.currentPage],
   );
 
   // Apply page numbers to ALL pages (full processing, runs only on explicit user action).
@@ -741,9 +902,8 @@ function PageNumbersPanel() {
     setApplyError(null);
     setApplySuccess(false);
     try {
-      const result = await addPageNumbers(state.pdfBytes, options);
-      updatePdfBytes(result);
-      markDirty();
+      const result = await addPageNumbers(baseBytes, options);
+      applyPageNumbers(baseBytes, result);
       setApplySuccess(true);
       setTimeout(() => setApplySuccess(false), 2000);
     } catch (err) {
@@ -751,7 +911,7 @@ function PageNumbersPanel() {
     } finally {
       setIsApplying(false);
     }
-  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [options, baseBytes, applyPageNumbers]);
 
   return (
     <div className="space-y-3">
@@ -789,10 +949,10 @@ function PageNumbersPanel() {
           </div>
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">Start At</label>
-            <input
-              type="number"
+            <NumberField
+              aria-label="Start at"
               value={options.startNumber}
-              onChange={(e) => setOptions((o) => ({ ...o, startNumber: Number(e.target.value) || 1 }))}
+              onChange={(n) => setOptions((o) => ({ ...o, startNumber: n }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
               min={1}
             />
@@ -801,19 +961,29 @@ function PageNumbersPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Font Size</label>
-          <input
-            type="number"
+          <NumberField
+            aria-label="Font size"
             value={options.fontSize}
-            onChange={(e) => setOptions((o) => ({ ...o, fontSize: Number(e.target.value) || 12 }))}
+            onChange={(n) => setOptions((o) => ({ ...o, fontSize: n }))}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
             min={6}
             max={48}
           />
         </div>
+
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground">Colour</label>
+          <div className="mt-0.5">
+            <PageNumberColorPicker
+              value={options.color ?? DEFAULT_NUMBER_COLOR}
+              onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
+            />
+          </div>
+        </div>
       </div>
 
       <ToolSidebarPreview
-        originalBytes={state.pdfBytes}
+        originalBytes={baseBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
         previewPageIndex={0}
@@ -826,7 +996,78 @@ function PageNumbersPanel() {
         success={applySuccess}
         error={applyError}
       />
+
+      {hasApplied && (
+        <button
+          type="button"
+          onClick={removePageNumbers}
+          className="w-full px-2 py-1 text-xs rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+        >
+          Remove page numbers
+        </button>
+      )}
     </div>
+  );
+}
+
+/**
+ * A number input that can actually be emptied while the user retypes it.
+ *
+ * The obvious spelling — `value={n}` with `Number(e.target.value) || fallback`
+ * — cannot be cleared: an empty field parses to `Number('') === 0`, which is
+ * falsy, so it snaps straight back to the fallback. Typing `0` hits the same
+ * trap. Holding the text locally lets the field be empty mid-edit while the
+ * committed value stays a number, and an empty or unparseable field falls back
+ * to the last good value on blur.
+ */
+function NumberField({
+  value,
+  onChange,
+  min,
+  max,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+  'aria-label'?: string;
+}) {
+  const [text, setText] = useState(String(value));
+
+  // Follow programmatic changes without overwriting what is being typed.
+  useEffect(() => {
+    setText((prev) => (Number(prev) === value ? prev : String(value)));
+  }, [value]);
+
+  return (
+    <input
+      type="number"
+      aria-label={ariaLabel}
+      value={text}
+      min={min}
+      max={max}
+      className={className}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        if (next === '') return; // mid-edit; keep the last committed value
+        const parsed = Number(next);
+        if (Number.isFinite(parsed)) onChange(parsed);
+      }}
+      onBlur={() => {
+        const parsed = Number(text);
+        if (text === '' || !Number.isFinite(parsed)) {
+          setText(String(value));
+          return;
+        }
+        const clamped = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, parsed));
+        if (clamped !== parsed) onChange(clamped);
+        setText(String(clamped));
+      }}
+    />
   );
 }
 

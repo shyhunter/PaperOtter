@@ -1,18 +1,37 @@
 // EditorTopToolbar: fixed top bar for the PDF editor.
 // Shows breadcrumb row (Dashboard > filename.pdf) with save button and formatting toolbar row below it.
-import { useCallback, useState } from 'react';
-import { ChevronRight, Save, Columns2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronRight, Save, Columns2, Undo2 } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import { useToolContext } from '@/context/ToolContext';
 import { useSaveActions } from './SaveController';
 import { FormattingToolbar } from './FormattingToolbar';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { diagLog } from '@/lib/diagLog';
 
 export function EditorTopToolbar() {
-  const { state, setCompareMode } = useEditorContext();
-  const { goToDashboard } = useToolContext();
+  const { state, setCompareMode, revertToOriginal, setStripMetadataOnSave } = useEditorContext();
+  const { goToDashboard, setNavigationGuard } = useToolContext();
   const { save, isSaving } = useSaveActions();
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
+  // The navigation this prompt is holding up, or null when nothing is pending.
+  const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
+
+  // Read inside the guard, which is registered once and must not capture a
+  // stale isDirty.
+  const isDirtyRef = useRef(state.isDirty);
+  isDirtyRef.current = state.isDirty;
+
+  // Every route out of the editor tears down its unsaved state, so all of them
+  // go through here rather than each growing its own prompt.
+  useEffect(() => {
+    setNavigationGuard((proceed) => {
+      if (!isDirtyRef.current) return true;
+      setPendingNav(() => proceed);
+      return false;
+    });
+    return () => setNavigationGuard(null);
+  }, [setNavigationGuard]);
 
   const handleSaveClick = useCallback(async () => {
     const success = await save();
@@ -22,26 +41,43 @@ export function EditorTopToolbar() {
     }
   }, [save]);
 
-  const handleBackToDashboard = useCallback(async () => {
+  const handleBackToDashboard = useCallback(() => {
     diagLog(`dashboard.click isDirty=${state.isDirty}`);
-    if (state.isDirty) {
-      // Three-choice dialog: Save / Don't Save / Cancel
-      // Using confirm for simplicity (two choices: save and leave, or cancel)
-      diagLog('dashboard.confirm.before');
-      const shouldSave = window.confirm(
-        'You have unsaved changes. Click OK to save before leaving, or Cancel to stay.',
-      );
-      diagLog(`dashboard.confirm.after shouldSave=${shouldSave}`);
-      if (shouldSave) {
-        const saved = await save();
-        if (!saved) return; // Save was cancelled or failed, stay in editor
-      }
-      // If user clicked Cancel on confirm, we still navigate away (Don't Save behavior)
-      // To give a proper 3-choice UX, we use a different approach:
-    }
-    diagLog('dashboard.goToDashboard');
+    // The guard turns this into a prompt when there are unsaved changes.
     goToDashboard();
-  }, [state.isDirty, save, goToDashboard]);
+  }, [state.isDirty, goToDashboard]);
+
+  const handlePromptSave = useCallback(async () => {
+    diagLog('prompt.save');
+    const saved = await save();
+    // Backing out of the OS save dialog must leave the document untouched.
+    if (!saved) return;
+    const proceed = pendingNav;
+    setPendingNav(null);
+    proceed?.();
+  }, [save, pendingNav]);
+
+  const handlePromptDiscard = useCallback(() => {
+    diagLog('prompt.discard');
+    const proceed = pendingNav;
+    setPendingNav(null);
+    proceed?.();
+  }, [pendingNav]);
+
+  const handlePromptCancel = useCallback(() => {
+    diagLog('prompt.cancel');
+    setPendingNav(null);
+  }, []);
+
+  const handleRevert = useCallback(() => {
+    // Offered even when the document is clean: the case this exists for is
+    // realising the wrong file was edited *after* saving over it.
+    const confirmed = window.confirm(
+      'Discard all changes and restore this document as it was opened?',
+    );
+    diagLog(`revert.confirm confirmed=${confirmed}`);
+    if (confirmed) revertToOriginal();
+  }, [revertToOriginal]);
 
   return (
     <div className="flex flex-col flex-none">
@@ -84,6 +120,33 @@ export function EditorTopToolbar() {
           </button>
         </div>
 
+        {/* Remove metadata on save — sits by Save because it governs what is
+            written out, not what any one tool does. */}
+        <label
+          className="ml-3 flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+          title="Remove author, title and other identifying metadata when saving"
+        >
+          <input
+            type="checkbox"
+            checked={state.stripMetadataOnSave}
+            onChange={(e) => setStripMetadataOnSave(e.target.checked)}
+          />
+          <span>Remove metadata</span>
+        </label>
+
+        {/* Revert */}
+        <div className="ml-2">
+          <button
+            type="button"
+            onClick={handleRevert}
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            title="Discard all changes and restore the document as it was opened"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            <span>Revert</span>
+          </button>
+        </div>
+
         {/* Compare toggle */}
         <div className="ml-2">
           <button
@@ -109,6 +172,15 @@ export function EditorTopToolbar() {
 
       {/* Row 2: Formatting toolbar */}
       <FormattingToolbar />
+
+      <UnsavedChangesDialog
+        open={pendingNav !== null}
+        fileName={state.fileName}
+        isSaving={isSaving}
+        onSave={handlePromptSave}
+        onDiscard={handlePromptDiscard}
+        onCancel={handlePromptCancel}
+      />
     </div>
   );
 }

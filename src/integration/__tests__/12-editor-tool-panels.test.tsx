@@ -15,6 +15,9 @@ import { ToolSidebar } from '@/components/pdf-editor/ToolSidebar';
 import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
+import { invoke } from '@tauri-apps/api/core';
+import { writeFile } from '@tauri-apps/plugin-fs';
+import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -55,6 +58,24 @@ vi.mock('@/lib/pdfWatermark', () => ({
   DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: 'gray' },
 }));
 
+// Partial: the estimate maths and the canonical non-compressible wording stay
+// real, only the document analysis is stubbed.
+vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfProcessor')>();
+  return {
+    ...actual,
+    // Default so panels that are not about estimates still render; the
+    // estimate tests override it.
+    getPdfCompressibilityFromBytes: vi.fn().mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 1024 * 1024,
+      imageCount: 4,
+      compressibilityScore: 0.5,
+      jpxByteShare: 0,
+    }),
+  };
+});
+
 vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
@@ -89,6 +110,17 @@ vi.stubGlobal(
 );
 
 beforeEach(() => {
+  // This suite does not clear mocks between tests, and the panels branch on
+  // this result — leaving a previous test's document shape in place changes
+  // what later panels render.
+  vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+    pageCount: 3,
+    fileSizeBytes: 1024 * 1024,
+    imageCount: 4,
+    compressibilityScore: 0.5,
+    jpxByteShare: 0,
+  });
+
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
     writable: true,
@@ -112,19 +144,22 @@ type EditorCtx = ReturnType<typeof useEditorContext>;
 function ToolPanelHarness({
   children,
   onContextReady,
+  bytes,
 }: {
   children: React.ReactNode;
   onContextReady?: (ctx: EditorCtx) => void;
+  /** Size-sensitive tests need a realistic document; estimates floor at 1 KB. */
+  bytes?: Uint8Array;
 }) {
   return (
     <EditorProvider>
-      <Initialiser onContextReady={onContextReady} />
+      <Initialiser onContextReady={onContextReady} bytes={bytes} />
       {children}
     </EditorProvider>
   );
 }
 
-function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => void }) {
+function Initialiser({ onContextReady, bytes }: { onContextReady?: (ctx: EditorCtx) => void; bytes?: Uint8Array }) {
   const ctx = useEditorContext();
   const initRef = useRef(false);
 
@@ -132,7 +167,7 @@ function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => 
     if (!initRef.current) {
       initRef.current = true;
       ctx.initState(
-        createEditorViewState(fakePdfBytes(), 3, 'test.pdf', '/tmp/test.pdf', 1.0),
+        createEditorViewState(bytes ?? fakePdfBytes(), 3, 'test.pdf', '/tmp/test.pdf', 1.0),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -149,6 +184,337 @@ function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => 
 
 describe('Suite 12 — PDF Editor: Tool Panels', () => {
   // TP-01: Compress Panel
+  it('TP-01c — Downsample images is actually sent to the compressor', async () => {
+    const user = userEvent.setup();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByRole('checkbox', { name: /keep image resolution/i }));
+    await user.click(screen.getByText('Apply'));
+
+    // Regression: both option checkboxes were rendered, never read, and never
+    // passed to the Rust command — ticking them did nothing whatsoever.
+    await waitFor(() => {
+      const call = vi.mocked(invoke).mock.calls.find(([cmd]) => cmd === 'compress_pdf');
+      expect(call?.[1]).toMatchObject({ downsampleImages: false });
+    });
+  });
+
+  /** An image-heavy document that should compress well. */
+  function compressible() {
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 10,
+      fileSizeBytes: 4 * 1024 * 1024,
+      imageCount: 12,
+      compressibilityScore: 0.8,
+      jpxByteShare: 0,
+    });
+  }
+
+  /** A text-only document that cannot meaningfully shrink. */
+  function textOnly() {
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 250 * 1024,
+      imageCount: 0,
+      compressibilityScore: 0.02,
+      jpxByteShare: 0,
+    });
+  }
+
+  it('TP-01f — every preset shows what it would produce, against the current size', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    const estimates = await screen.findAllByTestId('preset-estimate');
+    expect(estimates).toHaveLength(4);
+    // Each preset says roughly what it costs and how much it saves, so the
+    // choice can be made without running all four.
+    for (const node of estimates) {
+      expect(node.textContent).toMatch(/≈/);
+      expect(node.textContent).toMatch(/%/);
+    }
+  });
+
+  it('TP-01g — a document that cannot shrink says so instead of promising a reduction', async () => {
+    const user = userEvent.setup();
+    textOnly();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    expect(await screen.findByText(/mostly text with no embedded images/i)).toBeTruthy();
+  });
+
+  it('TP-01h — Apply stays available on a non-compressible file', async () => {
+    const user = userEvent.setup();
+    textOnly();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // The standalone flow disables its controls here; this panel does not,
+    // because a preset can still be worth trying on a borderline file.
+    expect(screen.getByText('Apply')).not.toBeDisabled();
+  });
+
+  it('TP-01i — keeping image resolution says the estimates no longer hold', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findAllByTestId('preset-estimate');
+
+    expect(screen.queryByText(/estimates assume downsampling/i)).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: /keep image resolution/i }));
+
+    // The ratios come from presets that downsample; without it they are wrong.
+    expect(await screen.findByText(/estimates assume downsampling/i)).toBeTruthy();
+  });
+
+  it('TP-01j — the resolution option is hidden when the document has no images', async () => {
+    const user = userEvent.setup();
+    textOnly();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // Nothing to downsample, so offering the choice is pure noise.
+    expect(screen.queryByRole('checkbox', { name: /keep image resolution/i })).toBeNull();
+  });
+
+  it('TP-01k — the compress panel spends its space on numbers, not on tiny thumbnails', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findAllByTestId('preset-estimate');
+
+    // Two 100px thumbnails cannot show compression artefacts at any page scale
+    // — the damage lives in image detail. The sidebar is for figures.
+    expect(screen.queryByAltText('Before')).toBeNull();
+    expect(screen.queryByAltText('After')).toBeNull();
+  });
+
+  it('TP-01l — it offers a full-size comparison instead', async () => {
+    const user = userEvent.setup();
+    compressible();
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('button', { name: /compare full size/i }));
+
+    // Reuses the editor's existing compare view, which is large and zoomable.
+    await waitFor(() => expect(ctx!.state.compareMode).not.toBe('off'));
+  });
+
+  it('TP-01m — trying a second preset re-compresses the original, not the first result', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x41, 0x41, 0x41, 0x41]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const writes = () => vi.mocked(writeFile).mock.calls;
+    const lastWrite = () => writes()[writes().length - 1][1];
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(0));
+    const first = lastWrite();
+    const afterFirst = writes().length;
+
+    await user.click(screen.getByLabelText(/web \/ screen/i));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(afterFirst));
+
+    // Compressing the previous result bakes in both lots of loss permanently.
+    // Switching preset must re-derive from the bytes the panel started with.
+    expect(lastWrite()).toEqual(first);
+  });
+
+  it('TP-01n — a change from outside the panel resets what it compresses from', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x41, 0x41, 0x41, 0x41]).buffer);
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const writes = () => vi.mocked(writeFile).mock.calls;
+    const lastWrite = () => writes()[writes().length - 1][1];
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(0));
+    const afterFirst = writes().length;
+
+    // Revert (or any other tool) makes the panel's baseline describe a document
+    // that no longer exists; compressing from it would undo them.
+    const replacement = new Uint8Array([0x50, 0x50, 0x50, 0x50]);
+    await act(async () => { ctx!.updatePdfBytes(replacement); });
+
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(afterFirst));
+
+    expect(lastWrite()).toEqual(replacement);
+  });
+
+  /** A realistic document size — estimates floor at 1 KB, so a 4-byte stub
+   *  makes every preset look identical. */
+  const fourMegabytes = () => new Uint8Array(4 * 1024 * 1024);
+
+  it('TP-01o — Target file size is hidden on a document that cannot be compressed', async () => {
+    const user = userEvent.setup();
+    textOnly();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // No number below the current size is reachable here, so asking for one is
+    // meaningless — the banner already explains why.
+    expect(screen.queryByText('Target file size')).toBeNull();
+  });
+
+  it('TP-01p — it is offered on a document that can be compressed', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    expect(await screen.findByText('Target file size')).toBeTruthy();
+  });
+
+  it('TP-01q — an unreachable target says so before anything runs', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(invoke).mockClear();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+    await user.type(screen.getByTitle('Target file size'), '50');
+    await user.selectOptions(screen.getByTitle('Size unit'), 'KB');
+
+    // Costs no processing time: the estimates already say where the floor is.
+    expect(await screen.findByText(/smallest achievable/i)).toBeTruthy();
+    expect(vi.mocked(invoke).mock.calls.some(([cmd]) => cmd === 'compress_pdf')).toBe(false);
+  });
+
+  it('TP-01r — a reachable target does not warn', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+    await user.type(screen.getByTitle('Target file size'), '3');
+
+    expect(screen.queryByText(/smallest achievable/i)).toBeNull();
+  });
+
+  it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByRole('checkbox', { name: /target file size/i }));
+
+    const field = screen.getByTitle('Target file size');
+
+    // A flex item defaults to min-width:auto, and a number input's intrinsic
+    // width (~20 characters plus spinners) exceeds the 232px sidebar. Without
+    // min-w-0 the field refuses to shrink and pushes MB/KB out of view.
+    expect(field.className).toContain('min-w-0');
+    expect(screen.getByTitle('Size unit')).toBeTruthy();
+  });
+
   it('TP-01 — Compress panel shows quality presets, target size toggle, and options', async () => {
     const user = userEvent.setup();
 
@@ -175,8 +541,9 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     // Advanced options
     expect(screen.getByText('Options')).toBeInTheDocument();
-    expect(screen.getByText('Downsample images')).toBeInTheDocument();
-    expect(screen.getByText('Strip metadata')).toBeInTheDocument();
+    // Appears once the document analysis resolves — it is hidden for documents
+    // with no images.
+    expect(await screen.findByText('Keep image resolution')).toBeInTheDocument();
 
     // Apply button
     expect(screen.getByText('Apply')).toBeInTheDocument();
@@ -427,6 +794,145 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Apply commits the full document — only once, only on explicit user action.
     await user.click(screen.getByText('Apply'));
     await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(1));
+  });
+
+  /** Apply is disabled until the debounced preview resolves. */
+  async function clickApply(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 3000 });
+    await user.click(screen.getByText('Apply'));
+  }
+
+  it('TP-04c — Page Numbers panel offers a colour, and Apply uses it', async () => {
+    const user = userEvent.setup();
+    vi.mocked(addPageNumbers).mockClear();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await user.click(screen.getByRole('button', { name: 'White' }));
+    await clickApply(user);
+
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalled());
+    expect(vi.mocked(addPageNumbers).mock.calls[0][1]).toMatchObject({ color: '#FFFFFF' });
+  });
+
+  it('TP-04d — Remove appears only once page numbers have been applied', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    expect(screen.queryByRole('button', { name: /remove page numbers/i })).toBeNull();
+
+    await clickApply(user);
+
+    expect(await screen.findByRole('button', { name: /remove page numbers/i })).toBeTruthy();
+  });
+
+  it('TP-04e — Remove restores the bytes from before numbering', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const before = ctx!.state.pdfBytes;
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await clickApply(user);
+    await waitFor(() => expect(ctx!.state.pageNumberBase).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /remove page numbers/i }));
+
+    await waitFor(() => expect(ctx!.state.pdfBytes).toEqual(before));
+    expect(ctx!.state.pageNumberBase).toBeNull();
+  });
+
+  it('TP-04f — re-applying after a colour change derives from the clean bytes, not the numbered ones', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+    vi.mocked(addPageNumbers).mockClear();
+
+    // Distinct results so a stacked apply would be visible in the call arguments.
+    vi.mocked(addPageNumbers).mockResolvedValueOnce(new Uint8Array([0x41, 0x41, 0x41, 0x41]));
+    vi.mocked(addPageNumbers).mockResolvedValueOnce(new Uint8Array([0x42, 0x42, 0x42, 0x42]));
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const clean = ctx!.state.pdfBytes;
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await clickApply(user);
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('button', { name: 'Red' }));
+    await clickApply(user);
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(2));
+
+    // Second apply must start from the clean bytes. Starting from the numbered
+    // result is how two overlapping sets of numbers get baked in permanently.
+    expect(vi.mocked(addPageNumbers).mock.calls[1][0]).toEqual(clean);
+    expect(vi.mocked(addPageNumbers).mock.calls[1][1]).toMatchObject({ color: '#DC2626' });
+  });
+
+  it('TP-04g — Font Size can be cleared in order to type a new value', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+
+    // Start At comes first in the panel, Font Size second.
+    const fontSize = screen.getAllByRole('spinbutton')[1] as HTMLInputElement;
+    expect(fontSize.value).toBe('12');
+
+    await user.clear(fontSize);
+
+    // Regression: `Number('') || 12` is 12, because Number('') is 0 and falsy.
+    // The field snapped straight back to 12, so it could never be emptied and
+    // a new value could not be typed over it.
+    expect(fontSize.value).toBe('');
+
+    await user.type(fontSize, '20');
+    expect(fontSize.value).toBe('20');
+  });
+
+  it('TP-04h — Start At can be cleared in order to type a new value', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+
+    const startAt = screen.getAllByRole('spinbutton')[0] as HTMLInputElement;
+    await user.clear(startAt);
+    expect(startAt.value).toBe('');
+
+    await user.type(startAt, '5');
+    expect(startAt.value).toBe('5');
   });
 
   // TP-05: Crop Panel

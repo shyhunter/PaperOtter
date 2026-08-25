@@ -73,7 +73,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   useEffect(() => {
     if (initialFile) loadFile(initialFile);
@@ -148,7 +148,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [pdfBytes, pages]);
+  }, [pdfBytes, pages, goToStep]);
 
   return (
     <>

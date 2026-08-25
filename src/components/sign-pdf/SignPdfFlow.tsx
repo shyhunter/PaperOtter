@@ -86,7 +86,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   const handleSignatureSelected = useCallback((dataUrl: string) => {
     setSignatureDataUrl(dataUrl);

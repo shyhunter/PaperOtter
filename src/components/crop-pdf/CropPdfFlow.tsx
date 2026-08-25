@@ -83,7 +83,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   useEffect(() => {
     if (initialFile) loadFile(initialFile);
@@ -157,7 +157,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [pdfBytes, topMm, bottomMm, leftMm, rightMm]);
+  }, [pdfBytes, topMm, bottomMm, leftMm, rightMm, goToStep]);
 
   // Calculate overlay percentages for visual crop indicator
   const topPct = pageHeight > 0 ? (mmToPoints(topMm) / pageHeight) * 100 : 0;

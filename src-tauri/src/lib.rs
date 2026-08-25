@@ -431,7 +431,18 @@ fn cancel_processing(state: tauri::State<ProcessState>) {
 /// shrink significantly just by re-encoding as JPEG. For every preset except
 /// prepress (archive — meant to stay lossless), force that re-encoding
 /// explicitly rather than relying on the resolution-based auto-detection.
-fn build_compress_pdf_args(preset: &str, tmp_path_str: &str, source_path: &str) -> Vec<String> {
+/// Builds the Ghostscript argument list.
+///
+/// `downsample_images` false keeps every image at its original resolution,
+/// letting the preset re-encode without also shrinking pixel dimensions. The
+/// forced JPEG conversion below is what makes non-prepress presets shrink at
+/// all, so it stays on either way.
+fn build_compress_pdf_args(
+    preset: &str,
+    tmp_path_str: &str,
+    source_path: &str,
+    downsample_images: bool,
+) -> Vec<String> {
     let mut gs_args = vec![
         "-sDEVICE=pdfwrite".to_string(),
         "-dNOPAUSE".to_string(),
@@ -451,6 +462,14 @@ fn build_compress_pdf_args(preset: &str, tmp_path_str: &str, source_path: &str) 
         ]);
     }
 
+    if !downsample_images {
+        gs_args.extend([
+            "-dDownsampleColorImages=false".to_string(),
+            "-dDownsampleGrayImages=false".to_string(),
+            "-dDownsampleMonoImages=false".to_string(),
+        ]);
+    }
+
     gs_args.push(format!("-sOutputFile={}", tmp_path_str));
     gs_args.push(source_path.to_string());
     gs_args
@@ -462,6 +481,7 @@ async fn compress_pdf(
     state: tauri::State<'_, ProcessState>,
     source_path: String,
     preset: String,
+    downsample_images: Option<bool>,
 ) -> Result<tauri::ipc::Response, String> {
     validate_source_path(&source_path)?;
     // Validate preset to prevent injection — only allow known GS presets
@@ -481,7 +501,12 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let gs_args = build_compress_pdf_args(&preset, &tmp_path_str, &source_path);
+    let gs_args = build_compress_pdf_args(
+        &preset,
+        &tmp_path_str,
+        &source_path,
+        downsample_images.unwrap_or(true),
+    );
 
     // Spawn GS process (sidecar first, then system PATH fallback)
     let (mut rx, child) = spawn_gs(&app, gs_args)?;
@@ -1776,6 +1801,28 @@ async fn convert_html_to_pdf_macos(
     }
 }
 
+/// Human-readable OS label plus the real CPU architecture.
+///
+/// The webview's `navigator.platform` reports "MacIntel" on every Mac —
+/// Apple Silicon included — so a crash report built from it can never tell an
+/// aarch64 build from an x86_64 one. That distinction matters here because the
+/// Ghostscript sidecar is architecture-specific.
+fn format_system_info(os: &str, arch: &str) -> String {
+    let label = match os {
+        "macos" => "macOS",
+        "windows" => "Windows",
+        "linux" => "Linux",
+        other => other,
+    };
+    format!("{label} ({arch})")
+}
+
+/// Reports the OS and architecture this binary was actually built for.
+#[tauri::command]
+fn system_info() -> String {
+    format_system_info(std::env::consts::OS, std::env::consts::ARCH)
+}
+
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
@@ -1871,7 +1918,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -1940,6 +1987,36 @@ pub fn run_with_file(open_file: Option<String>) {
 
 #[cfg(test)]
 mod tests {
+
+    // ─── system_info ──────────────────────────────────────────────────────────
+
+    use super::format_system_info;
+
+    #[test]
+    fn system_info_names_macos_and_keeps_the_real_arch() {
+        // navigator.platform reports "MacIntel" on Apple Silicon too, so the
+        // arch must come from the Rust side to be trustworthy.
+        assert_eq!(format_system_info("macos", "aarch64"), "macOS (aarch64)");
+        assert_eq!(format_system_info("macos", "x86_64"), "macOS (x86_64)");
+    }
+
+    #[test]
+    fn system_info_names_windows_and_linux() {
+        assert_eq!(format_system_info("windows", "x86_64"), "Windows (x86_64)");
+        assert_eq!(format_system_info("linux", "aarch64"), "Linux (aarch64)");
+    }
+
+    #[test]
+    fn system_info_passes_through_an_unknown_os_verbatim() {
+        assert_eq!(format_system_info("freebsd", "x86_64"), "freebsd (x86_64)");
+    }
+
+    #[test]
+    fn system_info_reports_this_build_not_a_placeholder() {
+        let info = super::system_info();
+        assert!(info.contains(std::env::consts::ARCH), "got {info}");
+        assert!(!info.contains("MacIntel"), "got {info}");
+    }
     use super::encode_image;
     use image::codecs::jpeg::JpegEncoder;
     use image::codecs::png::{PngEncoder, CompressionType};
@@ -2290,7 +2367,7 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_force_reencode_for_screen_preset() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(args.contains(&"-dAutoFilterColorImages=false".to_string()));
         assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
         assert!(args.contains(&"-dEncodeColorImages=true".to_string()));
@@ -2302,7 +2379,7 @@ mod tests {
     #[test]
     fn compress_pdf_args_force_reencode_for_ebook_and_printer_presets() {
         for preset in ["ebook", "printer"] {
-            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf");
+            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf", true);
             assert!(
                 args.contains(&"-dColorImageFilter=/DCTEncode".to_string()),
                 "preset '{}' must force color image re-encoding",
@@ -2313,7 +2390,7 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_prepress_preset_does_not_force_reencode() {
-        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(
             !args.iter().any(|a| a.contains("DCTEncode")),
             "prepress (archive) must stay lossless — no forced JPEG re-encoding"
@@ -2322,10 +2399,46 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_include_output_and_source_paths() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(args.contains(&"-sOutputFile=/tmp/out.pdf".to_string()));
         assert!(args.contains(&"/tmp/in.pdf".to_string()));
         // Source path must be last (GS positional input argument)
+        assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
+    }
+
+    // ─── Downsampling toggle ──────────────────────────────────────────────────
+    //
+    // The panel has always shown a "Downsample images" checkbox, but nothing was
+    // ever passed to Ghostscript -- the box did nothing at all.
+
+    #[test]
+    fn compress_pdf_args_downsampling_on_leaves_the_preset_in_charge() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
+        assert!(
+            !args.iter().any(|a| a.starts_with("-dDownsampleColorImages")),
+            "with downsampling on, the preset's own resolution policy applies"
+        );
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_disables_all_three_image_types() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
+        assert!(args.contains(&"-dDownsampleColorImages=false".to_string()));
+        assert!(args.contains(&"-dDownsampleGrayImages=false".to_string()));
+        assert!(args.contains(&"-dDownsampleMonoImages=false".to_string()));
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_still_re_encodes() {
+        // Turning off downsampling keeps resolution; it must not also turn off
+        // the JPEG re-encoding that makes non-prepress presets shrink at all.
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
+        assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_keeps_source_path_last() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
         assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
     }
 

@@ -93,7 +93,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   const handleConvert = useCallback(async () => {
     if (!filePath) return;
@@ -116,7 +116,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, pdfaLevel]);
+  }, [filePath, pdfaLevel, goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');

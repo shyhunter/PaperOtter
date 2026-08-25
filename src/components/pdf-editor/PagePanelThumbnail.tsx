@@ -53,7 +53,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [scrollContainerRef]);
 
   // Render thumbnail when visible
   useEffect(() => {

@@ -2,7 +2,7 @@
 // Left: ThumbnailSidebar (collapsible)
 // Center: PageCanvas with TextOverlay (main editing area, scrollable)
 // Right: EditorToolbar (text formatting controls)
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ChevronUp,
   ChevronDown,
@@ -215,8 +215,16 @@ export function EditorLayout({
       ? Math.round(canvasDims.scale * 100)
       : 100;
 
-  const currentPageBlocks = editorState.pages[currentPage]?.textBlocks ?? [];
-  const currentPageImages = editorState.pages[currentPage]?.imageBlocks ?? [];
+  // `?? []` yields a fresh array on every render for a page with no blocks,
+  // which would change the identity of every callback depending on it.
+  const currentPageBlocks = useMemo(
+    () => editorState.pages[currentPage]?.textBlocks ?? [],
+    [editorState.pages, currentPage],
+  );
+  const currentPageImages = useMemo(
+    () => editorState.pages[currentPage]?.imageBlocks ?? [],
+    [editorState.pages, currentPage],
+  );
   const selectedBlock = currentPageBlocks.find((b) => b.id === selectedBlockId) ?? null;
   const selectedImageBlock = currentPageImages.find((b) => b.id === selectedBlockId) ?? null;
 

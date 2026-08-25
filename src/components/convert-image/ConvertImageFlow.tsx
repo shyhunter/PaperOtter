@@ -137,7 +137,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   // Auto-load initial file
   useEffect(() => {
@@ -182,7 +182,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, quality, outputFormat]);
+  }, [filePath, quality, outputFormat, goToStep]);
 
   const showQualitySlider = outputFormat !== 'png';
   const sourceFormatLabel = filePath ? detectSourceFormatLabel(filePath) : '';

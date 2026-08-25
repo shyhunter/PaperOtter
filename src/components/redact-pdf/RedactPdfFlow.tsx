@@ -57,7 +57,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   useEffect(() => {
     if (initialFile) loadFile(initialFile);
@@ -102,7 +102,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
         setIsProcessing(false);
       }
     },
-    [pdfBytes],
+    [pdfBytes, goToStep],
   );
 
   return (

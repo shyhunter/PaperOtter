@@ -67,70 +67,70 @@ function buildImageSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: s
   }
 }
 
-function ToolFlow() {
-  const { activeTool, goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
-  const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
-  const [currentStep, setCurrentStep] = useState<AppStep>(0);
-  const [dedicatedFlowStep, setDedicatedFlowStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
-  const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
-  const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
-  const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number; jpxByteShare: number }>({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
+/** Tools with a dedicated flow component, handled by DedicatedToolFlow. */
+const DEDICATED_TOOLS = new Set<string>([
+  'merge-pdf',
+  'split-pdf',
+  'rotate-pdf',
+  'pdf-to-jpg',
+  'jpg-to-pdf',
+  'protect-pdf',
+  'unlock-pdf',
+  'rotate-image',
+  'convert-image',
+  'page-numbers',
+  'watermark',
+  'crop-pdf',
+  'organize-pdf',
+  'sign-pdf',
+  'redact-pdf',
+  'edit-pdf',
+  'convert-doc',
+  'pdfa-convert',
+  'repair-pdf',
+]);
 
-  const pdfProcessor = usePdfProcessor();
-  const imageProcessor = useImageProcessor();
+/**
+ * Dedicated tool flows and the standard compress/convert flow have entirely
+ * separate hook sets. Holding both in one component put the compress path's
+ * hooks below the dedicated flows' early returns, so they ran for some tools
+ * and not others -- a rules-of-hooks violation React punishes with "Rendered
+ * more hooks than during the previous render" when activeTool changes without
+ * a remount, which this element does not do (it has no key).
+ *
+ * Splitting them keeps each component's hooks unconditional, and keeps the
+ * compress path's effects from running while a dedicated tool is open.
+ */
+function ToolFlow() {
+  const { activeTool } = useToolContext();
+
+  return DEDICATED_TOOLS.has(activeTool as string) ? <DedicatedToolFlow /> : <StandardToolFlow />;
+}
+
+function DedicatedToolFlow() {
+  const { activeTool, goToDashboard, setPendingFiles } = useToolContext();
+  const [dedicatedFlowStep, setDedicatedFlowStep] = useState(0);
   const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
+
+  // Tracks whether the Edit PDF flow has unsaved changes (step 1 dirty state).
+  const editPdfIsDirtyRef = useRef(false);
 
   // When a file is picked from the global Recent Folder button, load it into the current tool
   const handleRecentFileSelected = useCallback((filePath: string) => {
     setPendingFiles([filePath]);
     // Reset to step 0 so the flow restarts and picks up pendingFiles
-    setCurrentStep(0);
     setDedicatedFlowStep(0);
-    setFileEntry(null);
-    pdfProcessor.reset();
-    imageProcessor.reset();
-    setSavedFilePath(null);
     addRecentDir(filePath);
-  }, [setPendingFiles, pdfProcessor, imageProcessor, addRecentDir]);
+  }, [setPendingFiles, addRecentDir]);
 
-  const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
-  const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
-  const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
-  const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
-  const [corruptPdfBlock, setCorruptPdfBlock] = useState<{ name: string } | null>(null);
-  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-  // Stores the last PDF options so Retry can re-run with the same settings
-  const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
-
-  // Suppress auto-advance to Compare when navigating Back from Compare.
-  // Set to true when Back is clicked; cleared when processing starts again.
-  const suppressImageAdvance = useRef(false);
-
-  // Tracks whether the Edit PDF flow has unsaved changes (step 1 dirty state).
-  // Used by handleEditPdfBackToDashboard to guard back-navigation with a confirm dialog.
-  const editPdfIsDirtyRef = useRef(false);
-
-  // Reset all state and return to the dashboard
+  // Going back to the dashboard unmounts this component, so its state -- and the
+  // processor hooks' state, which is hook-local -- is discarded either way.
   const handleBackToDashboard = useCallback(() => {
-    suppressImageAdvance.current = false;
-    lastPdfOptionsRef.current = null;
-    setSavedFilePath(null);
-    setFileEntry(null);
-    setCurrentStep(0);
     setDedicatedFlowStep(0);
-    setSourcePdfPageCount(1);
-    setSourcePdfFileSizeBytes(0);
-    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
-    pdfProcessor.reset();
-    imageProcessor.reset();
-    setCorruptPdfBlock(null);
     goToDashboard();
-  }, [pdfProcessor, imageProcessor, goToDashboard]);
+  }, [goToDashboard]);
 
-  // Back-to-dashboard handler for Edit PDF — shows a confirmation dialog when the
-  // user has unsaved edits (step 1 dirty state) to prevent accidental data loss.
+  // Guards back-navigation with a confirm dialog when Edit PDF has unsaved edits.
   const handleEditPdfBackToDashboard = useCallback(() => {
     if (editPdfIsDirtyRef.current && dedicatedFlowStep === 1) {
       const confirmed = window.confirm(
@@ -140,21 +140,6 @@ function ToolFlow() {
     }
     handleBackToDashboard();
   }, [handleBackToDashboard, dedicatedFlowStep]);
-
-  // Reset everything and go back to landing (step 0 within current tool)
-  const handleStartOver = useCallback(() => {
-    suppressImageAdvance.current = false;
-    lastPdfOptionsRef.current = null;
-    setSavedFilePath(null);
-    setFileEntry(null);
-    setCurrentStep(0);
-    setSourcePdfPageCount(1);
-    setSourcePdfFileSizeBytes(0);
-    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
-    pdfProcessor.reset();
-    imageProcessor.reset();
-    setCorruptPdfBlock(null);
-  }, [pdfProcessor, imageProcessor]);
 
   // Merge PDF — dedicated flow
   if (activeTool === 'merge-pdf') {
@@ -345,6 +330,79 @@ function ToolFlow() {
       </>
     );
   }
+
+  return null;
+}
+
+function StandardToolFlow() {
+  const { goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
+  const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
+  const [currentStep, setCurrentStep] = useState<AppStep>(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
+  const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
+  const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
+  const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number; jpxByteShare: number }>({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
+
+  const pdfProcessor = usePdfProcessor();
+  const imageProcessor = useImageProcessor();
+  const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
+
+  // When a file is picked from the global Recent Folder button, load it into the current tool
+  const handleRecentFileSelected = useCallback((filePath: string) => {
+    setPendingFiles([filePath]);
+    // Reset to step 0 so the flow restarts and picks up pendingFiles
+    setCurrentStep(0);
+    setFileEntry(null);
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    setSavedFilePath(null);
+    addRecentDir(filePath);
+  }, [setPendingFiles, pdfProcessor, imageProcessor, addRecentDir]);
+
+  const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
+  const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
+  const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
+  const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
+  const [corruptPdfBlock, setCorruptPdfBlock] = useState<{ name: string } | null>(null);
+  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
+  // Stores the last PDF options so Retry can re-run with the same settings
+  const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
+
+  // Suppress auto-advance to Compare when navigating Back from Compare.
+  // Set to true when Back is clicked; cleared when processing starts again.
+  const suppressImageAdvance = useRef(false);
+
+  // Reset all state and return to the dashboard
+  const handleBackToDashboard = useCallback(() => {
+    suppressImageAdvance.current = false;
+    lastPdfOptionsRef.current = null;
+    setSavedFilePath(null);
+    setFileEntry(null);
+    setCurrentStep(0);
+    setSourcePdfPageCount(1);
+    setSourcePdfFileSizeBytes(0);
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    setCorruptPdfBlock(null);
+    goToDashboard();
+  }, [pdfProcessor, imageProcessor, goToDashboard]);
+
+  // Reset everything and go back to landing (step 0 within current tool)
+  const handleStartOver = useCallback(() => {
+    suppressImageAdvance.current = false;
+    lastPdfOptionsRef.current = null;
+    setSavedFilePath(null);
+    setFileEntry(null);
+    setCurrentStep(0);
+    setSourcePdfPageCount(1);
+    setSourcePdfFileSizeBytes(0);
+    setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
+    pdfProcessor.reset();
+    imageProcessor.reset();
+    setCorruptPdfBlock(null);
+  }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string) => {
@@ -715,6 +773,7 @@ function ToolFlow() {
     </>
   );
 }
+
 
 function AppContent() {
   const { activeTool, editorFilePath, openEditor, goToDashboard, selectTool } = useToolContext();

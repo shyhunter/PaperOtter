@@ -59,12 +59,12 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
   }, [goToStep]);
 
   // Auto-load initial file on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (initialFile) {
       loadFile(initialFile);
     }
-  }, []);
+  }, [initialFile, loadFile]);
 
   const handleSelectFile = useCallback(async () => {
     try {

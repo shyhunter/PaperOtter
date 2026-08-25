@@ -25,6 +25,10 @@ type EditorAction =
   | { type: 'MARK_DIRTY' }
   | { type: 'CLEAR_DIRTY' }
   | { type: 'UPDATE_PDF_BYTES'; bytes: Uint8Array; pageCount?: number; pages?: PageEditState[] }
+  | { type: 'APPLY_PAGE_NUMBERS'; base: Uint8Array; numbered: Uint8Array }
+  | { type: 'REMOVE_PAGE_NUMBERS' }
+  | { type: 'REVERT_TO_ORIGINAL' }
+  | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -48,6 +52,19 @@ function clampZoom(z: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 }
 
+/** Fresh, edit-free overlay state for a document of `pageCount` pages. */
+function createEmptyPages(pageCount: number): PageEditState[] {
+  return Array.from({ length: pageCount }, (_, i) => ({
+    pageIndex: i,
+    textBlocks: [],
+    imageBlocks: [],
+    deletedTextIds: [],
+    deletedImageIds: [],
+    deletedTextBlocks: [],
+    deletedImageBlocks: [],
+  }));
+}
+
 function editorReducer(state: EditorViewState, action: EditorAction): EditorViewState {
   switch (action.type) {
     case 'SET_ZOOM':
@@ -65,11 +82,53 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
     case 'CLEAR_DIRTY':
       return { ...state, isDirty: false };
     case 'UPDATE_PDF_BYTES': {
-      const updates: Partial<EditorViewState> = { pdfBytes: action.bytes, isDirty: true };
+      // Another tool has written to the document, so the page-number base no
+      // longer describes it. Restoring it later would discard this edit.
+      const updates: Partial<EditorViewState> = {
+        pdfBytes: action.bytes,
+        isDirty: true,
+        pageNumberBase: null,
+      };
       if (action.pageCount !== undefined) updates.pageCount = action.pageCount;
       if (action.pages !== undefined) updates.pages = action.pages;
       return { ...state, ...updates };
     }
+    case 'APPLY_PAGE_NUMBERS':
+      // Re-applying (e.g. a colour change) keeps the ORIGINAL base: the numbered
+      // bytes must never become the base, or the next apply stacks on top.
+      return {
+        ...state,
+        pdfBytes: action.numbered,
+        pageNumberBase: state.pageNumberBase ?? action.base,
+        isDirty: true,
+      };
+    case 'REMOVE_PAGE_NUMBERS':
+      if (!state.pageNumberBase) return state;
+      return {
+        ...state,
+        pdfBytes: state.pageNumberBase,
+        pageNumberBase: null,
+        isDirty: true,
+      };
+    case 'SET_STRIP_METADATA_ON_SAVE':
+      return { ...state, stripMetadataOnSave: action.value };
+    case 'REVERT_TO_ORIGINAL':
+      // Every derived piece of edit state has to go with the bytes. Page
+      // overlays are applied at save time, so a survivor would be written back
+      // on top of the restored document.
+      return {
+        ...state,
+        pdfBytes: state.originalPdfBytes,
+        pageCount: state.originalPageCount,
+        pages: createEmptyPages(state.originalPageCount),
+        pageNumberBase: null,
+        selectedBlockId: null,
+        editingBlockId: null,
+        currentPage: 0,
+        // Deliberately dirty: if the edits were already saved, the file on disk
+        // still holds them and the restored document needs writing back.
+        isDirty: true,
+      };
     case 'SET_FILE_PATH':
       return { ...state, filePath: action.path };
     case 'SET_FILE_NAME':
@@ -145,6 +204,14 @@ interface EditorContextValue {
   markDirty: () => void;
   clearDirty: () => void;
   updatePdfBytes: (bytes: Uint8Array) => void;
+  /** Apply page numbers, remembering `base` so they can be taken off again. */
+  applyPageNumbers: (base: Uint8Array, numbered: Uint8Array) => void;
+  /** Restore the bytes from before page numbers were applied. No-op if none. */
+  removePageNumbers: () => void;
+  /** Discard every edit and restore the document as it was opened. */
+  revertToOriginal: () => void;
+  /** Whether saving should also strip identifying metadata. */
+  setStripMetadataOnSave: (value: boolean) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -188,6 +255,9 @@ function createEmptyState(): EditorViewState {
   return {
     pdfBytes: new Uint8Array(0),
     originalPdfBytes: new Uint8Array(0),
+    originalPageCount: 0,
+    stripMetadataOnSave: false,
+    pageNumberBase: null,
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -243,6 +313,22 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const updatePdfBytes = useCallback((bytes: Uint8Array) => {
     dispatch({ type: 'UPDATE_PDF_BYTES', bytes });
+  }, []);
+
+  const applyPageNumbers = useCallback((base: Uint8Array, numbered: Uint8Array) => {
+    dispatch({ type: 'APPLY_PAGE_NUMBERS', base, numbered });
+  }, []);
+
+  const removePageNumbers = useCallback(() => {
+    dispatch({ type: 'REMOVE_PAGE_NUMBERS' });
+  }, []);
+
+  const revertToOriginal = useCallback(() => {
+    dispatch({ type: 'REVERT_TO_ORIGINAL' });
+  }, []);
+
+  const setStripMetadataOnSave = useCallback((value: boolean) => {
+    dispatch({ type: 'SET_STRIP_METADATA_ON_SAVE', value });
   }, []);
 
   const setFilePath = useCallback((path: string) => {
@@ -536,6 +622,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       markDirty,
       clearDirty,
       updatePdfBytes,
+      applyPageNumbers,
+      removePageNumbers,
+      revertToOriginal,
+      setStripMetadataOnSave,
       setFilePath,
       setFileName,
       initState,
@@ -572,6 +662,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       markDirty,
       clearDirty,
       updatePdfBytes,
+      applyPageNumbers,
+      removePageNumbers,
+      revertToOriginal,
+      setStripMetadataOnSave,
       setFilePath,
       setFileName,
       initState,
@@ -616,19 +710,14 @@ export function createEditorViewState(
   filePath: string | null,
   fitWidthZoom: number,
 ): EditorViewState {
-  const pages: PageEditState[] = Array.from({ length: pageCount }, (_, i) => ({
-    pageIndex: i,
-    textBlocks: [],
-    imageBlocks: [],
-    deletedTextIds: [],
-    deletedImageIds: [],
-    deletedTextBlocks: [],
-    deletedImageBlocks: [],
-  }));
+  const pages = createEmptyPages(pageCount);
 
   return {
     pdfBytes,
     originalPdfBytes: pdfBytes.slice(), // Snapshot — never modified
+    originalPageCount: pageCount,
+    stripMetadataOnSave: false,
+    pageNumberBase: null,
     filePath,
     fileName,
     pageCount,

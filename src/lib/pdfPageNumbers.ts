@@ -1,4 +1,5 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
 
 export type NumberPosition = 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right';
 export type NumberFormat = 'numeric' | 'roman' | 'alphabetic';
@@ -10,6 +11,7 @@ export interface PageNumberOptions {
   startNumber: number;    // default 1
   margin: number;         // distance from edge in points, default 30
   pageRange?: Set<number>; // 1-based pages to number (undefined = all)
+  color?: string;         // #RRGGBB, default DEFAULT_NUMBER_COLOR
 }
 
 function toRoman(num: number): string {
@@ -36,6 +38,57 @@ export function formatNumber(n: number, format: NumberFormat): string {
   }
 }
 
+const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
+
+/**
+ * Converts a #RRGGBB string to pdf-lib's 0..1 components.
+ *
+ * Falls back to black on anything malformed rather than throwing: this value is
+ * written into a PDF content stream, so it must never pass through unvalidated,
+ * and a bad colour should not cost the user their page numbers.
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const match = HEX_COLOR.exec(hex ?? '');
+  if (!match) return { r: 0, g: 0, b: 0 };
+
+  const value = parseInt(match[1], 16);
+  return {
+    r: ((value >> 16) & 0xff) / 255,
+    g: ((value >> 8) & 0xff) / 255,
+    b: (value & 0xff) / 255,
+  };
+}
+
+/**
+ * Where the number goes on one page, and what it reads.
+ *
+ * Shared by the full-document and single-page-preview paths so the preview
+ * cannot drift from the output the user actually gets.
+ */
+function computeNumberPlacement(
+  page: PDFPage,
+  font: PDFFont,
+  displayNumber: number,
+  options: PageNumberOptions,
+): { x: number; y: number; text: string } {
+  const { width, height } = page.getSize();
+  const text = formatNumber(displayNumber, options.format);
+  const textWidth = font.widthOfTextAtSize(text, options.fontSize);
+  const m = options.margin;
+
+  let x: number, y: number;
+  switch (options.position) {
+    case 'bottom-center': x = (width - textWidth) / 2; y = m; break;
+    case 'bottom-left':   x = m; y = m; break;
+    case 'bottom-right':  x = width - textWidth - m; y = m; break;
+    case 'top-center':    x = (width - textWidth) / 2; y = height - m - options.fontSize; break;
+    case 'top-left':      x = m; y = height - m - options.fontSize; break;
+    case 'top-right':     x = width - textWidth - m; y = height - m - options.fontSize; break;
+  }
+
+  return { x, y, text };
+}
+
 export async function addPageNumbers(
   pdfBytes: Uint8Array,
   options: PageNumberOptions,
@@ -43,28 +96,16 @@ export async function addPageNumbers(
   const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const pages = doc.getPages();
+  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_NUMBER_COLOR);
 
   for (let i = 0; i < pages.length; i++) {
     const pageNum1Based = i + 1;
     if (options.pageRange && !options.pageRange.has(pageNum1Based)) continue;
 
     const page = pages[i];
-    const { width, height } = page.getSize();
-    const text = formatNumber(options.startNumber + i, options.format);
-    const textWidth = font.widthOfTextAtSize(text, options.fontSize);
+    const { x, y, text } = computeNumberPlacement(page, font, options.startNumber + i, options);
 
-    let x: number, y: number;
-    const m = options.margin;
-    switch (options.position) {
-      case 'bottom-center': x = (width - textWidth) / 2; y = m; break;
-      case 'bottom-left':   x = m; y = m; break;
-      case 'bottom-right':  x = width - textWidth - m; y = m; break;
-      case 'top-center':    x = (width - textWidth) / 2; y = height - m - options.fontSize; break;
-      case 'top-left':      x = m; y = height - m - options.fontSize; break;
-      case 'top-right':     x = width - textWidth - m; y = height - m - options.fontSize; break;
-    }
-
-    page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(0, 0, 0) });
+    page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(r, g, b) });
   }
 
   return new Uint8Array(await doc.save({ useObjectStreams: true }));
@@ -73,8 +114,8 @@ export async function addPageNumbers(
 /**
  * Numbers a single page, extracted into its own minimal document, for fast live
  * previews. Numbering the full document on every option change (position, format,
- * font size, start number) freezes the UI on large documents — pdf-lib has to
- * reparse and re-save every page and embedded image just to preview one page.
+ * font size, start number, colour) freezes the UI on large documents — pdf-lib has
+ * to reparse and re-save every page and embedded image just to preview one page.
  */
 export async function addPageNumbersSinglePage(
   pdfBytes: Uint8Array,
@@ -90,22 +131,10 @@ export async function addPageNumbersSinglePage(
 
   const font = await previewDoc.embedFont(StandardFonts.Helvetica);
   const page = previewDoc.getPages()[0];
-  const { width, height } = page.getSize();
-  const text = formatNumber(options.startNumber + clampedIndex, options.format);
-  const textWidth = font.widthOfTextAtSize(text, options.fontSize);
+  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_NUMBER_COLOR);
+  const { x, y, text } = computeNumberPlacement(page, font, options.startNumber + clampedIndex, options);
 
-  let x: number, y: number;
-  const m = options.margin;
-  switch (options.position) {
-    case 'bottom-center': x = (width - textWidth) / 2; y = m; break;
-    case 'bottom-left':   x = m; y = m; break;
-    case 'bottom-right':  x = width - textWidth - m; y = m; break;
-    case 'top-center':    x = (width - textWidth) / 2; y = height - m - options.fontSize; break;
-    case 'top-left':      x = m; y = height - m - options.fontSize; break;
-    case 'top-right':     x = width - textWidth - m; y = height - m - options.fontSize; break;
-  }
-
-  page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(0, 0, 0) });
+  page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(r, g, b) });
 
   return new Uint8Array(await previewDoc.save({ useObjectStreams: true }));
 }

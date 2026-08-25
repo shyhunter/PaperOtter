@@ -4,7 +4,7 @@
 //
 // CRITICAL: Uses pdfBytes.slice() for React StrictMode safety.
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { useEditorContext } from '@/context/EditorContext';
@@ -113,7 +113,8 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
 
   const { pdfBytes, selectedBlockId, editingBlockId, editorMode, pages } = state;
   const pageState = pages[pageIndex];
-  const textBlocks = pageState?.textBlocks ?? [];
+  // Memoised so the `?? []` fallback does not hand out a new array each render.
+  const textBlocks = useMemo(() => pageState?.textBlocks ?? [], [pageState]);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(zoom);

@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openUrl } from '@tauri-apps/plugin-opener';
-
-const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
+import { fetchFeedbackEmail } from '@/lib/feedbackConfig';
+import { getSystemInfo } from '@/lib/systemInfo';
 
 interface CrashReporterProps {
   error: Error | null;
@@ -20,7 +20,7 @@ interface CrashReporterProps {
  * Privacy guarantees:
  * - Nothing is sent automatically
  * - User sees exactly what will be sent before clicking
- * - "Send" opens the browser — user must click submit on GitHub too
+ * - "Send" opens the mail client — user must still send the message themselves
  * - No telemetry, no analytics, no automatic crash collection
  */
 export function CrashReporter({
@@ -31,6 +31,17 @@ export function CrashReporter({
 }: CrashReporterProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [systemInfo, setSystemInfo] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    getSystemInfo().then((info) => {
+      if (!cancelled) setSystemInfo(info);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const errorMessage = error?.message ?? 'Unknown error';
   const truncatedStack = componentStack
@@ -46,7 +57,7 @@ export function CrashReporter({
       // fallback
     }
 
-    const os = navigator.platform || 'unknown';
+    const os = systemInfo || (await getSystemInfo());
 
     const lines = [
       '## Crash Report',
@@ -70,17 +81,18 @@ export function CrashReporter({
     );
 
     return lines.join('\n');
-  }, [errorMessage, truncatedStack]);
+  }, [errorMessage, truncatedStack, systemInfo]);
 
   const handleSend = useCallback(async () => {
     const body = await buildReportBody();
     const title = `Crash: ${errorMessage.slice(0, 80)}`;
-    const url = `${GITHUB_REPO_URL}/issues/new?labels=bug,crash-report&title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+    const email = await fetchFeedbackEmail();
+    const url = `mailto:${email}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
 
     try {
       await openUrl(url);
     } catch (err) {
-      console.warn('[CrashReporter] Could not open browser:', err);
+      console.warn('[CrashReporter] Could not open mail client:', err);
     }
   }, [buildReportBody, errorMessage]);
 
@@ -146,17 +158,16 @@ export function CrashReporter({
           </button>
           {showPreview && (
             <div className="mt-2 rounded bg-muted p-3 text-xs text-muted-foreground overflow-auto max-h-48">
-              <p className="font-medium text-foreground mb-1">This will open in your browser:</p>
+              <p className="font-medium text-foreground mb-1">This will open in your email app:</p>
               <pre className="whitespace-pre-wrap break-words">
                 {`## Crash Report\n\n### Error\n\`\`\`\n${errorMessage}\n\`\`\`${
                   truncatedStack
                     ? `\n\n### Component Stack\n\`\`\`\n${truncatedStack}\n\`\`\``
                     : ''
-                }\n\n### System Info\n- App Version: (auto-detected)\n- OS: ${navigator.platform || 'unknown'}\n- Theme: ${document.documentElement.classList.contains('dark') ? 'dark' : 'light'}`}
+                }\n\n### System Info\n- App Version: (auto-detected)\n- OS: ${systemInfo}\n- Theme: ${document.documentElement.classList.contains('dark') ? 'dark' : 'light'}`}
               </pre>
               <p className="mt-2 text-[10px] text-muted-foreground/60 italic">
-                You will review and submit the report on GitHub. Nothing is sent until you click
-                &ldquo;Submit new issue&rdquo; on GitHub.
+                The report opens as a draft email. Nothing is sent until you send it yourself.
               </p>
             </div>
           )}
@@ -181,8 +192,8 @@ export function CrashReporter({
 
         {/* Privacy note */}
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-          No data is sent automatically. The report opens as a GitHub issue draft in your
-          browser — you choose whether to submit it.
+          No data is sent automatically. The report opens as a draft email in your mail app
+          — you choose whether to send it.
         </p>
       </div>
     </div>

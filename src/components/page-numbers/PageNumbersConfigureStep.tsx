@@ -6,6 +6,8 @@ import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { addPageNumbersSinglePage, formatNumber } from '@/lib/pdfPageNumbers';
 import { cn } from '@/lib/utils';
 import type { NumberPosition, NumberFormat, PageNumberOptions } from '@/lib/pdfPageNumbers';
+import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 
 interface PageNumbersConfigureStepProps {
   pdfBytes: Uint8Array;
@@ -49,6 +51,7 @@ export function PageNumbersConfigureStep({
   const [format, setFormat] = useState<NumberFormat>('numeric');
   const [fontSize, setFontSize] = useState(12);
   const [startNumber, setStartNumber] = useState(1);
+  const [color, setColor] = useState(DEFAULT_NUMBER_COLOR);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
@@ -59,7 +62,7 @@ export function PageNumbersConfigureStep({
     let cancelled = false;
     setIsLoadingPreview(true);
 
-    const opts: PageNumberOptions = { position, format, fontSize, startNumber, margin: 30 };
+    const opts: PageNumberOptions = { position, format, fontSize, startNumber, margin: 30, color };
 
     addPageNumbersSinglePage(pdfBytes, opts, 0)
       .then((numbered) => renderPdfThumbnail(numbered, 0.5))
@@ -68,11 +71,11 @@ export function PageNumbersConfigureStep({
       .finally(() => { if (!cancelled) setIsLoadingPreview(false); });
 
     return () => { cancelled = true; };
-  }, [pdfBytes, position, format, fontSize, startNumber]);
+  }, [pdfBytes, position, format, fontSize, startNumber, color]);
 
   const handleApply = useCallback(() => {
-    onApply({ position, format, fontSize, startNumber, margin: 30 });
-  }, [onApply, position, format, fontSize, startNumber]);
+    onApply({ position, format, fontSize, startNumber, margin: 30, color });
+  }, [onApply, position, format, fontSize, startNumber, color]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -145,6 +148,12 @@ export function PageNumbersConfigureStep({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Colour */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Colour</label>
+            <PageNumberColorPicker value={color} onChange={setColor} />
           </div>
 
           {/* Start number */}
