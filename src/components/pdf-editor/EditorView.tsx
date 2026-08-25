@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
-import { AlertTriangle, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Wrench } from 'lucide-react';
 import {
   EditorProvider,
   useEditorContext,
@@ -29,7 +29,7 @@ interface EditorViewProps {
 
 /** Inner component that consumes EditorContext */
 function EditorViewInner({ filePath }: EditorViewProps) {
-  const { state, initState, setFitWidthZoom, scrollToPageRef } = useEditorContext();
+  const { state, initState, setFitWidthZoom, scrollToPageRef, markDirty } = useEditorContext();
   const { goToDashboard } = useToolContext();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,13 +102,17 @@ function EditorViewInner({ filePath }: EditorViewProps) {
     };
   }, []);
 
-  const loadPdf = useCallback(async () => {
+  /**
+   * @param override Bytes to open instead of reading the file, used by repair.
+   *                 Everything downstream is identical, so a repaired document
+   *                 arrives in exactly the state a healthy one would.
+   */
+  const loadPdf = useCallback(async (override?: Uint8Array) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const bytes = await readFile(filePath);
-      const pdfBytesArray = new Uint8Array(bytes);
+      const pdfBytesArray = override ?? new Uint8Array(await readFile(filePath));
 
       // Get page count
       const doc = await PDFDocument.load(pdfBytesArray, { ignoreEncryption: true });
@@ -135,6 +139,43 @@ function EditorViewInner({ filePath }: EditorViewProps) {
       setIsLoading(false);
     }
   }, [filePath, initState, setFitWidthZoom]);
+
+  const [isRepairing, setIsRepairing] = useState(false);
+  const [repairFailed, setRepairFailed] = useState(false);
+
+  /**
+   * Runs the same repair the Repair PDF tool runs, on the file that just failed
+   * to open, and carries straight on into the editor if it worked.
+   *
+   * A PDF that will not open is precisely when repair is wanted and precisely
+   * when it is hardest to reach -- the editor is the thing that failed, and
+   * getting to the tool meant returning to the dashboard and picking the file
+   * again. The result is held in memory and left unsaved: overwriting the
+   * original without being asked would destroy the only copy of whatever could
+   * not be recovered.
+   */
+  const tryRepair = useCallback(async () => {
+    setIsRepairing(true);
+    setRepairFailed(false);
+
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const repaired = new Uint8Array(
+        await invoke<Uint8Array>('repair_pdf', { sourcePath: filePath }),
+      );
+
+      // Ghostscript can exit cleanly and still produce something pdf-lib
+      // refuses, so the result has to be opened before it is trusted.
+      await PDFDocument.load(repaired, { ignoreEncryption: true });
+
+      await loadPdf(repaired);
+      markDirty();
+    } catch {
+      setRepairFailed(true);
+    } finally {
+      setIsRepairing(false);
+    }
+  }, [filePath, loadPdf, markDirty]);
 
   // Keyed on the path, not a boolean: this component is rendered at a fixed
   // position with no key, so opening a different document changes the prop
@@ -172,6 +213,18 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
             <p className="text-xs text-destructive">{error}</p>
           </div>
+          {repairFailed && (
+            <p className="text-xs text-muted-foreground">
+              This file could not be repaired. Whatever is wrong with it is
+              beyond what a rebuild can recover.
+            </p>
+          )}
+
+          <Button onClick={tryRepair} disabled={isRepairing} className="w-full">
+            <Wrench className="h-4 w-4 mr-2" />
+            {isRepairing ? 'Repairing…' : 'Try to repair'}
+          </Button>
+
           <Button onClick={goToDashboard} variant="outline" className="w-full">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard

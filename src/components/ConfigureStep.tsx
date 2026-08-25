@@ -116,7 +116,6 @@ export function ConfigureStep({
   const unit: 'MB' | 'KB' = offerKb ? customUnit : 'MB';
 
   // Metadata stripping — off by default
-  const [stripMetadata, setStripMetadata] = useState(false);
 
   // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
@@ -165,7 +164,6 @@ export function ConfigureStep({
       customWidthMm: pagePreset === 'custom' ? parseFloat(customWidthMm) : null,
       customHeightMm: pagePreset === 'custom' ? parseFloat(customHeightMm) : null,
       selectedPageIndices,
-      stripMetadata,
     };
 
     onGeneratePreview(options);
@@ -510,41 +508,6 @@ export function ConfigureStep({
           )}
         </div>
 
-        {/* Remove personal info toggle */}
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Remove personal info</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Removes author name, software info, and document properties.
-                Helps comply with GDPR data minimisation. Does not affect DRM, encryption, or copyright.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              role="switch"
-              data-testid="strip-metadata-toggle"
-              aria-checked={stripMetadata ? 'true' : 'false'}
-              aria-label="Remove personal info from PDF"
-              onClick={() => setStripMetadata((v) => !v)}
-              disabled={isProcessing}
-              className={cn(
-                'relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-                stripMetadata ? 'bg-primary' : 'bg-muted-foreground/30',
-              )}
-            >
-              <span
-                className={cn(
-                  'inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
-                  stripMetadata ? 'translate-x-6' : 'translate-x-1',
-                )}
-              />
-            </button>
-          </div>
-        </div>
 
         {/* Processing progress */}
         {isProcessing && (
