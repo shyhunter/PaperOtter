@@ -1,10 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
 
 export type NumberPosition = 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right';
 export type NumberFormat = 'numeric' | 'roman' | 'alphabetic';
-
-/** Default page number colour — matches the behaviour from before colours existed. */
-export const DEFAULT_NUMBER_COLOR = '#000000';
 
 export interface PageNumberOptions {
   position: NumberPosition;
