@@ -5,6 +5,7 @@ import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
+import { t } from '@/i18n';
 
 // Pages within this margin (relative to the scroll container's own height, each
 // side) are rendered ahead of being scrolled into view and kept slightly after
@@ -161,12 +162,12 @@ function PreviewPanel({
       >
         {hasError ? (
           <div className="flex h-full min-h-[300px] items-center justify-center">
-            <span className="text-sm text-muted-foreground">Preview unavailable</span>
+            <span className="text-sm text-muted-foreground">{t('compare.unavailable')}</span>
           </div>
         ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Rendering preview…</span>
+            <span className="text-sm text-muted-foreground">{t('compare.rendering')}</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
@@ -285,17 +286,17 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <Ban className="h-10 w-10 text-muted-foreground" />
           <div className="text-center space-y-1">
-            <p className="text-base font-medium text-foreground">Processing cancelled</p>
-            <p className="text-sm text-muted-foreground">The operation was stopped before completion.</p>
+            <p className="text-base font-medium text-foreground">{t('compare.cancelled')}</p>
+            <p className="text-sm text-muted-foreground">{t('compare.cancelledDetail')}</p>
           </div>
           <div className="flex gap-3 mt-2">
             {onRetry && (
               <Button size="sm" onClick={onRetry}>
-                Retry
+                {t('common.retry')}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={onBack}>
-              Back to Configure
+              {t('compare.backToConfigure')}
             </Button>
           </div>
         </div>
@@ -340,7 +341,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
               onClick={onBack}
               className="underline hover:no-underline cursor-pointer"
             >
-              Back and try again
+              {t('compare.backAndRetry')}
             </button>
           </p>
         </div>
@@ -403,7 +404,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {/* Side-by-side preview panels with floating zoom toolbar */}
       <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
         <PreviewPanel
-          label="Before"
+          label={t('compare.before')}
           sizeLabel={formatBytes(result.inputSizeBytes)}
           handle={originalHandle}
           scale={RENDER_SCALE}
@@ -414,7 +415,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           onScroll={() => handleScroll('before')}
         />
         <PreviewPanel
-          label="After"
+          label={t('compare.after')}
           sizeLabel={formatBytes(result.outputSizeBytes)}
           handle={processedHandle}
           scale={getAfterRenderScale(qualityLevel)}

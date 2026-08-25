@@ -11,6 +11,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -145,7 +146,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
         type="button"
         onClick={onDismiss}
         className="absolute top-2 right-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        aria-label="Dismiss"
+        aria-label={t('common.dismiss')}
       >
         <X className="h-4 w-4" />
       </button>
@@ -153,7 +154,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
       <div className="flex items-center gap-3 pr-6">
         <AnimatedCheckmark />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">File saved successfully</p>
+          <p className="text-sm font-semibold text-foreground">{t('save.success')}</p>
           <button
             type="button"
             onClick={handleOpenFile}
@@ -167,7 +168,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
             onClick={handleRevealInFinder}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer mt-0.5"
           >
-            Show in Finder
+            {t('save.showInFinder')}
           </button>
         </div>
       </div>
@@ -312,7 +313,7 @@ function MultiFileSave({
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleMultiFileSave}>
-            Save Again
+            {t('save.again')}
           </Button>
         </div>
       </div>
@@ -336,7 +337,7 @@ function MultiFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-            <p className="text-xs font-medium text-destructive">Save failed</p>
+            <p className="text-xs font-medium text-destructive">{t('save.failed')}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
           <div className="flex gap-3">
@@ -344,7 +345,7 @@ function MultiFileSave({
               Back
             </Button>
             <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-              Try Again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>
@@ -360,7 +361,7 @@ function MultiFileSave({
           <p className="text-sm font-semibold text-foreground">
             Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
           </p>
-          <p className="text-xs text-muted-foreground">Choose how to save the split files.</p>
+          <p className="text-xs text-muted-foreground">{t('save.chooseSplitMode')}</p>
         </div>
 
         <div className="space-y-2">
@@ -373,8 +374,8 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">Save to Folder</p>
-              <p className="text-xs text-muted-foreground">Each file saved individually with auto-naming</p>
+              <p className="text-sm font-medium text-foreground">{t('save.toFolder')}</p>
+              <p className="text-xs text-muted-foreground">{t('save.individualHint')}</p>
             </div>
           </label>
           <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
@@ -386,8 +387,8 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">Save as ZIP</p>
-              <p className="text-xs text-muted-foreground">All files bundled into a single ZIP archive</p>
+              <p className="text-sm font-medium text-foreground">{t('save.asZip')}</p>
+              <p className="text-xs text-muted-foreground">{t('save.zipHint')}</p>
             </div>
           </label>
         </div>
@@ -518,7 +519,7 @@ function SingleFileSave({
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleSave}>
-            Save Again
+            {t('save.again')}
           </Button>
         </div>
       </div>
@@ -546,15 +547,15 @@ function SingleFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-            <p className="text-xs font-medium text-destructive">Save failed</p>
+            <p className="text-xs font-medium text-destructive">{t('save.failed')}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-              Back to Compare
+              {t('save.backToCompare')}
             </Button>
             <Button size="sm" onClick={handleSave} className="flex-1">
-              Try Again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>

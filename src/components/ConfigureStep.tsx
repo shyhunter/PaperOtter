@@ -13,6 +13,7 @@ import {
 } from '@/lib/pdfProcessor';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
+import { t } from '@/i18n';
 
 export interface ConfigureStepProps {
   fileName: string;
@@ -200,7 +201,7 @@ export function ConfigureStep({
 
         {/* Compression section */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Optimise file size</h2>
+          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('configure.optimiseSize')}</h2>
 
           {/* Non-compressible warning — shown prominently at top, at most once */}
           {nonCompressibleMsg && (
@@ -216,7 +217,7 @@ export function ConfigureStep({
           {/* Compression slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Compression level</span>
+              <span className="text-xs text-muted-foreground">{t('configure.compressionLevel')}</span>
               <span className="text-xs font-medium text-foreground">
                 {activeZone.label} ({activeZone.dpi})
               </span>
@@ -302,10 +303,10 @@ export function ConfigureStep({
               )}
             >
               <Crosshair className="w-3.5 h-3.5 flex-none" />
-              <span className="font-medium">Custom target size</span>
+              <span className="font-medium">{t('configure.customTargetSize')}</span>
               {customMode && (
                 <span className="ml-auto text-[10px] text-muted-foreground">
-                  Best preset auto-selected
+                  {t('configure.bestPresetAuto')}
                 </span>
               )}
             </button>
@@ -396,7 +397,7 @@ export function ConfigureStep({
         {/* Resize pages section — always visible, toggled via switch */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Resize pages</h2>
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('configure.resizePages')}</h2>
 
             {/* Prominent pill toggle switch */}
             <button
@@ -404,7 +405,7 @@ export function ConfigureStep({
               role="switch"
               data-testid="resize-toggle"
               aria-checked={resizeEnabled ? 'true' : 'false'}
-              aria-label="Enable page resize"
+              aria-label={t('configure.enablePageResize')}
               onClick={() => setResizeEnabled((v) => !v)}
               disabled={isProcessing}
               className={cn(
@@ -428,7 +429,7 @@ export function ConfigureStep({
               {/* Preset dropdown */}
               <div className="space-y-1">
                 <label htmlFor={`${formId}-preset`} className="text-xs text-muted-foreground">
-                  Page size
+                  {t('configure.pageSize')}
                 </label>
                 <select
                   id={`${formId}-preset`}
@@ -448,7 +449,7 @@ export function ConfigureStep({
               {pagePreset === 'custom' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label htmlFor={`${formId}-width`} className="text-xs text-muted-foreground">Width (mm)</label>
+                    <label htmlFor={`${formId}-width`} className="text-xs text-muted-foreground">{t('configure.widthMm')}</label>
                     <input
                       id={`${formId}-width`}
                       data-testid="custom-width-input"
@@ -462,7 +463,7 @@ export function ConfigureStep({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground">Height (mm)</label>
+                    <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground">{t('configure.heightMm')}</label>
                     <input
                       id={`${formId}-height`}
                       data-testid="custom-height-input"
@@ -482,7 +483,7 @@ export function ConfigureStep({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label htmlFor={`${formId}-page-range`} className="text-xs text-muted-foreground">
-                    Pages to resize (leave blank for all)
+                    {t('configure.pagesToResize')}
                   </label>
                   {selectedPageIndices.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -495,7 +496,7 @@ export function ConfigureStep({
                   type="text"
                   value={pageRangeInput}
                   onChange={(e) => setPageRangeInput(e.target.value)}
-                  placeholder="e.g. 1-3, 5, 7-9"
+                  placeholder={t('configure.pagesPlaceholder')}
                   disabled={isProcessing}
                   className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                 />
@@ -503,7 +504,7 @@ export function ConfigureStep({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Enable to change page dimensions — A4, A3, Letter, or custom size.
+              {t('configure.enablePageResizeHint')}
             </p>
           )}
         </div>

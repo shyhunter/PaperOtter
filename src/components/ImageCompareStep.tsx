@@ -3,6 +3,7 @@ import { ZoomIn, ZoomOut, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ImageProcessingResult } from '@/types/file';
+import { t } from '@/i18n';
 
 export interface ImageCompareStepProps {
   result: ImageProcessingResult;
@@ -158,7 +159,7 @@ export function ImageCompareStep({
             });
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          title="Copy processing stats to clipboard"
+          title={t('compare.copyStats')}
         >
           {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
           <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
@@ -171,7 +172,7 @@ export function ImageCompareStep({
         {/* Before panel */}
         <div data-testid="before-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
           <div className="flex items-center justify-center rounded-md bg-muted/50 px-3 py-2 flex-none">
-            <span className="text-sm font-semibold text-foreground">Before</span>
+            <span className="text-sm font-semibold text-foreground">{t('imageCompare.before')}</span>
           </div>
           <div
             ref={beforeScrollRef}
@@ -180,12 +181,12 @@ export function ImageCompareStep({
           >
             {originalUrl ? (
               <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
-                <img src={originalUrl} alt="Original" className="w-full h-auto block" />
+                <img src={originalUrl} alt={t('imageCompare.original')} className="w-full h-auto block" />
               </div>
             ) : (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
                 <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading…</span>
+                <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
               </div>
             )}
           </div>
@@ -194,7 +195,7 @@ export function ImageCompareStep({
         {/* After panel */}
         <div data-testid="after-panel" className="flex flex-1 flex-col gap-2 min-w-0 min-h-0">
           <div className="flex items-center justify-center rounded-md bg-muted/50 px-3 py-2 flex-none">
-            <span className="text-sm font-semibold text-foreground">After</span>
+            <span className="text-sm font-semibold text-foreground">{t('imageCompare.after')}</span>
           </div>
           <div
             ref={afterScrollRef}
@@ -205,13 +206,13 @@ export function ImageCompareStep({
               <>
                 <div className={cn('transition-opacity', isProcessing ? 'opacity-40' : 'opacity-100')}>
                   <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
-                    <img src={processedUrl} alt="Processed" className="w-full h-auto block" />
+                    <img src={processedUrl} alt={t('imageCompare.processed')} className="w-full h-auto block" />
                   </div>
                 </div>
                 {isProcessing && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <span className="text-sm bg-background/90 border border-border px-3 py-1.5 rounded-md shadow-sm">
-                      Regenerating…
+                      {t('imageCompare.regenerating')}
                     </span>
                   </div>
                 )}
@@ -219,7 +220,7 @@ export function ImageCompareStep({
             ) : isProcessing ? (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
                 <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-                <span className="text-sm text-muted-foreground">Processing…</span>
+                <span className="text-sm text-muted-foreground">{t('common.processing')}</span>
               </div>
             ) : null}
           </div>
@@ -232,7 +233,7 @@ export function ImageCompareStep({
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom out"
+            aria-label={t('common.zoomOut')}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
@@ -244,7 +245,7 @@ export function ImageCompareStep({
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom in"
+            aria-label={t('common.zoomIn')}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
@@ -256,7 +257,7 @@ export function ImageCompareStep({
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
 
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
 
         <div className="flex-1" />
@@ -267,11 +268,11 @@ export function ImageCompareStep({
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Start Over
+          {t('common.startOver')}
         </button>
 
         <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
-          Save…
+          {t('common.saveEllipsis')}
         </Button>
       </div>
     </div>

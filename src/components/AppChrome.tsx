@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { AboutDialog } from '@/components/AboutDialog';
 import { BuyMeACoffeeButton } from '@/components/BuyMeACoffeeButton';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 /** Every format any tool accepts, so the picker never hides a file the app can open. */
 const OPEN_FILTERS = [
@@ -58,8 +59,8 @@ export function AppChrome() {
             type="button"
             onClick={handleOpen}
             className={ICON_BUTTON}
-            title="Open another file"
-            aria-label="Open another file"
+            title={t('chrome.openAnother')}
+            aria-label={t('chrome.openAnother')}
           >
             <FolderOpen className="h-4 w-4" />
           </button>
@@ -68,8 +69,8 @@ export function AppChrome() {
           type="button"
           onClick={() => setAboutOpen(true)}
           className={ICON_BUTTON}
-          title="About Papercut"
-          aria-label="About Papercut"
+          title={t('chrome.about')}
+          aria-label={t('chrome.about')}
         >
           <Info className="h-4 w-4" />
         </button>

@@ -7,6 +7,7 @@ import type {
   ImageProcessingOptions,
   ImageProcessingResult,
 } from '@/types/file';
+import { t } from '@/i18n';
 
 export interface ImageConfigureStepProps {
   fileName: string;
@@ -204,11 +205,11 @@ export function ImageConfigureStep({
 
         {/* Image quality card */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Image quality</h2>
+          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('imageConfigure.quality')}</h2>
 
           {/* Format selector */}
           <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground">Output format</p>
+            <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
             <div data-testid="format-select" className="grid grid-cols-3 gap-1">
               {FORMATS.map((fmt) => (
                 <button
@@ -263,7 +264,7 @@ export function ImageConfigureStep({
         {/* Resize section */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Resize</h2>
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('imageConfigure.resize')}</h2>
 
             {/* Prominent pill toggle switch */}
             <button
@@ -271,7 +272,7 @@ export function ImageConfigureStep({
               data-testid="resize-toggle"
               role="switch"
               aria-checked={resizeEnabled ? 'true' : 'false'}
-              aria-label="Enable resize"
+              aria-label={t('imageConfigure.enableResize')}
               onClick={() => setResizeEnabled((v) => !v)}
               disabled={isProcessing}
               className={cn(
@@ -320,7 +321,7 @@ export function ImageConfigureStep({
 
               {/* Preset buttons */}
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Presets</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.presets')}</p>
                 <div className="grid grid-cols-4 gap-1">
                   {RESIZE_PRESETS.map((preset) => (
                     <button
@@ -359,7 +360,7 @@ export function ImageConfigureStep({
                       min="1"
                       value={widthInput}
                       onChange={(e) => handleWidthChange(e.target.value)}
-                      placeholder="Width"
+                      placeholder={t('common.width')}
                       disabled={isProcessing}
                       className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                     />
@@ -403,7 +404,7 @@ export function ImageConfigureStep({
                       min="1"
                       value={heightInput}
                       onChange={(e) => handleHeightChange(e.target.value)}
-                      placeholder="Height"
+                      placeholder={t('common.height')}
                       disabled={isProcessing}
                       className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                     />
@@ -417,7 +418,7 @@ export function ImageConfigureStep({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Enable to change image dimensions — pixels or percentage scale.
+              {t('imageConfigure.enableResizeHint')}
             </p>
           )}
         </div>
