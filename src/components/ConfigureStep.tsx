@@ -194,7 +194,7 @@ export function ConfigureStep({
           <p className="text-xs text-muted-foreground mt-0.5">
             {pageCount} page{pageCount !== 1 ? 's' : ''}
             {fileSizeBytes > 0 && (
-              <span className="ml-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
+              <span className="ms-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
             )}
           </p>
         </div>
@@ -305,14 +305,14 @@ export function ConfigureStep({
               <Crosshair className="w-3.5 h-3.5 flex-none" />
               <span className="font-medium">{t('configure.customTargetSize')}</span>
               {customMode && (
-                <span className="ml-auto text-[10px] text-muted-foreground">
+                <span className="ms-auto text-[10px] text-muted-foreground">
                   {t('configure.bestPresetAuto')}
                 </span>
               )}
             </button>
 
             {customMode && (
-              <div className="space-y-1 pl-1">
+              <div className="space-y-1 ps-1">
                 <div className="flex gap-2">
                   <input
                     id={`${formId}-custom-size`}

@@ -241,7 +241,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
   if (isCollapsed) {
     return (
       <div
-        className="flex flex-col items-center border-r border-border bg-muted/30 flex-none transition-all duration-200"
+        className="flex flex-col items-center border-e border-border bg-muted/30 flex-none transition-all duration-200"
         style={{ width: COLLAPSED_WIDTH }}
       >
         <button
@@ -263,7 +263,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
 
   return (
     <div
-      className="flex flex-col border-r border-border bg-muted/30 flex-none transition-all duration-200"
+      className="flex flex-col border-e border-border bg-muted/30 flex-none transition-all duration-200"
       style={{ width: PANEL_WIDTH }}
     >
       {/* Header with collapse button */}
@@ -322,7 +322,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           </button>
 
           {showInsertMenu && (
-            <div className="absolute bottom-full left-0 mb-1 w-44 rounded-md border border-border bg-popover shadow-lg py-1 z-20">
+            <div className="absolute bottom-full start-0 mb-1 w-44 rounded-md border border-border bg-popover shadow-lg py-1 z-20">
               <button
                 type="button"
                 onClick={handleInsertBlank}
@@ -392,7 +392,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
         </button>
 
         {/* Page count display */}
-        <span className="ml-auto text-[10px] text-muted-foreground">
+        <span className="ms-auto text-[10px] text-muted-foreground">
           {pageCount} {pageCount === 1 ? 'page' : 'pages'}
         </span>
       </div>

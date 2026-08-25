@@ -185,12 +185,12 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
+                    <FileUp className="w-4 h-4 me-2" />
                     {t('common.selectImage')}
                   </>
                 )}
@@ -223,7 +223,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 <p className="text-xs text-muted-foreground">{t('rotateImage.rotation')}</p>
                 <div className="flex items-center justify-center gap-3">
                   <Button variant="outline" size="sm" onClick={handleRotateLeft} disabled={isProcessing}>
-                    <RotateCcw className="w-4 h-4 mr-1.5" />
+                    <RotateCcw className="w-4 h-4 me-1.5" />
                     {t('rotateImage.left90')}
                   </Button>
                   <Button
@@ -236,7 +236,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleRotateRight} disabled={isProcessing}>
                     {t('rotateImage.right90')}
-                    <RotateCw className="w-4 h-4 ml-1.5" />
+                    <RotateCw className="w-4 h-4 ms-1.5" />
                   </Button>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
@@ -319,7 +319,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
                       {t('rotateImage.rotating')}
                     </>
                   ) : (

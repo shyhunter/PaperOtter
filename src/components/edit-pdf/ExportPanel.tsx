@@ -208,13 +208,13 @@ export function ExportPanel({
       {/* Typography controls (collapsible) */}
       <button
         onClick={() => setShowTypography(!showTypography)}
-        className="text-xs text-muted-foreground hover:text-foreground text-left transition-colors"
+        className="text-xs text-muted-foreground hover:text-foreground text-start transition-colors"
       >
         {showTypography ? '▾' : '▸'} Typography options
       </button>
 
       {showTypography && (
-        <div className="flex flex-col gap-2 pl-2 border-l-2 border-border">
+        <div className="flex flex-col gap-2 ps-2 border-s-2 border-border">
           {/* Font family */}
           <div>
             <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('convertDoc.font')}</label>
@@ -290,12 +290,12 @@ export function ExportPanel({
       >
         {isConverting ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />
             {t('convertImage.converting')}
           </>
         ) : (
           <>
-            <Download className="w-3.5 h-3.5 mr-2" />
+            <Download className="w-3.5 h-3.5 me-2" />
             {selectedFormat
               ? `Export as ${FORMAT_LABELS[selectedFormat]}`
               : 'Select format'}

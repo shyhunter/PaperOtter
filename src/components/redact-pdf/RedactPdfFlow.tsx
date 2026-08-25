@@ -125,12 +125,12 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
+                    <FileUp className="w-4 h-4 me-2" />
                     {t('pdfToJpg.selectPdf')}
                   </>
                 )}

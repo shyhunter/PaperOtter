@@ -254,7 +254,7 @@ export function EditorToolbar({
             onClick={() => onModeChange('select')}
             title={t('editPdf.selectMode')}
           >
-            <MousePointer className="w-3.5 h-3.5 mr-1" />
+            <MousePointer className="w-3.5 h-3.5 me-1" />
             {t('editPdf.select')}
           </Button>
           <Button
@@ -263,7 +263,7 @@ export function EditorToolbar({
             onClick={() => onModeChange('text')}
             title={t('editPdf.addTextMode')}
           >
-            <Plus className="w-3.5 h-3.5 mr-1" />
+            <Plus className="w-3.5 h-3.5 me-1" />
             <Type className="w-3.5 h-3.5" />
           </Button>
           <Button
@@ -285,8 +285,8 @@ export function EditorToolbar({
           className="w-full"
           onClick={handleInsertImage}
         >
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          <ImageIcon className="w-3.5 h-3.5 mr-1" />
+          <Plus className="w-3.5 h-3.5 me-1" />
+          <ImageIcon className="w-3.5 h-3.5 me-1" />
           {t('editPdf.insertImage')}
         </Button>
         <input
@@ -354,7 +354,7 @@ export function EditorToolbar({
               >
                 +
               </Button>
-              <span className="text-xs text-muted-foreground ml-1">pt</span>
+              <span className="text-xs text-muted-foreground ms-1">pt</span>
             </div>
           </div>
 
@@ -504,7 +504,7 @@ export function EditorToolbar({
               className="w-full"
               onClick={handleDelete}
             >
-              <Trash2 className="w-3.5 h-3.5 mr-2" />
+              <Trash2 className="w-3.5 h-3.5 me-2" />
               {t('editPdf.deleteText')}
             </Button>
           </div>
@@ -562,7 +562,7 @@ export function EditorToolbar({
                 onClick={handleFlipH}
                 title={t('editPdf.flipHorizontal')}
               >
-                <FlipHorizontal className="w-4 h-4 mr-1" />
+                <FlipHorizontal className="w-4 h-4 me-1" />
                 H
               </Button>
               <Button
@@ -571,7 +571,7 @@ export function EditorToolbar({
                 onClick={handleFlipV}
                 title={t('editPdf.flipVertical')}
               >
-                <FlipVertical className="w-4 h-4 mr-1" />
+                <FlipVertical className="w-4 h-4 me-1" />
                 V
               </Button>
             </div>
@@ -585,7 +585,7 @@ export function EditorToolbar({
               className="w-full"
               onClick={handleReplaceImage}
             >
-              <Replace className="w-3.5 h-3.5 mr-2" />
+              <Replace className="w-3.5 h-3.5 me-2" />
               {t('editPdf.replaceImage')}
             </Button>
             <input
@@ -610,7 +610,7 @@ export function EditorToolbar({
               className="w-full"
               onClick={handleImageDelete}
             >
-              <Trash2 className="w-3.5 h-3.5 mr-2" />
+              <Trash2 className="w-3.5 h-3.5 me-2" />
               {t('editPdf.deleteImage')}
             </Button>
           </div>
@@ -644,7 +644,7 @@ export function EditorToolbar({
           onClick={onUndo}
           title="Undo"
         >
-          <Undo2 className="w-4 h-4 mr-1" />
+          <Undo2 className="w-4 h-4 me-1" />
           {t('editPdf.undo')}
         </Button>
         <Button
@@ -655,7 +655,7 @@ export function EditorToolbar({
           onClick={onRedo}
           title="Redo"
         >
-          <Redo2 className="w-4 h-4 mr-1" />
+          <Redo2 className="w-4 h-4 me-1" />
           {t('editPdf.redo')}
         </Button>
       </div>

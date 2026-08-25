@@ -426,12 +426,12 @@ export function ConvertConfigStep({
         >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('convertImage.converting')}
             </>
           ) : isDetecting ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('convertDoc.detectingTools')}
             </>
           ) : (

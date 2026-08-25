@@ -165,12 +165,12 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
+                    <FileUp className="w-4 h-4 me-2" />
                     {t('pdfToJpg.selectPdf')}
                   </>
                 )}
@@ -204,7 +204,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
             <Button
               size="lg"
               onClick={handleSave}
-              className="absolute bottom-6 right-6 z-50 shadow-lg px-6 py-3 text-base font-semibold gap-2 rounded-full"
+              className="absolute bottom-6 end-6 z-50 shadow-lg px-6 py-3 text-base font-semibold gap-2 rounded-full"
             >
               <Save className="w-5 h-5" />
               {t('editPdf.saveChanges')}

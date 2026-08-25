@@ -552,7 +552,7 @@ function CompressPanel() {
               {t('pdfEditor.keepImageResolution')}
             </label>
             {!downsampleImages && (
-              <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
+              <p className="text-[10px] text-muted-foreground ps-5 leading-relaxed">
                 Images are still re-encoded, just not shrunk. Estimates assume
                 downsampling — actual sizes will be larger.
               </p>
@@ -1481,7 +1481,7 @@ function SignPanel() {
               <button
                 type="button"
                 onClick={() => handlePlaceSignature(sig.text, sig.font, sig.color)}
-                className="flex-1 text-left text-xs truncate"
+                className="flex-1 text-start text-xs truncate"
                 style={{
                   fontFamily: SIGNATURE_FONTS.find(f => f.value === sig.font)?.css ?? 'cursive',
                   color: sig.color,
@@ -1682,7 +1682,7 @@ function RedactPanel() {
                     onClick={() => addMatch(match)}
                     disabled={added}
                     title={added ? 'Already marked' : 'Mark this one'}
-                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-left transition-colors ${
+                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-start transition-colors ${
                       added
                         ? 'border-primary/40 bg-primary/5 text-muted-foreground'
                         : 'border-border hover:bg-muted/50'
@@ -1690,7 +1690,7 @@ function RedactPanel() {
                   >
                     <span className="flex-none text-muted-foreground">p{match.pageIndex + 1}</span>
                     <span className="truncate">{match.text}</span>
-                    <span className="ml-auto flex-none">{added ? '✓' : '+'}</span>
+                    <span className="ms-auto flex-none">{added ? '✓' : '+'}</span>
                   </button>
                 );
               })}

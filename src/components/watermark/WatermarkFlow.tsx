@@ -186,12 +186,12 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
+                    <FileUp className="w-4 h-4 me-2" />
                     {t('pdfToJpg.selectPdf')}
                   </>
                 )}
@@ -205,7 +205,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
               {/* Left panel: options */}
-              <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
+              <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
                 <h2 className="text-sm font-semibold text-foreground">{t('watermark.watermarkOptions')}</h2>
 
                 {/* Text input */}
@@ -337,7 +337,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.applying')}
                   </>
                 ) : (

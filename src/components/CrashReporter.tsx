@@ -186,7 +186,7 @@ export function CrashReporter({
             {t('crashReporter.sendCrashReport')}
           </Button>
           <Button variant="ghost" size="sm" onClick={onRecover}>
-            <X className="h-3.5 w-3.5 mr-1" />
+            <X className="h-3.5 w-3.5 me-1" />
             {recoveryLabel}
           </Button>
         </div>

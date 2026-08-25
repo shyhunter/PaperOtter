@@ -222,12 +222,12 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           )}
 
           <Button onClick={tryRepair} disabled={isRepairing} className="w-full">
-            <Wrench className="h-4 w-4 mr-2" />
+            <Wrench className="h-4 w-4 me-2" />
             {isRepairing ? 'Repairing…' : 'Try to repair'}
           </Button>
 
           <Button onClick={goToDashboard} variant="outline" className="w-full">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 me-2" />
             {t('pdfEditor.backToDashboard')}
           </Button>
         </div>

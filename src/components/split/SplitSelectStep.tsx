@@ -222,11 +222,11 @@ export function SplitSelectStep({
                       className="w-full h-full"
                       canvasClassName="w-full h-full object-cover"
                     />
-                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                    <span className="absolute bottom-0 start-0 end-0 bg-black/60 text-white text-[10px] text-center py-0.5">
                       {pageNum}
                     </span>
                     {isSelected && (
-                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                      <div className="absolute top-1 end-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                         <svg viewBox="0 0 12 12" className="w-3 h-3 text-primary-foreground"><path d="M2 6l3 3 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       </div>
                     )}
@@ -297,7 +297,7 @@ export function SplitSelectStep({
         <Button size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('split.splitting')}
             </>
           ) : (

@@ -194,7 +194,7 @@ export function FormattingToolbar() {
           }} />
         </button>
         {showColorPicker && !isDisabled && (
-          <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2 min-w-[140px]">
+          <div className="absolute top-full start-0 mt-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2 min-w-[140px]">
             <ColorPicker
               value={selectedBlock?.color ?? DEFAULT_TEXT_COLOR}
               onChange={handleColorChange}

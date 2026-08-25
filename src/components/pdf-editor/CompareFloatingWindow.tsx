@@ -291,7 +291,7 @@ export function CompareFloatingWindow() {
           <button
             type="button"
             onClick={() => setCompareMode('off')}
-            className="ml-2 p-1 rounded hover:bg-muted transition-colors"
+            className="ms-2 p-1 rounded hover:bg-muted transition-colors"
             title={t('pdfEditor.closeComparisonEsc')}
           >
             <X className="h-4 w-4" />
@@ -323,7 +323,7 @@ export function CompareFloatingWindow() {
         />
 
         {/* Floating zoom toolbar */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
+        <div className="absolute bottom-3 start-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
           <button
             type="button"
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}

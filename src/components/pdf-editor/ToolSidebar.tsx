@@ -68,13 +68,13 @@ export function ToolSidebar() {
     <div className="flex h-full flex-none">
       {/* Expanded panel */}
       {isExpanded && (
-        <div className="w-[232px] border-l bg-background overflow-y-auto p-3">
+        <div className="w-[232px] border-s bg-background overflow-y-auto p-3">
           <ToolSidebarPanel toolId={activeTool} />
         </div>
       )}
 
       {/* Icon strip — stays fixed, scrolls internally if too many icons */}
-      <div className="w-[48px] flex-none border-l bg-muted/30 flex flex-col items-center py-1 overflow-y-auto">
+      <div className="w-[48px] flex-none border-s bg-muted/30 flex flex-col items-center py-1 overflow-y-auto">
         {tools.map(({ id, def, Icon }) => {
           const isActive = activeTool === id;
           return (
@@ -90,7 +90,7 @@ export function ToolSidebar() {
             >
               {/* Active indicator — left border highlight */}
               {isActive && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-primary" />
+                <span className="absolute start-0 top-1.5 bottom-1.5 w-0.5 rounded-e bg-primary" />
               )}
               {Icon ? <Icon className="h-4 w-4" /> : <span className="text-[10px]">{id}</span>}
             </button>

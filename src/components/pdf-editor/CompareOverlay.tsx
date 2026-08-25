@@ -181,7 +181,7 @@ export function CompareOverlay({
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg text-xs font-medium hover:bg-primary/90"
+        className="fixed bottom-20 start-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg text-xs font-medium hover:bg-primary/90"
       >
         <Maximize2 className="h-3.5 w-3.5" />
         {t('pdfEditor.beforeAfter')}
@@ -239,7 +239,7 @@ export function CompareOverlay({
       ) : mode === 'side-by-side' ? (
         <div className="flex-1 flex min-h-0">
           {/* Before panel */}
-          <div className="flex-1 flex flex-col min-w-0 border-r">
+          <div className="flex-1 flex flex-col min-w-0 border-e">
             <div className="px-3 py-1.5 bg-muted/50 border-b text-[10px] font-medium text-muted-foreground text-center">
               BEFORE
             </div>

@@ -130,7 +130,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
     >
       {/* Selection check indicator */}
       {isSelected && (
-        <div className="absolute top-1 right-1 z-10 bg-blue-500 rounded-full p-0.5">
+        <div className="absolute top-1 end-1 z-10 bg-blue-500 rounded-full p-0.5">
           <Check className="h-2.5 w-2.5 text-white" />
         </div>
       )}

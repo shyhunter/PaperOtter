@@ -428,7 +428,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={isLoading}
                   className="flex-1"
                 >
-                  <FilePlus className="w-4 h-4 mr-2" />
+                  <FilePlus className="w-4 h-4 me-2" />
                   {images.length === 0 ? 'Select Images' : 'Add More'}
                 </Button>
 
@@ -555,7 +555,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
                       {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (

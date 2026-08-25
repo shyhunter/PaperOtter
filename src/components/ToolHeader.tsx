@@ -37,7 +37,7 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
         </span>
         {/* Recent Folder — right-aligned, always visible */}
         {recentDirs && onRecentFileSelected && (
-          <div className="ml-auto">
+          <div className="ms-auto">
             <RecentDirsButton dirs={recentDirs} onFileSelected={onRecentFileSelected} />
           </div>
         )}

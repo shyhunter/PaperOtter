@@ -427,7 +427,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         />
 
         {/* Floating zoom toolbar */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
+        <div className="absolute bottom-3 start-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
           <button
             type="button"
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}

@@ -167,9 +167,9 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               )}
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('common.loadingDots')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loadingDots')}</>
                 ) : (
-                  <><FileUp className="w-4 h-4 mr-2" />{t('pdfToJpg.selectPdf')}</>
+                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
               </Button>
             </div>
@@ -189,7 +189,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                 {t('organizePdf.reverse')}
               </Button>
               <Button variant="outline" size="sm" onClick={resetOrder}>
-                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                <RotateCcw className="w-3.5 h-3.5 me-1.5" />
                 {t('common.reset')}
               </Button>
             </div>
@@ -213,11 +213,11 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                           canvasClassName="w-full h-full object-cover"
                         />
                         {/* Page number badge */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5 text-center">
+                        <div className="absolute bottom-0 start-0 end-0 bg-black/60 px-1.5 py-0.5 text-center">
                           <span className="text-[10px] text-white font-medium">
                             {index + 1}
                             {entry.sourceIndex !== index && (
-                              <span className="text-white/60 ml-0.5">(p{entry.sourceIndex + 1})</span>
+                              <span className="text-white/60 ms-0.5">(p{entry.sourceIndex + 1})</span>
                             )}
                           </span>
                         </div>
@@ -295,7 +295,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <div className="flex-1" />
               <Button size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('organizePdf.processing')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('organizePdf.processing')}</>
                 ) : (
                   `Apply (${pages.length} page${pages.length !== 1 ? 's' : ''})`
                 )}

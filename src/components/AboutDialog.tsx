@@ -60,7 +60,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-3 end-3 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
           aria-label={t('common.close')}
         >
           <X className="h-4 w-4" />

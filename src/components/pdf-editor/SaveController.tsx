@@ -101,7 +101,7 @@ export function SaveController() {
   // Saving indicator
   if (isSaving) {
     return (
-      <div className="fixed top-2 right-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+      <div className="fixed top-2 end-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
         <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
         {t('pdfEditor.saving')}
       </div>

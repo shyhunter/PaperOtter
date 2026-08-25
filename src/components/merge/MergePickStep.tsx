@@ -137,7 +137,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
             disabled={isLoading}
             className="flex-1"
           >
-            <FilePlus className="w-4 h-4 mr-2" />
+            <FilePlus className="w-4 h-4 me-2" />
             {files.length === 0 ? 'Select PDFs' : 'Add More'}
           </Button>
 

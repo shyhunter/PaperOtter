@@ -87,7 +87,7 @@ export function ConvertCompareStep({
                 <p className="text-xs text-muted-foreground">{t('imageCompare.original')}</p>
                 <p className="text-sm font-medium text-foreground mt-0.5 truncate">{sourceFileName}</p>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                   {FORMAT_LABELS[sourceFormat]}
                 </span>
@@ -108,7 +108,7 @@ export function ConvertCompareStep({
                 <p className="text-xs text-muted-foreground">{t('convertDoc.converted')}</p>
                 <p className="text-sm font-medium text-foreground mt-0.5 truncate">{convertedFileName}</p>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   {FORMAT_LABELS[result.outputFormat]}
                 </span>

@@ -34,7 +34,7 @@ export function ZoomToolbar() {
   }, [showPresets]);
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10" ref={menuRef}>
+    <div className="absolute bottom-4 start-1/2 -translate-x-1/2 z-10" ref={menuRef}>
       <div className="flex items-center gap-1 rounded-lg border border-border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg">
         <button
           type="button"
@@ -67,7 +67,7 @@ export function ZoomToolbar() {
 
       {/* Preset dropdown — opens upward */}
       {showPresets && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 rounded-lg border border-border bg-background shadow-lg py-1 min-w-[120px]">
+        <div className="absolute bottom-full start-1/2 -translate-x-1/2 mb-1 rounded-lg border border-border bg-background shadow-lg py-1 min-w-[120px]">
           {PRESETS.map((p) => (
             <button
               key={p.label}
@@ -77,7 +77,7 @@ export function ZoomToolbar() {
                 setShowPresets(false);
               }}
               className={[
-                'w-full text-left px-3 py-1.5 text-xs hover:bg-muted transition-colors',
+                'w-full text-start px-3 py-1.5 text-xs hover:bg-muted transition-colors',
                 state.zoomPreset === p.value ? 'font-semibold text-primary' : '',
               ].join(' ')}
             >

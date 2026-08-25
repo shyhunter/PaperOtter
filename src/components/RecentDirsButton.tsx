@@ -53,7 +53,7 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
                   if (filePath) onFileSelected(filePath);
                 }}
                 className={cn(
-                  'w-full text-left px-2 py-1.5 rounded-sm text-sm',
+                  'w-full text-start px-2 py-1.5 rounded-sm text-sm',
                   'hover:bg-accent hover:text-accent-foreground',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   'truncate',

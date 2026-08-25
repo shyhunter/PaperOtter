@@ -152,7 +152,7 @@ export function ThumbnailSidebar({
 
   if (isCollapsed) {
     return (
-      <div className="flex flex-col items-center border-r border-border bg-muted/30" style={{ width: 40 }}>
+      <div className="flex flex-col items-center border-e border-border bg-muted/30" style={{ width: 40 }}>
         <button
           type="button"
           onClick={() => setIsCollapsed(false)}
@@ -166,7 +166,7 @@ export function ThumbnailSidebar({
   }
 
   return (
-    <div className="flex flex-col border-r border-border bg-muted/30" style={{ width: 160 }}>
+    <div className="flex flex-col border-e border-border bg-muted/30" style={{ width: 160 }}>
       {/* Collapse button */}
       <div className="flex items-center justify-between px-2 py-1 border-b border-border">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('common.pages')}</span>

@@ -183,9 +183,9 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               )}
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('common.loadingDots')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loadingDots')}</>
                 ) : (
-                  <><FileUp className="w-4 h-4 mr-2" />{t('pdfToJpg.selectPdf')}</>
+                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
               </Button>
             </div>
@@ -197,7 +197,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
               {/* Left panel: margin inputs */}
-              <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
+              <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
                 <h2 className="text-sm font-semibold text-foreground">{t('cropPdf.cropMargins')}</h2>
 
                 {/* Page dimensions info */}
@@ -286,10 +286,10 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                     {/* Crop overlay */}
                     {hasCrop && (
                       <>
-                        <div className="absolute top-0 left-0 right-0 bg-red-500/20 pointer-events-none rounded-t-md" style={{ height: `${Math.min(topPct, 100)}%` }} />
-                        <div className="absolute bottom-0 left-0 right-0 bg-red-500/20 pointer-events-none rounded-b-md" style={{ height: `${Math.min(bottomPct, 100)}%` }} />
-                        <div className="absolute top-0 left-0 bottom-0 bg-red-500/20 pointer-events-none rounded-l-md" style={{ width: `${Math.min(leftPct, 100)}%` }} />
-                        <div className="absolute top-0 right-0 bottom-0 bg-red-500/20 pointer-events-none rounded-r-md" style={{ width: `${Math.min(rightPct, 100)}%` }} />
+                        <div className="absolute top-0 start-0 end-0 bg-red-500/20 pointer-events-none rounded-t-md" style={{ height: `${Math.min(topPct, 100)}%` }} />
+                        <div className="absolute bottom-0 start-0 end-0 bg-red-500/20 pointer-events-none rounded-b-md" style={{ height: `${Math.min(bottomPct, 100)}%` }} />
+                        <div className="absolute top-0 start-0 bottom-0 bg-red-500/20 pointer-events-none rounded-s-md" style={{ width: `${Math.min(leftPct, 100)}%` }} />
+                        <div className="absolute top-0 end-0 bottom-0 bg-red-500/20 pointer-events-none rounded-e-md" style={{ width: `${Math.min(rightPct, 100)}%` }} />
                       </>
                     )}
                   </div>
@@ -305,7 +305,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               <div className="flex-1" />
               <Button size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('cropPdf.cropping')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('cropPdf.cropping')}</>
                 ) : (
                   'Apply Crop'
                 )}

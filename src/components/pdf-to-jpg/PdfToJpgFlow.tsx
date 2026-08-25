@@ -358,12 +358,12 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
                     {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
+                    <FileUp className="w-4 h-4 me-2" />
                     {t('pdfToJpg.selectPdf')}
                   </>
                 )}
@@ -382,7 +382,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 <p className="text-xs text-muted-foreground mt-1">
                   {pageCount} page{pageCount !== 1 ? 's' : ''}
                   {selectedPages.size < pageCount && (
-                    <span className="ml-1 text-primary font-medium">
+                    <span className="ms-1 text-primary font-medium">
                       ({selectedPages.size} selected)
                     </span>
                   )}
@@ -497,7 +497,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
                       {processProgress ?? 'Converting...'}
                     </>
                   ) : (
@@ -520,9 +520,9 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={handleSelectAll} className="h-7 text-xs">
                       {allSelected ? (
-                        <><Square className="w-3 h-3 mr-1" /> {t('pdfToJpg.deselectAll')}</>
+                        <><Square className="w-3 h-3 me-1" /> {t('pdfToJpg.deselectAll')}</>
                       ) : (
-                        <><CheckSquare className="w-3 h-3 mr-1" /> {t('pdfToJpg.selectAll')}</>
+                        <><CheckSquare className="w-3 h-3 me-1" /> {t('pdfToJpg.selectAll')}</>
                       )}
                     </Button>
                     {selectedPages.size > 0 && selectedPages.size < pageCount && (
@@ -557,12 +557,12 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                           className="w-full h-full bg-muted/30"
                           canvasClassName="w-full h-full object-contain"
                         />
-                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                        <span className="absolute bottom-0 start-0 end-0 bg-black/60 text-white text-[9px] text-center py-0.5">
                           {i + 1}
                         </span>
                         {/* Selection indicator */}
                         <span className={cn(
-                          'absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
+                          'absolute top-0.5 start-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
                           isSelected
                             ? 'bg-primary border-primary text-primary-foreground'
                             : 'bg-background/70 border-border text-transparent',

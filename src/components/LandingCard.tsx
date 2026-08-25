@@ -97,7 +97,7 @@ export function LandingCard({
                 onClick={onPickerClick}
                 disabled={isLoading}
                 className={cn(
-                  'group flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-l-xl',
+                  'group flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-s-xl',
                   'hover:bg-accent/50 transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -120,7 +120,7 @@ export function LandingCard({
               <div
                 data-testid="drop-zone"
                 className={cn(
-                  'flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-r-xl',
+                  'flex flex-col items-center justify-center gap-5 p-[clamp(1.5rem,3vw,3.5rem)] rounded-e-xl',
                   dragState === 'over-valid' && 'bg-primary/10',
                   dragState === 'over-invalid' && 'bg-destructive/10',
                 )}

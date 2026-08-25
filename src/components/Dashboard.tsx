@@ -140,7 +140,7 @@ export function ToolCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className="absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
+          className="absolute top-2 end-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
           title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           <Star className="h-4 w-4" />
@@ -204,7 +204,7 @@ function FavoriteCard({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onGripClick(index); }}
-        className={`absolute top-2 left-2 p-1 rounded transition-all duration-200 cursor-grab z-10 ${
+        className={`absolute top-2 start-2 p-1 rounded transition-all duration-200 cursor-grab z-10 ${
           isSwapSource
             ? 'text-primary opacity-100 bg-primary/10'
             : 'text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 hover:text-muted-foreground'
@@ -228,7 +228,7 @@ function FavoriteCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
+          className="absolute top-2 end-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
           title={t('dashboard.removeFromFavorites')}
         >
           <Star className="h-4 w-4 fill-yellow-500" />
@@ -403,13 +403,13 @@ export function Dashboard() {
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('dashboard.searchTools')}
-              className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+              className="w-full rounded-lg border border-border bg-card ps-10 pe-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             />
           </div>
         </div>
@@ -421,7 +421,7 @@ export function Dashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{stagedFile.name}</p>
               <p className="text-xs text-muted-foreground">
-                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium mr-1.5">
+                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium me-1.5">
                   {FORMAT_LABELS[stagedFile.format]}
                 </span>
                 {t('dashboard.readyToProcessChooseA')}

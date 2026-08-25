@@ -115,9 +115,9 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" size="sm" onClick={handleSelectAll}>
               {allSelected ? (
-                <><Square className="w-3.5 h-3.5 mr-1" /> {t('pdfToJpg.deselectAll')}</>
+                <><Square className="w-3.5 h-3.5 me-1" /> {t('pdfToJpg.deselectAll')}</>
               ) : (
-                <><CheckSquare className="w-3.5 h-3.5 mr-1" /> {t('pdfToJpg.selectAll')}</>
+                <><CheckSquare className="w-3.5 h-3.5 me-1" /> {t('pdfToJpg.selectAll')}</>
               )}
             </Button>
             {selectedCount > 0 && (
@@ -137,7 +137,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
               disabled={selectedCount === 0}
               title={t('rotate.rotateSelectedPagesLeft')}
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
+              <RotateCcw className="w-4 h-4 me-1" />
               {t('rotate.left')}
             </Button>
             <Button
@@ -147,7 +147,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
               disabled={selectedCount === 0}
               title={t('rotate.rotateSelectedPagesRight')}
             >
-              <RotateCw className="w-4 h-4 mr-1" />
+              <RotateCw className="w-4 h-4 me-1" />
               {t('rotate.right')}
             </Button>
 
@@ -155,11 +155,11 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
 
             {/* All pages rotation */}
             <Button variant="outline" size="sm" onClick={() => handleRotateAll('ccw')}>
-              <RotateCcw className="w-4 h-4 mr-1" />
+              <RotateCcw className="w-4 h-4 me-1" />
               {t('rotate.allLeft')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleRotateAll('cw')}>
-              <RotateCw className="w-4 h-4 mr-1" />
+              <RotateCw className="w-4 h-4 me-1" />
               {t('rotate.allRight')}
             </Button>
             <Button variant="outline" size="sm" onClick={handleResetAll} disabled={rotatedCount === 0}>
@@ -207,11 +207,11 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
                   canvasStyle={{ transform: `rotate(${rotation}deg)` }}
                 />
                 {/* Page number */}
-                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                <span className="absolute bottom-0 start-0 end-0 bg-black/60 text-white text-[10px] text-center py-0.5">
                   {i + 1}
                 </span>
                 {/* Selection checkbox indicator */}
-                <span className={`absolute top-1 left-1 w-4 h-4 rounded-sm border flex items-center justify-center text-[10px] transition-colors ${
+                <span className={`absolute top-1 start-1 w-4 h-4 rounded-sm border flex items-center justify-center text-[10px] transition-colors ${
                   isSelected
                     ? 'bg-primary border-primary text-primary-foreground'
                     : 'bg-background/70 border-border text-transparent'
@@ -220,7 +220,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
                 </span>
                 {/* Rotation badge */}
                 {isRotated && (
-                  <span className="absolute top-1 right-1 bg-blue-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
+                  <span className="absolute top-1 end-1 bg-blue-500 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full">
                     {rotation}°
                   </span>
                 )}
@@ -239,7 +239,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
         <Button size="sm" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}>
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('rotate.applying')}
             </>
           ) : (

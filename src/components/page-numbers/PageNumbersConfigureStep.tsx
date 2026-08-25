@@ -82,7 +82,7 @@ export function PageNumbersConfigureStep({
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel: options */}
-        <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
+        <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
           <h2 className="text-sm font-semibold text-foreground">{t('pageNumbers.pageNumberOptions')}</h2>
 
           {/* Position grid: 3x2 */}
@@ -218,7 +218,7 @@ export function PageNumbersConfigureStep({
         <Button size="sm" onClick={handleApply} disabled={isProcessing}>
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('common.applying')}
             </>
           ) : (

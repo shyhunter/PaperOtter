@@ -145,20 +145,20 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
       <button
         type="button"
         onClick={onDismiss}
-        className="absolute top-2 right-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        className="absolute top-2 end-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         aria-label={t('common.dismiss')}
       >
         <X className="h-4 w-4" />
       </button>
 
-      <div className="flex items-center gap-3 pr-6">
+      <div className="flex items-center gap-3 pe-6">
         <AnimatedCheckmark />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">{t('save.success')}</p>
           <button
             type="button"
             onClick={handleOpenFile}
-            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-left"
+            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-start"
             title={`Open: ${savedPath}`}
           >
             {savedPath}

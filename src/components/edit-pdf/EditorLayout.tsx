@@ -523,7 +523,7 @@ export function EditorLayout({
 
       {/* Right: Controls panel */}
       <div
-        className="border-l border-border bg-muted/20 flex flex-col overflow-y-auto"
+        className="border-s border-border bg-muted/20 flex flex-col overflow-y-auto"
         style={{ width: 280 }}
       >
         {/* Tab toggle: Edit | Export */}

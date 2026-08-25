@@ -186,7 +186,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
         </div>
 
         {/* Side panel: search + summary */}
-        <div className="w-72 flex-none overflow-y-auto border-l border-border p-4 space-y-5">
+        <div className="w-72 flex-none overflow-y-auto border-s border-border p-4 space-y-5">
           <h3 className="text-sm font-semibold text-foreground">{t('redactPdf.redactionTools')}</h3>
 
           {/* Drawing instructions */}
@@ -327,7 +327,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                   {Array.from(redactionsByPage.entries())
                     .sort((a, b) => a[0] - b[0])
                     .map(([page, count]) => (
-                      <span key={page} className="mr-2">
+                      <span key={page} className="me-2">
                         Page {page + 1}: {count}
                       </span>
                     ))}
@@ -339,7 +339,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           {/* Clear all */}
           {allRedactions.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleClearAll} className="w-full">
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              <Trash2 className="w-3.5 h-3.5 me-1.5" />
               {t('redactPdf.clearAll')}
             </Button>
           )}

@@ -112,7 +112,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
                 <button
                   type="button"
                   onClick={(e) => handleDelete(e, sig.id)}
-                  className="absolute right-1.5 top-1.5 hidden rounded p-0.5 text-muted-foreground hover:text-destructive group-hover:block"
+                  className="absolute end-1.5 top-1.5 hidden rounded p-0.5 text-muted-foreground hover:text-destructive group-hover:block"
                   title={t('signPdf.deleteSignature')}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

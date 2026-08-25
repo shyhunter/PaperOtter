@@ -97,14 +97,14 @@ export function EditorTopToolbar() {
             {state.fileName || 'Untitled.pdf'}
           </span>
           {state.isDirty && (
-            <span className="text-muted-foreground ml-1" title={t('common.unsavedChanges')}>
+            <span className="text-muted-foreground ms-1" title={t('common.unsavedChanges')}>
               *
             </span>
           )}
         </nav>
 
         {/* Save button */}
-        <div className="ml-3 flex items-center gap-1.5">
+        <div className="ms-3 flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleSaveClick}
@@ -123,7 +123,7 @@ export function EditorTopToolbar() {
 
 
         {/* Revert */}
-        <div className="ml-2">
+        <div className="ms-2">
           <button
             type="button"
             onClick={handleRevert}
@@ -136,7 +136,7 @@ export function EditorTopToolbar() {
         </div>
 
         {/* Compare toggle */}
-        <div className="ml-2">
+        <div className="ms-2">
           <button
             type="button"
             onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}

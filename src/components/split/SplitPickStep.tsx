@@ -72,12 +72,12 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
         <Button onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
               {t('common.loading')}
             </>
           ) : (
             <>
-              <FileUp className="w-4 h-4 mr-2" />
+              <FileUp className="w-4 h-4 me-2" />
               {t('pdfToJpg.selectPdf')}
             </>
           )}
