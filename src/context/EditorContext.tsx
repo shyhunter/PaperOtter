@@ -14,6 +14,10 @@ import React, {
 } from 'react';
 import type { ReactNode } from 'react';
 import { PDFDocument, PageSizes } from 'pdf-lib';
+import type { WatermarkOptions } from '@/lib/pdfWatermark';
+import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
+import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
+import type { ImageBlock } from '@/types/editor';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 
 // ── Actions ────────────────────────────────────────────────────────────
@@ -29,6 +33,9 @@ type EditorAction =
   | { type: 'REMOVE_PAGE_NUMBERS' }
   | { type: 'REVERT_TO_ORIGINAL' }
   | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
+  | { type: 'SET_WATERMARK_DRAFT'; draft: WatermarkOptions | null }
+  | { type: 'SET_REDACTION_DRAFT'; draft: RedactionRect[] | null }
+  | { type: 'SET_REDACTION_COLOR'; color: string }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -39,6 +46,9 @@ type EditorAction =
   | { type: 'SET_PAGE_TEXT_BLOCKS'; pageIdx: number; blocks: TextBlock[] }
   | { type: 'UPDATE_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
   | { type: 'ADD_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
+  | { type: 'ADD_IMAGE_BLOCK'; pageIdx: number; block: ImageBlock }
+  | { type: 'UPDATE_IMAGE_BLOCK'; pageIdx: number; block: ImageBlock }
+  | { type: 'DELETE_IMAGE_BLOCK'; pageIdx: number; blockId: string }
   | { type: 'DELETE_TEXT_BLOCK'; pageIdx: number; blockId: string }
   | { type: 'SET_COMPARE_MODE'; mode: CompareMode };
 
@@ -112,6 +122,15 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       };
     case 'SET_STRIP_METADATA_ON_SAVE':
       return { ...state, stripMetadataOnSave: action.value };
+
+    case 'SET_WATERMARK_DRAFT':
+      return { ...state, watermarkDraft: action.draft };
+
+    case 'SET_REDACTION_DRAFT':
+      return { ...state, redactionDraft: action.draft };
+
+    case 'SET_REDACTION_COLOR':
+      return { ...state, redactionColor: action.color };
     case 'REVERT_TO_ORIGINAL':
       // Every derived piece of edit state has to go with the bytes. Page
       // overlays are applied at save time, so a survivor would be written back
@@ -166,6 +185,31 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       });
       return { ...state, pages, isDirty: true };
     }
+    case 'ADD_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx ? { ...p, imageBlocks: [...p.imageBlocks, action.block] } : p,
+      );
+      return { ...state, pages, isDirty: true, selectedBlockId: action.block.id };
+    }
+    case 'UPDATE_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx
+          ? { ...p, imageBlocks: p.imageBlocks.map((b) => (b.id === action.block.id ? action.block : b)) }
+          : p,
+      );
+      return { ...state, pages, isDirty: true };
+    }
+    case 'DELETE_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx
+          ? { ...p, imageBlocks: p.imageBlocks.filter((b) => b.id !== action.blockId) }
+          : p,
+      );
+      return {
+        ...state, pages, isDirty: true,
+        selectedBlockId: state.selectedBlockId === action.blockId ? null : state.selectedBlockId,
+      };
+    }
     case 'DELETE_TEXT_BLOCK': {
       const pages = state.pages.map((p, i) => {
         if (i !== action.pageIdx) return p;
@@ -212,6 +256,11 @@ interface EditorContextValue {
   revertToOriginal: () => void;
   /** Whether saving should also strip identifying metadata. */
   setStripMetadataOnSave: (value: boolean) => void;
+  /** Set (or clear, with null) the watermark being configured. */
+  setWatermarkDraft: (draft: WatermarkOptions | null) => void;
+  /** Set (or clear, with null) the rectangles marked for redaction. */
+  setRedactionDraft: (draft: RedactionRect[] | null) => void;
+  setRedactionColor: (color: string) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -244,6 +293,10 @@ interface EditorContextValue {
   setPageTextBlocks: (pageIdx: number, blocks: TextBlock[]) => void;
   updateTextBlock: (pageIdx: number, block: TextBlock) => void;
   addTextBlock: (pageIdx: number, block: TextBlock) => void;
+  /** Place a rasterised image -- a signature stamp today -- on a page. */
+  addImageBlock: (pageIdx: number, block: ImageBlock) => void;
+  updateImageBlock: (pageIdx: number, block: ImageBlock) => void;
+  deleteImageBlock: (pageIdx: number, blockId: string) => void;
   deleteTextBlock: (pageIdx: number, blockId: string) => void;
 }
 
@@ -258,6 +311,9 @@ function createEmptyState(): EditorViewState {
     originalPageCount: 0,
     stripMetadataOnSave: false,
     pageNumberBase: null,
+    watermarkDraft: null,
+    redactionDraft: null,
+    redactionColor: DEFAULT_REDACTION_COLOR,
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -331,6 +387,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_STRIP_METADATA_ON_SAVE', value });
   }, []);
 
+  const setWatermarkDraft = useCallback((draft: WatermarkOptions | null) => {
+    dispatch({ type: 'SET_WATERMARK_DRAFT', draft });
+  }, []);
+
+  const setRedactionDraft = useCallback((draft: RedactionRect[] | null) => {
+    dispatch({ type: 'SET_REDACTION_DRAFT', draft });
+  }, []);
+
+  const setRedactionColor = useCallback((color: string) => {
+    dispatch({ type: 'SET_REDACTION_COLOR', color });
+  }, []);
+
   const setFilePath = useCallback((path: string) => {
     dispatch({ type: 'SET_FILE_PATH', path });
   }, []);
@@ -370,6 +438,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const updateTextBlock = useCallback((pageIdx: number, block: TextBlock) => {
     dispatch({ type: 'UPDATE_TEXT_BLOCK', pageIdx, block });
+  }, []);
+
+  const addImageBlock = useCallback((pageIdx: number, block: ImageBlock) => {
+    dispatch({ type: 'ADD_IMAGE_BLOCK', pageIdx, block });
+  }, []);
+
+  const updateImageBlock = useCallback((pageIdx: number, block: ImageBlock) => {
+    dispatch({ type: 'UPDATE_IMAGE_BLOCK', pageIdx, block });
+  }, []);
+
+  const deleteImageBlock = useCallback((pageIdx: number, blockId: string) => {
+    dispatch({ type: 'DELETE_IMAGE_BLOCK', pageIdx, blockId });
   }, []);
 
   const addTextBlock = useCallback((pageIdx: number, block: TextBlock) => {
@@ -626,6 +706,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       removePageNumbers,
       revertToOriginal,
       setStripMetadataOnSave,
+      setWatermarkDraft,
+      setRedactionDraft,
+      setRedactionColor,
       setFilePath,
       setFileName,
       initState,
@@ -639,6 +722,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
+      addImageBlock,
+      updateImageBlock,
+      deleteImageBlock,
       deleteTextBlock,
       // Page management
       selectedPages,
@@ -666,6 +752,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       removePageNumbers,
       revertToOriginal,
       setStripMetadataOnSave,
+      setWatermarkDraft,
+      setRedactionDraft,
+      setRedactionColor,
       setFilePath,
       setFileName,
       initState,
@@ -678,6 +767,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
+      addImageBlock,
+      updateImageBlock,
+      deleteImageBlock,
       deleteTextBlock,
       selectedPages,
       togglePageSelection,
@@ -718,6 +810,9 @@ export function createEditorViewState(
     originalPageCount: pageCount,
     stripMetadataOnSave: false,
     pageNumberBase: null,
+    watermarkDraft: null,
+    redactionDraft: null,
+    redactionColor: DEFAULT_REDACTION_COLOR,
     filePath,
     fileName,
     pageCount,

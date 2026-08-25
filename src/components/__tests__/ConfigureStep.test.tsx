@@ -79,7 +79,7 @@ describe('ConfigureStep — custom target pre-estimate warning (Phase C)', () =>
 
     // Enter a target lower than web estimate (~998 KB for fileSizeBytes=6.65MB score=1.0)
     // Enter 100 KB — definitely below web estimate
-    const input = screen.getByPlaceholderText(/e\.g\. 2/i);
+    const input = screen.getByTestId('custom-target-size');
     await userEvent.type(input, '100');
 
     // Toggle to KB unit so 100 KB < web estimate
@@ -99,11 +99,45 @@ describe('ConfigureStep — custom target pre-estimate warning (Phase C)', () =>
     await userEvent.click(screen.getByText(/custom target size/i));
 
     // Enter 4 MB — well within achievable range for an image-heavy PDF
-    const input = screen.getByPlaceholderText(/e\.g\. 2/i);
+    const input = screen.getByTestId('custom-target-size');
     await userEvent.type(input, '4');
 
     // No warning
     expect(screen.queryByTestId('target-below-min-warning')).not.toBeInTheDocument();
+  });
+});
+
+// ─── Target unit — only the units the file can actually be measured in ───────
+
+describe('ConfigureStep — custom target unit', () => {
+  it('[CFG-UNIT-01] withholds KB when no KB-scale target is reachable', async () => {
+    // 20 MB at score 0.5 floors around 10.7 MB. KB is not impossible there,
+    // but every reachable value is five digits.
+    render(<ConfigureStep {...makeProps({ fileSizeBytes: 20 * 1024 * 1024, compressibilityScore: 0.5 })} />);
+
+    await userEvent.click(screen.getByText(/custom target size/i));
+
+    expect(screen.queryByRole('button', { name: /^(MB|KB)$/i })).toBeNull();
+    expect(screen.getByTestId('custom-target-unit').textContent).toBe('MB');
+  });
+
+  it('[CFG-UNIT-02] keeps KB available when the floor is KB-scale', async () => {
+    // Default props floor at ~974 KB, where KB is the natural unit.
+    render(<ConfigureStep {...makeProps()} />);
+
+    await userEvent.click(screen.getByText(/custom target size/i));
+
+    expect(screen.getByRole('button', { name: /^(MB|KB)$/i })).toBeInTheDocument();
+  });
+
+  it('[CFG-UNIT-03] states the floor before anything is typed', async () => {
+    render(<ConfigureStep {...makeProps({ fileSizeBytes: 20 * 1024 * 1024, compressibilityScore: 0.5 })} />);
+
+    await userEvent.click(screen.getByText(/custom target size/i));
+
+    // The limit should not have to be discovered by entering a rejected value.
+    expect(screen.getByText(/can compress to about/i)).toBeInTheDocument();
+    expect(screen.getByTestId('custom-target-size').getAttribute('placeholder')).toBe('e.g. 11');
   });
 });
 

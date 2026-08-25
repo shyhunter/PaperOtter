@@ -4,21 +4,17 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Search, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
+import { cn } from '@/lib/utils';
+import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
+import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import { ColorPicker } from '@/components/ColorPicker';
+import { isLightColor } from '@/lib/colorPresets';
+import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
-
-interface TextMatch {
-  id: string;
-  pageIndex: number;
-  text: string;
-  x: number; // percentage
-  y: number;
-  width: number;
-  height: number;
-}
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
-  onComplete: (redactions: RedactionRect[]) => void;
+  onComplete: (redactions: RedactionRect[], color: string) => void;
   onBack: () => void;
 }
 
@@ -29,11 +25,15 @@ function genId(prefix: string): string {
 
 export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
   const [allRedactions, setAllRedactions] = useState<RedactionRect[]>([]);
+  const [boxColor, setBoxColor] = useState(DEFAULT_REDACTION_COLOR);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  // So "nothing found" can be said out loud instead of the panel just staying blank.
+  const [searchRan, setSearchRan] = useState(false);
+  const [scope, setScope] = useState<RedactionScope>('match');
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
 
   // Keep PDF doc reference for text search
@@ -93,111 +93,42 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
   // Text search across all pages
   const handleSearch = useCallback(async () => {
-    const doc = pdfDocRef.current;
-    if (!doc || !searchQuery.trim()) return;
+    if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     setSearchResults([]);
+    setSearchRan(false);
 
-    const query = searchQuery.toLowerCase();
-    const matches: TextMatch[] = [];
-
+    // Opens the document here rather than reaching for one loaded elsewhere: a
+    // ref that has not been populated yet -- or was nulled by a cleanup -- made
+    // this return silently, which looks exactly like "no matches".
+    let doc: pdfjsLib.PDFDocumentProxy | null = null;
     try {
-      for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
-        const page = await doc.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const viewport = page.getViewport({ scale: 1 });
-        const pageW = viewport.width;
-        const pageH = viewport.height;
-
-        for (const item of textContent.items) {
-          if (!('str' in item)) continue;
-          const textItem = item as { str: string; transform: number[]; width: number; height: number };
-          if (!textItem.str.toLowerCase().includes(query)) continue;
-
-          // transform: [scaleX, 0, 0, scaleY, x, y]
-          const tx = textItem.transform[4];
-          const ty = textItem.transform[5];
-          const tw = textItem.width;
-          const th = Math.abs(textItem.transform[3]) || textItem.height || 12;
-
-          // PDF coords: origin at bottom-left. Convert to top-left percentages.
-          const xPct = (tx / pageW) * 100;
-          const yPct = ((pageH - ty - th) / pageH) * 100;
-          const wPct = (tw / pageW) * 100;
-          const hPct = (th / pageH) * 100;
-
-          matches.push({
-            id: genId('match'),
-            pageIndex: pageNum - 1,
-            text: textItem.str,
-            x: Math.max(0, xPct),
-            y: Math.max(0, yPct),
-            width: Math.min(wPct, 100 - xPct),
-            height: Math.min(hPct, 100 - yPct),
-          });
-        }
-      }
+      doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+      setSearchResults(await findTextMatches(doc, searchQuery));
     } catch {
-      // Search failed silently
+      setSearchResults([]);
+    } finally {
+      doc?.destroy();
+      setSearchRan(true);
+      setIsSearching(false);
     }
-
-    setSearchResults(matches);
-    setIsSearching(false);
-  }, [searchQuery]);
+  }, [searchQuery, pdfBytes]);
 
   const handleAddSearchResult = useCallback(
     (match: TextMatch) => {
-      // Check if already added
-      const existing = allRedactions.find(
-        (r) =>
-          r.source === 'search' &&
-          r.pageIndex === match.pageIndex &&
-          Math.abs(r.x - match.x) < 0.5 &&
-          Math.abs(r.y - match.y) < 0.5,
-      );
-      if (existing) return;
-
-      const newRect: RedactionRect = {
-        id: genId('search'),
-        pageIndex: match.pageIndex,
-        x: match.x,
-        y: match.y,
-        width: match.width,
-        height: match.height,
-        source: 'search',
-      };
-      setAllRedactions((prev) => [...prev, newRect]);
+      if (isAlreadyMarked(match, scope, allRedactions)) return;
+      setAllRedactions((prev) => [...prev, matchToRect(match, scope, genId('search'))]);
     },
-    [allRedactions],
+    [allRedactions, scope],
   );
 
   const handleAddAllSearchResults = useCallback(() => {
-    const newRects: RedactionRect[] = [];
-    for (const match of searchResults) {
-      const existing = allRedactions.find(
-        (r) =>
-          r.source === 'search' &&
-          r.pageIndex === match.pageIndex &&
-          Math.abs(r.x - match.x) < 0.5 &&
-          Math.abs(r.y - match.y) < 0.5,
-      );
-      if (!existing) {
-        newRects.push({
-          id: genId('search'),
-          pageIndex: match.pageIndex,
-          x: match.x,
-          y: match.y,
-          width: match.width,
-          height: match.height,
-          source: 'search',
-        });
-      }
-    }
-    if (newRects.length > 0) {
-      setAllRedactions((prev) => [...prev, ...newRects]);
-    }
-  }, [searchResults, allRedactions]);
+    const added = searchResults
+      .filter((m) => !isAlreadyMarked(m, scope, allRedactions))
+      .map((m) => matchToRect(m, scope, genId('search')));
+    if (added.length > 0) setAllRedactions((prev) => [...prev, ...added]);
+  }, [searchResults, allRedactions, scope]);
 
   // Count redactions per page
   const redactionsByPage = new Map<number, number>();
@@ -245,6 +176,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                 redactions={currentPageRedactions}
                 onAddRedaction={handleAddRedaction}
                 onRemoveRedaction={handleRemoveRedaction}
+                color={boxColor}
                 width={pageDimensions.width}
                 height={pageDimensions.height}
               />
@@ -291,8 +223,38 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           </div>
 
           {/* Search results */}
+          {searchRan && !isSearching && searchResults.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No matches for &ldquo;{searchQuery}&rdquo;. Scanned pages with no
+              selectable text — an image-only scan, for instance — cannot be
+              searched.
+            </p>
+          )}
+
           {searchResults.length > 0 && (
             <div className="space-y-2">
+              {/* Redacting a name usually means the name, but sometimes the
+                  whole line it sits on. The search returns both boxes, so this
+                  costs no second search. */}
+              <div className="flex gap-1.5">
+                {REDACTION_SCOPES.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setScope(s.value)}
+                    title={s.hint}
+                    aria-pressed={scope === s.value}
+                    className={cn(
+                      'flex-1 rounded-md border px-2 py-1 text-xs transition-colors',
+                      scope === s.value
+                        ? 'border-primary bg-primary/10 font-medium text-foreground'
+                        : 'border-border text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground">
                   {searchResults.length} match{searchResults.length !== 1 ? 'es' : ''} found
@@ -307,13 +269,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
               </div>
               <div className="max-h-48 overflow-y-auto space-y-1">
                 {searchResults.map((match) => {
-                  const alreadyAdded = allRedactions.some(
-                    (r) =>
-                      r.source === 'search' &&
-                      r.pageIndex === match.pageIndex &&
-                      Math.abs(r.x - match.x) < 0.5 &&
-                      Math.abs(r.y - match.y) < 0.5,
-                  );
+                  const alreadyAdded = isAlreadyMarked(match, scope, allRedactions);
                   return (
                     <div
                       key={match.id}
@@ -342,6 +298,21 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
               </div>
             </div>
           )}
+
+          {/* Box colour */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-medium text-muted-foreground">Box colour</h4>
+            <ColorPicker value={boxColor} onChange={setBoxColor} />
+            {isLightColor(boxColor) && (
+              // The content underneath is destroyed whatever colour this is --
+              // the page is replaced by a flat image. What a pale box costs is
+              // the reader's ability to tell that anything was removed at all.
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                A box this pale is hard to see on a white page. The content
+                underneath is still permanently removed.
+              </p>
+            )}
+          </div>
 
           {/* Redaction summary */}
           <div className="space-y-2">
@@ -382,7 +353,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
         <div className="flex-1" />
         <Button
           size="sm"
-          onClick={() => onComplete(allRedactions)}
+          onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
         >
           Apply Redactions ({allRedactions.length})

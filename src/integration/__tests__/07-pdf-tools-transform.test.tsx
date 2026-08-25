@@ -90,7 +90,9 @@ vi.mock('@/lib/pdfWatermark', () => ({
     fontSize: 48,
     opacity: 0.3,
     rotation: -45,
-    color: 'gray',
+    color: '#808080',
+    centerX: 0.5,
+    centerY: 0.5,
   },
 }));
 

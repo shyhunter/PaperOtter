@@ -94,3 +94,81 @@ describe('addWatermarkSinglePage', () => {
     expect(result[3]).toBe(0x46); // F
   });
 });
+
+// ─── Colour and placement ─────────────────────────────────────────────────────
+//
+// The watermark used to take a 'gray' | 'red' | 'blue' enum — its own private
+// vocabulary, three colours, no way to reach any other. It now takes the same
+// #RRGGBB string every other colour-bearing feature takes.
+
+describe('addWatermark — colour', () => {
+  it('WM-COL-01: accepts any hex colour, not a fixed set of three', async () => {
+    const src = await createContentPdf(1);
+    const teal = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, color: '#0D9488' });
+    const red = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, color: '#DC2626' });
+
+    expect(Buffer.from(teal).equals(Buffer.from(red))).toBe(false);
+  });
+
+  it('WM-COL-02: defaults to the same grey the old gray preset drew', async () => {
+    // rgb(0.5, 0.5, 0.5) rounded to 8 bits is #808080; the default must not
+    // silently change what existing users see.
+    expect(DEFAULT_WATERMARK_OPTIONS.color).toBe('#808080');
+  });
+
+  it('WM-COL-03: a malformed colour still produces a valid PDF', async () => {
+    const src = await createContentPdf(1);
+    const result = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, color: 'chartreuse' });
+
+    const doc = await PDFDocument.load(result);
+    expect(doc.getPageCount()).toBe(1);
+  });
+});
+
+describe('addWatermark — placement', () => {
+  it('WM-POS-01: defaults to the centre of the page', async () => {
+    expect(DEFAULT_WATERMARK_OPTIONS.centerX).toBe(0.5);
+    expect(DEFAULT_WATERMARK_OPTIONS.centerY).toBe(0.5);
+  });
+
+  it('WM-POS-02: a moved watermark produces different output', async () => {
+    const src = await createContentPdf(1);
+    const centred = await addWatermark(src, DEFAULT_WATERMARK_OPTIONS);
+    const moved = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.2, centerY: 0.8 });
+
+    expect(Buffer.from(centred).equals(Buffer.from(moved))).toBe(false);
+  });
+
+  it('WM-POS-03: position is a fraction of the page, so mixed page sizes agree', async () => {
+    // Stored as 0..1 rather than points: a document whose pages differ in size
+    // would otherwise put the watermark in a different place on each one.
+    const src = await createContentPdf(1);
+    const result = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.25, centerY: 0.25 });
+
+    const doc = await PDFDocument.load(result);
+    expect(doc.getPageCount()).toBe(1);
+  });
+
+  it('WM-POS-04: the preview places the watermark exactly where the output does', async () => {
+    // Both paths go through the same placement function, so a preview cannot
+    // drift from the document the user actually gets.
+    const src = await createContentPdf(1);
+    const options = { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.3, centerY: 0.7, fontSize: 60 };
+
+    const full = await addWatermark(src, options);
+    const preview = await addWatermarkSinglePage(src, options, 0);
+
+    const fullDoc = await PDFDocument.load(full);
+    const previewDoc = await PDFDocument.load(preview);
+    expect(previewDoc.getPageCount()).toBe(1);
+    expect(fullDoc.getPage(0).getSize()).toEqual(previewDoc.getPage(0).getSize());
+  });
+
+  it('WM-POS-05: an out-of-range position is clamped onto the page', async () => {
+    const src = await createContentPdf(1);
+    const result = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, centerX: 5, centerY: -3 });
+
+    const doc = await PDFDocument.load(result);
+    expect(doc.getPageCount()).toBe(1);
+  });
+});

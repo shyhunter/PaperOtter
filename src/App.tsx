@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { SplashScreen } from '@/components/SplashScreen';
 import { LandingCard } from '@/components/LandingCard';
 import { ToolHeader } from '@/components/ToolHeader';
+import { AppChrome } from '@/components/AppChrome';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
 import { SaveStep } from '@/components/SaveStep';
@@ -776,7 +777,7 @@ function StandardToolFlow() {
 
 
 function AppContent() {
-  const { activeTool, editorFilePath, openEditor, goToDashboard, selectTool } = useToolContext();
+  const { activeTool, editorFilePath, documentEpoch, openEditor, goToDashboard, selectTool } = useToolContext();
 
   // Intercept edit-pdf tool: open file picker then redirect to new editor
   useEffect(() => {
@@ -835,10 +836,14 @@ function AppContent() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      <AppChrome />
       <UpdateChecker />
       {showDashboard && <FirstLaunchBanner />}
       {showEditor && <EditorView filePath={editorFilePath} />}
-      {showToolFlow && <ToolFlow />}
+      {/* Keyed on the document session: every flow keeps its own step and bytes
+          in local state and reads pendingFiles only once, so a flow already past
+          step one would otherwise ignore a newly chosen file entirely. */}
+      {showToolFlow && <ToolFlow key={documentEpoch} />}
       {showDashboard && <Dashboard />}
       {!showEditor && <PrivacyFooter />}
       <Toaster position="bottom-center" />

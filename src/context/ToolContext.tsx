@@ -16,6 +16,12 @@ interface ToolContextValue {
   goToDashboard: () => void;
   setPendingFiles: (files: string[]) => void;
   openEditor: (filePath: string) => void;
+  /** Swap the document the current tool is working on, without leaving the tool. */
+  replaceDocument: (filePath: string) => void;
+  /** Bumped by replaceDocument. Flows are keyed on it so they remount: each keeps
+   *  its own step and bytes in local state and reads pendingFiles only once, so
+   *  nothing short of a remount makes a flow past step one take a new file. */
+  documentEpoch: number;
   /** Register a veto over navigation that would tear down the current view.
    *
    * The guard receives the navigation it is vetoing and returns false to block
@@ -61,10 +67,26 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     });
   }, [runGuarded]);
 
-  const openEditor = useCallback((filePath: string) => {
-    setActiveTool(null);
-    setEditorFilePath(filePath);
+  // Guarded like the other two: replacing the open document tears down the
+  // editor and discards its unsaved edits just as surely as leaving for the
+  // dashboard does. This was reachable before anything in the UI offered it --
+  // double-clicking a PDF in Finder while the editor was dirty came through
+  // here and threw the edits away without asking.
+  const [documentEpoch, setDocumentEpoch] = useState(0);
+
+  const replaceDocument = useCallback((filePath: string) => {
+    setPendingFiles([filePath]);
+    // Counter rather than the path: re-choosing the file a flow has already
+    // mangled has to give a clean one too.
+    setDocumentEpoch((n) => n + 1);
   }, []);
+
+  const openEditor = useCallback((filePath: string) => {
+    runGuarded(() => {
+      setActiveTool(null);
+      setEditorFilePath(filePath);
+    });
+  }, [runGuarded]);
 
   const activeToolDef = useMemo(
     () => (activeTool ? TOOL_REGISTRY[activeTool] : null),
@@ -72,8 +94,8 @@ export function ToolProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<ToolContextValue>(
-    () => ({ activeTool, activeToolDef, pendingFiles, editorFilePath, selectTool, goToDashboard, setPendingFiles, openEditor, setNavigationGuard }),
-    [activeTool, activeToolDef, pendingFiles, editorFilePath, selectTool, goToDashboard, openEditor, setNavigationGuard],
+    () => ({ activeTool, activeToolDef, pendingFiles, editorFilePath, documentEpoch, selectTool, goToDashboard, setPendingFiles, openEditor, replaceDocument, setNavigationGuard }),
+    [activeTool, activeToolDef, pendingFiles, editorFilePath, documentEpoch, selectTool, goToDashboard, openEditor, replaceDocument, setNavigationGuard],
   );
 
   return <ToolContext.Provider value={value}>{children}</ToolContext.Provider>;

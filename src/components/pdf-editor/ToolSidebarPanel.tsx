@@ -8,9 +8,21 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
-import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
+import {
+  addWatermark,
+  addWatermarkSinglePage,
+  DEFAULT_WATERMARK_OPTIONS,
+  WATERMARK_FONT_SIZE_MAX,
+  WATERMARK_FONT_SIZE_MIN,
+  type WatermarkOptions,
+} from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { rasteriseSignature } from '@/lib/signatureRaster';
+import { applyRedactions } from '@/lib/pdfRedact';
+import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
+import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
+import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
   getPdfCompressibilityFromBytes,
   estimateOutputSizeBytes,
@@ -19,7 +31,7 @@ import {
   type PdfCompressibility,
 } from '@/lib/pdfProcessor';
 import type { PdfQualityLevel } from '@/types/file';
-import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
+import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
@@ -311,14 +323,22 @@ function CompressPanel() {
   const canTargetSize = analysis !== null && nonCompressibleReason === null;
   const targetActive = canTargetSize && useTargetSize;
 
+  // The most aggressive preset's estimate is the floor: nothing here goes below it.
+  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
+
+  // A unit the document cannot sensibly be measured in is the same trap as a
+  // target it cannot reach. Applying another tool can raise the floor past the
+  // point where KB is usable, so the unit in force is derived rather than
+  // stored -- a stale KB selection can never survive into a target.
+  const offerKb = floorBytes === null || offersKbUnit(floorBytes);
+  const unit: 'MB' | 'KB' = offerKb ? targetUnit : 'MB';
+
   const targetBytes = useMemo(() => {
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return null;
-    return parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
-  }, [targetSizeValue, targetUnit]);
+    return parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
+  }, [targetSizeValue, unit]);
 
-  // The most aggressive preset's estimate is the floor: nothing here goes below it.
-  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
   const targetUnreachable =
     targetActive && targetBytes !== null && floorBytes !== null && targetBytes < floorBytes;
   const nonCompressibleMsg = analysis
@@ -332,14 +352,14 @@ function CompressPanel() {
     if (!targetActive || !targetSizeValue.trim()) return preset;
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return preset;
-    const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
+    const targetBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
     const ratio = targetBytes / baseBytes.byteLength;
     // Pick the most aggressive preset that might meet the target
     if (ratio < 0.3) return 'screen';
     if (ratio < 0.5) return 'ebook';
     if (ratio < 0.8) return 'printer';
     return 'prepress';
-  }, [targetActive, targetSizeValue, targetUnit, baseBytes, preset]);
+  }, [targetActive, targetSizeValue, unit, baseBytes, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -460,30 +480,53 @@ function CompressPanel() {
               type="number"
               value={targetSizeValue}
               onChange={(e) => setTargetSizeValue(e.target.value)}
-              placeholder="e.g. 5"
+              placeholder={floorBytes !== null ? `e.g. ${smallestReachableTarget(floorBytes, unit)}` : 'e.g. 5'}
               title="Target file size"
-              min={1}
+              min={floorBytes !== null ? smallestReachableTarget(floorBytes, unit) : 1}
               // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
               // and a number input's intrinsic width is wider than the 232px
               // sidebar, so without it the field pushes MB/KB out of view.
               className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
             />
-            <select
-              value={targetUnit}
-              onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
-              title="Size unit"
-              className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
-            >
-              <option value="MB">MB</option>
-              <option value="KB">KB</option>
-            </select>
+            {offerKb ? (
+              <select
+                data-testid="target-unit"
+                value={targetUnit}
+                onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
+                title="Size unit"
+                className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
+              >
+                <option value="MB">MB</option>
+                <option value="KB">KB</option>
+              </select>
+            ) : (
+              // A static label, not a dropdown with KB greyed out: a two-option
+              // select with one option dead reads as broken and invites clicking.
+              // "MB" as plain text states the true thing — this file is measured
+              // in megabytes.
+              <span
+                data-testid="target-unit"
+                className="flex-none px-1.5 py-1 text-xs text-muted-foreground"
+              >
+                MB
+              </span>
+            )}
           </div>
         )}
-        {targetUnreachable && floorBytes !== null && (
-          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-            Smallest achievable is about {formatBytes(floorBytes)} — compression
-            cannot go below this for this file.
-          </p>
+        {useTargetSize && floorBytes !== null && (
+          targetUnreachable ? (
+            <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+              Smallest achievable is about {formatBytes(floorBytes)} — compression
+              cannot go below this for this file.
+            </p>
+          ) : (
+            // Stated up front rather than only after a rejected value: the floor
+            // is known the moment the estimates are, so making the user discover
+            // it by failing is a choice, not a limitation.
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Can compress to about {formatBytes(floorBytes)} at best.
+            </p>
+          )
         )}
       </div>
       )}
@@ -727,8 +770,33 @@ function RotatePanel() {
 // ── Watermark Panel ──────────────────────────────────────────────────
 
 function WatermarkPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
-  const [options, setOptions] = useState<WatermarkOptions>({ ...DEFAULT_WATERMARK_OPTIONS });
+  const { state, updatePdfBytes, markDirty, setWatermarkDraft } = useEditorContext();
+
+  // The draft lives in context so the canvas can draw it and the user can drag
+  // it. This panel and the overlay are two views of one value, which is why
+  // neither can fall out of step with the other.
+  const options = state.watermarkDraft ?? DEFAULT_WATERMARK_OPTIONS;
+
+  // Read through a ref, not the closure: setOptions must stay stable for the
+  // preview's dependency list, and a stale capture would silently undo a drag
+  // the moment a sidebar field changed.
+  const draftRef = useRef(state.watermarkDraft);
+  draftRef.current = state.watermarkDraft;
+
+  const setOptions = useCallback(
+    (update: (previous: WatermarkOptions) => WatermarkOptions) => {
+      setWatermarkDraft(update(draftRef.current ?? DEFAULT_WATERMARK_OPTIONS));
+    },
+    [setWatermarkDraft],
+  );
+
+  // Opening the tool starts a draft; leaving it takes the overlay off the
+  // canvas. Null doing double duty means there is no second flag to forget.
+  useEffect(() => {
+    setWatermarkDraft({ ...DEFAULT_WATERMARK_OPTIONS });
+    return () => setWatermarkDraft(null);
+  }, [setWatermarkDraft]);
+
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -744,7 +812,8 @@ function WatermarkPanel() {
   const { previewBytes, isProcessing } = useDebouncedPreview(
     state.pdfBytes,
     runPreview,
-    [options.text, options.fontSize, options.opacity, options.rotation, options.color, state.currentPage],
+    [options.text, options.fontSize, options.opacity, options.rotation, options.color,
+     options.centerX, options.centerY, state.currentPage],
   );
 
   // Apply watermark to ALL pages (full processing, runs only on explicit user action).
@@ -757,6 +826,11 @@ function WatermarkPanel() {
       const result = await addWatermark(state.pdfBytes, options);
       updatePdfBytes(result);
       markDirty();
+      // The watermark is in the document now. Leaving the draft alive would
+      // draw a live overlay on top of the one just baked in, showing two where
+      // the user will get one -- and inviting a second Apply that really would
+      // stack them.
+      setWatermarkDraft(null);
       setApplySuccess(true);
       setTimeout(() => setApplySuccess(false), 2000);
     } catch (err) {
@@ -764,7 +838,7 @@ function WatermarkPanel() {
     } finally {
       setIsApplying(false);
     }
-  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [options, state.pdfBytes, updatePdfBytes, markDirty, setWatermarkDraft]);
 
   return (
     <div className="space-y-3">
@@ -790,8 +864,8 @@ function WatermarkPanel() {
               value={options.fontSize}
               onChange={(e) => setOptions((o) => ({ ...o, fontSize: Number(e.target.value) || 12 }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-              min={8}
-              max={120}
+              min={WATERMARK_FONT_SIZE_MIN}
+              max={WATERMARK_FONT_SIZE_MAX}
             />
           </div>
           <div>
@@ -823,18 +897,11 @@ function WatermarkPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Color</label>
-          <div className="flex gap-1 mt-0.5">
-            {(['gray', 'red', 'blue'] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setOptions((o) => ({ ...o, color: c }))}
-                className={`px-2 py-0.5 text-[10px] rounded border capitalize ${
-                  options.color === c ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="mt-1">
+            <ColorPicker
+              value={options.color}
+              onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
+            />
           </div>
         </div>
       </div>
@@ -871,7 +938,7 @@ function PageNumbersPanel() {
     fontSize: 12,
     startNumber: 1,
     margin: 30,
-    color: DEFAULT_NUMBER_COLOR,
+    color: DEFAULT_TEXT_COLOR,
   });
 
   // Everything derives from the bytes as they were before numbering. Once numbers
@@ -974,8 +1041,8 @@ function PageNumbersPanel() {
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Colour</label>
           <div className="mt-0.5">
-            <PageNumberColorPicker
-              value={options.color ?? DEFAULT_NUMBER_COLOR}
+            <ColorPicker
+              value={options.color ?? DEFAULT_TEXT_COLOR}
               onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
             />
           </div>
@@ -1205,8 +1272,13 @@ function CropPanel() {
 // ── Sign Panel (placeholder) ─────────────────────────────────────────
 
 /** Handwriting-style fonts for typed signatures */
+// Script uses the OFL font bundled with the app rather than 'Brush Script MT',
+// which only exists on machines that happen to have it. Canvas falls back
+// silently for a font it cannot find, so naming a system face would put a plain
+// signature on the page anywhere it is missing -- the same failure, moved to
+// other people's computers.
 const SIGNATURE_FONTS = [
-  { value: 'cursive', label: 'Script', css: "'Brush Script MT', 'Segoe Script', cursive" },
+  { value: 'cursive', label: 'Script', css: "'Dancing Script', 'Brush Script MT', cursive" },
   { value: 'serif', label: 'Formal', css: "'Georgia', 'Times New Roman', serif" },
   { value: 'sans', label: 'Clean', css: "'Helvetica Neue', Arial, sans-serif" },
 ];
@@ -1232,43 +1304,52 @@ function saveSavedSignatures(sigs: SavedSignature[]) {
 }
 
 function SignPanel() {
-  const { state, setEditorMode, addTextBlock, startEditing } = useEditorContext();
+  const { state, setEditorMode, addImageBlock, markDirty } = useEditorContext();
+  const [placeError, setPlaceError] = useState<string | null>(null);
   const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
   const [sigFont, setSigFont] = useState(SIGNATURE_FONTS[0].value);
-  const [sigColor, setSigColor] = useState('#1a365d');
+  const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
   const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
   const [showSaved, setShowSaved] = useState(false);
 
   const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
 
-  // Place signature as a text block on the current page
-  const handlePlaceSignature = useCallback((text: string, font: string, color: string) => {
+  // Place the signature as a rasterised stamp on the current page.
+  //
+  // Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
+  // script face, so a Script signature used to be silently swapped for italic
+  // Helvetica while the panel went on showing a script preview over it. Drawing
+  // it to a canvas in the real bundled font makes the preview and the page the
+  // same thing, for every style rather than just the two that happened to map.
+  const handlePlaceSignature = useCallback(async (text: string, font: string, color: string) => {
     const pageIndex = state.currentPage;
-    const newBlock = {
+    const fontCss = SIGNATURE_FONTS.find((f) => f.value === font)?.css ?? 'cursive';
+
+    const raster = await rasteriseSignature(text, fontCss, sigSize, color);
+    if (!raster) {
+      setPlaceError('Could not draw the signature. Try a different style or a shorter name.');
+      return;
+    }
+    setPlaceError(null);
+
+    addImageBlock(pageIndex, {
       id: crypto.randomUUID(),
       pageIndex,
       x: 100,
       y: 100,
-      width: Math.max(200, text.length * sigSize * 0.6),
-      height: sigSize * 1.5,
-      text,
-      fontSize: sigSize,
-      fontName: font === 'cursive' ? 'Helvetica' : font === 'serif' ? 'TimesRoman' : 'Helvetica',
-      color,
-      alignment: 'left' as const,
-      bold: false,
-      italic: font === 'cursive',
-      underline: false,
-      lineHeight: 1.2,
+      width: raster.width,
+      height: raster.height,
+      imageBytes: raster.bytes,
+      rotation: 0,
+      flipH: false,
+      flipV: false,
       isNew: true,
-      isModified: true,
-    };
-    addTextBlock(pageIndex, newBlock);
-    startEditing(newBlock.id);
-  }, [state.currentPage, sigSize, addTextBlock, startEditing]);
+    });
+    markDirty();
+  }, [state.currentPage, sigSize, addImageBlock, markDirty]);
 
   const handleSaveSignature = useCallback(() => {
     if (!sigText.trim()) return;
@@ -1340,17 +1421,8 @@ function SignPanel() {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">Color</label>
-            <div className="flex gap-1 mt-0.5">
-              {['#1a365d', '#000000', '#2563EB', '#DC2626'].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setSigColor(c)}
-                  className={`w-5 h-5 rounded-sm border-2 ${sigColor === c ? 'border-primary' : 'border-border'}`}
-                  style={{ backgroundColor: c }}
-                  title={c}
-                />
-              ))}
+            <div className="mt-1">
+              <ColorPicker value={sigColor} onChange={setSigColor} />
             </div>
           </div>
           <div>
@@ -1388,6 +1460,10 @@ function SignPanel() {
           Save
         </button>
       </div>
+
+      {placeError && (
+        <p className="text-[10px] leading-relaxed text-destructive">{placeError}</p>
+      )}
 
       {/* Saved signatures */}
       {savedSignatures.length > 0 && (
@@ -1459,124 +1535,219 @@ function SignPanel() {
 // ── Redact Panel ─────────────────────────────────────────────────────
 
 function RedactPanel() {
-  const { state, setEditorMode, addTextBlock, markDirty } = useEditorContext();
-  const isTextMode = state.editorMode === 'text';
+  const { state, setRedactionDraft, setRedactionColor, updatePdfBytes, markDirty } = useEditorContext();
+  // Memoised so the `?? []` fallback does not hand out a new array each render
+  // and re-create every callback that depends on it.
+  const draft = useMemo(() => state.redactionDraft ?? [], [state.redactionDraft]);
 
-  const [redactColor, setRedactColor] = useState('#000000');
-  const [redactedCount, setRedactedCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchRan, setSearchRan] = useState(false);
+  const [scope, setScope] = useState<RedactionScope>('match');
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
-  // Place a solid redaction rectangle (opaque text block with block character)
-  const handlePlaceRedactBlock = useCallback(() => {
-    const pageIndex = state.currentPage;
-    const newBlock = {
-      id: crypto.randomUUID(),
-      pageIndex,
-      x: 100,
-      y: 300,
-      width: 200,
-      height: 30,
-      text: '█'.repeat(30), // Solid block characters
-      fontSize: 24,
-      fontName: 'Helvetica',
-      color: redactColor,
-      alignment: 'left' as const,
-      bold: false,
-      italic: false,
-      underline: false,
-      lineHeight: 1.0,
-      isNew: true,
-      isModified: true,
-    };
-    addTextBlock(pageIndex, newBlock);
-    markDirty();
-    setRedactedCount((c) => c + 1);
-  }, [state.currentPage, redactColor, addTextBlock, markDirty]);
+  // Opening the tool arms the canvas to take rectangles; leaving it disarms.
+  useEffect(() => {
+    setRedactionDraft([]);
+    return () => setRedactionDraft(null);
+  }, [setRedactionDraft]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    setSearchRan(false);
+
+    const pdfjsLib = await import('pdfjs-dist');
+    let doc: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']> | null = null;
+    try {
+      doc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
+      setSearchResults(await findTextMatches(doc, searchQuery));
+    } catch {
+      setSearchResults([]);
+    } finally {
+      doc?.destroy();
+      setSearchRan(true);
+      setIsSearching(false);
+    }
+  }, [searchQuery, state.pdfBytes]);
+
+  const addMatch = useCallback(
+    (match: TextMatch) => {
+      if (isAlreadyMarked(match, scope, draft)) return;
+      setRedactionDraft([...draft, matchToRect(match, scope, `redact-${match.id}-${scope}`)]);
+    },
+    [draft, scope, setRedactionDraft],
+  );
+
+  const addAllMatches = useCallback(() => {
+    const added = searchResults
+      .filter((m) => !isAlreadyMarked(m, scope, draft))
+      .map((m) => matchToRect(m, scope, `redact-${m.id}-${scope}`));
+    if (added.length > 0) setRedactionDraft([...draft, ...added]);
+  }, [draft, scope, searchResults, setRedactionDraft]);
+
+  const handleApply = useCallback(async () => {
+    if (draft.length === 0) return;
+    setIsApplying(true);
+    setApplyError(null);
+    try {
+      // The same rasterising apply the standalone tool uses. Drawing a box over
+      // the text would leave it in the file, selectable and extractable.
+      const result = await applyRedactions(state.pdfBytes, draft, state.redactionColor);
+      updatePdfBytes(result);
+      markDirty();
+      setRedactionDraft([]);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [draft, state.pdfBytes, state.redactionColor, updatePdfBytes, markDirty, setRedactionDraft]);
 
   return (
     <div className="space-y-3">
       <PanelHeader toolId="redact-pdf" />
 
-      {/* Method 1: Click to select + delete text */}
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        Drag on the page to cover something. Applying flattens those pages to an
+        image, so the content underneath is removed from the file, not just hidden.
+      </p>
+
+      {/* Find text */}
       <div className="space-y-1.5">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 1: Delete text</span>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Click a text block to select it, then press <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Delete</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Backspace</kbd>. The area is covered with a white rectangle in the saved PDF.
-        </p>
-      </div>
-
-      {/* Method 2: Place opaque redaction block */}
-      <div className="space-y-1.5 border-t pt-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 2: Cover with redaction block</span>
-
-        <div>
-          <label className="text-[10px] text-muted-foreground">Redaction color</label>
-          <div className="flex gap-1 mt-0.5">
-            {['#000000', '#FFFFFF', '#333333'].map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setRedactColor(c)}
-                className={`w-6 h-6 rounded-sm border-2 ${redactColor === c ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
-                style={{ backgroundColor: c }}
-                title={c === '#000000' ? 'Black' : c === '#FFFFFF' ? 'White' : 'Dark gray'}
-              />
-            ))}
-          </div>
+        <label className="text-[10px] font-medium text-muted-foreground">Find text</label>
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+            placeholder="Name, number…"
+            title="Find text to redact"
+            className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={isSearching || !searchQuery.trim()}
+            className="flex-none px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-50"
+          >
+            {isSearching ? '…' : 'Find'}
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={handlePlaceRedactBlock}
-          className="w-full py-1.5 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
-        >
-          Place Redaction Block
-        </button>
-        <p className="text-[9px] text-muted-foreground">
-          Drag and resize the block to cover sensitive content. The block is opaque and will permanently cover content when saved.
-        </p>
+        {searchRan && !isSearching && searchResults.length === 0 && (
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            No matches. Pages with no selectable text — a scan, for instance —
+            cannot be searched.
+          </p>
+        )}
+
+        {searchResults.length > 0 && (
+          <div className="space-y-1.5">
+            {/* Same choice the standalone tool offers, and the same helper
+                decides what each one covers. */}
+            <div className="flex gap-1">
+              {REDACTION_SCOPES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setScope(s.value)}
+                  title={s.hint}
+                  aria-pressed={scope === s.value}
+                  className={`flex-1 px-1.5 py-1 text-[10px] rounded border transition-colors ${
+                    scope === s.value
+                      ? 'border-primary bg-primary/10 font-medium'
+                      : 'border-border text-muted-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* One row per match, so a single occurrence can be covered without
+                covering the rest -- the standalone tool always allowed this. */}
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {searchResults.map((match) => {
+                const added = isAlreadyMarked(match, scope, draft);
+                return (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => addMatch(match)}
+                    disabled={added}
+                    title={added ? 'Already marked' : 'Mark this one'}
+                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-left transition-colors ${
+                      added
+                        ? 'border-primary/40 bg-primary/5 text-muted-foreground'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <span className="flex-none text-muted-foreground">p{match.pageIndex + 1}</span>
+                    <span className="truncate">{match.text}</span>
+                    <span className="ml-auto flex-none">{added ? '✓' : '+'}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={addAllMatches}
+              className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
+            >
+              Mark all {searchResults.length}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Method 3: Click-to-place mode */}
+      {/* Colour */}
       <div className="border-t pt-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 3: Click-to-place</span>
-        <button
-          type="button"
-          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-          className={`w-full mt-1.5 py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-            isTextMode
-              ? 'bg-green-600 text-white'
-              : 'border border-border hover:bg-muted'
-          }`}
-        >
-          {isTextMode ? (
-            <>
-              <Check className="h-3 w-3" />
-              Click-to-Place Active
-            </>
-          ) : (
-            'Activate Click-to-Place'
-          )}
-        </button>
-        {isTextMode && (
-          <p className="text-[9px] text-muted-foreground mt-1">
-            Click anywhere on the PDF to place a covering block at that position.
+        <label className="text-[10px] font-medium text-muted-foreground">Box colour</label>
+        <div className="mt-1">
+          <ColorPicker value={state.redactionColor} onChange={setRedactionColor} />
+        </div>
+        {isLightColor(state.redactionColor) && (
+          <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            A box this pale is hard to see on a white page. The content underneath
+            is still permanently removed.
           </p>
         )}
       </div>
 
-      {/* Counter */}
-      {redactedCount > 0 && (
-        <div className="rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-2">
-          <p className="text-[10px] text-red-700 dark:text-red-400 font-medium">
-            {redactedCount} redaction block{redactedCount !== 1 ? 's' : ''} placed. Remember to save to make redactions permanent.
-          </p>
-        </div>
-      )}
+      <div className="border-t pt-2 space-y-1.5">
+        <p className="text-[10px] text-muted-foreground">
+          {draft.length} area{draft.length === 1 ? '' : 's'} marked
+        </p>
+        {draft.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setRedactionDraft([])}
+            className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
+          >
+            Clear all
+          </button>
+        )}
+        {applyError && (
+          <p className="text-[10px] leading-relaxed text-destructive">{applyError}</p>
+        )}
+        <button
+          type="button"
+          onClick={handleApply}
+          disabled={draft.length === 0 || isApplying}
+          className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isApplying ? 'Redacting…' : 'Apply'}
+        </button>
+      </div>
     </div>
   );
 }
-
-// ── PDF/A Convert Panel ──────────────────────────────────────────────
 
 function PdfaPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();

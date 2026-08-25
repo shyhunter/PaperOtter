@@ -1,27 +1,98 @@
-// Adds a centered text watermark to every page of a PDF using pdf-lib.
-import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
+// Adds a text watermark to every page of a PDF using pdf-lib.
+import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage } from 'pdf-lib';
+import { hexToRgb } from '@/lib/colorPresets';
 
 export interface WatermarkOptions {
   text: string;
   fontSize: number;      // default 48
   opacity: number;       // 0.0 to 1.0, default 0.3
   rotation: number;      // degrees, default -45 (diagonal)
-  color: 'gray' | 'red' | 'blue'; // simple color presets
+  color: string;         // #RRGGBB, any colour the shared picker offers
+  /** Horizontal centre of the text, as a fraction of page width (0..1). */
+  centerX: number;
+  /** Vertical centre of the text, as a fraction of page height (0..1),
+   *  measured from the bottom as PDF coordinates are. */
+  centerY: number;
 }
-
-const COLOR_MAP = {
-  gray: rgb(0.5, 0.5, 0.5),
-  red: rgb(0.8, 0.2, 0.2),
-  blue: rgb(0.2, 0.2, 0.8),
-};
 
 export const DEFAULT_WATERMARK_OPTIONS: WatermarkOptions = {
   text: 'CONFIDENTIAL',
   fontSize: 48,
   opacity: 0.3,
+  // rgb(0.5, 0.5, 0.5) to 8 bits — what the retired 'gray' preset drew, so the
+  // default keeps looking exactly as it did.
+  color: '#808080',
   rotation: -45,
-  color: 'gray',
+  centerX: 0.5,
+  centerY: 0.5,
 };
+
+/** Bounds for the watermark's font size, shared by the sidebar field and the
+ *  canvas resize handle so the two cannot disagree about what is allowed. */
+export const WATERMARK_FONT_SIZE_MIN = 8;
+export const WATERMARK_FONT_SIZE_MAX = 200;
+
+function clamp01(n: number): number {
+  if (!Number.isFinite(n)) return 0.5;
+  return Math.min(1, Math.max(0, n));
+}
+
+/**
+ * Where the text's baseline-left origin has to go for its *centre* to land on
+ * the requested point.
+ *
+ * The position is stored as a centre because that is what the user drags: the
+ * grab point and the anchor have to be the same thing, or the watermark jumps
+ * out from under the cursor on the first pixel of movement. pdf-lib draws from
+ * a baseline-left origin and rotates about that origin, so the offset back to
+ * it has to be rotated too.
+ *
+ * Shared by the full-document and single-page-preview paths so the preview
+ * cannot drift from the output the user actually gets.
+ */
+export function computeWatermarkPlacement(
+  page: PDFPage,
+  font: PDFFont,
+  options: WatermarkOptions,
+): { x: number; y: number } {
+  const { width, height } = page.getSize();
+  const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
+  // Cap height is the visual middle of capitals far better than the full font
+  // box, which includes descender space a watermark rarely uses.
+  const textHeight = font.heightAtSize(options.fontSize) * 0.5;
+
+  const cx = clamp01(options.centerX) * width;
+  const cy = clamp01(options.centerY) * height;
+
+  const rad = (options.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  // Rotate the half-extent vector (-w/2, -h/2) by the same angle pdf-lib will
+  // apply, then step from the centre by it.
+  const dx = -textWidth / 2;
+  const dy = -textHeight / 2;
+
+  return {
+    x: cx + dx * cos - dy * sin,
+    y: cy + dx * sin + dy * cos,
+  };
+}
+
+function drawWatermark(page: PDFPage, font: PDFFont, options: WatermarkOptions): void {
+  const { x, y } = computeWatermarkPlacement(page, font, options);
+  const { r, g, b } = hexToRgb(options.color);
+
+  page.drawText(options.text, {
+    x,
+    y,
+    size: options.fontSize,
+    font,
+    color: rgb(r, g, b),
+    opacity: options.opacity,
+    rotate: degrees(options.rotation),
+  });
+}
 
 export async function addWatermark(
   pdfBytes: Uint8Array,
@@ -29,27 +100,9 @@ export async function addWatermark(
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const font = await doc.embedFont(StandardFonts.Helvetica);
-  const pages = doc.getPages();
 
-  for (const page of pages) {
-    const { width, height } = page.getSize();
-    const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
-
-    // For diagonal watermark we rotate around page center.
-    // Offset by half text width (adjusted for rotation) to visually center.
-    const rad = Math.abs(options.rotation) * (Math.PI / 180);
-    const adjustedX = width / 2 - (textWidth * Math.cos(rad)) / 2;
-    const adjustedY = height / 2 - (textWidth * Math.sin(rad)) / 2;
-
-    page.drawText(options.text, {
-      x: adjustedX,
-      y: adjustedY,
-      size: options.fontSize,
-      font,
-      color: COLOR_MAP[options.color],
-      opacity: options.opacity,
-      rotate: degrees(options.rotation),
-    });
+  for (const page of doc.getPages()) {
+    drawWatermark(page, font, options);
   }
 
   return new Uint8Array(await doc.save({ useObjectStreams: true }));
@@ -79,23 +132,7 @@ export async function addWatermarkSinglePage(
   previewDoc.addPage(copiedPage);
 
   const font = await previewDoc.embedFont(StandardFonts.Helvetica);
-  const page = previewDoc.getPages()[0];
-  const { width, height } = page.getSize();
-  const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
-
-  const rad = Math.abs(options.rotation) * (Math.PI / 180);
-  const adjustedX = width / 2 - (textWidth * Math.cos(rad)) / 2;
-  const adjustedY = height / 2 - (textWidth * Math.sin(rad)) / 2;
-
-  page.drawText(options.text, {
-    x: adjustedX,
-    y: adjustedY,
-    size: options.fontSize,
-    font,
-    color: COLOR_MAP[options.color],
-    opacity: options.opacity,
-    rotate: degrees(options.rotation),
-  });
+  drawWatermark(previewDoc.getPages()[0], font, options);
 
   return new Uint8Array(await previewDoc.save({ useObjectStreams: true }));
 }

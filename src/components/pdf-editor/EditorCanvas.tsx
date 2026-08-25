@@ -5,6 +5,9 @@ import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { TextEditingLayer } from './TextEditingLayer';
+import { WatermarkOverlay } from './WatermarkOverlay';
+import { ImageBlockLayer } from './ImageBlockLayer';
+import { RedactionLayer } from './RedactionLayer';
 import { diagLog } from '@/lib/diagLog';
 
 const PAGE_GAP = 16; // px between pages
@@ -96,6 +99,12 @@ const PageCanvasRenderer = memo(function PageCanvasRenderer({
         pageHeight={pageHeight}
         zoom={zoom}
       />
+      {/* On every page, because the watermark goes on every page. Dragging it
+          anywhere moves it everywhere, which is the same promise the sidebar
+          has always made. */}
+      <WatermarkOverlay pageWidth={pageWidth} pageHeight={pageHeight} zoom={zoom} />
+      <ImageBlockLayer pageIndex={pageIndex} pageHeight={pageHeight} zoom={zoom} />
+      <RedactionLayer pageIndex={pageIndex} pageWidth={pageWidth} pageHeight={pageHeight} zoom={zoom} />
     </>
   );
 });

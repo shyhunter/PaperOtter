@@ -1,7 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { DEFAULT_TEXT_COLOR, normaliseHex } from '@/lib/colorPresets';
 
 interface SignatureTypedProps {
   onComplete: (dataUrl: string) => void;
+  /** Ink colour as #RRGGBB. Defaults to black, as it was before it could vary. */
+  color?: string;
 }
 
 const FONTS: { label: string; family: string }[] = [
@@ -35,7 +38,8 @@ function calcFontSize(text: string, fontFamily: string, maxWidth: number): numbe
   return size;
 }
 
-export function SignatureTyped({ onComplete }: SignatureTypedProps) {
+export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: SignatureTypedProps) {
+  const ink = normaliseHex(color);
   const [text, setText] = useState('');
   const [selectedFont, setSelectedFont] = useState(FONTS[0].family);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -66,7 +70,7 @@ export function SignatureTyped({ onComplete }: SignatureTypedProps) {
 
     const renderSize = calcFontSize(text, selectedFont, CANVAS_WIDTH);
     ctx.font = `${renderSize}px "${selectedFont}"`;
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = ink;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
     ctx.fillText(text, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
@@ -107,7 +111,7 @@ export function SignatureTyped({ onComplete }: SignatureTypedProps) {
     cropCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
 
     onComplete(cropCanvas.toDataURL('image/png'));
-  }, [text, selectedFont, onComplete]);
+  }, [text, selectedFont, ink, onComplete]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -151,8 +155,9 @@ export function SignatureTyped({ onComplete }: SignatureTypedProps) {
       >
         {text ? (
           <span
-            className="select-none text-black"
+            className="select-none"
             style={{
+              color: ink,
               fontFamily: `"${selectedFont}"`,
               fontSize: `${fontSize}px`,
               lineHeight: 1,

@@ -131,7 +131,9 @@ describe('Suite 02 — PDF Configure Step', () => {
     await navigateToPdfConfigure(user);
     // Click the "Custom target size" toggle to reveal the input
     await user.click(screen.getByText('Custom target size'));
-    const targetInput = screen.getByPlaceholderText(/e\.g\. 2/i);
+    // The placeholder is derived from the file's floor, so address the field
+    // by a stable handle instead.
+    const targetInput = screen.getByTestId('custom-target-size');
     await user.type(targetInput, '500');
     // "Best preset auto-selected" message should appear when custom mode is active
     expect(screen.getByText('Best preset auto-selected')).toBeInTheDocument();

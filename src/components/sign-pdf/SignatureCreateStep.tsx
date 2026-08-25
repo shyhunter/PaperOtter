@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { SignatureCanvas } from './SignatureCanvas';
 import { SignatureTyped } from './SignatureTyped';
 import { SignatureUpload } from './SignatureUpload';
+import { ColorPicker } from '@/components/ColorPicker';
+import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { useSavedSignatures } from '@/hooks/useSavedSignatures';
 import type { SavedSignature } from '@/hooks/useSavedSignatures';
 
@@ -21,6 +23,7 @@ const TABS: { id: TabId; label: string }[] = [
 export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCreateStepProps) {
   const { signatures, saveSignature, deleteSignature, isLoading } = useSavedSignatures();
   const [activeTab, setActiveTab] = useState<TabId>('draw');
+  const [ink, setInk] = useState(DEFAULT_TEXT_COLOR);
   const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
   const [pendingType, setPendingType] = useState<SavedSignature['type']>('drawn');
   const [sigName, setSigName] = useState('');
@@ -146,16 +149,29 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
           ))}
         </div>
 
+        {/* Ink — one colour for the whole step, so switching between drawing and
+            typing does not lose the choice. Not offered on Upload: an uploaded
+            image carries its own colours, and a picker there would imply a
+            recolouring that does not happen. */}
+        {activeTab !== 'upload' && (
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">Ink</span>
+            <ColorPicker value={ink} onChange={setInk} />
+          </div>
+        )}
+
         {/* Tab Content */}
         {activeTab === 'draw' && (
           <SignatureCanvas
             onComplete={(dataUrl) => handleCreated(dataUrl, 'drawn')}
             onClear={() => {}}
+            color={ink}
           />
         )}
         {activeTab === 'type' && (
           <SignatureTyped
             onComplete={(dataUrl) => handleCreated(dataUrl, 'typed')}
+            color={ink}
           />
         )}
         {activeTab === 'upload' && (

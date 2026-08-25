@@ -18,6 +18,9 @@ import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
+import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { applyRedactions } from '@/lib/pdfRedact';
+import { findTextMatches } from '@/lib/pdfTextSearch';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -53,10 +56,17 @@ vi.mock('@/lib/pdfRotate', () => ({
   rotatePdf: vi.fn().mockResolvedValue({ bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]) }),
 }));
 
-vi.mock('@/lib/pdfWatermark', () => ({
-  addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
-  DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: 'gray' },
-}));
+// Partial: only the pdf-lib drawing call is stubbed. The defaults and the
+// font-size bounds stay real, so a change to either shows up here instead of
+// being papered over by a mock that has drifted from the module.
+vi.mock('@/lib/pdfWatermark', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfWatermark')>();
+  return {
+    ...actual,
+    addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+    DEFAULT_WATERMARK_OPTIONS: { ...actual.DEFAULT_WATERMARK_OPTIONS, text: '' },
+  };
+});
 
 // Partial: the estimate maths and the canonical non-compressible wording stay
 // real, only the document analysis is stubbed.
@@ -80,6 +90,13 @@ vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
 }));
+
+vi.mock('@/lib/pdfTextSearch', () => ({ findTextMatches: vi.fn().mockResolvedValue([]) }));
+
+vi.mock('@/lib/pdfRedact', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfRedact')>();
+  return { ...actual, applyRedactions: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])) };
+});
 
 vi.mock('@/lib/pdfCrop', () => ({
   cropPdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
@@ -469,8 +486,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Compress PDF'));
     await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
-    await user.type(screen.getByTitle('Target file size'), '50');
-    await user.selectOptions(screen.getByTitle('Size unit'), 'KB');
+    // 1 MB, against a ~1.2 MB floor. KB is not offered on this document at all.
+    await user.type(screen.getByTitle('Target file size'), '1');
 
     // Costs no processing time: the estimates already say where the floor is.
     expect(await screen.findByText(/smallest achievable/i)).toBeTruthy();
@@ -492,6 +509,61 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await user.type(screen.getByTitle('Target file size'), '3');
 
     expect(screen.queryByText(/smallest achievable/i)).toBeNull();
+  });
+
+
+  // A unit the document cannot be measured in is the same trap as a target it
+  // cannot reach -- the panel already knows the floor before the user types.
+  it('TP-01s — KB is withheld when no KB-scale target is reachable', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    // Floor is ~1.2 MB here: every reachable KB value is five digits.
+    expect(screen.queryByTitle('Size unit')).toBeNull();
+    expect(screen.getByTestId('target-unit').textContent).toBe('MB');
+  });
+
+  it('TP-01t — KB stays available when the floor is KB-scale', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    expect(await screen.findByTitle('Size unit')).toBeTruthy();
+  });
+
+  it('TP-01u — the floor is stated before anything is typed', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    // Learning the limit must not cost the user a rejected attempt.
+    expect(await screen.findByText(/can compress to about/i)).toBeTruthy();
+    expect(screen.getByTitle('Target file size').getAttribute('placeholder')).toBe('e.g. 2');
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
@@ -725,11 +797,12 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Opacity slider
     expect(screen.getByText(/Opacity:/)).toBeInTheDocument();
 
-    // Color buttons
+    // The shared colour picker, not the watermark's own three-colour vocabulary.
     expect(screen.getByText('Color')).toBeInTheDocument();
-    expect(screen.getByText('gray')).toBeInTheDocument();
-    expect(screen.getByText('red')).toBeInTheDocument();
-    expect(screen.getByText('blue')).toBeInTheDocument();
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
   });
 
   it('TP-03b — Watermark Apply is disabled when text is empty', async () => {
@@ -747,6 +820,103 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     const applyBtn = screen.getByText('Apply');
     // When text is empty, Apply should be disabled
     expect(applyBtn.closest('button')).toBeDisabled();
+  });
+
+  // The overlay on the canvas and the fields in this panel are two views of one
+  // draft. These pin down when that draft exists, because null is also what
+  // tells the canvas to draw nothing.
+  it('TP-03c — opening the panel starts a draft, leaving it takes the overlay away', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    expect(ctx!.state.watermarkDraft).toBeNull();
+
+    await user.click(screen.getByTitle('Watermark'));
+    expect(ctx!.state.watermarkDraft).not.toBeNull();
+
+    // Switching tools unmounts the panel; the canvas must stop drawing it.
+    await user.click(screen.getByTitle('Rotate PDF'));
+    expect(ctx!.state.watermarkDraft).toBeNull();
+  });
+
+  it('TP-03d — applying clears the draft, so the page is not watermarked twice over', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Watermark'));
+    await user.type(screen.getByPlaceholderText('CONFIDENTIAL'), 'SECRET');
+    await user.click(screen.getByText('Apply'));
+
+    // Once it is in the document, a live overlay of the same text on top of it
+    // would show the user two watermarks where they will get one.
+    await waitFor(() => expect(ctx!.state.watermarkDraft).toBeNull());
+  });
+
+  // The editor has its own Sign and Redact panels, separate code from the
+  // standalone flows of the same name. Both kept private colour lists.
+  it('TP-13 — the Sign panel offers the shared colours', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
+  });
+
+  it('TP-14 — the Redact panel offers the shared colours', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
+  });
+
+  it('TP-15 — the Redact panel warns about a block too pale to notice', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    expect(screen.queryByText(/hard to see/i)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'White' }));
+
+    // Same warning the standalone flow gives, for the same reason: the block is
+    // opaque either way, but a reader cannot see that anything was covered.
+    expect(screen.getByText(/hard to see/i)).toBeInTheDocument();
   });
 
   // TP-04: Page Numbers Panel
@@ -1053,54 +1223,111 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-07: Redact Panel
-  it('TP-07 — Redact panel shows three redaction methods', async () => {
+  // These replace TP-07/TP-07b, which asserted that the editor placed a text
+  // block of block characters over the content and counted them. That covered
+  // the pixels and left the text in the file, fully extractable -- the tests
+  // were pinning the bug in place.
+  it('TP-07 — the Redact panel arms the canvas and offers real redaction', async () => {
     const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
 
     render(
-      <ToolPanelHarness>
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    expect(ctx!.state.redactionDraft).toBeNull();
+
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    // A non-null draft is what tells the canvas to accept drawn rectangles.
+    expect(ctx!.state.redactionDraft).toEqual([]);
+    expect(screen.getByTitle('Find text to redact')).toBeInTheDocument();
+    expect(screen.getByText(/removed from the file, not just hidden/i)).toBeInTheDocument();
+  });
+
+  it('TP-07c — matches can be marked one at a time, like the standalone tool', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+    vi.mocked(findTextMatches).mockResolvedValue([
+      { id: 'm1', pageIndex: 0, text: 'document', x: 20, y: 10, width: 8, height: 2,
+        line: { x: 10, y: 10, width: 60, height: 2 } },
+      { id: 'm2', pageIndex: 1, text: 'document', x: 30, y: 40, width: 8, height: 2,
+        line: { x: 10, y: 40, width: 60, height: 2 } },
+    ]);
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    await user.type(screen.getByTitle('Find text to redact'), 'document');
+    await user.click(screen.getByText('Find'));
+
+    const rows = await screen.findAllByTitle('Mark this one');
+    expect(rows).toHaveLength(2);
+
+    // Covering one occurrence must not cover the other.
+    await user.click(rows[0]);
+    expect(ctx!.state.redactionDraft).toHaveLength(1);
+    expect(ctx!.state.redactionDraft![0].pageIndex).toBe(0);
+  });
+
+  it('[TP-07d] the scope choice decides how much of the line is covered', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+    vi.mocked(findTextMatches).mockResolvedValue([
+      { id: 'm1', pageIndex: 0, text: 'document', x: 20, y: 10, width: 8, height: 2,
+        line: { x: 10, y: 10, width: 60, height: 2 } },
+    ]);
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    await user.type(screen.getByTitle('Find text to redact'), 'document');
+    await user.click(screen.getByText('Find'));
+
+    await user.click(await screen.findByText('Whole line'));
+    await user.click(screen.getAllByTitle('Mark this one')[0]);
+
+    expect(ctx!.state.redactionDraft![0].width).toBe(60);
+  });
+
+  it('TP-07b — Apply goes through the rasterising redaction, not a drawn box', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
         <ToolSidebar />
       </ToolPanelHarness>,
     );
 
     await user.click(screen.getByTitle('Redact PDF'));
 
-    expect(screen.getByText('Redact PDF')).toBeInTheDocument();
+    // Nothing marked yet: Apply must not offer to redact nothing.
+    expect(screen.getByText('Apply').closest('button')).toBeDisabled();
 
-    // Method 1
-    expect(screen.getByText('Method 1: Delete text')).toBeInTheDocument();
+    act(() => {
+      ctx!.setRedactionDraft([
+        { id: 'r1', pageIndex: 0, x: 10, y: 10, width: 20, height: 5, source: 'drawn' },
+      ]);
+    });
 
-    // Method 2
-    expect(screen.getByText('Method 2: Cover with redaction block')).toBeInTheDocument();
-    expect(screen.getByText('Place Redaction Block')).toBeInTheDocument();
+    await user.click(screen.getByText('Apply'));
 
-    // Method 3
-    expect(screen.getByText('Method 3: Click-to-place')).toBeInTheDocument();
-    expect(screen.getByText('Activate Click-to-Place')).toBeInTheDocument();
+    await waitFor(() => expect(vi.mocked(applyRedactions)).toHaveBeenCalled());
+    const [, rects] = vi.mocked(applyRedactions).mock.calls[0];
+    expect(rects).toHaveLength(1);
   });
 
-  it('TP-07b — Place Redaction Block increments redaction counter', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Redact PDF'));
-
-    // Click Place Redaction Block
-    await user.click(screen.getByText('Place Redaction Block'));
-
-    // Counter should show
-    expect(screen.getByText(/1 redaction block placed/)).toBeInTheDocument();
-
-    // Place another
-    await user.click(screen.getByText('Place Redaction Block'));
-    expect(screen.getByText(/2 redaction blocks placed/)).toBeInTheDocument();
-  });
-
-  // TP-08: PDF/A Convert Panel
   it('TP-08 — PDF/A Convert panel shows level select and Apply', async () => {
     const user = userEvent.setup();
 
@@ -1243,31 +1470,6 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-13: Redact Click-to-Place mode toggle
-  it('TP-13 — Redact click-to-place toggles editor mode', async () => {
-    let latestCtx: EditorCtx | null = null;
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness onContextReady={(ctx) => { latestCtx = ctx; }}>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
-
-    await user.click(screen.getByTitle('Redact PDF'));
-
-    // Click "Activate Click-to-Place"
-    await user.click(screen.getByText('Activate Click-to-Place'));
-
-    // Should change to text mode
-    expect(latestCtx!.state.editorMode).toBe('text');
-
-    // Button should now say "Click-to-Place Active"
-    expect(screen.getByText('Click-to-Place Active')).toBeInTheDocument();
-  });
-
-  // TP-14: Sign panel Click-to-Place mode toggle
   it('TP-14 — Sign panel click-to-place toggles editor mode', async () => {
     let latestCtx: EditorCtx | null = null;
     const user = userEvent.setup();

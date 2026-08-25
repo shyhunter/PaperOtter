@@ -8,10 +8,26 @@
 // Process:
 // 1. Group redactions by page
 // 2. Non-redacted pages: copy as-is (preserves text selectability)
-// 3. Redacted pages: render to canvas → draw black rects → export as PNG → embed
+// 3. Redacted pages: render to canvas → draw redaction rects → export as PNG → embed
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument } from 'pdf-lib';
 import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
+import { normaliseHex } from '@/lib/colorPresets';
+
+/** What redactions were before they could be any other colour. */
+export const DEFAULT_REDACTION_COLOR = '#000000';
+
+/**
+ * The colour a redaction box is actually painted with.
+ *
+ * Never passes a caller's string to `fillStyle` directly: canvas accepts
+ * `transparent` and `rgba(0,0,0,0)`, and a box painted with either leaves the
+ * content it was meant to cover fully visible in the rasterised page -- the
+ * redaction would look applied and not be.
+ */
+export function resolveRedactionFill(color: string | undefined): string {
+  return normaliseHex(color ?? DEFAULT_REDACTION_COLOR);
+}
 
 /**
  * Apply permanent redactions to a PDF.
@@ -20,7 +36,10 @@ import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
 export async function applyRedactions(
   pdfBytes: Uint8Array,
   redactions: RedactionRect[],
+  color?: string,
 ): Promise<Uint8Array> {
+  const fill = resolveRedactionFill(color);
+
   if (redactions.length === 0) {
     return pdfBytes;
   }
@@ -64,10 +83,12 @@ export async function applyRedactions(
 
         await page.render({ canvas, viewport }).promise;
 
-        // Draw black rectangles over redacted areas
+        // Draw the redaction boxes over the rendered page. The content beneath
+        // is gone either way -- this page is being replaced by a flat image --
+        // so the colour is what the reader sees, not what protects them.
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.fillStyle = '#000000';
+          ctx.fillStyle = fill;
           for (const rect of pageRedactions) {
             const x = (rect.x / 100) * canvas.width;
             const y = (rect.y / 100) * canvas.height;

@@ -1,4 +1,6 @@
 /** PDF editor types — used by the Edit PDF tool (Phase 13). */
+import type { WatermarkOptions } from '@/lib/pdfWatermark';
+import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
 
 export interface TextBlock {
   id: string;
@@ -86,6 +88,17 @@ export interface EditorViewState {
    * re-derive from clean bytes instead of stacking a second set of numbers.
    * Dropped as soon as any other tool applies — see UPDATE_PDF_BYTES. */
   pageNumberBase: Uint8Array | null;
+  /** The watermark currently being configured, or null when the watermark tool
+   * is not open. Lives here rather than in the panel because the canvas has to
+   * draw it too — that is the whole point of being able to drag it. Null does
+   * double duty as "no overlay", so there is no second flag to keep in step. */
+  watermarkDraft: WatermarkOptions | null;
+  /** Rectangles marked for redaction, or null when the redact tool is not open.
+   *  Same shape the standalone Redact tool uses, so both go through the same
+   *  rasterising apply -- the one that actually destroys the content. */
+  redactionDraft: RedactionRect[] | null;
+  /** Colour the redaction boxes will be flattened in. */
+  redactionColor: string;
   filePath: string | null;         // null until first save
   fileName: string;
   pageCount: number;

@@ -6,8 +6,8 @@ import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { addPageNumbersSinglePage, formatNumber } from '@/lib/pdfPageNumbers';
 import { cn } from '@/lib/utils';
 import type { NumberPosition, NumberFormat, PageNumberOptions } from '@/lib/pdfPageNumbers';
-import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
-import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
+import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
+import { ColorPicker } from '@/components/ColorPicker';
 
 interface PageNumbersConfigureStepProps {
   pdfBytes: Uint8Array;
@@ -51,7 +51,7 @@ export function PageNumbersConfigureStep({
   const [format, setFormat] = useState<NumberFormat>('numeric');
   const [fontSize, setFontSize] = useState(12);
   const [startNumber, setStartNumber] = useState(1);
-  const [color, setColor] = useState(DEFAULT_NUMBER_COLOR);
+  const [color, setColor] = useState(DEFAULT_TEXT_COLOR);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
@@ -153,7 +153,7 @@ export function PageNumbersConfigureStep({
           {/* Colour */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Colour</label>
-            <PageNumberColorPicker value={color} onChange={setColor} />
+            <ColorPicker value={color} onChange={setColor} />
           </div>
 
           {/* Start number */}

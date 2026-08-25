@@ -11,6 +11,7 @@ import {
   getNonCompressibleReason,
   nonCompressibleMessage,
 } from '@/lib/pdfProcessor';
+import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 
 export interface ConfigureStepProps {
@@ -107,6 +108,13 @@ export function ConfigureStep({
   const [customUnit, setCustomUnit] = useState<'MB' | 'KB'>(fileSizeBytes >= 1024 * 1024 ? 'MB' : 'KB');
   const [customError, setCustomError] = useState<string | null>(null);
 
+  // The most aggressive preset's estimate is the floor: nothing goes below it.
+  // KB is only worth offering when a KB-scale target is actually reachable, so
+  // the unit in force is derived from the floor rather than trusted from state.
+  const floorBytes = estimatedZoneSizes['web'];
+  const offerKb = offersKbUnit(floorBytes);
+  const unit: 'MB' | 'KB' = offerKb ? customUnit : 'MB';
+
   // Metadata stripping — off by default
   const [stripMetadata, setStripMetadata] = useState(false);
 
@@ -136,7 +144,7 @@ export function ConfigureStep({
         setCustomError('Enter a valid target size');
         return;
       }
-      const customBytes = parsed * (customUnit === 'MB' ? 1024 * 1024 : 1024);
+      const customBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
       if (customBytes >= fileSizeBytes) {
         setCustomError(`Target must be smaller than original (${formatBytes(fileSizeBytes)})`);
         return;
@@ -309,23 +317,37 @@ export function ConfigureStep({
                 <div className="flex gap-2">
                   <input
                     id={`${formId}-custom-size`}
+                    data-testid="custom-target-size"
                     type="number"
-                    min="1"
+                    min={smallestReachableTarget(floorBytes, unit)}
                     step="1"
                     value={customSizeValue}
                     onChange={(e) => { setCustomSizeValue(e.target.value); setCustomError(null); }}
-                    placeholder="e.g. 2"
+                    placeholder={`e.g. ${smallestReachableTarget(floorBytes, unit)}`}
                     disabled={isProcessing || isNonCompressible}
                     className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setCustomUnit((u) => u === 'MB' ? 'KB' : 'MB')}
-                    disabled={isProcessing || isNonCompressible}
-                    className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-50 min-w-[3.5rem]"
-                  >
-                    {customUnit}
-                  </button>
+                  {offerKb ? (
+                    <button
+                      type="button"
+                      data-testid="custom-target-unit"
+                      onClick={() => setCustomUnit((u) => u === 'MB' ? 'KB' : 'MB')}
+                      disabled={isProcessing || isNonCompressible}
+                      className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-50 min-w-[3.5rem]"
+                    >
+                      {customUnit}
+                    </button>
+                  ) : (
+                    // Not a disabled toggle: a control that looks pressable but
+                    // refuses to change reads as a bug. Plain text states the
+                    // true thing — this file is measured in megabytes.
+                    <span
+                      data-testid="custom-target-unit"
+                      className="flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground min-w-[3.5rem]"
+                    >
+                      MB
+                    </span>
+                  )}
                 </div>
                 {customError && (
                   <p className="text-xs text-destructive">{customError}</p>
@@ -334,8 +356,8 @@ export function ConfigureStep({
                 {customMode && customSizeValue.trim() !== '' && (() => {
                   const parsed = parseInt(customSizeValue, 10);
                   if (isNaN(parsed) || parsed < 1) return null;
-                  const targetBytes = parsed * (customUnit === 'MB' ? 1024 * 1024 : 1024);
-                  const minAchievable = estimatedZoneSizes['web'];
+                  const targetBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
+                  const minAchievable = floorBytes;
                   if (targetBytes < minAchievable) {
                     return (
                       <div data-testid="target-below-min-warning" className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5">
@@ -348,8 +370,12 @@ export function ConfigureStep({
                   }
                   return null;
                 })()}
+                {/* The floor is known as soon as the estimates are, so making
+                    the user discover it by entering a rejected value is a
+                    choice, not a limitation. */}
                 <p className="text-xs text-muted-foreground">
-                  Maximum file size — the best compression preset will be chosen automatically.
+                  Can compress to about {formatBytes(floorBytes)} at best. Maximum file
+                  size — the best compression preset will be chosen automatically.
                 </p>
               </div>
             )}
