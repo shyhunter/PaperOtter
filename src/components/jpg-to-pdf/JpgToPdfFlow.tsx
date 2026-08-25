@@ -9,7 +9,7 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -451,7 +451,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               <div className="text-center space-y-1">
                 <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.configurePdf')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {images.length} image{images.length !== 1 ? 's' : ''} selected
+                  {plural('count.image', images.length)} selected
                 </p>
               </div>
 

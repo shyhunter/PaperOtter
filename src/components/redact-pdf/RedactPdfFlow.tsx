@@ -11,7 +11,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -176,8 +176,8 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                {redactionCount} redaction{redactionCount !== 1 ? 's' : ''} applied across{' '}
-                {redactedPageCount} page{redactedPageCount !== 1 ? 's' : ''}
+                {plural('count.redaction', redactionCount)} applied across{' '}
+                {plural('count.page', redactedPageCount)}
               </p>
             </div>
 

@@ -13,7 +13,7 @@ import {
 } from '@/lib/pdfProcessor';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 export interface ConfigureStepProps {
   fileName: string;
@@ -192,7 +192,7 @@ export function ConfigureStep({
         <div className="text-center">
           <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {pageCount} page{pageCount !== 1 ? 's' : ''}
+            {plural('count.page', pageCount)}
             {fileSizeBytes > 0 && (
               <span className="ms-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
             )}
@@ -387,8 +387,8 @@ export function ConfigureStep({
               <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
               <p className="text-xs text-muted-foreground">
                 {compressibilityScore >= 0.5
-                  ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — compression will reduce file size significantly.`
-                  : `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — moderate compression savings expected.`}
+                  ? `This PDF contains ${plural('count.image', imageCount)} — compression will reduce file size significantly.`
+                  : `This PDF contains ${plural('count.image', imageCount)} — moderate compression savings expected.`}
               </p>
             </div>
           )}
@@ -487,7 +487,7 @@ export function ConfigureStep({
                   </label>
                   {selectedPageIndices.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
-                      {selectedPageIndices.length} page{selectedPageIndices.length !== 1 ? 's' : ''}
+                      {plural('count.page', selectedPageIndices.length)}
                     </Badge>
                   )}
                 </div>

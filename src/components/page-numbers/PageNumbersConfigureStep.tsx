@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { NumberPosition, NumberFormat, PageNumberOptions } from '@/lib/pdfPageNumbers';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { ColorPicker } from '@/components/ColorPicker';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface PageNumbersConfigureStepProps {
   pdfBytes: Uint8Array;
@@ -171,7 +171,7 @@ export function PageNumbersConfigureStep({
 
           {/* Info */}
           <p className="text-xs text-muted-foreground">
-            {pageCount} page{pageCount !== 1 ? 's' : ''} &middot; numbering: {formatNumber(startNumber, format)}–{formatNumber(startNumber + pageCount - 1, format)}
+            {plural('count.page', pageCount)} &middot; numbering: {formatNumber(startNumber, format)}–{formatNumber(startNumber + pageCount - 1, format)}
           </p>
 
           {error && (

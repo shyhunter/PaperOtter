@@ -22,9 +22,6 @@ export const en = {
   'file.unsafeName':
     "This filename contains characters that aren't supported. Please rename the file and try again.",
 
-  // ── Redaction ─────────────────────────────────────────────────────────────
-  'redaction.count_one': '{count} redaction',
-  'redaction.count_other': '{count} redactions',
 
   // ── Image compare ───────────────────────────────────────────────────────
   'imageCompare.before': 'Before',
@@ -593,6 +590,31 @@ export const en = {
   // ── updateChecker ───────────────────────────────────────────────────────
   'updateChecker.dismissUpdateBanner': 'Dismiss update banner',
   'updateChecker.download': 'Download',
+
+  // ── Counts ──────────────────────────────────────────────────────────────────
+  // Read through plural(), never t(). The category comes from Intl.PluralRules,
+  // so a language needing _few or _many simply adds those entries.
+  'count.page_one': '{count} page',
+  'count.page_other': '{count} pages',
+  'count.file_one': '{count} file',
+  'count.file_other': '{count} files',
+  'count.image_one': '{count} image',
+  'count.image_other': '{count} images',
+  'count.redaction_one': '{count} redaction',
+  'count.redaction_other': '{count} redactions',
+
+  // ── support ─────────────────────────────────────────────────────────────
+  'support.buyMeACoffee': 'Buy me a coffee',
+
+  // ── recentDirs ──────────────────────────────────────────────────────────
+  'recentDirs.recentFolders': 'Recent folders',
+
+  // ── editorToolbar ───────────────────────────────────────────────────────
+  'common.undo': 'Undo',
+  'common.redo': 'Redo',
+
+  // ── toolSidebar ─────────────────────────────────────────────────────────
+  'toolSidebar.targetFileSize': 'Target file size',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */
@@ -605,8 +627,8 @@ export type TranslationKey = keyof typeof en;
 export type Dictionary = Partial<Record<TranslationKey, string>>;
 
 /**
- * The stems of plural entries — `redaction.count` for the `redaction.count_one`
- * / `redaction.count_other` pair. Derived from the dictionary, so `plural()`
+ * The stems of plural entries — `count.page` for the `count.page_one` /
+ * `count.page_other` pair. Derived from the dictionary, so `plural()`
  * only accepts a key that genuinely has plural forms, and `t()` cannot be used
  * on one by mistake.
  */

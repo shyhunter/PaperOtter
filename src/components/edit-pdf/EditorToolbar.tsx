@@ -642,7 +642,7 @@ export function EditorToolbar({
           className="flex-1"
           disabled={!canUndo}
           onClick={onUndo}
-          title="Undo"
+          title={t('common.undo')}
         >
           <Undo2 className="w-4 h-4 me-1" />
           {t('editPdf.undo')}
@@ -653,7 +653,7 @@ export function EditorToolbar({
           className="flex-1"
           disabled={!canRedo}
           onClick={onRedo}
-          title="Redo"
+          title={t('common.redo')}
         >
           <Redo2 className="w-4 h-4 me-1" />
           {t('editPdf.redo')}

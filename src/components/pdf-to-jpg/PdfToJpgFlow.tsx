@@ -16,7 +16,7 @@ import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { convertDocument, checkSidecarAvailability } from '@/lib/documentConverter';
 import type { MultiFileOutput } from '@/components/SaveStep';
 import type { ConvertFormat } from '@/types/converter';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 // Worker setup — must match pdfThumbnail.ts
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -380,7 +380,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {pageCount} page{pageCount !== 1 ? 's' : ''}
+                  {plural('count.page', pageCount)}
                   {selectedPages.size < pageCount && (
                     <span className="ms-1 text-primary font-medium">
                       ({selectedPages.size} selected)

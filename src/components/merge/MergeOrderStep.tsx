@@ -5,7 +5,7 @@ import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import type { MergeInput } from '@/lib/pdfMerge';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -100,7 +100,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('merge.orderMerge')}</h2>
           <p className="text-sm text-muted-foreground">
-            Drag to reorder. Total: {totalPages} page{totalPages !== 1 ? 's' : ''} from {files.length} files.
+            Drag to reorder. Total: {plural('count.page', totalPages)} from {files.length} files.
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">{file.fileName}</p>
-                <p className="text-xs text-muted-foreground">{file.pageCount} page{file.pageCount !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-muted-foreground">{plural('count.page', file.pageCount)}</p>
               </div>
 
               {/* Arrow buttons (accessible fallback) */}

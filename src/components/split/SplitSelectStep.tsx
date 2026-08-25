@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 type TabMode = 'range' | 'every-n' | 'individual';
 
@@ -162,7 +162,7 @@ export function SplitSelectStep({
       <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('split.selectPages')}</h2>
-          <p className="text-sm text-muted-foreground">{fileName} — {pageCount} page{pageCount !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-muted-foreground">{fileName} — {plural('count.page', pageCount)}</p>
         </div>
 
         {/* Mode tabs */}
@@ -255,7 +255,7 @@ export function SplitSelectStep({
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              This will create {Math.ceil(pageCount / everyN)} file{Math.ceil(pageCount / everyN) !== 1 ? 's' : ''}.
+              This will create {plural('count.file', Math.ceil(pageCount / everyN))}.
             </p>
           </div>
         )}
@@ -267,7 +267,7 @@ export function SplitSelectStep({
               {t('split.extractEachPageAsA')}
             </p>
             <p className="text-sm font-medium text-foreground mt-1">
-              This will create {pageCount} file{pageCount !== 1 ? 's' : ''}.
+              This will create {plural('count.file', pageCount)}.
             </p>
           </div>
         )}
@@ -280,7 +280,7 @@ export function SplitSelectStep({
               {previewInfo.map((item, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-foreground">{item.label}</span>
-                  <span className="text-muted-foreground">{item.count} page{item.count !== 1 ? 's' : ''}</span>
+                  <span className="text-muted-foreground">{plural('count.page', item.count)}</span>
                 </div>
               ))}
             </div>

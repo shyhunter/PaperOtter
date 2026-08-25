@@ -12,7 +12,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { organizePdf } from '@/lib/pdfOrganize';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface PageEntry {
   sourceIndex: number;
@@ -182,7 +182,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
             {/* Toolbar */}
             <div className="border-b border-border bg-background px-4 py-2 flex items-center gap-3 flex-none">
               <span className="text-sm font-medium text-foreground">
-                {pages.length} page{pages.length !== 1 ? 's' : ''}
+                {plural('count.page', pages.length)}
               </span>
               <div className="flex-1" />
               <Button variant="outline" size="sm" onClick={reverseOrder} disabled={pages.length < 2}>
@@ -297,7 +297,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('organizePdf.processing')}</>
                 ) : (
-                  `Apply (${pages.length} page${pages.length !== 1 ? 's' : ''})`
+                  `Apply (${plural('count.page', pages.length)})`
                 )}
               </Button>
             </div>

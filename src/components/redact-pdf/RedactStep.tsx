@@ -11,7 +11,7 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
@@ -320,7 +320,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
             <h4 className="text-xs font-medium text-muted-foreground">{t('redactPdf.summary')}</h4>
             <div className="rounded-md border border-border px-3 py-2 space-y-1">
               <p className="text-sm font-semibold text-foreground">
-                {allRedactions.length} redaction{allRedactions.length !== 1 ? 's' : ''}
+                {plural('count.redaction', allRedactions.length)}
               </p>
               {redactionsByPage.size > 0 && (
                 <div className="text-xs text-muted-foreground">

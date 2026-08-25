@@ -482,7 +482,7 @@ function CompressPanel() {
               value={targetSizeValue}
               onChange={(e) => setTargetSizeValue(e.target.value)}
               placeholder={floorBytes !== null ? `e.g. ${smallestReachableTarget(floorBytes, unit)}` : 'e.g. 5'}
-              title="Target file size"
+              title={t('toolSidebar.targetFileSize')}
               min={floorBytes !== null ? smallestReachableTarget(floorBytes, unit) : 1}
               // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
               // and a number input's intrinsic width is wider than the 232px

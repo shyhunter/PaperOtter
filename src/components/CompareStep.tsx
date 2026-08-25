@@ -5,7 +5,7 @@ import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 // Pages within this margin (relative to the scroll container's own height, each
 // side) are rendered ahead of being scrolled into view and kept slightly after
@@ -373,7 +373,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           </span>
         )}
         <span className="text-muted-foreground whitespace-nowrap">
-          {result.pageCount} page{result.pageCount !== 1 ? 's' : ''}
+          {plural('count.page', result.pageCount)}
         </span>
         {dimensionsLabel && (
           <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>

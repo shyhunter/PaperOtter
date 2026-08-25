@@ -32,7 +32,7 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
           size="sm"
           disabled={disabled}
           className="gap-1.5 text-muted-foreground hover:text-foreground"
-          aria-label="Recent folders"
+          aria-label={t('recentDirs.recentFolders')}
         >
           <Clock className="h-3.5 w-3.5" />
           <span className="text-xs">{t('recentDirsButton.recent')}</span>

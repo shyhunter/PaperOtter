@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cycleRotation } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 /** Rotate counter-clockwise: cycle 3 forward = 1 backward */
 function rotateCCW(r: RotationDegrees): RotationDegrees {
@@ -105,7 +105,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           <h2 className="text-lg font-semibold text-foreground">{t('common.rotatePages')}</h2>
           <p className="text-sm text-muted-foreground">
             Select pages, then rotate them left or right.
-            {rotatedCount > 0 && ` ${rotatedCount} page${rotatedCount !== 1 ? 's' : ''} rotated.`}
+            {rotatedCount > 0 && ` ${plural('count.page', rotatedCount)} rotated.`}
           </p>
         </div>
 

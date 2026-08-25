@@ -14,8 +14,8 @@ import {
 const XX = {
   'common.cancel': 'ZZcancel',
   'file.tooLarge': 'ZZ too large: {size}',
-  'redaction.count_one': 'ZZ {count} redaction',
-  'redaction.count_other': 'ZZ {count} redactions',
+  'count.redaction_one': 'ZZ {count} redaction',
+  'count.redaction_other': 'ZZ {count} redactions',
 } as const;
 
 beforeEach(() => {
@@ -61,21 +61,21 @@ describe('t', () => {
 
 describe('plural', () => {
   it('[I18N-01g] picks the English singular and plural forms', () => {
-    expect(plural('redaction.count', 1)).toBe('1 redaction');
-    expect(plural('redaction.count', 2)).toBe('2 redactions');
-    expect(plural('redaction.count', 0)).toBe('0 redactions');
+    expect(plural('count.redaction', 1)).toBe('1 redaction');
+    expect(plural('count.redaction', 2)).toBe('2 redactions');
+    expect(plural('count.redaction', 0)).toBe('0 redactions');
   });
 
   it('[I18N-01h] uses the active language forms', () => {
     setLocale('xx');
-    expect(plural('redaction.count', 1)).toBe('ZZ 1 redaction');
-    expect(plural('redaction.count', 3)).toBe('ZZ 3 redactions');
+    expect(plural('count.redaction', 1)).toBe('ZZ 1 redaction');
+    expect(plural('count.redaction', 3)).toBe('ZZ 3 redactions');
   });
 
   it('[I18N-01i] falls back to English when the language lacks the form', () => {
     registerDictionary('yy', { 'common.cancel': 'YY' });
     setLocale('yy');
-    expect(plural('redaction.count', 2)).toBe('2 redactions');
+    expect(plural('count.redaction', 2)).toBe('2 redactions');
   });
 
   it('[I18N-01m] rejects a key that has no plural forms, at compile time', () => {
@@ -90,10 +90,10 @@ describe('plural', () => {
     // Turkish has no separate singular category for this purpose; a hand-rolled
     // "n === 1 ? singular : plural" would be wrong the moment a real language
     // arrives. Registering a Turkish stub with only _other must still resolve.
-    registerDictionary('tr', { 'redaction.count_other': '{count} karartma' });
+    registerDictionary('tr', { 'count.redaction_other': '{count} karartma' });
     setLocale('tr');
-    expect(plural('redaction.count', 1)).toBe('1 karartma');
-    expect(plural('redaction.count', 5)).toBe('5 karartma');
+    expect(plural('count.redaction', 1)).toBe('1 karartma');
+    expect(plural('count.redaction', 5)).toBe('5 karartma');
   });
 });
 

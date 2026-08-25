@@ -11,7 +11,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -359,7 +359,7 @@ function MultiFileSave({
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center space-y-1">
           <p className="text-sm font-semibold text-foreground">
-            Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
+            Save {plural('count.file', multiFileOutputs.length)}
           </p>
           <p className="text-xs text-muted-foreground">{t('save.chooseSplitMode')}</p>
         </div>

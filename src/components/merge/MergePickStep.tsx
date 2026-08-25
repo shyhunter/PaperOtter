@@ -7,7 +7,7 @@ import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -99,7 +99,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{file.fileName}</p>
-                  <p className="text-xs text-muted-foreground">{file.pageCount} page{file.pageCount !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-muted-foreground">{plural('count.page', file.pageCount)}</p>
                 </div>
                 <button
                   type="button"

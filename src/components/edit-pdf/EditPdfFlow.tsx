@@ -14,7 +14,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { EditorLayout } from './EditorLayout';
 import type { EditorState, PageEditState } from '@/types/editor';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): EditorState {
   const pages: PageEditState[] = Array.from({ length: pageCount }, (_, i) => ({
@@ -185,7 +185,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
             {/* Top info bar */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
               <span className="text-xs text-muted-foreground">
-                {fileName} -- {pageCount} page{pageCount !== 1 ? 's' : ''}
+                {fileName} -- {plural('count.page', pageCount)}
               </span>
               {editorState.isDirty && (
                 <span className="text-xs text-amber-600 font-medium">{t('common.unsavedChanges')}</span>

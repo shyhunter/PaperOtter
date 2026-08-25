@@ -18,7 +18,7 @@ interface ToolSidebarPreviewProps {
    *  current page. Pass 0 when previewBytes is a single-page preview PDF so
    *  the thumbnail always shows the correct page. */
   previewPageIndex?: number;
-  /** Inline style applied to the "After" image — e.g. a CSS transform to
+  /** Inline style applied to the t('compare.after') image — e.g. a CSS transform to
    *  simulate an edit (rotation) visually without re-processing the PDF. */
   afterImageStyle?: React.CSSProperties;
 }
@@ -36,7 +36,7 @@ export function ToolSidebarPreview({
   const [showOverlay, setShowOverlay] = useState(false);
   const renderIdRef = useRef(0);
 
-  // Render "Before" thumbnail
+  // Render t('compare.before') thumbnail
   useEffect(() => {
     if (originalBytes.byteLength === 0) return;
 
@@ -60,7 +60,7 @@ export function ToolSidebarPreview({
     };
   }, [originalBytes, state.currentPage]);
 
-  // Render "After" thumbnail
+  // Render t('compare.after') thumbnail
   useEffect(() => {
     if (!previewBytes || previewBytes.byteLength === 0) {
       setAfterUrl(null);
@@ -96,7 +96,7 @@ export function ToolSidebarPreview({
             <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">{t('compare.before')}</div>
             <div className="border rounded bg-muted/30 aspect-[3/4] flex items-center justify-center overflow-hidden">
               {beforeUrl ? (
-                <img src={beforeUrl} alt="Before" className="w-full h-full object-contain" />
+                <img src={beforeUrl} alt={t('compare.before')} className="w-full h-full object-contain" />
               ) : (
                 <div className="text-[10px] text-muted-foreground">...</div>
               )}
@@ -110,7 +110,7 @@ export function ToolSidebarPreview({
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : afterUrl ? (
-                <img src={afterUrl} alt="After" className="w-full h-full object-contain" style={afterImageStyle} />
+                <img src={afterUrl} alt={t('compare.after')} className="w-full h-full object-contain" style={afterImageStyle} />
               ) : beforeUrl ? (
                 <img src={beforeUrl} alt={t('pdfEditor.pending')} className="w-full h-full object-contain opacity-30" />
               ) : (
