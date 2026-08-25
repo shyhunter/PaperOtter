@@ -132,6 +132,52 @@ describe('WatermarkOverlay', () => {
     expect(latestDraft!.fontSize).toBeLessThanOrEqual(200);
   });
 
+  it('WMO-11: the rotate handle turns it', () => {
+    renderOverlay({ ...DEFAULT_WATERMARK_OPTIONS, text: 'DRAFT', rotation: -45 });
+
+    // The handle sits 40px straight above the centre (300, 400). Swinging the
+    // pointer from there round to due east is a quarter turn clockwise.
+    drag(screen.getByTestId('watermark-rotate-handle'), 300, 360, 340, 400);
+
+    expect(latestDraft!.rotation).toBeCloseTo(-135, 4);
+  });
+
+  it('WMO-12: rotating neither moves nor resizes it', () => {
+    renderOverlay({ ...DEFAULT_WATERMARK_OPTIONS, text: 'DRAFT', fontSize: 48 });
+
+    const before = latestDraft;
+    drag(screen.getByTestId('watermark-rotate-handle'), 300, 360, 340, 400);
+
+    expect(latestDraft!.centerX).toBe(before!.centerX);
+    expect(latestDraft!.centerY).toBe(before!.centerY);
+    expect(latestDraft!.fontSize).toBe(before!.fontSize);
+  });
+
+  it('WMO-13: rotation stays inside the range the sidebar field accepts', () => {
+    renderOverlay({ ...DEFAULT_WATERMARK_OPTIONS, text: 'DRAFT', rotation: -45 });
+
+    // Half a turn from straight up puts the raw sum at -225.
+    drag(screen.getByTestId('watermark-rotate-handle'), 300, 360, 300, 440);
+
+    expect(latestDraft!.rotation).toBeCloseTo(135, 4);
+    expect(latestDraft!.rotation).toBeGreaterThan(-180);
+    expect(latestDraft!.rotation).toBeLessThanOrEqual(180);
+  });
+
+  it('WMO-14: holding Shift snaps to 15 degrees', () => {
+    renderOverlay({ ...DEFAULT_WATERMARK_OPTIONS, text: 'DRAFT', rotation: -45 });
+
+    // Free rotation would land on about -120.96 here.
+    act(() => {
+      const el = screen.getByTestId('watermark-rotate-handle');
+      fireEvent.mouseDown(el, { clientX: 300, clientY: 360, button: 0 });
+      fireEvent.mouseMove(document, { clientX: 340, clientY: 390, shiftKey: true });
+      fireEvent.mouseUp(document);
+    });
+
+    expect(latestDraft!.rotation).toBe(-120);
+  });
+
   it('WMO-10: a plain click does not nudge it', () => {
     renderOverlay({ ...DEFAULT_WATERMARK_OPTIONS, text: 'DRAFT' });
 
