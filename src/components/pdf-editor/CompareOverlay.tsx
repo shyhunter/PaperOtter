@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 import { X, Minimize2, Maximize2, Columns2, Layers, ZoomIn, ZoomOut } from 'lucide-react';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
+import { t } from '@/i18n';
 
 export type CompareMode = 'overlay' | 'side-by-side';
 
@@ -183,7 +184,7 @@ export function CompareOverlay({
         className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground shadow-lg text-xs font-medium hover:bg-primary/90"
       >
         <Maximize2 className="h-3.5 w-3.5" />
-        Before / After
+        {t('pdfEditor.beforeAfter')}
       </button>
     );
   }
@@ -193,19 +194,19 @@ export function CompareOverlay({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold">Before / After Comparison</h3>
+          <h3 className="text-sm font-semibold">{t('pdfEditor.beforeAfterComparison')}</h3>
           <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
             <button
               onClick={() => setMode('side-by-side')}
               className={`px-2 py-1 text-[10px] rounded ${mode === 'side-by-side' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-              title="Side by side"
+              title={t('pdfEditor.sideBySide')}
             >
               <Columns2 className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => setMode('overlay')}
               className={`px-2 py-1 text-[10px] rounded ${mode === 'overlay' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-              title="Overlay slider"
+              title={t('pdfEditor.overlaySlider')}
             >
               <Layers className="h-3.5 w-3.5" />
             </button>
@@ -213,18 +214,18 @@ export function CompareOverlay({
         </div>
         <div className="flex items-center gap-2">
           {/* Zoom controls */}
-          <button onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))} className="p-1 rounded hover:bg-muted" title="Zoom out">
+          <button onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))} className="p-1 rounded hover:bg-muted" title={t('common.zoomOut')}>
             <ZoomOut className="h-4 w-4" />
           </button>
           <span className="text-xs font-mono w-12 text-center">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom((z) => Math.min(3.0, z + 0.25))} className="p-1 rounded hover:bg-muted" title="Zoom in">
+          <button onClick={() => setZoom((z) => Math.min(3.0, z + 0.25))} className="p-1 rounded hover:bg-muted" title={t('common.zoomIn')}>
             <ZoomIn className="h-4 w-4" />
           </button>
           <div className="w-px h-5 bg-border mx-1" />
-          <button onClick={() => setIsMinimized(true)} className="p-1 rounded hover:bg-muted" title="Minimize">
+          <button onClick={() => setIsMinimized(true)} className="p-1 rounded hover:bg-muted" title={t('pdfEditor.minimize')}>
             <Minimize2 className="h-4 w-4" />
           </button>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted" title="Close">
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted" title={t('common.close')}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -366,7 +367,7 @@ export function CompareOverlay({
           {/* Slider control at bottom */}
           <div className="sticky bottom-4 flex justify-center mt-4">
             <div className="bg-background/90 backdrop-blur rounded-full px-4 py-2 shadow-lg flex items-center gap-3">
-              <span className="text-[10px] text-muted-foreground">Before</span>
+              <span className="text-[10px] text-muted-foreground">{t('compare.before')}</span>
               <input
                 type="range"
                 min={0}
@@ -374,9 +375,9 @@ export function CompareOverlay({
                 value={sliderPos}
                 onChange={(e) => setSliderPos(Number(e.target.value))}
                 className="w-48"
-                title="Comparison slider"
+                title={t('pdfEditor.comparisonSlider')}
               />
-              <span className="text-[10px] text-muted-foreground">After</span>
+              <span className="text-[10px] text-muted-foreground">{t('compare.after')}</span>
             </div>
           </div>
         </div>

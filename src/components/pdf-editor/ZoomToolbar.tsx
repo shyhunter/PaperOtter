@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Minus, Plus, ChevronUp } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { ZoomPreset } from '@/types/editor';
+import { t } from '@/i18n';
 
 const PRESETS: { label: string; value: ZoomPreset }[] = [
   { label: '50%', value: 0.5 },
@@ -39,7 +40,7 @@ export function ZoomToolbar() {
           type="button"
           onClick={zoomOut}
           className="p-1 rounded hover:bg-muted transition-colors"
-          title="Zoom out (Cmd+-)"
+          title={t('pdfEditor.zoomOutCmd')}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -48,7 +49,7 @@ export function ZoomToolbar() {
           type="button"
           onClick={() => setShowPresets(!showPresets)}
           className="min-w-[4rem] px-2 py-0.5 text-xs font-medium text-center rounded hover:bg-muted transition-colors flex items-center justify-center gap-1"
-          title="Zoom presets"
+          title={t('pdfEditor.zoomPresets')}
         >
           {zoomPercent}%
           <ChevronUp className={`w-3 h-3 transition-transform ${showPresets ? '' : 'rotate-180'}`} />
@@ -58,7 +59,7 @@ export function ZoomToolbar() {
           type="button"
           onClick={zoomIn}
           className="p-1 rounded hover:bg-muted transition-colors"
-          title="Zoom in (Cmd+=)"
+          title={t('pdfEditor.zoomInCmd')}
         >
           <Plus className="w-4 h-4" />
         </button>

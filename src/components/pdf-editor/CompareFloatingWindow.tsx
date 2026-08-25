@@ -10,6 +10,7 @@ import { X, ZoomIn, ZoomOut } from 'lucide-react';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 // Zoom steps matching CompareStep
 const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
@@ -131,12 +132,12 @@ function PreviewPanel({
       >
         {hasError ? (
           <div className="flex h-full min-h-[300px] items-center justify-center">
-            <span className="text-sm text-muted-foreground">Preview unavailable</span>
+            <span className="text-sm text-muted-foreground">{t('compare.unavailable')}</span>
           </div>
         ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Rendering preview...</span>
+            <span className="text-sm text-muted-foreground">{t('pdfEditor.renderingPreview')}</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
@@ -268,7 +269,7 @@ export function CompareFloatingWindow() {
     <div className="absolute inset-0 z-50 flex flex-col bg-background">
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 flex-none">
-        <span className="text-sm font-semibold text-foreground">Compare: Original vs Current</span>
+        <span className="text-sm font-semibold text-foreground">{t('pdfEditor.compareOriginalVsCurrent')}</span>
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">
@@ -291,7 +292,7 @@ export function CompareFloatingWindow() {
             type="button"
             onClick={() => setCompareMode('off')}
             className="ml-2 p-1 rounded hover:bg-muted transition-colors"
-            title="Close comparison (Esc)"
+            title={t('pdfEditor.closeComparisonEsc')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -301,7 +302,7 @@ export function CompareFloatingWindow() {
       {/* Side-by-side preview panels */}
       <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
         <PreviewPanel
-          label="Original"
+          label={t('imageCompare.original')}
           sizeLabel={formatBytes(originalSize)}
           handle={originalHandle}
           isRendering={originalRendering}
@@ -311,7 +312,7 @@ export function CompareFloatingWindow() {
           onScroll={() => handleScroll('before')}
         />
         <PreviewPanel
-          label="Current"
+          label={t('pdfEditor.current')}
           sizeLabel={formatBytes(currentSize)}
           handle={currentHandle}
           isRendering={currentRendering}
@@ -328,7 +329,7 @@ export function CompareFloatingWindow() {
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom out"
+            aria-label={t('common.zoomOut')}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
@@ -340,7 +341,7 @@ export function CompareFloatingWindow() {
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom in"
+            aria-label={t('common.zoomIn')}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>

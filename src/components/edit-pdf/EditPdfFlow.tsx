@@ -14,6 +14,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { EditorLayout } from './EditorLayout';
 import type { EditorState, PageEditState } from '@/types/editor';
+import { t } from '@/i18n';
 
 function buildInitialEditorState(pdfBytes: Uint8Array, pageCount: number): EditorState {
   const pages: PageEditState[] = Array.from({ length: pageCount }, (_, i) => ({
@@ -152,9 +153,9 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Edit PDF</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('editPdf.editPdf')}</h2>
               <p className="text-sm text-muted-foreground">
-                Select a PDF to edit text and images.
+                {t('editPdf.selectAPdfToEdit')}
               </p>
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -165,12 +166,12 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -187,7 +188,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
                 {fileName} -- {pageCount} page{pageCount !== 1 ? 's' : ''}
               </span>
               {editorState.isDirty && (
-                <span className="text-xs text-amber-600 font-medium">Unsaved changes</span>
+                <span className="text-xs text-amber-600 font-medium">{t('common.unsavedChanges')}</span>
               )}
             </div>
             <EditorLayout
@@ -206,7 +207,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
               className="absolute bottom-6 right-6 z-50 shadow-lg px-6 py-3 text-base font-semibold gap-2 rounded-full"
             >
               <Save className="w-5 h-5" />
-              Save changes
+              {t('editPdf.saveChanges')}
             </Button>
           </div>
         )}

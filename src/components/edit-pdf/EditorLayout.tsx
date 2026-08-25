@@ -20,6 +20,7 @@ import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { extractPageImages } from '@/lib/pdfImageExtract';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import type { EditorState, TextBlock, ImageBlock, EditorMode } from '@/types/editor';
+import { t } from '@/i18n';
 
 interface EditorLayoutProps {
   /** PDF file bytes */
@@ -465,7 +466,7 @@ export function EditorLayout({
             onClick={() => onPageChange(Math.max(0, currentPage - 1))}
             disabled={currentPage === 0}
             className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Previous page"
+            title={t('common.previousPage')}
           >
             <ChevronUp className="w-4 h-4" />
           </button>
@@ -474,7 +475,7 @@ export function EditorLayout({
             onClick={() => onPageChange(Math.min(pageCount - 1, currentPage + 1))}
             disabled={currentPage === pageCount - 1}
             className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Next page"
+            title={t('common.nextPage')}
           >
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -485,7 +486,7 @@ export function EditorLayout({
             onKeyDown={handlePageInput}
             onBlur={() => setPageInputValue(String(currentPage + 1))}
             className="w-10 text-center rounded border border-input bg-background px-1 py-0.5 text-xs"
-            title="Page number"
+            title={t('editPdf.pageNumber')}
           />
           <span className="text-xs text-muted-foreground">/ {pageCount}</span>
 
@@ -496,7 +497,7 @@ export function EditorLayout({
             type="button"
             onClick={handleZoomOut}
             className="p-1 rounded hover:bg-muted"
-            title="Zoom out"
+            title={t('common.zoomOut')}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
@@ -504,7 +505,7 @@ export function EditorLayout({
             type="button"
             onClick={handleZoomIn}
             className="p-1 rounded hover:bg-muted"
-            title="Zoom in"
+            title={t('common.zoomIn')}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
@@ -513,7 +514,7 @@ export function EditorLayout({
             type="button"
             onClick={handleFitToWidth}
             className="p-1 rounded hover:bg-muted"
-            title="Fit to width"
+            title={t('editPdf.fitToWidth')}
           >
             <Maximize2 className="w-4 h-4" />
           </button>
@@ -536,7 +537,7 @@ export function EditorLayout({
                 : 'text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            Edit
+            {t('editPdf.edit')}
           </button>
           <button
             onClick={() => setRightPanelTab('export')}
@@ -547,7 +548,7 @@ export function EditorLayout({
                 : 'text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            Export
+            {t('editPdf.export')}
           </button>
         </div>
 

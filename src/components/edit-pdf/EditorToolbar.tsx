@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { TextBlock, ImageBlock, EditorMode } from '@/types/editor';
 import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { t } from '@/i18n';
 
 /** Standard PDF fonts available in pdf-lib.
  *  pdf-lib only supports the 14 standard fonts grouped into 3 families.
@@ -244,23 +245,23 @@ export function EditorToolbar({
       {/* Mode toggle */}
       <div>
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
-          Mode
+          {t('editPdf.mode')}
         </label>
         <div className="flex gap-1">
           <Button
             variant={editorMode === 'select' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onModeChange('select')}
-            title="Select mode"
+            title={t('editPdf.selectMode')}
           >
             <MousePointer className="w-3.5 h-3.5 mr-1" />
-            Select
+            {t('editPdf.select')}
           </Button>
           <Button
             variant={editorMode === 'text' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onModeChange('text')}
-            title="Add text mode"
+            title={t('editPdf.addTextMode')}
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
             <Type className="w-3.5 h-3.5" />
@@ -269,7 +270,7 @@ export function EditorToolbar({
             variant={editorMode === 'image' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onModeChange('image')}
-            title="Image mode"
+            title={t('editPdf.imageMode')}
           >
             <ImageIcon className="w-3.5 h-3.5" />
           </Button>
@@ -286,14 +287,14 @@ export function EditorToolbar({
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
           <ImageIcon className="w-3.5 h-3.5 mr-1" />
-          Insert Image
+          {t('editPdf.insertImage')}
         </Button>
         <input
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
-          title="Select image file to insert"
+          title={t('editPdf.selectImageFileToInsert')}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handleImageFile(file);
@@ -308,7 +309,7 @@ export function EditorToolbar({
           {/* Font family */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Font
+              {t('convertDoc.font')}
             </label>
             <select
               value={selectedBlock.fontName}
@@ -326,7 +327,7 @@ export function EditorToolbar({
           {/* Font size */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Size
+              {t('common.size')}
             </label>
             <div className="flex items-center gap-1">
               <Button
@@ -360,7 +361,7 @@ export function EditorToolbar({
           {/* Color */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Current Color
+              {t('editPdf.currentColor')}
             </label>
             <div className="flex items-center gap-2 mb-2">
               <div
@@ -382,7 +383,7 @@ export function EditorToolbar({
                 value={selectedBlock.color}
                 onChange={(e) => handleColorChange(e.target.value)}
                 className="w-8 h-8 rounded cursor-pointer border border-input"
-                title="Pick color"
+                title={t('editPdf.pickColor')}
               />
             </div>
             <div className="flex flex-wrap gap-1.5 mb-2">
@@ -405,7 +406,7 @@ export function EditorToolbar({
 
             {/* Custom Colors */}
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Custom Colors
+              {t('editPdf.customColors')}
             </label>
             <div className="flex flex-wrap gap-1.5 items-center">
               {customColors.map((c) => (
@@ -425,7 +426,7 @@ export function EditorToolbar({
               ))}
               <button
                 onClick={() => addCustomColor(selectedBlock.color)}
-                title="Save current color"
+                title={t('editPdf.saveCurrentColor')}
                 className="w-7 h-7 rounded-md border-2 border-dashed border-border hover:border-muted-foreground flex items-center justify-center text-muted-foreground"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -436,7 +437,7 @@ export function EditorToolbar({
           {/* Style toggles: Bold / Italic / Underline */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Style
+              {t('common.style')}
             </label>
             <div className="flex gap-1">
               <Button
@@ -444,7 +445,7 @@ export function EditorToolbar({
                 size="sm"
                 className={cn('h-8 w-8 p-0', selectedBlock.bold && 'font-bold')}
                 onClick={() => onBlockUpdate(selectedBlock.id, { bold: !selectedBlock.bold })}
-                title="Bold"
+                title={t('common.bold')}
               >
                 <Bold className="w-4 h-4" />
               </Button>
@@ -453,7 +454,7 @@ export function EditorToolbar({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => onBlockUpdate(selectedBlock.id, { italic: !selectedBlock.italic })}
-                title="Italic"
+                title={t('common.italic')}
               >
                 <Italic className="w-4 h-4" />
               </Button>
@@ -462,7 +463,7 @@ export function EditorToolbar({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => onBlockUpdate(selectedBlock.id, { underline: !selectedBlock.underline })}
-                title="Underline"
+                title={t('common.underline')}
               >
                 <Underline className="w-4 h-4" />
               </Button>
@@ -472,7 +473,7 @@ export function EditorToolbar({
           {/* Alignment */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Alignment
+              {t('editPdf.alignment')}
             </label>
             <div className="flex gap-1">
               {([
@@ -504,7 +505,7 @@ export function EditorToolbar({
               onClick={handleDelete}
             >
               <Trash2 className="w-3.5 h-3.5 mr-2" />
-              Delete Text
+              {t('editPdf.deleteText')}
             </Button>
           </div>
         </>
@@ -516,7 +517,7 @@ export function EditorToolbar({
           {/* Rotate */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Rotate
+              {t('editPdf.rotate')}
             </label>
             <div className="flex gap-1">
               <Button
@@ -524,7 +525,7 @@ export function EditorToolbar({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => handleRotate(270)}
-                title="Rotate 90 counter-clockwise"
+                title={t('editPdf.rotate90CounterClockwise')}
               >
                 <RotateCcw className="w-4 h-4" />
               </Button>
@@ -533,7 +534,7 @@ export function EditorToolbar({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => handleRotate(90)}
-                title="Rotate 90 clockwise"
+                title={t('editPdf.rotate90Clockwise')}
               >
                 <RotateCw className="w-4 h-4" />
               </Button>
@@ -542,7 +543,7 @@ export function EditorToolbar({
                 size="sm"
                 className="h-8 px-2"
                 onClick={() => handleRotate(180)}
-                title="Rotate 180"
+                title={t('editPdf.rotate180')}
               >
                 180
               </Button>
@@ -552,14 +553,14 @@ export function EditorToolbar({
           {/* Flip */}
           <div>
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 block">
-              Flip
+              {t('editPdf.flip')}
             </label>
             <div className="flex gap-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleFlipH}
-                title="Flip horizontal"
+                title={t('editPdf.flipHorizontal')}
               >
                 <FlipHorizontal className="w-4 h-4 mr-1" />
                 H
@@ -568,7 +569,7 @@ export function EditorToolbar({
                 variant="outline"
                 size="sm"
                 onClick={handleFlipV}
-                title="Flip vertical"
+                title={t('editPdf.flipVertical')}
               >
                 <FlipVertical className="w-4 h-4 mr-1" />
                 V
@@ -585,14 +586,14 @@ export function EditorToolbar({
               onClick={handleReplaceImage}
             >
               <Replace className="w-3.5 h-3.5 mr-2" />
-              Replace Image
+              {t('editPdf.replaceImage')}
             </Button>
             <input
               ref={replaceInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
-              title="Select replacement image"
+              title={t('editPdf.selectReplacementImage')}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file && selectedImageBlock) handleImageFile(file, selectedImageBlock.id);
@@ -610,7 +611,7 @@ export function EditorToolbar({
               onClick={handleImageDelete}
             >
               <Trash2 className="w-3.5 h-3.5 mr-2" />
-              Delete Image
+              {t('editPdf.deleteImage')}
             </Button>
           </div>
         </>
@@ -619,17 +620,17 @@ export function EditorToolbar({
       {/* Hint when nothing is selected */}
       {!selectedBlock && !selectedImageBlock && editorMode === 'select' && (
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Click a text block or image on the page to select and edit it.
+          {t('editPdf.clickATextBlockOr')}
         </p>
       )}
       {!selectedBlock && !selectedImageBlock && editorMode === 'text' && (
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Click anywhere on the page to add a new text block.
+          {t('editPdf.clickAnywhereOnThePage')}
         </p>
       )}
       {!selectedBlock && !selectedImageBlock && editorMode === 'image' && (
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Click "Insert Image" to add an image, or select an existing image to edit it.
+          {t('editPdf.clickInsertImageToAdd')}
         </p>
       )}
 
@@ -644,7 +645,7 @@ export function EditorToolbar({
           title="Undo"
         >
           <Undo2 className="w-4 h-4 mr-1" />
-          Undo
+          {t('editPdf.undo')}
         </Button>
         <Button
           variant="outline"
@@ -655,7 +656,7 @@ export function EditorToolbar({
           title="Redo"
         >
           <Redo2 className="w-4 h-4 mr-1" />
-          Redo
+          {t('editPdf.redo')}
         </Button>
       </div>
     </div>

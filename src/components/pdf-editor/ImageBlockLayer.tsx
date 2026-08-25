@@ -9,6 +9,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { ImageBlock } from '@/types/editor';
 import { resizeFromCorner, type Corner } from '@/lib/blockResize';
+import { t } from '@/i18n';
 
 interface ImageBlockLayerProps {
   pageIndex: number;
@@ -178,7 +179,7 @@ function ImageBlockView({
     >
       <img
         src={src}
-        alt="Placed signature"
+        alt={t('pdfEditor.placedSignature')}
         draggable={false}
         style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }}
       />

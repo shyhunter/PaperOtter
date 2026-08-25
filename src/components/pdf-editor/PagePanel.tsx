@@ -17,6 +17,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { useEditorContext } from '@/context/EditorContext';
 import { PagePanelThumbnail } from './PagePanelThumbnail';
+import { t } from '@/i18n';
 
 const PANEL_WIDTH = 180;
 const COLLAPSED_WIDTH = 28;
@@ -247,7 +248,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           type="button"
           onClick={() => setIsCollapsed(false)}
           className="p-1.5 mt-1 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Expand page panel"
+          aria-label={t('pdfEditor.expandPagePanel')}
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
@@ -268,13 +269,13 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       {/* Header with collapse button */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          Pages
+          {t('common.pages')}
         </span>
         <button
           type="button"
           onClick={() => setIsCollapsed(true)}
           className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Collapse page panel"
+          aria-label={t('pdfEditor.collapsePagePanel')}
         >
           <ChevronLeft className="h-3 w-3" />
         </button>
@@ -314,8 +315,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
             type="button"
             onClick={() => setShowInsertMenu((prev) => !prev)}
             className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            aria-label="Insert page"
-            title="Insert page"
+            aria-label={t('pdfEditor.insertPage')}
+            title={t('pdfEditor.insertPage')}
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -328,7 +329,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-popover-foreground hover:bg-accent transition-colors"
               >
                 <File className="h-3.5 w-3.5" />
-                Blank page
+                {t('pdfEditor.blankPage')}
               </button>
               <button
                 type="button"
@@ -336,7 +337,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-popover-foreground hover:bg-accent transition-colors"
               >
                 <FileText className="h-3.5 w-3.5" />
-                From PDF file...
+                {t('pdfEditor.fromPdfFile')}
               </button>
             </div>
           )}
@@ -348,8 +349,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           onClick={handleMoveUp}
           disabled={!canMoveUp}
           className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Move page up"
-          title="Move page up"
+          aria-label={t('pdfEditor.movePageUp')}
+          title={t('pdfEditor.movePageUp')}
         >
           <ChevronUp className="h-3.5 w-3.5" />
         </button>
@@ -360,8 +361,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           onClick={handleMoveDown}
           disabled={!canMoveDown}
           className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Move page down"
-          title="Move page down"
+          aria-label={t('pdfEditor.movePageDown')}
+          title={t('pdfEditor.movePageDown')}
         >
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
@@ -372,8 +373,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           onClick={handleDelete}
           disabled={!canDelete}
           className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Delete selected pages"
-          title="Delete selected pages"
+          aria-label={t('pdfEditor.deleteSelectedPages')}
+          title={t('pdfEditor.deleteSelectedPages')}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -384,8 +385,8 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
           onClick={handleDuplicate}
           disabled={!canDuplicate}
           className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="Duplicate selected pages"
-          title="Duplicate selected pages"
+          aria-label={t('pdfEditor.duplicateSelectedPages')}
+          title={t('pdfEditor.duplicateSelectedPages')}
         >
           <Copy className="h-3.5 w-3.5" />
         </button>

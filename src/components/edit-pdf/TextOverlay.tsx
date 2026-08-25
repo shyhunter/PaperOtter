@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import type { TextBlock, EditorMode } from '@/types/editor';
+import { t } from '@/i18n';
 
 /** Map PDF font names to web-safe CSS font stacks */
 function mapFontToCSS(fontName: string): string {
@@ -305,7 +306,7 @@ function TextBlockDiv({
           ref={textareaRef}
           value={localText}
           onChange={(e) => setLocalText(e.target.value)}
-          aria-label="Edit text block"
+          aria-label={t('editPdf.editTextBlock')}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           spellCheck={false}

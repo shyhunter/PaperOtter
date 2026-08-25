@@ -345,6 +345,192 @@ export const en = {
   'watermark.text': 'Text',
   'watermark.watermarkOptions': 'Watermark Options',
   'watermark.watermarkPreview': 'Watermark preview',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.editPdf': 'Edit PDF',
+  'editPdf.saveChanges': 'Save changes',
+  'editPdf.selectAPdfToEdit': 'Select a PDF to edit text and images.',
+  'common.unsavedChanges': 'Unsaved changes',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.edit': 'Edit',
+  'editPdf.export': 'Export',
+  'editPdf.fitToWidth': 'Fit to width',
+  'common.nextPage': 'Next page',
+  'editPdf.pageNumber': 'Page number',
+  'common.previousPage': 'Previous page',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.addTextMode': 'Add text mode',
+  'editPdf.alignment': 'Alignment',
+  'common.bold': 'Bold',
+  'editPdf.clickInsertImageToAdd': 'Click "Insert Image" to add an image, or select an existing image to edit it.',
+  'editPdf.clickATextBlockOr': 'Click a text block or image on the page to select and edit it.',
+  'editPdf.clickAnywhereOnThePage': 'Click anywhere on the page to add a new text block.',
+  'editPdf.currentColor': 'Current Color',
+  'editPdf.customColors': 'Custom Colors',
+  'editPdf.deleteImage': 'Delete Image',
+  'editPdf.deleteText': 'Delete Text',
+  'editPdf.flip': 'Flip',
+  'editPdf.flipHorizontal': 'Flip horizontal',
+  'editPdf.flipVertical': 'Flip vertical',
+  'editPdf.imageMode': 'Image mode',
+  'editPdf.insertImage': 'Insert Image',
+  'common.italic': 'Italic',
+  'editPdf.mode': 'Mode',
+  'editPdf.pickColor': 'Pick color',
+  'editPdf.redo': 'Redo',
+  'editPdf.replaceImage': 'Replace Image',
+  'editPdf.rotate': 'Rotate',
+  'editPdf.rotate180': 'Rotate 180',
+  'editPdf.rotate90Clockwise': 'Rotate 90 clockwise',
+  'editPdf.rotate90CounterClockwise': 'Rotate 90 counter-clockwise',
+  'editPdf.saveCurrentColor': 'Save current color',
+  'editPdf.select': 'Select',
+  'editPdf.selectImageFileToInsert': 'Select image file to insert',
+  'editPdf.selectMode': 'Select mode',
+  'editPdf.selectReplacementImage': 'Select replacement image',
+  'common.size': 'Size',
+  'common.style': 'Style',
+  'common.underline': 'Underline',
+  'editPdf.undo': 'Undo',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.exportConvert': 'Export / Convert',
+  'editPdf.noDocumentConverterFoundInstall': 'No document converter found. Install any converter (Microsoft Word, LibreOffice, etc.) to enable export.',
+  'editPdf.pendingEditsWillBeApplied': 'Pending edits will be applied before export.',
+  'editPdf.sizePt': 'Size (pt)',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.image': 'Image',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.editTextBlock': 'Edit text block',
+
+  // ── editPdf ─────────────────────────────────────────────────────────────
+  'editPdf.collapseSidebar': 'Collapse sidebar',
+  'editPdf.expandSidebar': 'Expand sidebar',
+  'editPdf.goToPageNumber': 'Go to page number',
+  'editPdf.goTo': 'Go to:',
+  'common.pages': 'Pages',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.closeComparisonEsc': 'Close comparison (Esc)',
+  'pdfEditor.compareOriginalVsCurrent': 'Compare: Original vs Current',
+  'pdfEditor.current': 'Current',
+  'pdfEditor.renderingPreview': 'Rendering preview...',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.beforeAfter': 'Before / After',
+  'pdfEditor.beforeAfterComparison': 'Before / After Comparison',
+  'pdfEditor.comparisonSlider': 'Comparison slider',
+  'pdfEditor.minimize': 'Minimize',
+  'pdfEditor.overlaySlider': 'Overlay slider',
+  'pdfEditor.sideBySide': 'Side by side',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.compare': 'Compare',
+  'pdfEditor.dashboard': 'Dashboard',
+  'pdfEditor.discardAllChangesAndRestore': 'Discard all changes and restore the document as it was opened',
+  'pdfEditor.revert': 'Revert',
+  'pdfEditor.saveCmdS': 'Save (Cmd+S)',
+  'pdfEditor.saved': 'Saved',
+  'pdfEditor.toggleCompareViewOriginalVs': 'Toggle compare view (original vs edited)',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.backToDashboard': 'Back to Dashboard',
+  'pdfEditor.loadingPdf': 'Loading PDF...',
+  'pdfEditor.unableToOpenFile': 'Unable to open file',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.addTextModeClickOn': 'Add text mode (click on page to add)',
+  'pdfEditor.decreaseFontSize': 'Decrease font size',
+  'pdfEditor.increaseFontSize': 'Increase font size',
+  'pdfEditor.textColor': 'Text color',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.placedSignature': 'Placed signature',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.blankPage': 'Blank page',
+  'pdfEditor.collapsePagePanel': 'Collapse page panel',
+  'pdfEditor.deleteSelectedPages': 'Delete selected pages',
+  'pdfEditor.duplicateSelectedPages': 'Duplicate selected pages',
+  'pdfEditor.expandPagePanel': 'Expand page panel',
+  'pdfEditor.fromPdfFile': 'From PDF file...',
+  'pdfEditor.insertPage': 'Insert page',
+  'pdfEditor.movePageDown': 'Move page down',
+  'pdfEditor.movePageUp': 'Move page up',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.failedToSave': 'Failed to save',
+  'pdfEditor.saving': 'Saving...',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.allEqual': 'All equal',
+  'pdfEditor.allMarginsMm': 'All margins (mm)',
+  'pdfEditor.allSides': 'All sides',
+  'pdfEditor.applied': 'Applied',
+  'pdfEditor.applyToAllPages': 'Apply to all pages',
+  'pdfEditor.attemptToFixCorruptedOr': 'Attempt to fix corrupted or malformed PDF structure using Ghostscript.',
+  'pdfEditor.bottomCenter': 'Bottom Center',
+  'pdfEditor.bottomLeft': 'Bottom Left',
+  'pdfEditor.bottomRight': 'Bottom Right',
+  'pdfEditor.clearAll': 'Clear all',
+  'pdfEditor.clickAnywhereOnThePdf': 'Click anywhere on the PDF to place a text block.',
+  'pdfEditor.compareFullSize': 'Compare full size',
+  'pdfEditor.compressed': 'Compressed',
+  'pdfEditor.currentSize': 'Current size',
+  'pdfEditor.deleteSavedSignature': 'Delete saved signature',
+  'pdfEditor.direction': 'Direction',
+  'pdfEditor.enterPdfPassword': 'Enter PDF password',
+  'pdfEditor.findText': 'Find text',
+  'pdfEditor.findTextToRedact': 'Find text to redact',
+  'pdfEditor.keepImageResolution': 'Keep image resolution',
+  'pdfEditor.nameNumber': 'Name, number…',
+  'pdfEditor.options': 'Options',
+  'pdfEditor.pdfIsNowPasswordProtected': 'PDF is now password-protected',
+  'pdfEditor.pdfPasswordProtectionRemoved': 'PDF password protection removed',
+  'pdfEditor.pdfALevel': 'PDF/A Level',
+  'pdfEditor.pdfAConformanceLevel': 'PDF/A conformance level',
+  'pdfEditor.pdfA1MostCompatible': 'PDF/A-1 (most compatible)',
+  'pdfEditor.pdfA2Recommended': 'PDF/A-2 (recommended)',
+  'pdfEditor.pdfA3FullFeatures': 'PDF/A-3 (full features)',
+  'pdfEditor.passwordsDoNotMatch': 'Passwords do not match',
+  'pdfEditor.placeOnPage': 'Place on Page',
+  'pdfEditor.placementModeActive': 'Placement Mode Active',
+  'pdfEditor.qualityPreset': 'Quality Preset',
+  'pdfEditor.reduction': 'Reduction',
+  'pdfEditor.removePageNumbers': 'Remove page numbers',
+  'pdfEditor.saveSignatureForReuse': 'Save signature for reuse',
+  'pdfEditor.signatureFontSize': 'Signature font size',
+  'pdfEditor.signatureText': 'Signature text',
+  'pdfEditor.sizeChange': 'Size change',
+  'pdfEditor.sizeUnit': 'Size unit',
+  'pdfEditor.startAt': 'Start At',
+  'pdfEditor.startAt2': 'Start at',
+  'pdfEditor.target': 'Target',
+  'pdfEditor.targetFileSize': 'Target file size',
+  'pdfEditor.toolPanelNotYetImplemented': 'Tool panel not yet implemented.',
+  'pdfEditor.topCenter': 'Top Center',
+  'pdfEditor.topLeft': 'Top Left',
+  'pdfEditor.topRight': 'Top Right',
+  'pdfEditor.typeYourSignature': 'Type your signature',
+  'pdfEditor.yourName': 'Your Name',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.fullComparisonView': 'Full comparison view',
+  'pdfEditor.pending': 'Pending',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.dragToMove': 'Drag to move',
+  'pdfEditor.dragToResize': 'Drag to resize',
+  'pdfEditor.dragToRotateHoldShift': 'Drag to rotate — hold Shift to snap',
+
+  // ── pdfEditor ───────────────────────────────────────────────────────────
+  'pdfEditor.zoomInCmd': 'Zoom in (Cmd+=)',
+  'pdfEditor.zoomOutCmd': 'Zoom out (Cmd+-)',
+  'pdfEditor.zoomPresets': 'Zoom presets',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

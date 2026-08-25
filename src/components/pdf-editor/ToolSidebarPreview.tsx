@@ -8,6 +8,7 @@ import { useEditorContext } from '@/context/EditorContext';
 import { Loader2, Expand } from 'lucide-react';
 import { CompareOverlay } from './CompareOverlay';
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 interface ToolSidebarPreviewProps {
   originalBytes: Uint8Array;
@@ -92,7 +93,7 @@ export function ToolSidebarPreview({
         <div className="flex gap-2 w-full">
           {/* Before */}
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">Before</div>
+            <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">{t('compare.before')}</div>
             <div className="border rounded bg-muted/30 aspect-[3/4] flex items-center justify-center overflow-hidden">
               {beforeUrl ? (
                 <img src={beforeUrl} alt="Before" className="w-full h-full object-contain" />
@@ -104,14 +105,14 @@ export function ToolSidebarPreview({
 
           {/* After */}
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">After</div>
+            <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">{t('compare.after')}</div>
             <div className="border rounded bg-muted/30 aspect-[3/4] flex items-center justify-center overflow-hidden relative">
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : afterUrl ? (
                 <img src={afterUrl} alt="After" className="w-full h-full object-contain" style={afterImageStyle} />
               ) : beforeUrl ? (
-                <img src={beforeUrl} alt="Pending" className="w-full h-full object-contain opacity-30" />
+                <img src={beforeUrl} alt={t('pdfEditor.pending')} className="w-full h-full object-contain opacity-30" />
               ) : (
                 <div className="text-[10px] text-muted-foreground">...</div>
               )}
@@ -129,7 +130,7 @@ export function ToolSidebarPreview({
             className="w-full flex items-center justify-center gap-1.5 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed transition-colors"
           >
             <Expand className="h-3 w-3" />
-            Full comparison view
+            {t('pdfEditor.fullComparisonView')}
           </button>
         )}
       </div>

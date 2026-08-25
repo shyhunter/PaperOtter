@@ -10,6 +10,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
+import { t } from '@/i18n';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
@@ -73,7 +74,7 @@ export function SaveController() {
       showSavedToast(targetPath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
-      toast.error('Failed to save', { description: msg });
+      toast.error(t('pdfEditor.failedToSave'), { description: msg });
     } finally {
       setIsSaving(false);
     }
@@ -102,7 +103,7 @@ export function SaveController() {
     return (
       <div className="fixed top-2 right-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
         <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-        Saving...
+        {t('pdfEditor.saving')}
       </div>
     );
   }
@@ -157,7 +158,7 @@ export function useSaveActions() {
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
-      toast.error('Failed to save', { description: msg });
+      toast.error(t('pdfEditor.failedToSave'), { description: msg });
       return false;
     } finally {
       setIsSaving(false);
