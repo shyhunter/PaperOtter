@@ -16,6 +16,7 @@ import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
+import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -351,6 +352,68 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     // Reuses the editor's existing compare view, which is large and zoomable.
     await waitFor(() => expect(ctx!.state.compareMode).not.toBe('off'));
+  });
+
+  it('TP-01m — trying a second preset re-compresses the original, not the first result', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x41, 0x41, 0x41, 0x41]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const writes = () => vi.mocked(writeFile).mock.calls;
+    const lastWrite = () => writes()[writes().length - 1][1];
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(0));
+    const first = lastWrite();
+    const afterFirst = writes().length;
+
+    await user.click(screen.getByLabelText(/web \/ screen/i));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(afterFirst));
+
+    // Compressing the previous result bakes in both lots of loss permanently.
+    // Switching preset must re-derive from the bytes the panel started with.
+    expect(lastWrite()).toEqual(first);
+  });
+
+  it('TP-01n — a change from outside the panel resets what it compresses from', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x41, 0x41, 0x41, 0x41]).buffer);
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const writes = () => vi.mocked(writeFile).mock.calls;
+    const lastWrite = () => writes()[writes().length - 1][1];
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(0));
+    const afterFirst = writes().length;
+
+    // Revert (or any other tool) makes the panel's baseline describe a document
+    // that no longer exists; compressing from it would undo them.
+    const replacement = new Uint8Array([0x50, 0x50, 0x50, 0x50]);
+    await act(async () => { ctx!.updatePdfBytes(replacement); });
+
+    await user.click(screen.getByText('Apply'));
+    await waitFor(() => expect(writes().length).toBeGreaterThan(afterFirst));
+
+    expect(lastWrite()).toEqual(replacement);
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {

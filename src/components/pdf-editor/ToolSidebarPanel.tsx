@@ -254,19 +254,38 @@ function CompressPanel() {
   } | null>(null);
   const [analysis, setAnalysis] = useState<PdfCompressibility | null>(null);
 
+  // The bytes this panel compresses from. Ghostscript is lossy, so compressing
+  // its own output bakes in both lots of loss -- trying Screen, deciding it is
+  // too soft and switching to eBook has to re-derive from the document as it
+  // was, not stack eBook on top of Screen.
+  const [baseline, setBaseline] = useState<Uint8Array | null>(null);
+  // The last result this panel produced, so a change from anywhere else is
+  // distinguishable from its own.
+  const ownResultRef = useRef<Uint8Array | null>(null);
+
+  useEffect(() => {
+    // Revert, or another tool applying, leaves the baseline describing a
+    // document that no longer exists; compressing from it would undo them.
+    if (state.pdfBytes !== ownResultRef.current) setBaseline(null);
+  }, [state.pdfBytes]);
+
+  const baseBytes = baseline ?? state.pdfBytes;
+
   // What this document can actually give up, read once per version of the bytes.
   // Without it the panel offers four presets and no way to tell them apart.
   useEffect(() => {
     let cancelled = false;
     setAnalysis(null);
-    getPdfCompressibilityFromBytes(state.pdfBytes)
+    getPdfCompressibilityFromBytes(baseBytes)
       .then((result) => { if (!cancelled) setAnalysis(result); })
       // An unreadable document simply means no estimates; the panel still works.
       .catch(() => { if (!cancelled) setAnalysis(null); });
     return () => { cancelled = true; };
-  }, [state.pdfBytes]);
+  }, [baseBytes]);
 
-  const currentSize = state.pdfBytes.byteLength;
+  // Estimates predict what each preset yields from the baseline, since that is
+  // what Apply will actually compress.
+  const currentSize = baseBytes.byteLength;
 
   const estimates = useMemo(() => {
     if (!analysis) return null;
@@ -296,14 +315,13 @@ function CompressPanel() {
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return preset;
     const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
-    const originalSize = state.pdfBytes.byteLength;
-    const ratio = targetBytes / originalSize;
+    const ratio = targetBytes / baseBytes.byteLength;
     // Pick the most aggressive preset that might meet the target
     if (ratio < 0.3) return 'screen';
     if (ratio < 0.5) return 'ebook';
     if (ratio < 0.8) return 'printer';
     return 'prepress';
-  }, [useTargetSize, targetSizeValue, targetUnit, state.pdfBytes.byteLength, preset]);
+  }, [useTargetSize, targetSizeValue, targetUnit, baseBytes, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -315,8 +333,10 @@ function CompressPanel() {
       const tempInputPath = await join(tmpBase, `papercut_sidebar_${ts}.pdf`);
 
       const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      const originalSize = state.pdfBytes.byteLength;
-      await writeFile(tempInputPath, state.pdfBytes);
+      const source = baseline ?? state.pdfBytes;
+      setBaseline(source);
+      const originalSize = source.byteLength;
+      await writeFile(tempInputPath, source);
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
@@ -327,6 +347,7 @@ function CompressPanel() {
       await remove(tempInputPath).catch(() => {});
 
       const result = new Uint8Array(gsResult);
+      ownResultRef.current = result;
       setPreviewBytes(result);
       setIsProcessing(false);
       setCompressionResult({
@@ -340,7 +361,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, resolvedPreset, downsampleImages, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
