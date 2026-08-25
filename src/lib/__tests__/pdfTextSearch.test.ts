@@ -92,4 +92,58 @@ describe('findTextMatches', () => {
 
     expect(await findTextMatches(doc, 'secret')).toHaveLength(1);
   });
+
+  it('[TS-08] finds a word whose items carry no space between them', async () => {
+    // pdf.js does not promise spaces as text: a PDF that positions each run
+    // separately emits "This" and "document" with nothing joining them, so a
+    // literal join gives "Thisdocument" and the search finds nothing.
+    const matches = await findTextMatches(
+      fakeDoc([[item('This', 60, 720, 25), item('document', 88, 720, 55)]]),
+      'this document',
+    );
+
+    expect(matches).toHaveLength(1);
+  });
+
+  it('[TS-09] a word split mid-way across items is still found', async () => {
+    const matches = await findTextMatches(
+      fakeDoc([[item('docum', 60, 720, 30), item('ent', 92, 720, 18)]]),
+      'document',
+    );
+
+    expect(matches).toHaveLength(1);
+  });
+
+  it('[TS-10] baselines that differ by a fraction are still one line', async () => {
+    // Rounding the baseline to an integer split 719.4 from 719.6 into separate
+    // lines, and a line break inserted a space -- straight through the middle
+    // of a word. This is what made a search for plainly visible text fail.
+    const doc = {
+      numPages: 1,
+      getPage: vi.fn(async () => ({
+        getTextContent: async () => ({
+          items: [
+            { str: 'docu', transform: [12, 0, 0, 12, 60, 719.4], width: 24, height: 12 },
+            { str: 'ment', transform: [12, 0, 0, 12, 86, 719.6], width: 24, height: 12 },
+          ],
+        }),
+        getViewport: () => ({ width: 600, height: 800 }),
+      })),
+    };
+
+    const matches = await findTextMatches(doc, 'document');
+
+    expect(matches).toHaveLength(1);
+    // And one box, not two: they are the same line.
+    expect(matches[0].width).toBeGreaterThan(0);
+  });
+
+  it('[TS-11] the extra whitespace in the middle of a run is ignored', async () => {
+    const matches = await findTextMatches(
+      fakeDoc([[item('The  Camelot   Project', 60, 720, 120)]]),
+      'camelot project',
+    );
+
+    expect(matches).toHaveLength(1);
+  });
 });

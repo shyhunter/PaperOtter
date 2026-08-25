@@ -6,6 +6,8 @@
  * it lived inline in a component next to a catch that swallowed every failure.
  */
 
+import { diagLog } from '@/lib/diagLog';
+
 /** A pdf.js text item. transform is [scaleX, skewY, skewX, scaleY, x, y]. */
 interface TextItem {
   str: string;
@@ -37,14 +39,19 @@ export interface TextMatch {
 
 let nextId = 1;
 
+/** Two items belong to the same line if their baselines are this close, in points. */
+const SAME_LINE_TOLERANCE = 3;
+
 /** Items in reading order: top line first, left to right within a line. */
 function inReadingOrder(items: unknown[]): TextItem[] {
   return (items as TextItem[])
     .filter((it) => typeof it?.str === 'string' && it.str !== '')
     .sort((a, b) => {
-      // Round the baseline: two items on one line rarely share it to the decimal.
-      const lineDelta = Math.round(b.transform[5]) - Math.round(a.transform[5]);
-      return lineDelta !== 0 ? lineDelta : a.transform[4] - b.transform[4];
+      const delta = b.transform[5] - a.transform[5];
+      // Not rounded to an integer: 719.4 and 719.6 are one line, and rounding
+      // put them in different ones -- which inserted a line break, and a space,
+      // straight through the middle of a word.
+      return Math.abs(delta) > SAME_LINE_TOLERANCE ? delta : a.transform[4] - b.transform[4];
     });
 }
 
@@ -66,21 +73,32 @@ function boxFor(items: TextItem[], pageW: number, pageH: number) {
 
 /** One box per line the match touches. */
 function boxesForCovered(covered: TextItem[], pageW: number, pageH: number) {
-  const byLine = new Map<number, TextItem[]>();
+  const lines: TextItem[][] = [];
+
   for (const it of covered) {
-    const line = Math.round(it.transform[5]);
-    byLine.set(line, [...(byLine.get(line) ?? []), it]);
+    const line = lines.find(
+      (l) => Math.abs(l[0].transform[5] - it.transform[5]) <= SAME_LINE_TOLERANCE,
+    );
+    if (line) line.push(it);
+    else lines.push([it]);
   }
+
   // Never one box spanning several lines: that would black out everything
   // between them, including text the search never matched.
-  return [...byLine.values()].map((line) => boxFor(line, pageW, pageH));
+  return lines.map((line) => boxFor(line, pageW, pageH));
 }
 
 export async function findTextMatches(doc: DocLike, query: string): Promise<TextMatch[]> {
-  const needle = query.trim().toLowerCase();
+  // Whitespace-insensitive on both sides, so a query typed with normal spacing
+  // matches text however the PDF happens to have broken it up.
+  const needle = query.toLowerCase().replace(/\s+/g, '');
   if (!needle) return [];
 
   const matches: TextMatch[] = [];
+  // Extraction cannot be exercised in tests -- pdf.js does not run in the test
+  // environment -- so the log has to be able to answer "was there any text?".
+  let itemsSeen = 0;
+  let charsSeen = 0;
 
   for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
     // Per page, not around the whole sweep: one unreadable page used to return
@@ -91,39 +109,40 @@ export async function findTextMatches(doc: DocLike, query: string): Promise<Text
       const { width: pageW, height: pageH } = page.getViewport({ scale: 1 });
 
       const ordered = inReadingOrder(items);
+      itemsSeen += ordered.length;
 
-      // One string for the whole page rather than one per item. pdf.js emits an
-      // item per text-showing operator, so a name is routinely split across
-      // several -- matching item by item can only ever miss it, which is why
-      // searching for something plainly on the page found nothing at all.
-      // Lines are joined with a space so a phrase that wraps is still found.
-      let haystack = '';
-      const spans: { item: TextItem; from: number; to: number }[] = [];
-      let previousLine: number | null = null;
+      // Whitespace is dropped from both sides before matching, and every kept
+      // character remembers which item it came from.
+      //
+      // pdf.js makes no promise about spaces. A PDF that positions each run
+      // separately emits "This" and "document" with nothing joining them, and
+      // one that letter-spaces a heading emits fragments mid-word. Matching the
+      // literal text therefore fails on documents where the words are plainly
+      // visible on the page -- which is exactly what was reported.
+      let compact = '';
+      const owner: TextItem[] = [];
 
       for (const it of ordered) {
-        const line = Math.round(it.transform[5]);
-        if (previousLine !== null && line !== previousLine) haystack += ' ';
-        previousLine = line;
-
-        const from = haystack.length;
-        haystack += it.str;
-        spans.push({ item: it, from, to: haystack.length });
+        for (const ch of it.str) {
+          if (/\s/.test(ch)) continue;
+          compact += ch.toLowerCase();
+          owner.push(it);
+        }
       }
 
-      const lower = haystack.toLowerCase();
+      charsSeen += compact.length;
+
       let from = 0;
       for (;;) {
-        const at = lower.indexOf(needle, from);
+        const at = compact.indexOf(needle, from);
         if (at === -1) break;
-        const end = at + needle.length;
 
-        const covered = spans.filter((s) => s.from < end && s.to > at).map((s) => s.item);
+        const covered = [...new Set(owner.slice(at, at + needle.length))];
         for (const box of boxesForCovered(covered, pageW, pageH)) {
           matches.push({
             id: `match-${nextId++}`,
             pageIndex: pageNum - 1,
-            text: haystack.slice(at, end),
+            text: query.trim(),
             ...box,
           });
         }
@@ -133,6 +152,11 @@ export async function findTextMatches(doc: DocLike, query: string): Promise<Text
       // An unreadable page contributes nothing; the rest of the document still counts.
     }
   }
+
+  diagLog(
+    `textSearch pages=${doc.numPages} items=${itemsSeen} chars=${charsSeen} ` +
+    `needle=${needle.length} matches=${matches.length}`,
+  );
 
   return matches;
 }
