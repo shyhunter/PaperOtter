@@ -523,6 +523,51 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(vi.mocked(addPageNumbers).mock.calls[1][1]).toMatchObject({ color: '#DC2626' });
   });
 
+  it('TP-04g — Font Size can be cleared in order to type a new value', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+
+    // Start At comes first in the panel, Font Size second.
+    const fontSize = screen.getAllByRole('spinbutton')[1] as HTMLInputElement;
+    expect(fontSize.value).toBe('12');
+
+    await user.clear(fontSize);
+
+    // Regression: `Number('') || 12` is 12, because Number('') is 0 and falsy.
+    // The field snapped straight back to 12, so it could never be emptied and
+    // a new value could not be typed over it.
+    expect(fontSize.value).toBe('');
+
+    await user.type(fontSize, '20');
+    expect(fontSize.value).toBe('20');
+  });
+
+  it('TP-04h — Start At can be cleared in order to type a new value', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+
+    const startAt = screen.getAllByRole('spinbutton')[0] as HTMLInputElement;
+    await user.clear(startAt);
+    expect(startAt.value).toBe('');
+
+    await user.type(startAt, '5');
+    expect(startAt.value).toBe('5');
+  });
+
   // TP-05: Crop Panel
   it('TP-05 — Crop panel shows margins controls with linked "All equal" toggle', async () => {
     const user = userEvent.setup();

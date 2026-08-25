@@ -802,10 +802,10 @@ function PageNumbersPanel() {
           </div>
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">Start At</label>
-            <input
-              type="number"
+            <NumberField
+              aria-label="Start at"
               value={options.startNumber}
-              onChange={(e) => setOptions((o) => ({ ...o, startNumber: Number(e.target.value) || 1 }))}
+              onChange={(n) => setOptions((o) => ({ ...o, startNumber: n }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
               min={1}
             />
@@ -814,10 +814,10 @@ function PageNumbersPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Font Size</label>
-          <input
-            type="number"
+          <NumberField
+            aria-label="Font size"
             value={options.fontSize}
-            onChange={(e) => setOptions((o) => ({ ...o, fontSize: Number(e.target.value) || 12 }))}
+            onChange={(n) => setOptions((o) => ({ ...o, fontSize: n }))}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
             min={6}
             max={48}
@@ -860,6 +860,67 @@ function PageNumbersPanel() {
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * A number input that can actually be emptied while the user retypes it.
+ *
+ * The obvious spelling — `value={n}` with `Number(e.target.value) || fallback`
+ * — cannot be cleared: an empty field parses to `Number('') === 0`, which is
+ * falsy, so it snaps straight back to the fallback. Typing `0` hits the same
+ * trap. Holding the text locally lets the field be empty mid-edit while the
+ * committed value stays a number, and an empty or unparseable field falls back
+ * to the last good value on blur.
+ */
+function NumberField({
+  value,
+  onChange,
+  min,
+  max,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+  'aria-label'?: string;
+}) {
+  const [text, setText] = useState(String(value));
+
+  // Follow programmatic changes without overwriting what is being typed.
+  useEffect(() => {
+    setText((prev) => (Number(prev) === value ? prev : String(value)));
+  }, [value]);
+
+  return (
+    <input
+      type="number"
+      aria-label={ariaLabel}
+      value={text}
+      min={min}
+      max={max}
+      className={className}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        if (next === '') return; // mid-edit; keep the last committed value
+        const parsed = Number(next);
+        if (Number.isFinite(parsed)) onChange(parsed);
+      }}
+      onBlur={() => {
+        const parsed = Number(text);
+        if (text === '' || !Number.isFinite(parsed)) {
+          setText(String(value));
+          return;
+        }
+        const clamped = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, parsed));
+        if (clamped !== parsed) onChange(clamped);
+        setText(String(clamped));
+      }}
+    />
   );
 }
 
