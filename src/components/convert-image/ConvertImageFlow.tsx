@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { stripImageExtension } from '@/lib/fileValidation';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { FileUp, Loader2 } from 'lucide-react';
@@ -10,7 +11,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -35,11 +36,12 @@ function detectSourceFormatLabel(filePath: string): string {
   if (ext === 'bmp') return 'BMP';
   if (ext === 'tiff' || ext === 'tif') return 'TIFF';
   if (ext === 'gif') return 'GIF';
+  if (ext === 'heic' || ext === 'heif') return 'HEIC';
   return ext.toUpperCase();
 }
 
 function buildSaveName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp|bmp|tiff?|gif)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-converted.${ext}`;
 }
@@ -97,7 +99,8 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const bytes = await readFile(path);
+      // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+      const { bytes, sizeBytes } = await readImageBytes(path);
       // Create preview URL from bytes
       const blob = new Blob([bytes]);
       const bitmap = await createImageBitmap(blob);
@@ -112,7 +115,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
       setFilePath(path);
       setFileName(name);
-      setFileSize(bytes.byteLength);
+      setFileSize(sizeBytes);
       setPreviewUrl(url);
 
       // Default output format: pick a different format from the source

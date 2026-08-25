@@ -2,10 +2,18 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { getFileSizeBytes } from '@/lib/fileValidation';
 import { invoke } from '@tauri-apps/api/core';
 import { processImage } from '@/lib/imageProcessor';
 import { createMinimalJpeg, createMinimalPng, createMinimalWebP } from '@/test/fixtures';
 import type { ImageProcessingOptions } from '@/types/file';
+
+// Partial mock: only the on-disk size lookup is stubbed. isHeicPath and the rest
+// stay real so the HEIC tests exercise the actual extension routing.
+vi.mock('@/lib/fileValidation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/fileValidation')>()),
+  getFileSizeBytes: vi.fn(),
+}));
 
 // Convenience base options — overrideable per-test with spread
 const baseOpts: ImageProcessingOptions = {
@@ -517,5 +525,49 @@ describe('processImage — pexels-pixabay-459225.jpg (TEST_PLAN.md IC-01, IC-02,
       'process_image',
       expect.objectContaining({ quality: 50, resizeWidth: 400, resizeHeight: 400 }),
     );
+  });
+});
+
+// ─── HEIC sources (IMG-HEIC-04) ──────────────────────────────────────────────
+//
+// A HEIC is decoded to PNG on the way into the webview so the Before panel can
+// render it. That substitution must not leak into the numbers the user is shown:
+// PNG is far larger than the HEIC it came from, so measuring the stand-in would
+// invent a "saving" that never happened.
+
+describe('processImage with a HEIC source', () => {
+  beforeEach(() => {
+    vi.mocked(getFileSizeBytes).mockReset();
+    vi.mocked(invoke).mockReset();
+    vi.mocked(createImageBitmap).mockReset();
+  });
+
+  it('[IMG-HEIC-04a] reports the size of the HEIC on disk, not of the PNG stand-in', async () => {
+    const decodedPng = new Uint8Array(900_000); // what the webview previews
+    const processed = new Uint8Array(120_000);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'decode_heic_preview') return decodedPng;
+      if (cmd === 'heic_frame_count') return 1;
+      return processed;
+    });
+    vi.mocked(getFileSizeBytes).mockResolvedValue(180_000); // the real .heic
+    mockDimensions(4032, 3024);
+
+    const result = await processImage('/Users/me/IMG_4032.heic', baseOpts);
+
+    expect(result.inputSizeBytes).toBe(180_000);
+    expect(result.outputSizeBytes).toBe(120_000);
+  });
+
+  it('[IMG-HEIC-04b] still measures ordinary images from their bytes, with no extra read', async () => {
+    const jpegBytes = new Uint8Array(50_000);
+    mockReadFile(jpegBytes);
+    mockInvoke(new Uint8Array(20_000));
+    mockDimensions(300, 200);
+
+    const result = await processImage('/Users/me/photo.jpg', baseOpts);
+
+    expect(result.inputSizeBytes).toBe(50_000);
+    expect(getFileSizeBytes).not.toHaveBeenCalled();
   });
 });

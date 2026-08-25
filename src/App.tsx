@@ -16,7 +16,7 @@ import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader } from '@/lib/fileValidation';
+import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, HEIC_UNSUPPORTED_MESSAGE } from '@/lib/fileValidation';
 import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
@@ -55,7 +55,7 @@ function detectImageFormat(filePath: string): ImageOutputFormat {
 }
 
 function buildImageSaveFileName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-processed.${ext}`;
 }
@@ -417,6 +417,14 @@ function StandardToolFlow() {
     if (!format) {
       setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
       setTimeout(() => setInvalidDropError(null), 2500);
+      return;
+    }
+
+    // HEIC decoding needs macOS Image I/O. Say so here rather than letting the
+    // user configure a whole job and fail at the last step.
+    if (isHeicPath(filePath) && !isHeicDecodable()) {
+      setInvalidDropError(HEIC_UNSUPPORTED_MESSAGE);
+      setTimeout(() => setInvalidDropError(null), 4000);
       return;
     }
 

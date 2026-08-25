@@ -9,6 +9,8 @@ use std::io::Cursor;
 use std::sync::Mutex;
 use uuid::Uuid;
 
+mod heic;
+
 /// Validates a source file path from the frontend.
 /// Blocks null bytes, path traversal, and overly long paths.
 fn validate_source_path(path: &str) -> Result<(), String> {
@@ -233,6 +235,19 @@ struct ProcessState {
     gs_child: Mutex<Option<CommandChild>>,
 }
 
+/// Decodes any image the app accepts as input.
+///
+/// This is the single door every user-supplied image comes through on the Rust
+/// side. HEIC is routed to the OS decoder (see heic.rs) because the `image` crate
+/// has no HEIF support; everything else decodes as before. Adding a format here
+/// makes it work in every image tool at once.
+fn decode_input_image(bytes: &[u8]) -> Result<image::DynamicImage, String> {
+    if heic::is_heic(bytes) {
+        return heic::decode(bytes).map(|(img, _frames)| img);
+    }
+    image::load_from_memory(bytes).map_err(|e| format!("Failed to decode image: {}", e))
+}
+
 /// Core image processing logic — no Tauri dependency.
 /// Called by the `process_image` command and directly by unit tests.
 fn encode_image(
@@ -244,8 +259,7 @@ fn encode_image(
     resize_exact: bool,
 ) -> Result<Vec<u8>, String> {
     // Decode image from source bytes
-    let mut img = image::load_from_memory(source_bytes)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let mut img = decode_input_image(source_bytes)?;
 
     // Resize if dimensions provided
     if let (Some(w), Some(h)) = (resize_width, resize_height) {
@@ -321,8 +335,7 @@ fn rotate_image(
     let source_bytes = std::fs::read(&source_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let img = image::load_from_memory(&source_bytes)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let img = decode_input_image(&source_bytes)?;
 
     let rotated = match rotation {
         90 => img.rotate90(),
@@ -405,6 +418,42 @@ fn process_image(
         resize_exact,
     )?;
     Ok(Response::new(output_buf))
+}
+
+/// Decodes a HEIC to PNG for the webview.
+///
+/// The webview cannot decode HEIC — `createImageBitmap` and `<img>` both fail on
+/// it — so previews, thumbnails and dimension reads go through here and get PNG
+/// bytes back. Only ever called for files the frontend has already identified as
+/// HEIC; every other format is read straight off disk.
+#[tauri::command]
+fn decode_heic_preview(source_path: String) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
+    let source_bytes = std::fs::read(&source_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let (img, _frames) = heic::decode(&source_bytes)?;
+
+    let mut output_buf: Vec<u8> = Vec::new();
+    let encoder = PngEncoder::new_with_quality(
+        Cursor::new(&mut output_buf),
+        CompressionType::Fast,
+        image::codecs::png::FilterType::Adaptive,
+    );
+    img.write_with_encoder(encoder)
+        .map_err(|e| format!("PNG encoding failed: {}", e))?;
+
+    Ok(Response::new(output_buf))
+}
+
+/// How many images a HEIC container holds, so the UI can say when it used the
+/// primary one out of several rather than silently picking a frame.
+#[tauri::command]
+fn heic_frame_count(source_path: String) -> Result<usize, String> {
+    validate_source_path(&source_path)?;
+    let source_bytes = std::fs::read(&source_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    heic::frame_count(&source_bytes)
 }
 
 /// Cancel an in-progress compression by killing the GS child process.
@@ -1918,7 +1967,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -2584,7 +2633,7 @@ mod tests {
                 .join(name)
         }
 
-        fn read_fixture(name: &str) -> Vec<u8> {
+        pub(super) fn read_fixture(name: &str) -> Vec<u8> {
             let mut file = std::fs::File::open(fixture_path(name))
                 .expect(&format!("fixture {} must exist", name));
             let mut bytes = Vec::new();
@@ -2675,6 +2724,123 @@ mod tests {
             let out = result.unwrap();
             assert!(has_jpeg_magic(&out), "output must be valid JPEG");
             assert!(out.len() > 0, "output must not be empty");
+        }
+    }
+
+
+    // ─── IMG-HEIC-01 — HEIC input, the iPhone photo path ────────────────────────
+    //
+    // Decoding runs on macOS Image I/O (see heic.rs), so the tests that actually
+    // decode a HEIC are gated to macOS and DO NOT run on the ubuntu CI runner.
+    // What runs everywhere: brand sniffing, the non-HEIC path, and the honest
+    // error produced on platforms that have no decoder.
+
+    mod heic_input {
+        use super::super::{decode_input_image, encode_image, heic};
+        use heic::{frame_count, is_heic};
+        use super::fixture_integration::read_fixture;
+
+        #[test]
+        fn heic_fixtures_are_recognised_by_their_ftyp_brand() {
+            assert!(is_heic(&read_fixture("sample.heic")));
+            assert!(is_heic(&read_fixture("sample-multi.heic")));
+        }
+
+        #[test]
+        fn ordinary_images_are_not_mistaken_for_heic() {
+            assert!(!is_heic(&read_fixture("sample.jpg")));
+            assert!(!is_heic(&read_fixture("sample.png")));
+        }
+
+        #[test]
+        fn a_truncated_header_does_not_panic_the_sniffer() {
+            assert!(!is_heic(&[]));
+            assert!(!is_heic(b"\0\0\0"));
+            assert!(!is_heic(b"\0\0\0\x18ftyp"));
+        }
+
+        #[test]
+        fn non_heic_input_still_decodes_on_every_platform() {
+            let img = decode_input_image(&read_fixture("sample.jpg"))
+                .expect("JPEG must still decode through the new entry point");
+            assert_eq!((img.width(), img.height()), (300, 200));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn heic_decodes_to_its_real_dimensions() {
+            let img = decode_input_image(&read_fixture("sample.heic"))
+                .expect("sample.heic must decode");
+            assert_eq!((img.width(), img.height()), (300, 200));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_multi_image_heic_uses_the_primary_image() {
+            // sample-multi.heic holds two frames: primary 120x80, secondary 60x40.
+            // Taking the primary is the defensible behaviour; silently taking
+            // whichever frame happens to be last is what this pins against.
+            let img = decode_input_image(&read_fixture("sample-multi.heic"))
+                .expect("multi-image heic must decode");
+            assert_eq!((img.width(), img.height()), (120, 80));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn decoded_pixels_keep_their_real_colours() {
+            // sample-multi.heic's primary frame is solid red (220, 40, 40).
+            // Pins the channel order coming out of Core Graphics: an alpha-First
+            // bitmap format yields ARGB instead of RGBA, which shifts every
+            // channel by one. Dimensions still pass, and every photo comes out
+            // looking wrong. Verified to fail under that mutation.
+            let img = decode_input_image(&read_fixture("sample-multi.heic"))
+                .expect("multi-image heic must decode");
+            let px = img.to_rgba8().get_pixel(60, 40).0;
+            assert!(px[0] > 200, "red channel must be red, got {:?}", px);
+            assert!(px[2] < 80, "blue channel must be blue, got {:?}", px);
+            assert_eq!(px[3], 255, "an opaque photo must stay opaque");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn frame_count_reports_every_frame_so_the_user_can_be_told() {
+            assert_eq!(frame_count(&read_fixture("sample.heic")).unwrap(), 1);
+            assert_eq!(frame_count(&read_fixture("sample-multi.heic")).unwrap(), 2);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_converts_to_jpeg() {
+            let out = encode_image(&read_fixture("sample.heic"), 85, "jpeg", None, None, false)
+                .expect("HEIC -> JPEG must succeed");
+            assert!(out.len() > 2 && out[0] == 0xFF && out[1] == 0xD8, "output must be JPEG");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_converts_to_png_and_webp() {
+            let heic = read_fixture("sample.heic");
+            let png = encode_image(&heic, 85, "png", None, None, false).expect("HEIC -> PNG");
+            assert_eq!(&png[..4], b"\x89PNG", "output must be PNG");
+            let webp = encode_image(&heic, 85, "webp", None, None, false).expect("HEIC -> WebP");
+            assert_eq!(&webp[..4], b"RIFF", "output must be WebP");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_resizes_like_any_other_image() {
+            let out = encode_image(&read_fixture("sample.heic"), 85, "jpeg", Some(150), Some(100), false)
+                .expect("HEIC resize must succeed");
+            let decoded = image::load_from_memory(&out).expect("resized output must decode");
+            assert_eq!((decoded.width(), decoded.height()), (150, 100));
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        #[test]
+        fn platforms_without_a_decoder_say_so_plainly() {
+            let err = decode_input_image(&read_fixture("sample.heic"))
+                .expect_err("HEIC must not decode off macOS");
+            assert!(err.contains("macOS"), "error must name the platform limit, got: {err}");
         }
     }
 

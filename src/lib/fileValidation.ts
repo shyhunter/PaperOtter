@@ -1,7 +1,7 @@
 import type { SupportedFormat } from '@/types/file';
 
 const SUPPORTED_EXTENSIONS = new Set([
-  'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif',
+  'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif',
   'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
 ]);
 
@@ -34,10 +34,41 @@ export function isSupportedFile(filePath: string): boolean {
 export function detectFormat(filePath: string): SupportedFormat | null {
   const ext = getExtension(filePath);
   if (ext === 'pdf') return 'pdf';
-  if (['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif'].includes(ext)) return 'image';
+  if (['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif'].includes(ext)) return 'image';
   if (['docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html'].includes(ext)) return 'document';
   return null;
 }
+
+/** The extensions an iPhone writes for its default photo format. */
+const HEIC_EXTENSIONS = ['heic', 'heif'];
+
+export function isHeicPath(filePath: string): boolean {
+  return HEIC_EXTENSIONS.includes(getExtension(filePath));
+}
+
+/**
+ * Whether this build can decode HEIC.
+ *
+ * Decoding runs on macOS Image I/O (see src-tauri/src/heic.rs) because no
+ * permissively-licensed cross-platform decoder exists. The Rust side is the real
+ * gate and errors regardless; this is here so a Windows or Linux user is told at
+ * the moment they drop the file rather than three configuration steps later.
+ */
+export function isHeicDecodable(): boolean {
+  return navigator.userAgent.includes('Macintosh');
+}
+
+/**
+ * Strips a trailing image extension so an output name can be built from it.
+ * Without HEIC here, converting IMG_4032.heic produces "IMG_4032.heic.jpg".
+ */
+export function stripImageExtension(fileName: string): string {
+  return fileName.replace(/\.(jpe?g|png|webp|bmp|tiff?|gif|heic|heif)$/i, '');
+}
+
+/** Tells the user what to do instead, not merely that it did not work. */
+export const HEIC_UNSUPPORTED_MESSAGE =
+  'HEIC photos can only be opened on macOS for now — convert it to JPEG first.';
 
 export function getFileName(filePath: string): string {
   return filePath.replace(/\\/g, '/').split('/').pop() ?? filePath;

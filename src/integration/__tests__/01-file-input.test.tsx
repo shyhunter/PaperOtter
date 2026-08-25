@@ -43,6 +43,9 @@ vi.mock('@/lib/fileValidation', async (importOriginal) => {
   return {
     ...original,
     getFileSizeBytes: vi.fn().mockResolvedValue(1 * 1024 * 1024), // default: 1 MB
+    // Default to a build that can decode HEIC; FI-12 overrides. The user-agent
+    // parsing behind this is unit-tested in fileValidation.test.ts.
+    isHeicDecodable: vi.fn().mockReturnValue(true),
   };
 });
 
@@ -205,6 +208,32 @@ describe('Suite 01 — File Input', () => {
     await screen.findByText(/This file is empty/i, {}, { timeout: 2000 });
 
     // Should NOT have advanced to Configure
+    expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
+  });
+
+  // FI-11 ────────────────────────────────────────────────────────────────────
+  // HEIC is the iPhone camera default, so it is the persona's very first action.
+  // Decoding needs macOS Image I/O; a build without it must say so at the moment
+  // the file arrives, not after the user has configured a whole job.
+  it('FI-11 — opening a HEIC photo on macOS goes to the Image Configure step', async () => {
+    const { user } = await setup();
+    await pickFile(user, '/Users/test/IMG_4032.heic');
+    expect(screen.getByRole('slider')).toBeInTheDocument();
+  });
+
+  // FI-12 ────────────────────────────────────────────────────────────────────
+  it('FI-12 — opening a HEIC photo without a decoder explains what to do instead', async () => {
+    vi.mocked(fileValidation.isHeicDecodable).mockReturnValue(false);
+    const { user } = await setup();
+
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/IMG_4032.heic');
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    await screen.findByText(/only be opened on macOS/i, {}, { timeout: 2000 });
+
+    // Must not have advanced into the image flow
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
   });
 });

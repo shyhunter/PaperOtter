@@ -1,6 +1,6 @@
 // JpgToPdfFlow: Pick images -> Configure page layout -> Create & Save PDF.
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { PDFDocument } from 'pdf-lib';
 import { FilePlus, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 type PageSizeId = 'a4' | 'letter' | 'auto';
 type OrientationId = 'portrait' | 'landscape' | 'auto';
@@ -167,7 +167,8 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     try {
       const newEntries: ImageEntry[] = [];
       for (const path of filePaths) {
-        const bytes = await readFile(path);
+        // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+        const { bytes } = await readImageBytes(path);
         const { url, width, height } = await createThumbnail(bytes);
         newEntries.push({
           filePath: path,
@@ -249,8 +250,10 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
       for (const img of images) {
         // Read and convert image
-        const rawBytes = await readFile(img.filePath);
-        const ext = img.filePath.split('.').pop()?.toLowerCase() ?? '';
+        const { bytes: rawBytes, mime } = await readImageBytes(img.filePath);
+        // Derive the format from the bytes we actually hold, not from the path:
+        // a .heic has already been decoded to PNG by this point.
+        const ext = mime.replace('image/', '');
         const { bytes: imgBytes, format } = await convertToSupportedFormat(rawBytes, ext);
 
         let embeddedImage;

@@ -10,7 +10,7 @@ export async function openFilePicker(): Promise<string | null> {
     filters: [
       {
         name: 'Supported Files',
-        extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+        extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
       },
     ],
   });

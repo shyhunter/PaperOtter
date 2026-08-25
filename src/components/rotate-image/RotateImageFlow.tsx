@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { stripImageExtension } from '@/lib/fileValidation';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -11,7 +12,7 @@ import { cn } from '@/lib/utils';
 import type { ImageRotation } from '@/lib/imageRotate';
 import type { ImageOutputFormat } from '@/types/file';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -29,7 +30,7 @@ function detectFormatFromPath(filePath: string): ImageOutputFormat {
 }
 
 function buildSaveName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-rotated.${ext}`;
 }
@@ -81,7 +82,8 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const bytes = await readFile(path);
+      // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+      const { bytes } = await readImageBytes(path);
       // Create preview URL from bytes
       const blob = new Blob([bytes]);
       const bitmap = await createImageBitmap(blob);

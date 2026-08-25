@@ -72,6 +72,19 @@ objc2-pdf-kit = { version = "0.3", default-features = false, features = [
     "std", "PDFDocument", "PDFPage",
 ] }
 
+# HEIC decoding via the OS. Every iPhone photo is HEIC by default, and no
+# permissively-licensed Rust decoder exists — the pure-Rust ones are AGPL, which
+# an MIT app cannot take, and libheif means shipping LGPL C libraries built for
+# four targets. macOS has a decoder in the OS, so we use it and report the limit
+# honestly elsewhere (see heic.rs). objc2-core-graphics is already in the tree
+# via wry, so this resolves to the same crate instance.
+objc2-core-graphics = { version = "0.3", default-features = false, features = [
+    "std", "CGImage", "CGContext", "CGColorSpace", "CGBitmapContext", "CGGeometry",
+] }
+objc2-image-io = { version = "0.3", default-features = false, features = [
+    "std", "CGImageSource", "objc2-core-graphics",
+] }
+
 
 [features]
 e2e = ["dep:tauri-plugin-webdriver-automation"]

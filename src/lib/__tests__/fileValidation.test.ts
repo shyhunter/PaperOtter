@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE, isPdfHeader } from '@/lib/fileValidation';
+import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE, isPdfHeader, isHeicPath, isHeicDecodable, HEIC_UNSUPPORTED_MESSAGE, stripImageExtension } from '@/lib/fileValidation';
 
 // ─── getExtension ────────────────────────────────────────────────────────────
 
@@ -289,5 +289,90 @@ describe('isPdfHeader', () => {
 
   it('[COR-01f] returns false for all-zero bytes', () => {
     expect(isPdfHeader(new Uint8Array(10))).toBe(false);
+  });
+});
+
+// ─── HEIC input (IMG-HEIC-02) ────────────────────────────────────────────────
+//
+// HEIC is the iPhone camera default. Decoding needs macOS Image I/O, so these
+// tests cover the two halves that live in TS: the file is recognised everywhere,
+// and a build with no decoder says so plainly instead of failing three steps in.
+
+describe('HEIC input', () => {
+  it('[IMG-HEIC-02a] accepts .heic and .heif as supported files', () => {
+    expect(isSupportedFile('/Users/me/IMG_4032.heic')).toBe(true);
+    expect(isSupportedFile('/Users/me/scan.heif')).toBe(true);
+  });
+
+  it('[IMG-HEIC-02b] accepts the uppercase extension the iPhone sometimes writes', () => {
+    expect(isSupportedFile('/Users/me/IMG_4032.HEIC')).toBe(true);
+  });
+
+  it('[IMG-HEIC-02c] routes HEIC to the image tools, not to documents', () => {
+    expect(detectFormat('/Users/me/IMG_4032.heic')).toBe('image');
+    expect(detectFormat('/Users/me/scan.heif')).toBe('image');
+  });
+
+  it('[IMG-HEIC-02d] identifies HEIC paths and leaves other images alone', () => {
+    expect(isHeicPath('/Users/me/IMG_4032.heic')).toBe(true);
+    expect(isHeicPath('/Users/me/IMG_4032.HEIF')).toBe(true);
+    expect(isHeicPath('/Users/me/photo.jpg')).toBe(false);
+    expect(isHeicPath('/Users/me/scan.pdf')).toBe(false);
+  });
+});
+
+describe('isHeicDecodable', () => {
+  // This file runs in the node environment, so there is no real navigator to
+  // patch — stub the global the implementation reads.
+  const setUserAgent = (ua: string) => vi.stubGlobal('navigator', { userAgent: ua });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('[IMG-HEIC-02e] is true on macOS, where the OS provides the decoder', () => {
+    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15');
+    expect(isHeicDecodable()).toBe(true);
+  });
+
+  it('[IMG-HEIC-02f] is false on Windows and Linux, which have no decoder', () => {
+    setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    expect(isHeicDecodable()).toBe(false);
+    setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36');
+    expect(isHeicDecodable()).toBe(false);
+  });
+
+  it('[IMG-HEIC-02g] tells the user what to do instead, not just that it failed', () => {
+    expect(HEIC_UNSUPPORTED_MESSAGE).toMatch(/macOS/);
+    expect(HEIC_UNSUPPORTED_MESSAGE).toMatch(/JPEG/i);
+  });
+});
+
+// ─── stripImageExtension (IMG-HEIC-05) ───────────────────────────────────────
+//
+// Output names are built by stripping the source extension and appending the
+// chosen one. Three flows carried their own copy of this regex and none knew
+// about HEIC, which would have produced "IMG_4032.heic.jpg".
+
+describe('stripImageExtension', () => {
+  it('[IMG-HEIC-05a] strips a HEIC extension so the output is not double-suffixed', () => {
+    expect(stripImageExtension('IMG_4032.heic')).toBe('IMG_4032');
+    expect(stripImageExtension('scan.HEIF')).toBe('scan');
+  });
+
+  it('[IMG-HEIC-05b] still strips every extension the image flows already accepted', () => {
+    expect(stripImageExtension('a.jpg')).toBe('a');
+    expect(stripImageExtension('a.jpeg')).toBe('a');
+    expect(stripImageExtension('a.png')).toBe('a');
+    expect(stripImageExtension('a.webp')).toBe('a');
+    expect(stripImageExtension('a.bmp')).toBe('a');
+    expect(stripImageExtension('a.tif')).toBe('a');
+    expect(stripImageExtension('a.tiff')).toBe('a');
+    expect(stripImageExtension('a.gif')).toBe('a');
+  });
+
+  it('[IMG-HEIC-05c] leaves a name with dots but no image extension alone', () => {
+    expect(stripImageExtension('my.holiday.photo')).toBe('my.holiday.photo');
+  });
+
+  it('[IMG-HEIC-05d] strips only the final extension', () => {
+    expect(stripImageExtension('scan.v2.heic')).toBe('scan.v2');
   });
 });
