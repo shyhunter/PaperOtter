@@ -1,5 +1,6 @@
 // Shared utility functions extracted for testability.
 // Used by ConfigureStep.tsx (and potentially CompareStep.tsx).
+import { formatNumber } from '@/i18n';
 
 /**
  * Convert a raw PDF parsing/loading error into a short, user-friendly message.
@@ -65,7 +66,14 @@ export function parsePageRange(input: string, maxPages: number): number[] {
 /** Format bytes to human-readable string (KB/MB/GB). Returns empty string for 0. */
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '';
-  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(2)} MB`;
-  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+  // toFixed() hardcodes "." as the decimal separator, which is wrong in both
+  // German and Turkish — "2.50 MB" reads as two and a half thousand megabytes.
+  // formatNumber goes through Intl bound to the *app* language: left to default,
+  // Intl follows the operating system and would put a comma into an English UI.
+  const fixed = (value: number, digits: number) =>
+    formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+  if (bytes < 1024 ** 2) return `${fixed(bytes / 1024, 1)} KB`;
+  if (bytes < 1024 ** 3) return `${fixed(bytes / 1024 ** 2, 2)} MB`;
+  return `${fixed(bytes / 1024 ** 3, 2)} GB`;
 }

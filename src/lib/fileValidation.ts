@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import type { SupportedFormat } from '@/types/file';
 
 const SUPPORTED_EXTENSIONS = new Set([
@@ -67,8 +68,7 @@ export function stripImageExtension(fileName: string): string {
 }
 
 /** Tells the user what to do instead, not merely that it did not work. */
-export const HEIC_UNSUPPORTED_MESSAGE =
-  'HEIC photos can only be opened on macOS for now — convert it to JPEG first.';
+export const heicUnsupportedMessage = () => t('file.heicNeedsMacos');
 
 export function getFileName(filePath: string): string {
   return filePath.replace(/\\/g, '/').split('/').pop() ?? filePath;
@@ -88,8 +88,7 @@ export function isFilenameSafe(filePath: string): boolean {
 }
 
 /** User-facing error message for unsafe filenames (matches Rust-side message). */
-export const UNSAFE_FILENAME_MESSAGE =
-  "This filename contains characters that aren't supported. Please rename the file and try again.";
+export const unsafeFilenameMessage = () => t('file.unsafeName');
 
 /**
  * Returns true if the first 5 bytes of the given buffer match the PDF magic bytes: %PDF-

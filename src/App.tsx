@@ -13,10 +13,11 @@ import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary';
 import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
+import { I18nProvider } from '@/i18n/context';
 import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, HEIC_UNSUPPORTED_MESSAGE } from '@/lib/fileValidation';
+import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
 import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
@@ -423,7 +424,7 @@ function StandardToolFlow() {
     // HEIC decoding needs macOS Image I/O. Say so here rather than letting the
     // user configure a whole job and fail at the last step.
     if (isHeicPath(filePath) && !isHeicDecodable()) {
-      setInvalidDropError(HEIC_UNSUPPORTED_MESSAGE);
+      setInvalidDropError(heicUnsupportedMessage());
       setTimeout(() => setInvalidDropError(null), 4000);
       return;
     }
@@ -864,10 +865,12 @@ function App() {
 
   return (
     <AppErrorBoundary>
+      <I18nProvider>
       <ToolProvider>
         {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
         <AppContent />
       </ToolProvider>
+      </I18nProvider>
     </AppErrorBoundary>
   );
 }

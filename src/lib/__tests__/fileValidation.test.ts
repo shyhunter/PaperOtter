@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, UNSAFE_FILENAME_MESSAGE, isPdfHeader, isHeicPath, isHeicDecodable, HEIC_UNSUPPORTED_MESSAGE, stripImageExtension } from '@/lib/fileValidation';
+import { getExtension, isSupportedFile, detectFormat, getFileName, FILE_SIZE_LIMIT_BYTES, getFileSizeBytes, isFilenameSafe, unsafeFilenameMessage, isPdfHeader, isHeicPath, isHeicDecodable, heicUnsupportedMessage, stripImageExtension } from '@/lib/fileValidation';
 
 // ─── getExtension ────────────────────────────────────────────────────────────
 
@@ -192,8 +192,8 @@ describe('isFilenameSafe', () => {
   });
 
   it('provides correct error message', () => {
-    expect(UNSAFE_FILENAME_MESSAGE).toContain("aren't supported");
-    expect(UNSAFE_FILENAME_MESSAGE).toContain("rename the file");
+    expect(unsafeFilenameMessage()).toContain("aren't supported");
+    expect(unsafeFilenameMessage()).toContain("rename the file");
   });
 
   it('extracts filename from full path', () => {
@@ -340,8 +340,8 @@ describe('isHeicDecodable', () => {
   });
 
   it('[IMG-HEIC-02g] tells the user what to do instead, not just that it failed', () => {
-    expect(HEIC_UNSUPPORTED_MESSAGE).toMatch(/macOS/);
-    expect(HEIC_UNSUPPORTED_MESSAGE).toMatch(/JPEG/i);
+    expect(heicUnsupportedMessage()).toMatch(/macOS/);
+    expect(heicUnsupportedMessage()).toMatch(/JPEG/i);
   });
 });
 

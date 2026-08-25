@@ -33,7 +33,7 @@ import type { ToolDefinition, ToolCategory } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { toast } from 'sonner';
-import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, HEIC_UNSUPPORTED_MESSAGE } from '@/lib/fileValidation';
+import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
 import type { SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -317,7 +317,7 @@ export function Dashboard() {
           // HEIC decoding needs macOS Image I/O. Say so at the drop rather than
           // staging a file that cannot be opened by any tool on this build.
           if (isHeicPath(filePath) && !isHeicDecodable()) {
-            toast.error(HEIC_UNSUPPORTED_MESSAGE);
+            toast.error(heicUnsupportedMessage());
             return;
           }
 
