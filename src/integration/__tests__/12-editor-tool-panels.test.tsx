@@ -18,6 +18,7 @@ import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
+import { COLOR_PRESETS } from '@/lib/colorPresets';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ vi.mock('@/lib/pdfRotate', () => ({
 
 vi.mock('@/lib/pdfWatermark', () => ({
   addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
-  DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: 'gray' },
+  DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: '#808080', centerX: 0.5, centerY: 0.5 },
 }));
 
 // Partial: the estimate maths and the canonical non-compressible wording stay
@@ -780,11 +781,12 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Opacity slider
     expect(screen.getByText(/Opacity:/)).toBeInTheDocument();
 
-    // Color buttons
+    // The shared colour picker, not the watermark's own three-colour vocabulary.
     expect(screen.getByText('Color')).toBeInTheDocument();
-    expect(screen.getByText('gray')).toBeInTheDocument();
-    expect(screen.getByText('red')).toBeInTheDocument();
-    expect(screen.getByText('blue')).toBeInTheDocument();
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
   });
 
   it('TP-03b — Watermark Apply is disabled when text is empty', async () => {

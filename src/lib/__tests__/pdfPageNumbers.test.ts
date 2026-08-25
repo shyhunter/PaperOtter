@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import {
   addPageNumbers,
   addPageNumbersSinglePage,
-  hexToRgb,
   type PageNumberOptions,
 } from '@/lib/pdfPageNumbers';
 
@@ -23,33 +22,6 @@ const BASE: PageNumberOptions = {
   margin: 30,
   color: '#000000',
 };
-
-describe('hexToRgb', () => {
-  it('PN-COL-01: converts black and white to pdf-lib 0..1 components', () => {
-    expect(hexToRgb('#000000')).toEqual({ r: 0, g: 0, b: 0 });
-    expect(hexToRgb('#FFFFFF')).toEqual({ r: 1, g: 1, b: 1 });
-  });
-
-  it('PN-COL-02: converts an arbitrary colour', () => {
-    const { r, g, b } = hexToRgb('#DC2626');
-    expect(r).toBeCloseTo(0xdc / 255, 5);
-    expect(g).toBeCloseTo(0x26 / 255, 5);
-    expect(b).toBeCloseTo(0x26 / 255, 5);
-  });
-
-  it('PN-COL-03: accepts lowercase and a missing leading hash', () => {
-    expect(hexToRgb('#ffffff')).toEqual({ r: 1, g: 1, b: 1 });
-    expect(hexToRgb('ffffff')).toEqual({ r: 1, g: 1, b: 1 });
-  });
-
-  it('PN-COL-04: falls back to black on malformed input rather than throwing', () => {
-    // The value reaches a PDF content stream, so it must never pass through raw.
-    expect(hexToRgb('not-a-colour')).toEqual({ r: 0, g: 0, b: 0 });
-    expect(hexToRgb('#FFF')).toEqual({ r: 0, g: 0, b: 0 });
-    expect(hexToRgb('')).toEqual({ r: 0, g: 0, b: 0 });
-    expect(hexToRgb('#12345g')).toEqual({ r: 0, g: 0, b: 0 });
-  });
-});
 
 describe('addPageNumbers — colour', () => {
   it('PN-COL-05: a different colour produces different output', async () => {

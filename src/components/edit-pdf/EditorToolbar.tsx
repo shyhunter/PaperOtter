@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { TextBlock, ImageBlock, EditorMode } from '@/types/editor';
+import { COLOR_PRESETS } from '@/lib/colorPresets';
 
 /** Standard PDF fonts available in pdf-lib.
  *  pdf-lib only supports the 14 standard fonts grouped into 3 families.
@@ -38,14 +39,6 @@ const FONT_OPTIONS = [
 ];
 
 /** Preset colors for text */
-const COLOR_PRESETS = [
-  { value: '#000000', label: 'Black' },
-  { value: '#DC2626', label: 'Red' },
-  { value: '#2563EB', label: 'Blue' },
-  { value: '#16A34A', label: 'Green' },
-  { value: '#FFFFFF', label: 'White' },
-];
-
 /** Local-storage key for custom colors */
 const CUSTOM_COLORS_KEY = 'papercut-custom-colors';
 
@@ -395,16 +388,17 @@ export function EditorToolbar({
             <div className="flex flex-wrap gap-1.5 mb-2">
               {COLOR_PRESETS.map((c) => (
                 <button
-                  key={c.value}
-                  onClick={() => handleColorChange(c.value)}
+                  key={c.hex}
+                  onClick={() => handleColorChange(c.hex)}
                   title={c.label}
+                  aria-label={c.label}
                   className={cn(
                     'w-7 h-7 rounded-md border-2 transition-all',
-                    selectedBlock.color === c.value
+                    selectedBlock.color.toLowerCase() === c.hex.toLowerCase()
                       ? 'border-blue-500 ring-1 ring-blue-300'
                       : 'border-border hover:border-muted-foreground',
                   )}
-                  style={{ backgroundColor: c.value }}
+                  style={{ backgroundColor: c.hex }}
                 />
               ))}
             </div>

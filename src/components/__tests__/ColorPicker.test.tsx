@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
-import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
-import { COLOR_PRESETS } from '@/lib/pageNumberColors';
+import { ColorPicker } from '@/components/ColorPicker';
+import { COLOR_PRESETS } from '@/lib/colorPresets';
 
 afterEach(cleanup);
 
-describe('PageNumberColorPicker', () => {
-  it('PNC-01: offers the five presets, White among them', () => {
-    render(<PageNumberColorPicker value="#000000" onChange={() => {}} />);
+describe('ColorPicker', () => {
+  it('PNC-01: offers every shared preset, White among them', () => {
+    render(<ColorPicker value="#000000" onChange={() => {}} />);
 
     for (const preset of COLOR_PRESETS) {
       expect(screen.getByRole('button', { name: preset.label })).toBeTruthy();
@@ -18,7 +18,7 @@ describe('PageNumberColorPicker', () => {
 
   it('PNC-02: choosing a preset reports its hex', () => {
     const onChange = vi.fn();
-    render(<PageNumberColorPicker value="#000000" onChange={onChange} />);
+    render(<ColorPicker value="#000000" onChange={onChange} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'White' }));
 
@@ -26,7 +26,7 @@ describe('PageNumberColorPicker', () => {
   });
 
   it('PNC-03: marks the selected preset, and only that one', () => {
-    render(<PageNumberColorPicker value="#FFFFFF" onChange={() => {}} />);
+    render(<ColorPicker value="#FFFFFF" onChange={() => {}} />);
 
     expect(screen.getByRole('button', { name: 'White' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Black' }).getAttribute('aria-pressed')).toBe('false');
@@ -34,7 +34,7 @@ describe('PageNumberColorPicker', () => {
 
   it('PNC-04: a custom colour reports through the same callback', () => {
     const onChange = vi.fn();
-    render(<PageNumberColorPicker value="#000000" onChange={onChange} />);
+    render(<ColorPicker value="#000000" onChange={onChange} />);
 
     const custom = screen.getByLabelText(/custom colour/i) as HTMLInputElement;
     fireEvent.input(custom, { target: { value: '#123456' } });
@@ -43,7 +43,7 @@ describe('PageNumberColorPicker', () => {
   });
 
   it('PNC-05: a custom value marks no preset as selected', () => {
-    render(<PageNumberColorPicker value="#123456" onChange={() => {}} />);
+    render(<ColorPicker value="#123456" onChange={() => {}} />);
 
     for (const preset of COLOR_PRESETS) {
       expect(screen.getByRole('button', { name: preset.label }).getAttribute('aria-pressed')).toBe('false');
@@ -52,7 +52,7 @@ describe('PageNumberColorPicker', () => {
 
   it('PNC-06: matches a preset case-insensitively', () => {
     // <input type="color"> normalises to lowercase, so #ffffff must still read as White.
-    render(<PageNumberColorPicker value="#ffffff" onChange={() => {}} />);
+    render(<ColorPicker value="#ffffff" onChange={() => {}} />);
 
     expect(screen.getByRole('button', { name: 'White' }).getAttribute('aria-pressed')).toBe('true');
   });

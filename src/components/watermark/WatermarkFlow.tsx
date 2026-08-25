@@ -13,12 +13,11 @@ import { addWatermark, addWatermarkSinglePage, DEFAULT_WATERMARK_OPTIONS } from 
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
+import { ColorPicker } from '@/components/ColorPicker';
 
 interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
 }
-
-type WatermarkColor = WatermarkOptions['color'];
 
 const FONT_SIZES: { label: string; value: number }[] = [
   { label: 'Small', value: 24 },
@@ -30,12 +29,6 @@ const ROTATIONS: { label: string; value: number }[] = [
   { label: '-45\u00B0', value: -45 },
   { label: '0\u00B0', value: 0 },
   { label: '45\u00B0', value: 45 },
-];
-
-const COLORS: { label: string; value: WatermarkColor; className: string }[] = [
-  { label: 'Gray', value: 'gray', className: 'bg-gray-400' },
-  { label: 'Red', value: 'red', className: 'bg-red-500' },
-  { label: 'Blue', value: 'blue', className: 'bg-blue-600' },
 ];
 
 export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
@@ -52,7 +45,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
   const [fontSize, setFontSize] = useState(DEFAULT_WATERMARK_OPTIONS.fontSize);
   const [opacity, setOpacity] = useState(DEFAULT_WATERMARK_OPTIONS.opacity);
   const [rotation, setRotation] = useState(DEFAULT_WATERMARK_OPTIONS.rotation);
-  const [color, setColor] = useState<WatermarkColor>(DEFAULT_WATERMARK_OPTIONS.color);
+  const [color, setColor] = useState(DEFAULT_WATERMARK_OPTIONS.color);
 
   // Preview state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -127,7 +120,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
 
     setIsGeneratingPreview(true);
     try {
-      const options: WatermarkOptions = { text, fontSize, opacity, rotation, color };
+      const options: WatermarkOptions = { ...DEFAULT_WATERMARK_OPTIONS, text, fontSize, opacity, rotation, color };
       const watermarked = await addWatermarkSinglePage(pdfBytes, options, 0);
       const url = await renderPdfThumbnail(watermarked, 0.5);
       setPreviewUrl(url);
@@ -161,7 +154,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     setIsProcessing(true);
     setProcessError(null);
     try {
-      const options: WatermarkOptions = { text, fontSize, opacity, rotation, color };
+      const options: WatermarkOptions = { ...DEFAULT_WATERMARK_OPTIONS, text, fontSize, opacity, rotation, color };
       const result = await addWatermark(pdfBytes, options);
       setProcessedBytes(result);
       goToStep(2);
@@ -289,24 +282,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {/* Color */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Color</label>
-                  <div className="flex gap-1.5">
-                    {COLORS.map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        onClick={() => setColor(c.value)}
-                        className={cn(
-                          'flex-1 flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
-                          color === c.value
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border text-muted-foreground hover:bg-accent',
-                        )}
-                      >
-                        <span className={cn('inline-block h-2.5 w-2.5 rounded-full', c.className)} />
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
+                  <ColorPicker value={color} onChange={setColor} />
                 </div>
 
                 {/* Process error */}

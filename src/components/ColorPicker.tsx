@@ -1,20 +1,25 @@
 import { cn } from '@/lib/utils';
-import { COLOR_PRESETS } from '@/lib/pageNumberColors';
+import { COLOR_PRESETS } from '@/lib/colorPresets';
 
-interface PageNumberColorPickerProps {
+interface ColorPickerProps {
   /** Current colour as #RRGGBB. */
   value: string;
   onChange: (hex: string) => void;
 }
 
-/** Shared by the standalone Page Numbers tool and the editor's page-numbers panel,
- * so both offer the same colours and agree on what each one means. */
-export function PageNumberColorPicker({ value, onChange }: PageNumberColorPickerProps) {
+/**
+ * The one colour control, shared by every feature where the user picks a colour:
+ * page numbers (standalone and editor panel), watermarks (both), and text.
+ *
+ * A single component rather than a shared list alone, so the features cannot
+ * drift back apart in how a colour is chosen -- only in what they do with it.
+ */
+export function ColorPicker({ value, onChange }: ColorPickerProps) {
   // <input type="color"> normalises to lowercase, so compare case-insensitively.
   const selected = value.toLowerCase();
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {COLOR_PRESETS.map((preset) => {
         const isSelected = preset.hex.toLowerCase() === selected;
         return (

@@ -2,10 +2,12 @@
 // Shows font family, size, color, and bold/italic/underline toggles.
 // Integrated into EditorTopToolbar, always visible (disabled when no block selected).
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Bold, Italic, Underline, Plus, Minus, Type, AlignVerticalSpaceAround } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
+import { ColorPicker } from '@/components/ColorPicker';
+import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 
 /** Standard PDF fonts available in pdf-lib */
 const FONT_OPTIONS = [
@@ -15,15 +17,9 @@ const FONT_OPTIONS = [
 ];
 
 /** Common color presets */
-const COLOR_PRESETS = [
-  '#000000', '#DC2626', '#2563EB', '#16A34A', '#F59E0B',
-  '#7C3AED', '#EC4899', '#FFFFFF',
-];
-
 export function FormattingToolbar() {
   const { state, updateTextBlock, setEditorMode } = useEditorContext();
   const { selectedBlockId, editorMode, pages, currentPage } = state;
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   // Find the selected block across all pages
@@ -193,40 +189,18 @@ export function FormattingToolbar() {
           title="Text color"
         >
           <div className="w-4 h-4 rounded-sm border border-border" style={{
-            backgroundColor: selectedBlock?.color ?? '#000000',
+            backgroundColor: selectedBlock?.color ?? DEFAULT_TEXT_COLOR,
           }} />
         </button>
         {showColorPicker && !isDisabled && (
           <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2 min-w-[140px]">
-            <div className="grid grid-cols-4 gap-1 mb-2">
-              {COLOR_PRESETS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => handleColorChange(c)}
-                  className={`w-6 h-6 rounded-sm border-2 transition-all ${
-                    selectedBlock?.color === c
-                      ? 'border-blue-500 ring-1 ring-blue-300'
-                      : 'border-border hover:border-muted-foreground'
-                  }`}
-                  style={{ backgroundColor: c }}
-                  title={c}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-1">
-              <input
-                ref={colorInputRef}
-                type="color"
-                value={selectedBlock?.color ?? '#000000'}
-                onChange={(e) => handleColorChange(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer border border-input"
-                title="Custom color"
-              />
-              <span className="text-xs text-muted-foreground font-mono">
-                {selectedBlock?.color ?? '#000000'}
-              </span>
-            </div>
+            <ColorPicker
+              value={selectedBlock?.color ?? DEFAULT_TEXT_COLOR}
+              onChange={handleColorChange}
+            />
+            <span className="mt-2 block text-xs text-muted-foreground font-mono">
+              {selectedBlock?.color ?? DEFAULT_TEXT_COLOR}
+            </span>
           </div>
         )}
       </div>

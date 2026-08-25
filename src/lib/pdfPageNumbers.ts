@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { DEFAULT_TEXT_COLOR, hexToRgb } from '@/lib/colorPresets';
 
 export type NumberPosition = 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right';
 export type NumberFormat = 'numeric' | 'roman' | 'alphabetic';
@@ -11,7 +11,7 @@ export interface PageNumberOptions {
   startNumber: number;    // default 1
   margin: number;         // distance from edge in points, default 30
   pageRange?: Set<number>; // 1-based pages to number (undefined = all)
-  color?: string;         // #RRGGBB, default DEFAULT_NUMBER_COLOR
+  color?: string;         // #RRGGBB, default DEFAULT_TEXT_COLOR
 }
 
 function toRoman(num: number): string {
@@ -36,27 +36,6 @@ export function formatNumber(n: number, format: NumberFormat): string {
     case 'alphabetic': return toAlpha(n);
     default: return String(n);
   }
-}
-
-const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
-
-/**
- * Converts a #RRGGBB string to pdf-lib's 0..1 components.
- *
- * Falls back to black on anything malformed rather than throwing: this value is
- * written into a PDF content stream, so it must never pass through unvalidated,
- * and a bad colour should not cost the user their page numbers.
- */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const match = HEX_COLOR.exec(hex ?? '');
-  if (!match) return { r: 0, g: 0, b: 0 };
-
-  const value = parseInt(match[1], 16);
-  return {
-    r: ((value >> 16) & 0xff) / 255,
-    g: ((value >> 8) & 0xff) / 255,
-    b: (value & 0xff) / 255,
-  };
 }
 
 /**
@@ -96,7 +75,7 @@ export async function addPageNumbers(
   const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const pages = doc.getPages();
-  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_NUMBER_COLOR);
+  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_TEXT_COLOR);
 
   for (let i = 0; i < pages.length; i++) {
     const pageNum1Based = i + 1;
@@ -131,7 +110,7 @@ export async function addPageNumbersSinglePage(
 
   const font = await previewDoc.embedFont(StandardFonts.Helvetica);
   const page = previewDoc.getPages()[0];
-  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_NUMBER_COLOR);
+  const { r, g, b } = hexToRgb(options.color ?? DEFAULT_TEXT_COLOR);
   const { x, y, text } = computeNumberPlacement(page, font, options.startNumber + clampedIndex, options);
 
   page.drawText(text, { x, y, size: options.fontSize, font, color: rgb(r, g, b) });

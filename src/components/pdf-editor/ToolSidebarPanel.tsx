@@ -10,7 +10,7 @@ import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
   getPdfCompressibilityFromBytes,
@@ -20,7 +20,7 @@ import {
   type PdfCompressibility,
 } from '@/lib/pdfProcessor';
 import type { PdfQualityLevel } from '@/types/file';
-import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
+import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
@@ -855,18 +855,11 @@ function WatermarkPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Color</label>
-          <div className="flex gap-1 mt-0.5">
-            {(['gray', 'red', 'blue'] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setOptions((o) => ({ ...o, color: c }))}
-                className={`px-2 py-0.5 text-[10px] rounded border capitalize ${
-                  options.color === c ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="mt-1">
+            <ColorPicker
+              value={options.color}
+              onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
+            />
           </div>
         </div>
       </div>
@@ -903,7 +896,7 @@ function PageNumbersPanel() {
     fontSize: 12,
     startNumber: 1,
     margin: 30,
-    color: DEFAULT_NUMBER_COLOR,
+    color: DEFAULT_TEXT_COLOR,
   });
 
   // Everything derives from the bytes as they were before numbering. Once numbers
@@ -1006,8 +999,8 @@ function PageNumbersPanel() {
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">Colour</label>
           <div className="mt-0.5">
-            <PageNumberColorPicker
-              value={options.color ?? DEFAULT_NUMBER_COLOR}
+            <ColorPicker
+              value={options.color ?? DEFAULT_TEXT_COLOR}
               onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
             />
           </div>
