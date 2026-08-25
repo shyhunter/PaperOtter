@@ -855,6 +855,61 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(ctx!.state.watermarkDraft).toBeNull());
   });
 
+  // The editor has its own Sign and Redact panels, separate code from the
+  // standalone flows of the same name. Both kept private colour lists.
+  it('TP-13 — the Sign panel offers the shared colours', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
+  });
+
+  it('TP-14 — the Redact panel offers the shared colours', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    for (const preset of COLOR_PRESETS) {
+      expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
+  });
+
+  it('TP-15 — the Redact panel warns about a block too pale to notice', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    expect(screen.queryByText(/hard to see/i)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'White' }));
+
+    // Same warning the standalone flow gives, for the same reason: the block is
+    // opaque either way, but a reader cannot see that anything was covered.
+    expect(screen.getByText(/hard to see/i)).toBeInTheDocument();
+  });
+
   // TP-04: Page Numbers Panel
   it('TP-04 — Page Numbers panel shows position, format, start-at, and font-size controls', async () => {
     const user = userEvent.setup();

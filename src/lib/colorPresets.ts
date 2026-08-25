@@ -21,17 +21,23 @@ export const DEFAULT_TEXT_COLOR = '#000000';
 /**
  * The union of what the separate lists offered, deduplicated.
  *
+ * Charcoal and Navy earn their place the same way: the editor's redact panel
+ * offered a dark grey and its sign panel a navy ink, and unifying a vocabulary
+ * must not quietly take a colour away from the feature that had it.
+ *
  * White is here deliberately: text, numbering or a watermark over dark pages or
  * full-bleed images needs it, even though it is invisible on plain white.
  */
 export const COLOR_PRESETS: readonly ColorPreset[] = [
   { label: 'Black', hex: DEFAULT_TEXT_COLOR },
   { label: 'White', hex: '#FFFFFF' },
+  { label: 'Charcoal', hex: '#333333' },
   { label: 'Grey', hex: '#808080' },
   { label: 'Red', hex: '#DC2626' },
   { label: 'Orange', hex: '#F59E0B' },
   { label: 'Green', hex: '#16A34A' },
   { label: 'Blue', hex: '#2563EB' },
+  { label: 'Navy', hex: '#1A365D' },
   { label: 'Purple', hex: '#7C3AED' },
   { label: 'Pink', hex: '#EC4899' },
 ];

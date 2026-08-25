@@ -17,7 +17,7 @@ import {
   type WatermarkOptions,
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
+import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
   getPdfCompressibilityFromBytes,
@@ -1300,7 +1300,7 @@ function SignPanel() {
 
   const [sigText, setSigText] = useState('');
   const [sigFont, setSigFont] = useState(SIGNATURE_FONTS[0].value);
-  const [sigColor, setSigColor] = useState('#1a365d');
+  const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
   const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
   const [showSaved, setShowSaved] = useState(false);
@@ -1403,17 +1403,8 @@ function SignPanel() {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">Color</label>
-            <div className="flex gap-1 mt-0.5">
-              {['#1a365d', '#000000', '#2563EB', '#DC2626'].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setSigColor(c)}
-                  className={`w-5 h-5 rounded-sm border-2 ${sigColor === c ? 'border-primary' : 'border-border'}`}
-                  style={{ backgroundColor: c }}
-                  title={c}
-                />
-              ))}
+            <div className="mt-1">
+              <ColorPicker value={sigColor} onChange={setSigColor} />
             </div>
           </div>
           <div>
@@ -1573,18 +1564,18 @@ function RedactPanel() {
 
         <div>
           <label className="text-[10px] text-muted-foreground">Redaction color</label>
-          <div className="flex gap-1 mt-0.5">
-            {['#000000', '#FFFFFF', '#333333'].map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setRedactColor(c)}
-                className={`w-6 h-6 rounded-sm border-2 ${redactColor === c ? 'border-primary ring-1 ring-primary/30' : 'border-border'}`}
-                style={{ backgroundColor: c }}
-                title={c === '#000000' ? 'Black' : c === '#FFFFFF' ? 'White' : 'Dark gray'}
-              />
-            ))}
+          <div className="mt-1">
+            <ColorPicker value={redactColor} onChange={setRedactColor} />
           </div>
+          {isLightColor(redactColor) && (
+            // The block is opaque whatever colour it is, so nothing shows
+            // through. What a pale one costs is the reader's ability to see
+            // that anything was covered at all.
+            <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+              A block this pale is hard to see on a white page. It still covers
+              the content completely.
+            </p>
+          )}
         </div>
 
         <button

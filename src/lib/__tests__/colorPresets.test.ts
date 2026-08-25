@@ -19,9 +19,14 @@ describe('colorPresets — one colour vocabulary for the whole app', () => {
 
   it('[COL-03] covers every colour the separate lists used to offer', () => {
     const hexes = COLOR_PRESETS.map((p) => p.hex.toUpperCase());
-    // Union of the four vocabularies this module replaces: page numbers,
-    // both text toolbars, and the watermark's gray/red/blue.
-    for (const hex of ['#000000', '#FFFFFF', '#808080', '#DC2626', '#2563EB', '#16A34A']) {
+    // Union of the six vocabularies this module replaces: page numbers, both
+    // text toolbars, the watermark's gray/red/blue, and the editor's own sign
+    // and redact panels — whose navy ink and dark grey are here for that reason
+    // alone. No feature may lose a colour it used to offer.
+    for (const hex of [
+      '#000000', '#FFFFFF', '#808080', '#DC2626', '#2563EB', '#16A34A',
+      '#1A365D', '#333333',
+    ]) {
       expect(hexes).toContain(hex);
     }
   });
