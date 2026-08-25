@@ -75,7 +75,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
@@ -97,7 +97,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, password, passwordsMatch]);
+  }, [filePath, password, passwordsMatch, goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');

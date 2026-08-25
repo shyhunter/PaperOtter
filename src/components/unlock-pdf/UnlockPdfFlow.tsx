@@ -72,7 +72,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   const handleUnlock = useCallback(async () => {
     if (!filePath || password.length === 0) return;
@@ -96,7 +96,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, password]);
+  }, [filePath, password, goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');

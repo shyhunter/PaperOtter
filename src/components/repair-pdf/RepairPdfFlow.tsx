@@ -78,7 +78,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   const handleRepair = useCallback(async () => {
     if (!filePath) return;
@@ -100,7 +100,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath]);
+  }, [filePath, goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');

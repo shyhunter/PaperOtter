@@ -329,7 +329,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [images, pageSize, orientation, margin]);
+  }, [images, pageSize, orientation, margin, goToStep]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 

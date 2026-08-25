@@ -105,7 +105,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     } finally {
       setIsLoadingFile(false);
     }
-  }, []);
+  }, [goToStep]);
 
   // Auto-load initial file
   useEffect(() => {
@@ -159,7 +159,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, rotation, outputFormat, quality]);
+  }, [filePath, rotation, outputFormat, quality, goToStep]);
 
   const showQualitySlider = outputFormat !== 'png';
 
