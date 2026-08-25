@@ -429,6 +429,100 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(1));
   });
 
+  /** Apply is disabled until the debounced preview resolves. */
+  async function clickApply(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 3000 });
+    await user.click(screen.getByText('Apply'));
+  }
+
+  it('TP-04c — Page Numbers panel offers a colour, and Apply uses it', async () => {
+    const user = userEvent.setup();
+    vi.mocked(addPageNumbers).mockClear();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await user.click(screen.getByRole('button', { name: 'White' }));
+    await clickApply(user);
+
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalled());
+    expect(vi.mocked(addPageNumbers).mock.calls[0][1]).toMatchObject({ color: '#FFFFFF' });
+  });
+
+  it('TP-04d — Remove appears only once page numbers have been applied', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    expect(screen.queryByRole('button', { name: /remove page numbers/i })).toBeNull();
+
+    await clickApply(user);
+
+    expect(await screen.findByRole('button', { name: /remove page numbers/i })).toBeTruthy();
+  });
+
+  it('TP-04e — Remove restores the bytes from before numbering', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const before = ctx!.state.pdfBytes;
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await clickApply(user);
+    await waitFor(() => expect(ctx!.state.pageNumberBase).not.toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /remove page numbers/i }));
+
+    await waitFor(() => expect(ctx!.state.pdfBytes).toEqual(before));
+    expect(ctx!.state.pageNumberBase).toBeNull();
+  });
+
+  it('TP-04f — re-applying after a colour change derives from the clean bytes, not the numbered ones', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | undefined;
+    vi.mocked(addPageNumbers).mockClear();
+
+    // Distinct results so a stacked apply would be visible in the call arguments.
+    vi.mocked(addPageNumbers).mockResolvedValueOnce(new Uint8Array([0x41, 0x41, 0x41, 0x41]));
+    vi.mocked(addPageNumbers).mockResolvedValueOnce(new Uint8Array([0x42, 0x42, 0x42, 0x42]));
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    const clean = ctx!.state.pdfBytes;
+
+    await user.click(screen.getByTitle('Page Numbers'));
+    await clickApply(user);
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('button', { name: 'Red' }));
+    await clickApply(user);
+    await waitFor(() => expect(addPageNumbers).toHaveBeenCalledTimes(2));
+
+    // Second apply must start from the clean bytes. Starting from the numbered
+    // result is how two overlapping sets of numbers get baked in permanently.
+    expect(vi.mocked(addPageNumbers).mock.calls[1][0]).toEqual(clean);
+    expect(vi.mocked(addPageNumbers).mock.calls[1][1]).toMatchObject({ color: '#DC2626' });
+  });
+
   // TP-05: Crop Panel
   it('TP-05 — Crop panel shows margins controls with linked "All equal" toggle', async () => {
     const user = userEvent.setup();

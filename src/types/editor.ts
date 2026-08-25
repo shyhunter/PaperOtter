@@ -75,6 +75,11 @@ export interface EditorViewState {
   pdfBytes: Uint8Array;
   /** Snapshot of the original PDF at load time — never modified after init */
   originalPdfBytes: Uint8Array;
+  /** Bytes as they were immediately before page numbers were applied, or null.
+   * Lets the page-numbers panel take them back off, and lets a colour change
+   * re-derive from clean bytes instead of stacking a second set of numbers.
+   * Dropped as soon as any other tool applies — see UPDATE_PDF_BYTES. */
+  pageNumberBase: Uint8Array | null;
   filePath: string | null;         // null until first save
   fileName: string;
   pageCount: number;

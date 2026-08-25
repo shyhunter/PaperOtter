@@ -10,6 +10,8 @@ import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
+import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
@@ -715,14 +717,21 @@ function WatermarkPanel() {
 // ── Page Numbers Panel ───────────────────────────────────────────────
 
 function PageNumbersPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const { state, applyPageNumbers, removePageNumbers } = useEditorContext();
   const [options, setOptions] = useState<PageNumberOptions>({
     position: 'bottom-center',
     format: 'numeric',
     fontSize: 12,
     startNumber: 1,
     margin: 30,
+    color: DEFAULT_NUMBER_COLOR,
   });
+
+  // Everything derives from the bytes as they were before numbering. Once numbers
+  // are applied, state.pdfBytes already carries them -- deriving from that would
+  // show, and then bake in, a second overlapping set.
+  const baseBytes = state.pageNumberBase ?? state.pdfBytes;
+  const hasApplied = state.pageNumberBase !== null;
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -735,9 +744,9 @@ function PageNumbersPanel() {
   }, [options, state.currentPage]);
 
   const { previewBytes, isProcessing } = useDebouncedPreview(
-    state.pdfBytes,
+    baseBytes,
     runPreview,
-    [options.position, options.format, options.fontSize, options.startNumber, options.margin, state.currentPage],
+    [options.position, options.format, options.fontSize, options.startNumber, options.margin, options.color, state.currentPage],
   );
 
   // Apply page numbers to ALL pages (full processing, runs only on explicit user action).
@@ -746,9 +755,8 @@ function PageNumbersPanel() {
     setApplyError(null);
     setApplySuccess(false);
     try {
-      const result = await addPageNumbers(state.pdfBytes, options);
-      updatePdfBytes(result);
-      markDirty();
+      const result = await addPageNumbers(baseBytes, options);
+      applyPageNumbers(baseBytes, result);
       setApplySuccess(true);
       setTimeout(() => setApplySuccess(false), 2000);
     } catch (err) {
@@ -756,7 +764,7 @@ function PageNumbersPanel() {
     } finally {
       setIsApplying(false);
     }
-  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [options, baseBytes, applyPageNumbers]);
 
   return (
     <div className="space-y-3">
@@ -815,10 +823,20 @@ function PageNumbersPanel() {
             max={48}
           />
         </div>
+
+        <div>
+          <label className="text-[10px] font-medium text-muted-foreground">Colour</label>
+          <div className="mt-0.5">
+            <PageNumberColorPicker
+              value={options.color ?? DEFAULT_NUMBER_COLOR}
+              onChange={(hex) => setOptions((o) => ({ ...o, color: hex }))}
+            />
+          </div>
+        </div>
       </div>
 
       <ToolSidebarPreview
-        originalBytes={state.pdfBytes}
+        originalBytes={baseBytes}
         previewBytes={previewBytes}
         isProcessing={isProcessing}
         previewPageIndex={0}
@@ -831,6 +849,16 @@ function PageNumbersPanel() {
         success={applySuccess}
         error={applyError}
       />
+
+      {hasApplied && (
+        <button
+          type="button"
+          onClick={removePageNumbers}
+          className="w-full px-2 py-1 text-xs rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+        >
+          Remove page numbers
+        </button>
+      )}
     </div>
   );
 }

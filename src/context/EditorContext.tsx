@@ -25,6 +25,8 @@ type EditorAction =
   | { type: 'MARK_DIRTY' }
   | { type: 'CLEAR_DIRTY' }
   | { type: 'UPDATE_PDF_BYTES'; bytes: Uint8Array; pageCount?: number; pages?: PageEditState[] }
+  | { type: 'APPLY_PAGE_NUMBERS'; base: Uint8Array; numbered: Uint8Array }
+  | { type: 'REMOVE_PAGE_NUMBERS' }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -65,11 +67,34 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
     case 'CLEAR_DIRTY':
       return { ...state, isDirty: false };
     case 'UPDATE_PDF_BYTES': {
-      const updates: Partial<EditorViewState> = { pdfBytes: action.bytes, isDirty: true };
+      // Another tool has written to the document, so the page-number base no
+      // longer describes it. Restoring it later would discard this edit.
+      const updates: Partial<EditorViewState> = {
+        pdfBytes: action.bytes,
+        isDirty: true,
+        pageNumberBase: null,
+      };
       if (action.pageCount !== undefined) updates.pageCount = action.pageCount;
       if (action.pages !== undefined) updates.pages = action.pages;
       return { ...state, ...updates };
     }
+    case 'APPLY_PAGE_NUMBERS':
+      // Re-applying (e.g. a colour change) keeps the ORIGINAL base: the numbered
+      // bytes must never become the base, or the next apply stacks on top.
+      return {
+        ...state,
+        pdfBytes: action.numbered,
+        pageNumberBase: state.pageNumberBase ?? action.base,
+        isDirty: true,
+      };
+    case 'REMOVE_PAGE_NUMBERS':
+      if (!state.pageNumberBase) return state;
+      return {
+        ...state,
+        pdfBytes: state.pageNumberBase,
+        pageNumberBase: null,
+        isDirty: true,
+      };
     case 'SET_FILE_PATH':
       return { ...state, filePath: action.path };
     case 'SET_FILE_NAME':
@@ -145,6 +170,10 @@ interface EditorContextValue {
   markDirty: () => void;
   clearDirty: () => void;
   updatePdfBytes: (bytes: Uint8Array) => void;
+  /** Apply page numbers, remembering `base` so they can be taken off again. */
+  applyPageNumbers: (base: Uint8Array, numbered: Uint8Array) => void;
+  /** Restore the bytes from before page numbers were applied. No-op if none. */
+  removePageNumbers: () => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -188,6 +217,7 @@ function createEmptyState(): EditorViewState {
   return {
     pdfBytes: new Uint8Array(0),
     originalPdfBytes: new Uint8Array(0),
+    pageNumberBase: null,
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -243,6 +273,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const updatePdfBytes = useCallback((bytes: Uint8Array) => {
     dispatch({ type: 'UPDATE_PDF_BYTES', bytes });
+  }, []);
+
+  const applyPageNumbers = useCallback((base: Uint8Array, numbered: Uint8Array) => {
+    dispatch({ type: 'APPLY_PAGE_NUMBERS', base, numbered });
+  }, []);
+
+  const removePageNumbers = useCallback(() => {
+    dispatch({ type: 'REMOVE_PAGE_NUMBERS' });
   }, []);
 
   const setFilePath = useCallback((path: string) => {
@@ -536,6 +574,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       markDirty,
       clearDirty,
       updatePdfBytes,
+      applyPageNumbers,
+      removePageNumbers,
       setFilePath,
       setFileName,
       initState,
@@ -572,6 +612,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       markDirty,
       clearDirty,
       updatePdfBytes,
+      applyPageNumbers,
+      removePageNumbers,
       setFilePath,
       setFileName,
       initState,
@@ -629,6 +671,7 @@ export function createEditorViewState(
   return {
     pdfBytes,
     originalPdfBytes: pdfBytes.slice(), // Snapshot — never modified
+    pageNumberBase: null,
     filePath,
     fileName,
     pageCount,
