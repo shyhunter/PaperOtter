@@ -14,6 +14,7 @@ import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import { ColorPicker } from '@/components/ColorPicker';
+import { t } from '@/i18n';
 
 interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
@@ -173,8 +174,8 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Add Watermark</h2>
-              <p className="text-sm text-muted-foreground">Select a PDF to add a text watermark.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('watermark.addWatermark')}</h2>
+              <p className="text-sm text-muted-foreground">{t('watermark.selectAPdfToAdd')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -186,12 +187,12 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -205,23 +206,23 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
             <div className="flex flex-1 overflow-hidden">
               {/* Left panel: options */}
               <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
-                <h2 className="text-sm font-semibold text-foreground">Watermark Options</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t('watermark.watermarkOptions')}</h2>
 
                 {/* Text input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Text</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('watermark.text')}</label>
                   <input
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder="Enter watermark text"
+                    placeholder={t('watermark.enterWatermarkText')}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
                 {/* Font size */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Font Size</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('common.fontSize')}</label>
                   <div className="flex gap-1.5">
                     {FONT_SIZES.map((fs) => (
                       <button
@@ -259,7 +260,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
 
                 {/* Rotation */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Rotation</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('rotateImage.rotation')}</label>
                   <div className="flex gap-1.5">
                     {ROTATIONS.map((r) => (
                       <button
@@ -281,7 +282,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
 
                 {/* Color */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Color</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('watermark.color')}</label>
                   <ColorPicker value={color} onChange={setColor} />
                 </div>
 
@@ -298,7 +299,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {isGeneratingPreview && !previewUrl && (
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">Generating preview...</p>
+                    <p className="text-xs">{t('common.generatingPreview')}</p>
                   </div>
                 )}
                 {previewUrl && (
@@ -310,7 +311,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                     )}
                     <img
                       src={previewUrl}
-                      alt="Watermark preview"
+                      alt={t('watermark.watermarkPreview')}
                       className="max-h-[60vh] rounded-md border border-border shadow-sm"
                     />
                   </div>
@@ -326,7 +327,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
             {/* Bottom bar */}
             <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
-                Back
+                {t('common.back')}
               </Button>
               <div className="flex-1" />
               <Button
@@ -337,7 +338,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {isProcessing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Applying...
+                    {t('common.applying')}
                   </>
                 ) : (
                   'Apply Watermark'

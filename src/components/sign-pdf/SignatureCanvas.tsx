@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { DEFAULT_TEXT_COLOR, normaliseHex } from '@/lib/colorPresets';
+import { t } from '@/i18n';
 
 interface Point {
   x: number;
@@ -245,7 +246,7 @@ export function SignatureCanvas({ onComplete, onClear, color = DEFAULT_TEXT_COLO
           disabled={!hasDrawn}
           className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
         >
-          Clear
+          {t('signPdf.clear')}
         </button>
         <button
           type="button"
@@ -253,7 +254,7 @@ export function SignatureCanvas({ onComplete, onClear, color = DEFAULT_TEXT_COLO
           disabled={!hasDrawn}
           className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
         >
-          Use This Signature
+          {t('common.useThisSignature')}
         </button>
       </div>
     </div>

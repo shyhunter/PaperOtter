@@ -7,6 +7,7 @@ import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
+import { t } from '@/i18n';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -82,8 +83,8 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-4">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Merge PDFs</h2>
-          <p className="text-sm text-muted-foreground">Select two or more PDFs to combine into one.</p>
+          <h2 className="text-lg font-semibold text-foreground">{t('merge.mergePdfs')}</h2>
+          <p className="text-sm text-muted-foreground">{t('merge.selectTwoOrMorePdfs')}</p>
         </div>
 
         {/* File list */}
@@ -117,7 +118,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Loading PDFs…</span>
+            <span className="text-sm text-muted-foreground">{t('merge.loadingPdfs')}</span>
           </div>
         )}
 
@@ -145,12 +146,12 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
             disabled={files.length < 2 || isLoading}
             className="flex-1"
           >
-            Continue
+            {t('jpgToPdf.continue')}
           </Button>
         </div>
 
         {files.length === 1 && (
-          <p className="text-xs text-muted-foreground text-center">Add at least one more PDF to merge.</p>
+          <p className="text-xs text-muted-foreground text-center">{t('merge.addAtLeastOneMore')}</p>
         )}
       </div>
     </div>

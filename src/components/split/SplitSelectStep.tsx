@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
+import { t } from '@/i18n';
 
 type TabMode = 'range' | 'every-n' | 'individual';
 
@@ -160,7 +161,7 @@ export function SplitSelectStep({
     <div className="flex flex-1 flex-col p-6">
       <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Select Pages</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('split.selectPages')}</h2>
           <p className="text-sm text-muted-foreground">{fileName} — {pageCount} page{pageCount !== 1 ? 's' : ''}</p>
         </div>
 
@@ -186,7 +187,7 @@ export function SplitSelectStep({
             {/* Text input */}
             <div>
               <label htmlFor="range-input" className="text-xs font-medium text-muted-foreground mb-1 block">
-                Page ranges (e.g., 1-3, 5, 7-10)
+                {t('split.pageRangesEG1')}
               </label>
               <input
                 id="range-input"
@@ -241,7 +242,7 @@ export function SplitSelectStep({
           <div className="space-y-3">
             <div>
               <label htmlFor="every-n-input" className="text-xs font-medium text-muted-foreground mb-1 block">
-                Split every N pages
+                {t('split.splitEveryNPages')}
               </label>
               <input
                 id="every-n-input"
@@ -263,7 +264,7 @@ export function SplitSelectStep({
         {mode === 'individual' && (
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground">
-              Extract each page as a separate PDF.
+              {t('split.extractEachPageAsA')}
             </p>
             <p className="text-sm font-medium text-foreground mt-1">
               This will create {pageCount} file{pageCount !== 1 ? 's' : ''}.
@@ -290,14 +291,14 @@ export function SplitSelectStep({
       {/* Bottom bar */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 mt-4">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Splitting…
+              {t('split.splitting')}
             </>
           ) : (
             'Split'

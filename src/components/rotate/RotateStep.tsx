@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cycleRotation } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
+import { t } from '@/i18n';
 
 /** Rotate counter-clockwise: cycle 3 forward = 1 backward */
 function rotateCCW(r: RotationDegrees): RotationDegrees {
@@ -101,7 +102,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
     <div className="flex flex-1 flex-col p-6">
       <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Rotate Pages</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('common.rotatePages')}</h2>
           <p className="text-sm text-muted-foreground">
             Select pages, then rotate them left or right.
             {rotatedCount > 0 && ` ${rotatedCount} page${rotatedCount !== 1 ? 's' : ''} rotated.`}
@@ -114,9 +115,9 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           <div className="flex items-center justify-center gap-2">
             <Button variant="outline" size="sm" onClick={handleSelectAll}>
               {allSelected ? (
-                <><Square className="w-3.5 h-3.5 mr-1" /> Deselect All</>
+                <><Square className="w-3.5 h-3.5 mr-1" /> {t('pdfToJpg.deselectAll')}</>
               ) : (
-                <><CheckSquare className="w-3.5 h-3.5 mr-1" /> Select All</>
+                <><CheckSquare className="w-3.5 h-3.5 mr-1" /> {t('pdfToJpg.selectAll')}</>
               )}
             </Button>
             {selectedCount > 0 && (
@@ -134,20 +135,20 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
               size="sm"
               onClick={() => handleRotateSelected('ccw')}
               disabled={selectedCount === 0}
-              title="Rotate selected pages left"
+              title={t('rotate.rotateSelectedPagesLeft')}
             >
               <RotateCcw className="w-4 h-4 mr-1" />
-              Left
+              {t('rotate.left')}
             </Button>
             <Button
               variant="default"
               size="sm"
               onClick={() => handleRotateSelected('cw')}
               disabled={selectedCount === 0}
-              title="Rotate selected pages right"
+              title={t('rotate.rotateSelectedPagesRight')}
             >
               <RotateCw className="w-4 h-4 mr-1" />
-              Right
+              {t('rotate.right')}
             </Button>
 
             <span className="text-muted-foreground/40 mx-1">|</span>
@@ -155,14 +156,14 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
             {/* All pages rotation */}
             <Button variant="outline" size="sm" onClick={() => handleRotateAll('ccw')}>
               <RotateCcw className="w-4 h-4 mr-1" />
-              All Left
+              {t('rotate.allLeft')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleRotateAll('cw')}>
               <RotateCw className="w-4 h-4 mr-1" />
-              All Right
+              {t('rotate.allRight')}
             </Button>
             <Button variant="outline" size="sm" onClick={handleResetAll} disabled={rotatedCount === 0}>
-              Reset
+              {t('common.reset')}
             </Button>
           </div>
         </div>
@@ -232,14 +233,14 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
       {/* Bottom bar */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 mt-4">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Applying…
+              {t('rotate.applying')}
             </>
           ) : (
             'Apply & Save'

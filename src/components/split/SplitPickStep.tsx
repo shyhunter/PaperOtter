@@ -6,6 +6,7 @@ import { PDFDocument } from 'pdf-lib';
 import { FileUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { friendlyPdfError } from '@/lib/pdfUtils';
+import { t } from '@/i18n';
 
 interface SplitPickStepProps {
   onFileLoaded: (pdfBytes: Uint8Array, pageCount: number, fileName: string) => void;
@@ -59,8 +60,8 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-4 text-center">
-        <h2 className="text-lg font-semibold text-foreground">Split PDF</h2>
-        <p className="text-sm text-muted-foreground">Select a PDF to split into multiple files.</p>
+        <h2 className="text-lg font-semibold text-foreground">{t('split.splitPdf')}</h2>
+        <p className="text-sm text-muted-foreground">{t('split.selectAPdfToSplit')}</p>
 
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -72,12 +73,12 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading…
+              {t('common.loading')}
             </>
           ) : (
             <>
               <FileUp className="w-4 h-4 mr-2" />
-              Select PDF
+              {t('pdfToJpg.selectPdf')}
             </>
           )}
         </Button>

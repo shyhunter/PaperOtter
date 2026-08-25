@@ -7,6 +7,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -130,9 +131,9 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Convert to PDF/A</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('pdfaConvert.convertToPdfA')}</h2>
               <p className="text-sm text-muted-foreground">
-                Convert a PDF to archival format for long-term preservation.
+                {t('pdfaConvert.convertAPdfToArchival')}
               </p>
 
               {loadError && (
@@ -145,12 +146,12 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -171,11 +172,11 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Archive className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">Conformance Level</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('pdfaConvert.conformanceLevel')}</p>
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  PDF/A is an archival format designed for long-term document preservation.
+                  {t('pdfaConvert.pdfAIsAnArchival')}
                 </p>
 
                 {/* Radio group */}
@@ -224,7 +225,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -235,7 +236,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Converting...
+                      {t('convertImage.converting')}
                     </>
                   ) : (
                     'Convert'

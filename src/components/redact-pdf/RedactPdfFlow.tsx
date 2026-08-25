@@ -11,6 +11,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
+import { t } from '@/i18n';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -112,9 +113,9 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Redact PDF</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('redactPdf.redactPdf')}</h2>
               <p className="text-sm text-muted-foreground">
-                Select a PDF to permanently redact sensitive content.
+                {t('redactPdf.selectAPdfToPermanently')}
               </p>
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -125,12 +126,12 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -144,9 +145,9 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             {isProcessing ? (
               <div className="flex flex-1 flex-col items-center justify-center p-6">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-3" />
-                <p className="text-sm font-medium text-foreground">Applying redactions...</p>
+                <p className="text-sm font-medium text-foreground">{t('redactPdf.applyingRedactions')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Rendering pages and removing content permanently
+                  {t('redactPdf.renderingPagesAndRemovingContent')}
                 </p>
               </div>
             ) : (
@@ -171,7 +172,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             <div className="mx-4 mt-3 space-y-2">
               <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3">
                 <p className="text-xs text-amber-800 dark:text-amber-200">
-                  Redacted pages have been flattened to images. Text on those pages is no longer selectable.
+                  {t('redactPdf.redactedPagesHaveBeenFlattened')}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground text-center">

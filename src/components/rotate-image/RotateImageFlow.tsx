@@ -11,6 +11,7 @@ import { rotateImage } from '@/lib/imageRotate';
 import { cn } from '@/lib/utils';
 import type { ImageRotation } from '@/lib/imageRotate';
 import type { ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
@@ -172,8 +173,8 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Rotate Image</h2>
-              <p className="text-sm text-muted-foreground">Select an image to rotate 90, 180, or 270 degrees.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('rotateImage.rotateImage')}</h2>
+              <p className="text-sm text-muted-foreground">{t('rotateImage.selectAnImageToRotate')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -185,12 +186,12 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select Image
+                    {t('common.selectImage')}
                   </>
                 )}
               </Button>
@@ -211,7 +212,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
               <div className="flex items-center justify-center rounded-lg border border-border bg-card p-4 overflow-hidden">
                 <img
                   src={previewUrl}
-                  alt="Preview"
+                  alt={t('common.preview')}
                   className="max-h-48 max-w-full object-contain transition-transform duration-300"
                   style={{ transform: `rotate(${rotation}deg)` }}
                 />
@@ -219,11 +220,11 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
 
               {/* Rotation buttons */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Rotation</p>
+                <p className="text-xs text-muted-foreground">{t('rotateImage.rotation')}</p>
                 <div className="flex items-center justify-center gap-3">
                   <Button variant="outline" size="sm" onClick={handleRotateLeft} disabled={isProcessing}>
                     <RotateCcw className="w-4 h-4 mr-1.5" />
-                    Left 90
+                    {t('rotateImage.left90')}
                   </Button>
                   <Button
                     variant="outline"
@@ -234,7 +235,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                     180
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleRotateRight} disabled={isProcessing}>
-                    Right 90
+                    {t('rotateImage.right90')}
                     <RotateCw className="w-4 h-4 ml-1.5" />
                   </Button>
                 </div>
@@ -245,7 +246,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
 
               {/* Output format */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Output format</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {FORMATS.map((fmt) => (
                     <button
@@ -270,7 +271,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 {showQualitySlider && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">Quality</label>
+                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
                       <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
                     </div>
                     <input
@@ -308,7 +309,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -319,7 +320,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Rotating...
+                      {t('rotateImage.rotating')}
                     </>
                   ) : (
                     'Apply & Save'

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { DEFAULT_TEXT_COLOR, normaliseHex } from '@/lib/colorPresets';
+import { t } from '@/i18n';
 
 interface SignatureTypedProps {
   onComplete: (dataUrl: string) => void;
@@ -119,7 +120,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Type your name or signature..."
+        placeholder={t('signPdf.typeYourNameOrSignature')}
         className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         maxLength={60}
       />
@@ -166,7 +167,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
             {text}
           </span>
         ) : (
-          <span className="text-muted-foreground text-sm">Preview will appear here</span>
+          <span className="text-muted-foreground text-sm">{t('common.previewWillAppearHere')}</span>
         )}
       </div>
 
@@ -176,7 +177,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
         disabled={!text.trim()}
         className="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
       >
-        Use This Signature
+        {t('common.useThisSignature')}
       </button>
     </div>
   );

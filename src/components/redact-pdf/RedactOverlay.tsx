@@ -2,6 +2,7 @@
 // Positioned absolutely over a PagePreview canvas.
 import { useState, useCallback, useRef } from 'react';
 import { X } from 'lucide-react';
+import { t } from '@/i18n';
 
 export interface RedactionRect {
   id: string;
@@ -146,7 +147,7 @@ export function RedactOverlay({
                   onRemoveRedaction(r.id);
                 }}
                 className="flex items-center justify-center w-5 h-5 rounded-full bg-destructive text-white hover:bg-destructive/80 transition-colors"
-                title="Remove redaction"
+                title={t('redactPdf.removeRedaction')}
               >
                 <X className="w-3 h-3" />
               </button>

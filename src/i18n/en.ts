@@ -107,6 +107,244 @@ export const en = {
   // ── App chrome ──────────────────────────────────────────────────────────
   'chrome.about': 'About Papercut',
   'chrome.openAnother': 'Open another file',
+
+  // ── rotateImage ─────────────────────────────────────────────────────────
+  'rotateImage.left90': 'Left 90',
+  'common.loadingDots': 'Loading...',
+  'common.preview': 'Preview',
+  'common.quality': 'Quality',
+  'rotateImage.right90': 'Right 90',
+  'rotateImage.rotateImage': 'Rotate Image',
+  'rotateImage.rotating': 'Rotating...',
+  'rotateImage.rotation': 'Rotation',
+  'common.selectImage': 'Select Image',
+  'rotateImage.selectAnImageToRotate': 'Select an image to rotate 90, 180, or 270 degrees.',
+
+  // ── convertImage ────────────────────────────────────────────────────────
+  'convertImage.convertImage': 'Convert Image',
+  'convertImage.converting': 'Converting...',
+  'convertImage.selectAnImageToConvert': 'Select an image to convert between formats.',
+
+  // ── jpgToPdf ────────────────────────────────────────────────────────────
+  'jpgToPdf.configurePdf': 'Configure PDF',
+  'jpgToPdf.continue': 'Continue',
+  'jpgToPdf.creatingPdf': 'Creating PDF...',
+  'jpgToPdf.jpgToPdf': 'JPG to PDF',
+  'jpgToPdf.loadingImages': 'Loading images...',
+  'jpgToPdf.margin': 'Margin',
+  'jpgToPdf.orientation': 'Orientation',
+  'jpgToPdf.selectOneOrMoreImages': 'Select one or more images to convert into a single PDF.',
+
+  // ── pdfToJpg ────────────────────────────────────────────────────────────
+  'pdfToJpg.convertPdf': 'Convert PDF',
+  'pdfToJpg.convertPdfPagesToImages': 'Convert PDF pages to images, Word, or ebook formats.',
+  'pdfToJpg.deselectAll': 'Deselect All',
+  'pdfToJpg.resolution': 'Resolution',
+  'pdfToJpg.selectAll': 'Select All',
+  'pdfToJpg.selectPdf': 'Select PDF',
+  'pdfToJpg.selectPages': 'Select pages',
+
+  // ── convertDoc ──────────────────────────────────────────────────────────
+  'convertDoc.converted': 'Converted',
+  'convertDoc.processAnother': 'Process Another',
+  'convertDoc.save': 'Save...',
+
+  // ── convertDoc ──────────────────────────────────────────────────────────
+  'convertDoc.byChapter': 'By chapter',
+  'convertDoc.detectingTools': 'Detecting tools...',
+  'convertDoc.documentConversionRequiresACompatible': 'Document conversion requires a compatible application such as Microsoft Word, LibreOffice, or similar.',
+  'convertDoc.epubLayout': 'EPUB Layout',
+  'convertDoc.fixedLayout': 'Fixed Layout',
+  'convertDoc.font': 'Font',
+  'convertDoc.fontSize': 'Font size',
+  'convertDoc.lineSpacing': 'Line spacing',
+  'convertDoc.linkAll': 'Link all',
+  'convertDoc.marginsMm': 'Margins (mm)',
+  'convertDoc.noDocumentConverterFound': 'No document converter found',
+  'convertDoc.noOutputFormatsAvailableFor': 'No output formats available for this file type.',
+  'convertDoc.oneFile': 'One file',
+  'convertDoc.output': 'Output',
+  'convertDoc.preservesExactPageLayout': 'Preserves exact page layout',
+  'convertDoc.reflowable': 'Reflowable',
+  'convertDoc.textReflowsToFitScreen': 'Text reflows to fit screen',
+  'convertDoc.typography': 'Typography',
+  'convertDoc.wholeDocument': 'Whole document',
+
+  // ── convertDoc ──────────────────────────────────────────────────────────
+  'convertDoc.convertDocument': 'Convert Document',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more',
+  'convertDoc.openPdfDocxDocOdt': 'Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
+  'convertDoc.selectDocument': 'Select Document',
+  'convertDoc.selectADocumentToConvert': 'Select a document to convert between formats.',
+  'convertDoc.unsupportedFileFormatPleaseUse': 'Unsupported file format. Please use PDF, DOCX, DOC, ODT, EPUB, TXT, RTF, or HTML.',
+
+  // ── cropPdf ─────────────────────────────────────────────────────────────
+  'cropPdf.cropMargins': 'Crop Margins',
+  'cropPdf.cropPdf': 'Crop PDF',
+  'cropPdf.cropPreview': 'Crop preview',
+  'cropPdf.cropping': 'Cropping...',
+  'cropPdf.equalMargins': 'Equal margins',
+  'cropPdf.loadingPreview': 'Loading preview...',
+  'cropPdf.selectAPdfToCrop': 'Select a PDF to crop margins.',
+
+  // ── merge ───────────────────────────────────────────────────────────────
+  'merge.merging': 'Merging…',
+  'common.moveDown': 'Move down',
+  'common.moveUp': 'Move up',
+  'merge.orderMerge': 'Order & Merge',
+
+  // ── merge ───────────────────────────────────────────────────────────────
+  'merge.addAtLeastOneMore': 'Add at least one more PDF to merge.',
+  'merge.loadingPdfs': 'Loading PDFs…',
+  'merge.mergePdfs': 'Merge PDFs',
+  'merge.selectTwoOrMorePdfs': 'Select two or more PDFs to combine into one.',
+
+  // ── organizePdf ─────────────────────────────────────────────────────────
+  'organizePdf.delete': 'Delete',
+  'organizePdf.duplicate': 'Duplicate',
+  'organizePdf.organizePdf': 'Organize PDF',
+  'organizePdf.processing': 'Processing...',
+  'organizePdf.reorderDeleteOrDuplicatePages': 'Reorder, delete, or duplicate pages in a PDF.',
+  'common.reset': 'Reset',
+  'organizePdf.reverse': 'Reverse',
+
+  // ── pageNumbers ─────────────────────────────────────────────────────────
+  'common.applying': 'Applying...',
+  'pageNumbers.colour': 'Colour',
+  'common.fontSize': 'Font Size',
+  'pageNumbers.format': 'Format',
+  'common.generatingPreview': 'Generating preview...',
+  'pageNumbers.pageNumberOptions': 'Page Number Options',
+  'pageNumbers.pageNumbersPreview': 'Page numbers preview',
+  'pageNumbers.position': 'Position',
+  'common.previewWillAppearHere': 'Preview will appear here',
+  'pageNumbers.startNumber': 'Start Number',
+
+  // ── pageNumbers ─────────────────────────────────────────────────────────
+  'pageNumbers.addPageNumbers': 'Add Page Numbers',
+  'pageNumbers.selectAPdfToAdd': 'Select a PDF to add page numbers.',
+
+  // ── pdfaConvert ─────────────────────────────────────────────────────────
+  'pdfaConvert.conformanceLevel': 'Conformance Level',
+  'pdfaConvert.convertAPdfToArchival': 'Convert a PDF to archival format for long-term preservation.',
+  'pdfaConvert.convertToPdfA': 'Convert to PDF/A',
+  'pdfaConvert.pdfAIsAnArchival': 'PDF/A is an archival format designed for long-term document preservation.',
+
+  // ── protectPdf ──────────────────────────────────────────────────────────
+  'protectPdf.addPasswordEncryptionToA': 'Add password encryption to a PDF file.',
+  'protectPdf.confirmPassword': 'Confirm Password',
+  'protectPdf.confirmPassword2': 'Confirm password',
+  'protectPdf.encrypting': 'Encrypting...',
+  'protectPdf.enterPassword': 'Enter password',
+  'protectPdf.password': 'Password',
+  'protectPdf.passwordsDoNotMatch': 'Passwords do not match.',
+  'protectPdf.protectPdf': 'Protect PDF',
+  'protectPdf.setPassword': 'Set Password',
+
+  // ── redactPdf ───────────────────────────────────────────────────────────
+  'redactPdf.removeRedaction': 'Remove redaction',
+
+  // ── redactPdf ───────────────────────────────────────────────────────────
+  'redactPdf.applyingRedactions': 'Applying redactions...',
+  'redactPdf.redactPdf': 'Redact PDF',
+  'redactPdf.redactedPagesHaveBeenFlattened': 'Redacted pages have been flattened to images. Text on those pages is no longer selectable.',
+  'redactPdf.renderingPagesAndRemovingContent': 'Rendering pages and removing content permanently',
+  'redactPdf.selectAPdfToPermanently': 'Select a PDF to permanently redact sensitive content.',
+
+  // ── redactPdf ───────────────────────────────────────────────────────────
+  'redactPdf.addAll': 'Add all',
+  'redactPdf.boxColour': 'Box colour',
+  'redactPdf.clearAll': 'Clear All',
+  'redactPdf.drawRectanglesOnThePage': 'Draw rectangles on the page to mark areas for redaction. Use text search below to find and redact specific text.',
+  'redactPdf.redactionTools': 'Redaction Tools',
+  'redactPdf.searchText': 'Search text...',
+  'redactPdf.summary': 'Summary',
+  'redactPdf.textSearch': 'Text Search',
+
+  // ── repairPdf ───────────────────────────────────────────────────────────
+  'repairPdf.fixStructuralIssuesInCorrupted': 'Fix structural issues in corrupted or malformed PDFs.',
+  'repairPdf.noIssuesDetectedFileAppears': 'No issues detected -- file appears healthy',
+  'repairPdf.pdfRepair': 'PDF Repair',
+  'repairPdf.repairPdf': 'Repair PDF',
+  'repairPdf.repairCompleteIfTheDocument': 'Repair complete. If the document had structural issues, they have been addressed.',
+  'repairPdf.repairing': 'Repairing...',
+
+  // ── rotate ──────────────────────────────────────────────────────────────
+  'common.rotatePages': 'Rotate Pages',
+  'rotate.selectAPdfToRotate': 'Select a PDF to rotate individual or all pages.',
+
+  // ── rotate ──────────────────────────────────────────────────────────────
+  'rotate.allLeft': 'All Left',
+  'rotate.allRight': 'All Right',
+  'rotate.applying': 'Applying…',
+  'rotate.left': 'Left',
+  'rotate.right': 'Right',
+  'rotate.rotateSelectedPagesLeft': 'Rotate selected pages left',
+  'rotate.rotateSelectedPagesRight': 'Rotate selected pages right',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.addASignatureToYour': 'Add a signature to your PDF document.',
+  'signPdf.couldNotReadThePdf': 'Could not read the PDF file.',
+  'signPdf.signPdf': 'Sign PDF',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.clear': 'Clear',
+  'common.useThisSignature': 'Use This Signature',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.createNew': 'Create New',
+  'signPdf.createOrSelectSignature': 'Create or Select Signature',
+  'signPdf.deleteSignature': 'Delete signature',
+  'signPdf.ink': 'Ink',
+  'signPdf.nameYourSignature': 'Name your signature',
+  'signPdf.newSignature': 'New signature',
+  'signPdf.noSavedSignatures': 'No saved signatures',
+  'signPdf.savedSignatures': 'Saved Signatures',
+  'signPdf.signatureName': 'Signature name...',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.allPages': 'All pages',
+  'signPdf.applyTo': 'Apply To',
+  'signPdf.currentPageOnly': 'Current page only',
+  'signPdf.customRange': 'Custom range',
+  'signPdf.pageNavigation': 'Page Navigation',
+  'signPdf.pageSelector': 'Page selector',
+  'signPdf.signature': 'Signature',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.typeYourNameOrSignature': 'Type your name or signature...',
+
+  // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.selectAnImageFilePng': 'Select an image file (PNG, JPG, or WebP)',
+  'signPdf.signaturePreview': 'Signature preview',
+
+  // ── split ───────────────────────────────────────────────────────────────
+  'split.selectAPdfToSplit': 'Select a PDF to split into multiple files.',
+  'split.splitPdf': 'Split PDF',
+
+  // ── split ───────────────────────────────────────────────────────────────
+  'split.extractEachPageAsA': 'Extract each page as a separate PDF.',
+  'split.pageRangesEG1': 'Page ranges (e.g., 1-3, 5, 7-10)',
+  'split.selectPages': 'Select Pages',
+  'split.splitEveryNPages': 'Split every N pages',
+  'split.splitting': 'Splitting…',
+
+  // ── unlockPdf ───────────────────────────────────────────────────────────
+  'unlockPdf.enterPassword': 'Enter Password',
+  'unlockPdf.enterThePdfPassword': 'Enter the PDF password',
+  'unlockPdf.pdfPassword': 'PDF Password',
+  'unlockPdf.removePasswordProtectionFromA': 'Remove password protection from a PDF file.',
+  'unlockPdf.unlockPdf': 'Unlock PDF',
+  'unlockPdf.unlocking': 'Unlocking...',
+
+  // ── watermark ───────────────────────────────────────────────────────────
+  'watermark.addWatermark': 'Add Watermark',
+  'watermark.color': 'Color',
+  'watermark.enterWatermarkText': 'Enter watermark text',
+  'watermark.selectAPdfToAdd': 'Select a PDF to add a text watermark.',
+  'watermark.text': 'Text',
+  'watermark.watermarkOptions': 'Watermark Options',
+  'watermark.watermarkPreview': 'Watermark preview',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

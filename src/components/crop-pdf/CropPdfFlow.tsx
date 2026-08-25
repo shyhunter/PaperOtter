@@ -12,6 +12,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { cropPdf, mmToPoints, pointsToMm } from '@/lib/pdfCrop';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 const MARGIN_PRESETS: { label: string; mm: number }[] = [
   { label: 'None', mm: 0 },
@@ -173,8 +174,8 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Crop PDF</h2>
-              <p className="text-sm text-muted-foreground">Select a PDF to crop margins.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('cropPdf.cropPdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('cropPdf.selectAPdfToCrop')}</p>
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
                   <p className="text-xs text-destructive">{loadError}</p>
@@ -182,9 +183,9 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               )}
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('common.loadingDots')}</>
                 ) : (
-                  <><FileUp className="w-4 h-4 mr-2" />Select PDF</>
+                  <><FileUp className="w-4 h-4 mr-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
               </Button>
             </div>
@@ -197,7 +198,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
             <div className="flex flex-1 overflow-hidden">
               {/* Left panel: margin inputs */}
               <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
-                <h2 className="text-sm font-semibold text-foreground">Crop Margins</h2>
+                <h2 className="text-sm font-semibold text-foreground">{t('cropPdf.cropMargins')}</h2>
 
                 {/* Page dimensions info */}
                 <p className="text-xs text-muted-foreground">
@@ -206,7 +207,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
 
                 {/* Presets */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Presets</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
                   <div className="flex gap-1.5">
                     {MARGIN_PRESETS.map((p) => (
                       <button
@@ -239,7 +240,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                     }}
                     className="accent-primary"
                   />
-                  <span className="text-xs text-muted-foreground">Equal margins</span>
+                  <span className="text-xs text-muted-foreground">{t('cropPdf.equalMargins')}</span>
                 </label>
 
                 {/* Margin inputs */}
@@ -272,14 +273,14 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                 {isLoadingPreview && !previewUrl && (
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">Loading preview...</p>
+                    <p className="text-xs">{t('cropPdf.loadingPreview')}</p>
                   </div>
                 )}
                 {previewUrl && (
                   <div className="relative inline-block">
                     <img
                       src={previewUrl}
-                      alt="Crop preview"
+                      alt={t('cropPdf.cropPreview')}
                       className="max-h-[60vh] rounded-md border border-border shadow-sm"
                     />
                     {/* Crop overlay */}
@@ -299,12 +300,12 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
             {/* Bottom bar */}
             <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
-                Back
+                {t('common.back')}
               </Button>
               <div className="flex-1" />
               <Button size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Cropping...</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('cropPdf.cropping')}</>
                 ) : (
                   'Apply Crop'
                 )}

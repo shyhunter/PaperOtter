@@ -11,6 +11,7 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
@@ -186,22 +187,22 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
         {/* Side panel: search + summary */}
         <div className="w-72 flex-none overflow-y-auto border-l border-border p-4 space-y-5">
-          <h3 className="text-sm font-semibold text-foreground">Redaction Tools</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('redactPdf.redactionTools')}</h3>
 
           {/* Drawing instructions */}
           <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
             <p className="text-xs text-muted-foreground">
-              Draw rectangles on the page to mark areas for redaction. Use text search below to find and redact specific text.
+              {t('redactPdf.drawRectanglesOnThePage')}
             </p>
           </div>
 
           {/* Text search */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Text Search</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('redactPdf.textSearch')}</label>
             <div className="flex gap-1.5">
               <input
                 type="text"
-                placeholder="Search text..."
+                placeholder={t('redactPdf.searchText')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -264,7 +265,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                   onClick={handleAddAllSearchResults}
                   className="text-xs text-primary hover:text-primary/80 underline"
                 >
-                  Add all
+                  {t('redactPdf.addAll')}
                 </button>
               </div>
               <div className="max-h-48 overflow-y-auto space-y-1">
@@ -301,7 +302,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
           {/* Box colour */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground">Box colour</h4>
+            <h4 className="text-xs font-medium text-muted-foreground">{t('redactPdf.boxColour')}</h4>
             <ColorPicker value={boxColor} onChange={setBoxColor} />
             {isLightColor(boxColor) && (
               // The content underneath is destroyed whatever colour this is --
@@ -316,7 +317,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
           {/* Redaction summary */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground">Summary</h4>
+            <h4 className="text-xs font-medium text-muted-foreground">{t('redactPdf.summary')}</h4>
             <div className="rounded-md border border-border px-3 py-2 space-y-1">
               <p className="text-sm font-semibold text-foreground">
                 {allRedactions.length} redaction{allRedactions.length !== 1 ? 's' : ''}
@@ -339,7 +340,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           {allRedactions.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleClearAll} className="w-full">
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Clear All
+              {t('redactPdf.clearAll')}
             </Button>
           )}
         </div>
@@ -348,7 +349,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
       {/* Bottom bar */}
       <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button

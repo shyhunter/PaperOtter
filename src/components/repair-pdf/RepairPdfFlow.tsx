@@ -7,6 +7,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -120,9 +121,9 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Repair PDF</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('repairPdf.repairPdf')}</h2>
               <p className="text-sm text-muted-foreground">
-                Fix structural issues in corrupted or malformed PDFs.
+                {t('repairPdf.fixStructuralIssuesInCorrupted')}
               </p>
 
               {loadError && (
@@ -135,12 +136,12 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -161,7 +162,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">PDF Repair</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('repairPdf.pdfRepair')}</p>
                 </div>
 
                 <p className="text-xs text-muted-foreground">
@@ -192,7 +193,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -203,7 +204,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Repairing...
+                      {t('repairPdf.repairing')}
                     </>
                   ) : (
                     'Repair PDF'
@@ -226,12 +227,12 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               {isFileSizeSimilar && (
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                   <Info className="w-3 h-3" />
-                  <span>No issues detected -- file appears healthy</span>
+                  <span>{t('repairPdf.noIssuesDetectedFileAppears')}</span>
                 </div>
               )}
 
               <p className="text-xs text-muted-foreground/70 text-center italic">
-                Repair complete. If the document had structural issues, they have been addressed.
+                {t('repairPdf.repairCompleteIfTheDocument')}
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { t } from '@/i18n';
 
 interface SignatureUploadProps {
   onComplete: (dataUrl: string) => void;
@@ -111,7 +112,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
           >
             <img
               src={preview}
-              alt="Signature preview"
+              alt={t('signPdf.signaturePreview')}
               className="max-w-full max-h-[160px] object-contain"
             />
           </div>
@@ -123,7 +124,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
             onClick={handleUse}
             className="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
           >
-            Use This Signature
+            {t('common.useThisSignature')}
           </button>
         </div>
       )}
@@ -134,7 +135,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
           style={{ maxWidth: MAX_WIDTH, height: MAX_HEIGHT }}
         >
           <span className="text-muted-foreground text-sm">
-            Select an image file (PNG, JPG, or WebP)
+            {t('signPdf.selectAnImageFilePng')}
           </span>
         </div>
       )}

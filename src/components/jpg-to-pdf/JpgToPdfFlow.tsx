@@ -9,6 +9,7 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -344,9 +345,9 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-lg space-y-4">
               <div className="text-center space-y-1">
-                <h2 className="text-lg font-semibold text-foreground">JPG to PDF</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.jpgToPdf')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Select one or more images to convert into a single PDF.
+                  {t('jpgToPdf.selectOneOrMoreImages')}
                 </p>
               </div>
 
@@ -408,7 +409,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {isLoading && (
                 <div className="flex items-center justify-center gap-2 py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Loading images...</span>
+                  <span className="text-sm text-muted-foreground">{t('jpgToPdf.loadingImages')}</span>
                 </div>
               )}
 
@@ -436,7 +437,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={images.length < 1 || isLoading}
                   className="flex-1"
                 >
-                  Continue
+                  {t('jpgToPdf.continue')}
                 </Button>
               </div>
             </div>
@@ -448,7 +449,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
           <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
             <div className="w-full max-w-md space-y-4 my-auto">
               <div className="text-center space-y-1">
-                <h2 className="text-lg font-semibold text-foreground">Configure PDF</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.configurePdf')}</h2>
                 <p className="text-sm text-muted-foreground">
                   {images.length} image{images.length !== 1 ? 's' : ''} selected
                 </p>
@@ -456,7 +457,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
               {/* Page size */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Page size</p>
+                <p className="text-xs text-muted-foreground">{t('configure.pageSize')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {(['a4', 'letter', 'auto'] as PageSizeId[]).map((id) => (
                     <button
@@ -481,7 +482,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {/* Orientation (hidden when auto-fit page size) */}
               {pageSize !== 'auto' && (
                 <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                  <p className="text-xs text-muted-foreground">Orientation</p>
+                  <p className="text-xs text-muted-foreground">{t('jpgToPdf.orientation')}</p>
                   <div className="grid grid-cols-3 gap-1">
                     {(['portrait', 'landscape', 'auto'] as OrientationId[]).map((id) => (
                       <button
@@ -506,7 +507,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
               {/* Margin */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Margin</p>
+                <p className="text-xs text-muted-foreground">{t('jpgToPdf.margin')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {(['none', 'small', 'medium'] as MarginId[]).map((id) => (
                     <button
@@ -544,7 +545,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -555,7 +556,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating PDF...
+                      {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (
                     'Create PDF'

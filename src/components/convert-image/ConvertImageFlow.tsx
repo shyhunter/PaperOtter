@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
 
@@ -197,8 +198,8 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Convert Image</h2>
-              <p className="text-sm text-muted-foreground">Select an image to convert between formats.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('convertImage.convertImage')}</h2>
+              <p className="text-sm text-muted-foreground">{t('convertImage.selectAnImageToConvert')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -210,12 +211,12 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    {t('common.loadingDots')}
                   </>
                 ) : (
                   <>
                     <FileUp className="w-4 h-4 mr-2" />
-                    Select Image
+                    {t('common.selectImage')}
                   </>
                 )}
               </Button>
@@ -239,14 +240,14 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <div className="flex items-center justify-center rounded-lg border border-border bg-card p-4 overflow-hidden">
                 <img
                   src={previewUrl}
-                  alt="Preview"
+                  alt={t('common.preview')}
                   className="max-h-48 max-w-full object-contain"
                 />
               </div>
 
               {/* Output format */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Output format</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {FORMATS.map((fmt) => (
                     <button
@@ -271,7 +272,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 {showQualitySlider && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">Quality</label>
+                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
                       <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
                     </div>
                     <input
@@ -310,7 +311,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -321,7 +322,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Converting...
+                      {t('convertImage.converting')}
                     </>
                   ) : (
                     `Convert to ${FORMAT_LABELS[outputFormat]}`
