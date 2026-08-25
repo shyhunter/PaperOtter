@@ -62,7 +62,12 @@ function useDebouncedPreview(
 
     return () => {
       clearTimeout(timeoutRef.current);
-      // If cleanup fires (unmount or re-run), ensure processing flag is cleared
+      // If cleanup fires (unmount or re-run), ensure processing flag is cleared.
+      // Reading runIdRef.current *at cleanup time* is the point: it tells us
+      // whether a newer run has superseded this one. Copying it into a variable
+      // inside the effect, as react-hooks/exhaustive-deps suggests, would freeze
+      // it at the captured value and make this comparison always true.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (runIdRef.current === runId) {
         setIsProcessing(false);
       }
