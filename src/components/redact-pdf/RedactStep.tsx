@@ -4,6 +4,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Search, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
+import { ColorPicker } from '@/components/ColorPicker';
+import { isLightColor } from '@/lib/colorPresets';
+import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
 
 interface TextMatch {
@@ -18,7 +21,7 @@ interface TextMatch {
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
-  onComplete: (redactions: RedactionRect[]) => void;
+  onComplete: (redactions: RedactionRect[], color: string) => void;
   onBack: () => void;
 }
 
@@ -29,6 +32,7 @@ function genId(prefix: string): string {
 
 export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
   const [allRedactions, setAllRedactions] = useState<RedactionRect[]>([]);
+  const [boxColor, setBoxColor] = useState(DEFAULT_REDACTION_COLOR);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -245,6 +249,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                 redactions={currentPageRedactions}
                 onAddRedaction={handleAddRedaction}
                 onRemoveRedaction={handleRemoveRedaction}
+                color={boxColor}
                 width={pageDimensions.width}
                 height={pageDimensions.height}
               />
@@ -343,6 +348,21 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
             </div>
           )}
 
+          {/* Box colour */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-medium text-muted-foreground">Box colour</h4>
+            <ColorPicker value={boxColor} onChange={setBoxColor} />
+            {isLightColor(boxColor) && (
+              // The content underneath is destroyed whatever colour this is --
+              // the page is replaced by a flat image. What a pale box costs is
+              // the reader's ability to tell that anything was removed at all.
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                A box this pale is hard to see on a white page. The content
+                underneath is still permanently removed.
+              </p>
+            )}
+          </div>
+
           {/* Redaction summary */}
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-muted-foreground">Summary</h4>
@@ -382,7 +402,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
         <div className="flex-1" />
         <Button
           size="sm"
-          onClick={() => onComplete(allRedactions)}
+          onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
         >
           Apply Redactions ({allRedactions.length})

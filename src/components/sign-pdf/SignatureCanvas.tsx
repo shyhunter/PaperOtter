@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { DEFAULT_TEXT_COLOR, normaliseHex } from '@/lib/colorPresets';
 
 interface Point {
   x: number;
@@ -8,13 +9,14 @@ interface Point {
 interface SignatureCanvasProps {
   onComplete: (dataUrl: string) => void;
   onClear: () => void;
+  /** Pen colour as #RRGGBB. Defaults to black, as it was before it could vary. */
+  color?: string;
 }
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 200;
 const MAX_DPR = 2;
 const PEN_WIDTH = 2;
-const PEN_COLOR = '#000000';
 
 /**
  * Crop canvas content to the bounding box of drawn pixels,
@@ -66,7 +68,8 @@ function exportCroppedPng(canvas: HTMLCanvasElement): string | null {
   return cropCanvas.toDataURL('image/png');
 }
 
-export function SignatureCanvas({ onComplete, onClear }: SignatureCanvasProps) {
+export function SignatureCanvas({ onComplete, onClear, color = DEFAULT_TEXT_COLOR }: SignatureCanvasProps) {
+  const ink = normaliseHex(color);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [paths, setPaths] = useState<Point[][]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -95,7 +98,7 @@ export function SignatureCanvas({ onComplete, onClear }: SignatureCanvasProps) {
     ctx.restore();
 
     // Draw all paths
-    ctx.strokeStyle = PEN_COLOR;
+    ctx.strokeStyle = ink;
     ctx.lineWidth = PEN_WIDTH * dpr;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -114,7 +117,7 @@ export function SignatureCanvas({ onComplete, onClear }: SignatureCanvasProps) {
       ctx.lineTo(last.x * dpr, last.y * dpr);
       ctx.stroke();
     }
-  }, [dpr]);
+  }, [dpr, ink]);
 
   // Initialize canvas dimensions and draw guideline
   useEffect(() => {
@@ -164,7 +167,7 @@ export function SignatureCanvas({ onComplete, onClear }: SignatureCanvasProps) {
     const path = currentPathRef.current;
     if (path.length < 2) return;
 
-    ctx.strokeStyle = PEN_COLOR;
+    ctx.strokeStyle = ink;
     ctx.lineWidth = PEN_WIDTH * dpr;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -187,7 +190,7 @@ export function SignatureCanvas({ onComplete, onClear }: SignatureCanvasProps) {
       ctx.lineTo(path[1].x * dpr, path[1].y * dpr);
       ctx.stroke();
     }
-  }, [isDrawing, getPos, dpr]);
+  }, [isDrawing, getPos, dpr, ink]);
 
   const stopDrawing = useCallback(() => {
     if (!isDrawing) return;

@@ -56,3 +56,28 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
     b: (value & 0xff) / 255,
   };
 }
+
+/**
+ * Reduces a colour to a canonical, opaque `#rrggbb`, or black if it is not one.
+ *
+ * This is what stands between user input and a canvas `fillStyle`, which will
+ * accept `transparent`, `rgba(0,0,0,0)` or `none` without complaint. Anywhere a
+ * colour paints over content that must stay hidden, an invisible fill is not a
+ * cosmetic bug -- so nothing but six hex digits gets through.
+ */
+export function normaliseHex(hex: string | undefined | null): string {
+  const match = HEX_COLOR.exec(hex ?? '');
+  return match ? `#${match[1].toLowerCase()}` : DEFAULT_TEXT_COLOR;
+}
+
+/**
+ * Whether a colour is light enough to disappear against a white page.
+ *
+ * Rec. 601 luma, which is close enough for a yes/no about visibility and needs
+ * no gamma handling. Used where a fill is meant to *show* that something was
+ * covered -- a redaction box the reader cannot see is a box they cannot check.
+ */
+export function isLightColor(hex: string): boolean {
+  const { r, g, b } = hexToRgb(normaliseHex(hex));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 0.75;
+}

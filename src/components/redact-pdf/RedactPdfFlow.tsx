@@ -79,14 +79,14 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
   }, [loadFile]);
 
   const handleRedactComplete = useCallback(
-    async (redactions: RedactionRect[]) => {
+    async (redactions: RedactionRect[], color: string) => {
       if (!pdfBytes || redactions.length === 0) return;
 
       setIsProcessing(true);
       setProcessError(null);
 
       try {
-        const result = await applyRedactions(pdfBytes, redactions);
+        const result = await applyRedactions(pdfBytes, redactions, color);
         setProcessedBytes(result);
         setRedactionCount(redactions.length);
 

@@ -22,6 +22,8 @@ interface RedactOverlayProps {
   redactions: RedactionRect[];
   onAddRedaction: (rect: Omit<RedactionRect, 'id' | 'source'>) => void;
   onRemoveRedaction: (id: string) => void;
+  /** The colour these boxes will be painted in the flattened output. */
+  color: string;
   width: number;
   height: number;
 }
@@ -41,6 +43,7 @@ export function RedactOverlay({
   redactions,
   onAddRedaction,
   onRemoveRedaction,
+  color,
   width,
   height,
 }: RedactOverlayProps) {
@@ -121,7 +124,10 @@ export function RedactOverlay({
             y={toSvg(r.y, height)}
             width={toSvg(r.width, width)}
             height={toSvg(r.height, height)}
-            fill="rgba(255, 0, 0, 0.3)"
+            // Shown in the colour the output will actually carry, at a slight
+            // transparency so what is being covered stays checkable until Apply.
+            fill={color}
+            fillOpacity={0.85}
             stroke="rgba(200, 0, 0, 0.6)"
             strokeWidth={1}
           />
