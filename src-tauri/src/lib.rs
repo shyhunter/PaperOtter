@@ -431,7 +431,18 @@ fn cancel_processing(state: tauri::State<ProcessState>) {
 /// shrink significantly just by re-encoding as JPEG. For every preset except
 /// prepress (archive — meant to stay lossless), force that re-encoding
 /// explicitly rather than relying on the resolution-based auto-detection.
-fn build_compress_pdf_args(preset: &str, tmp_path_str: &str, source_path: &str) -> Vec<String> {
+/// Builds the Ghostscript argument list.
+///
+/// `downsample_images` false keeps every image at its original resolution,
+/// letting the preset re-encode without also shrinking pixel dimensions. The
+/// forced JPEG conversion below is what makes non-prepress presets shrink at
+/// all, so it stays on either way.
+fn build_compress_pdf_args(
+    preset: &str,
+    tmp_path_str: &str,
+    source_path: &str,
+    downsample_images: bool,
+) -> Vec<String> {
     let mut gs_args = vec![
         "-sDEVICE=pdfwrite".to_string(),
         "-dNOPAUSE".to_string(),
@@ -451,6 +462,14 @@ fn build_compress_pdf_args(preset: &str, tmp_path_str: &str, source_path: &str) 
         ]);
     }
 
+    if !downsample_images {
+        gs_args.extend([
+            "-dDownsampleColorImages=false".to_string(),
+            "-dDownsampleGrayImages=false".to_string(),
+            "-dDownsampleMonoImages=false".to_string(),
+        ]);
+    }
+
     gs_args.push(format!("-sOutputFile={}", tmp_path_str));
     gs_args.push(source_path.to_string());
     gs_args
@@ -462,6 +481,7 @@ async fn compress_pdf(
     state: tauri::State<'_, ProcessState>,
     source_path: String,
     preset: String,
+    downsample_images: Option<bool>,
 ) -> Result<tauri::ipc::Response, String> {
     validate_source_path(&source_path)?;
     // Validate preset to prevent injection — only allow known GS presets
@@ -481,7 +501,12 @@ async fn compress_pdf(
     ));
     let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let gs_args = build_compress_pdf_args(&preset, &tmp_path_str, &source_path);
+    let gs_args = build_compress_pdf_args(
+        &preset,
+        &tmp_path_str,
+        &source_path,
+        downsample_images.unwrap_or(true),
+    );
 
     // Spawn GS process (sidecar first, then system PATH fallback)
     let (mut rx, child) = spawn_gs(&app, gs_args)?;
@@ -2342,7 +2367,7 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_force_reencode_for_screen_preset() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(args.contains(&"-dAutoFilterColorImages=false".to_string()));
         assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
         assert!(args.contains(&"-dEncodeColorImages=true".to_string()));
@@ -2354,7 +2379,7 @@ mod tests {
     #[test]
     fn compress_pdf_args_force_reencode_for_ebook_and_printer_presets() {
         for preset in ["ebook", "printer"] {
-            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf");
+            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf", true);
             assert!(
                 args.contains(&"-dColorImageFilter=/DCTEncode".to_string()),
                 "preset '{}' must force color image re-encoding",
@@ -2365,7 +2390,7 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_prepress_preset_does_not_force_reencode() {
-        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(
             !args.iter().any(|a| a.contains("DCTEncode")),
             "prepress (archive) must stay lossless — no forced JPEG re-encoding"
@@ -2374,10 +2399,46 @@ mod tests {
 
     #[test]
     fn compress_pdf_args_include_output_and_source_paths() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf");
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
         assert!(args.contains(&"-sOutputFile=/tmp/out.pdf".to_string()));
         assert!(args.contains(&"/tmp/in.pdf".to_string()));
         // Source path must be last (GS positional input argument)
+        assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
+    }
+
+    // ─── Downsampling toggle ──────────────────────────────────────────────────
+    //
+    // The panel has always shown a "Downsample images" checkbox, but nothing was
+    // ever passed to Ghostscript -- the box did nothing at all.
+
+    #[test]
+    fn compress_pdf_args_downsampling_on_leaves_the_preset_in_charge() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
+        assert!(
+            !args.iter().any(|a| a.starts_with("-dDownsampleColorImages")),
+            "with downsampling on, the preset's own resolution policy applies"
+        );
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_disables_all_three_image_types() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
+        assert!(args.contains(&"-dDownsampleColorImages=false".to_string()));
+        assert!(args.contains(&"-dDownsampleGrayImages=false".to_string()));
+        assert!(args.contains(&"-dDownsampleMonoImages=false".to_string()));
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_still_re_encodes() {
+        // Turning off downsampling keeps resolution; it must not also turn off
+        // the JPEG re-encoding that makes non-prepress presets shrink at all.
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
+        assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
+    }
+
+    #[test]
+    fn compress_pdf_args_downsampling_off_keeps_source_path_last() {
+        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
         assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
     }
 

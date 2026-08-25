@@ -15,6 +15,8 @@ import { ToolSidebar } from '@/components/pdf-editor/ToolSidebar';
 import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
+import { invoke } from '@tauri-apps/api/core';
+import { stripPdfMetadata } from '@/lib/pdfMetadata';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -53,6 +55,10 @@ vi.mock('@/lib/pdfRotate', () => ({
 vi.mock('@/lib/pdfWatermark', () => ({
   addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: 'gray' },
+}));
+
+vi.mock('@/lib/pdfMetadata', () => ({
+  stripPdfMetadata: vi.fn(async (b: Uint8Array) => b),
 }));
 
 vi.mock('@/lib/pdfPageNumbers', () => ({
@@ -149,6 +155,66 @@ function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => 
 
 describe('Suite 12 — PDF Editor: Tool Panels', () => {
   // TP-01: Compress Panel
+  it('TP-01c — Downsample images is actually sent to the compressor', async () => {
+    const user = userEvent.setup();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByRole('checkbox', { name: /downsample images/i }));
+    await user.click(screen.getByText('Apply'));
+
+    // Regression: both option checkboxes were rendered, never read, and never
+    // passed to the Rust command — ticking them did nothing whatsoever.
+    await waitFor(() => {
+      const call = vi.mocked(invoke).mock.calls.find(([cmd]) => cmd === 'compress_pdf');
+      expect(call?.[1]).toMatchObject({ downsampleImages: false });
+    });
+  });
+
+  it('TP-01d — Strip metadata runs the metadata pass on the compressed result', async () => {
+    const user = userEvent.setup();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByRole('checkbox', { name: /strip metadata/i }));
+    await user.click(screen.getByText('Apply'));
+
+    await waitFor(() => expect(stripPdfMetadata).toHaveBeenCalled());
+  });
+
+  it('TP-01e — Strip metadata left unticked does not run the pass', async () => {
+    const user = userEvent.setup();
+    // This suite does not clear mocks between tests.
+    vi.mocked(stripPdfMetadata).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByText('Apply'));
+
+    await waitFor(() => {
+      expect(vi.mocked(invoke).mock.calls.some(([cmd]) => cmd === 'compress_pdf')).toBe(true);
+    });
+    expect(stripPdfMetadata).not.toHaveBeenCalled();
+  });
+
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
     const user = userEvent.setup();
 

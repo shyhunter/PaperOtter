@@ -11,6 +11,7 @@ import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { stripPdfMetadata } from '@/lib/pdfMetadata';
 import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
@@ -279,11 +280,16 @@ function CompressPanel() {
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
         preset: resolvedPreset(),
+        downsampleImages,
       });
 
       await remove(tempInputPath).catch(() => {});
 
-      const result = new Uint8Array(gsResult);
+      // Ghostscript carries the Info dictionary across its presets, so the
+      // metadata strip is a separate pdf-lib pass over its output.
+      let result = new Uint8Array(gsResult);
+      if (stripMetadata) result = await stripPdfMetadata(result);
+
       setPreviewBytes(result);
       setIsProcessing(false);
       setCompressionResult({
@@ -297,7 +303,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, resolvedPreset, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, resolvedPreset, downsampleImages, stripMetadata, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
