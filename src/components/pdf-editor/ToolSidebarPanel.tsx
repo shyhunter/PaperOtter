@@ -12,6 +12,14 @@ import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type W
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
 import { stripPdfMetadata } from '@/lib/pdfMetadata';
+import {
+  getPdfCompressibilityFromBytes,
+  estimateOutputSizeBytes,
+  getNonCompressibleReason,
+  nonCompressibleMessage,
+  type PdfCompressibility,
+} from '@/lib/pdfProcessor';
+import type { PdfQualityLevel } from '@/types/file';
 import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
@@ -221,10 +229,10 @@ function formatBytes(bytes: number): string {
 
 /** Quality zones matching the full compress tool */
 const QUALITY_ZONES = [
-  { value: 'screen', label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
-  { value: 'ebook', label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
-  { value: 'printer', label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
-  { value: 'prepress', label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+  { value: 'screen', quality: 'web' as PdfQualityLevel, label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
+  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
+  { value: 'printer', quality: 'print' as PdfQualityLevel, label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
 ] as const;
 
 function CompressPanel() {
@@ -246,6 +254,41 @@ function CompressPanel() {
     originalSize: number;
     compressedSize: number;
   } | null>(null);
+  const [analysis, setAnalysis] = useState<PdfCompressibility | null>(null);
+
+  // What this document can actually give up, read once per version of the bytes.
+  // Without it the panel offers four presets and no way to tell them apart.
+  useEffect(() => {
+    let cancelled = false;
+    setAnalysis(null);
+    getPdfCompressibilityFromBytes(state.pdfBytes)
+      .then((result) => { if (!cancelled) setAnalysis(result); })
+      // An unreadable document simply means no estimates; the panel still works.
+      .catch(() => { if (!cancelled) setAnalysis(null); });
+    return () => { cancelled = true; };
+  }, [state.pdfBytes]);
+
+  const currentSize = state.pdfBytes.byteLength;
+
+  const estimates = useMemo(() => {
+    if (!analysis) return null;
+    return QUALITY_ZONES.reduce((acc, zone) => {
+      acc[zone.value] = estimateOutputSizeBytes(
+        zone.quality,
+        currentSize,
+        analysis.compressibilityScore,
+        analysis.jpxByteShare,
+      );
+      return acc;
+    }, {} as Record<string, number>);
+  }, [analysis, currentSize]);
+
+  const nonCompressibleReason = analysis
+    ? getNonCompressibleReason(analysis.compressibilityScore, analysis.jpxByteShare)
+    : null;
+  const nonCompressibleMsg = analysis
+    ? nonCompressibleMessage(nonCompressibleReason, analysis.imageCount)
+    : null;
 
   const { apply, isApplying, success, error } = useApply(previewBytes, updatePdfBytes, markDirty);
 
@@ -319,6 +362,13 @@ function CompressPanel() {
         <span className="font-medium">{formatBytes(state.pdfBytes.byteLength)}</span>
       </div>
 
+      {/* Why this file may not shrink — the same wording the standalone tool uses */}
+      {nonCompressibleMsg && (
+        <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[10px] leading-relaxed text-foreground/80">
+          {nonCompressibleMsg}
+        </div>
+      )}
+
       {/* Quality presets */}
       <div className="space-y-1.5">
         <label className="text-[10px] font-medium text-muted-foreground">Quality Preset</label>
@@ -337,9 +387,20 @@ function CompressPanel() {
               onChange={() => { setPreset(p.value); setUseTargetSize(false); }}
               className="mt-0.5"
             />
-            <div>
+            <div className="min-w-0">
               <div className="font-medium">{p.label}</div>
               <div className="text-[10px] text-muted-foreground">{p.dpi} — {p.desc}</div>
+              {estimates && (
+                <div data-testid="preset-estimate" className="text-[10px] font-medium text-foreground/80 mt-0.5">
+                  ≈ {formatBytes(estimates[p.value])}
+                  <span className="text-muted-foreground font-normal">
+                    {' · '}
+                    {currentSize > 0
+                      ? `−${Math.max(0, Math.round((1 - estimates[p.value] / currentSize) * 100))}%`
+                      : '0%'}
+                  </span>
+                </div>
+              )}
             </div>
           </label>
         ))}
@@ -393,6 +454,11 @@ function CompressPanel() {
           />
           Downsample images
         </label>
+        {!downsampleImages && estimates && (
+          <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
+            Estimates assume downsampling — actual sizes will be larger.
+          </p>
+        )}
         <label className="flex items-center gap-2 text-[11px] cursor-pointer">
           <input
             type="checkbox"

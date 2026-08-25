@@ -254,14 +254,23 @@ export async function getPdfImageCount(sourcePath: string): Promise<number> {
  * and parsed the same file again just for page count/size — for a large PDF with a
  * complex xref table, parsing it twice noticeably slowed the Pick→Configure transition.
  */
-export async function getPdfCompressibility(sourcePath: string): Promise<{
+export interface PdfCompressibility {
   pageCount: number;
   fileSizeBytes: number;
   imageCount: number;
   compressibilityScore: number;
   jpxByteShare: number;
-}> {
-  const bytes = await readFile(sourcePath);
+}
+
+/**
+ * Same analysis as getPdfCompressibility, for bytes already in memory.
+ *
+ * The PDF editor works on bytes that may differ from anything on disk -- other
+ * tools may have already been applied -- so it cannot go through the path.
+ */
+export async function getPdfCompressibilityFromBytes(
+  bytes: Uint8Array,
+): Promise<PdfCompressibility> {
   const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const scan = await scanPdfImages(pdfDoc);
   return {
@@ -269,6 +278,10 @@ export async function getPdfCompressibility(sourcePath: string): Promise<{
     fileSizeBytes: bytes.byteLength,
     ...scan,
   };
+}
+
+export async function getPdfCompressibility(sourcePath: string): Promise<PdfCompressibility> {
+  return getPdfCompressibilityFromBytes(await readFile(sourcePath));
 }
 
 export async function processPdf(

@@ -17,6 +17,7 @@ import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { stripPdfMetadata } from '@/lib/pdfMetadata';
+import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,24 @@ vi.mock('@/lib/pdfWatermark', () => ({
   addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: 'gray' },
 }));
+
+// Partial: the estimate maths and the canonical non-compressible wording stay
+// real, only the document analysis is stubbed.
+vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfProcessor')>();
+  return {
+    ...actual,
+    // Default so panels that are not about estimates still render; the
+    // estimate tests override it.
+    getPdfCompressibilityFromBytes: vi.fn().mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 1024 * 1024,
+      imageCount: 4,
+      compressibilityScore: 0.5,
+      jpxByteShare: 0,
+    }),
+  };
+});
 
 vi.mock('@/lib/pdfMetadata', () => ({
   stripPdfMetadata: vi.fn(async (b: Uint8Array) => b),
@@ -213,6 +232,104 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
       expect(vi.mocked(invoke).mock.calls.some(([cmd]) => cmd === 'compress_pdf')).toBe(true);
     });
     expect(stripPdfMetadata).not.toHaveBeenCalled();
+  });
+
+  /** An image-heavy document that should compress well. */
+  function compressible() {
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 10,
+      fileSizeBytes: 4 * 1024 * 1024,
+      imageCount: 12,
+      compressibilityScore: 0.8,
+      jpxByteShare: 0,
+    });
+  }
+
+  it('TP-01f — every preset shows what it would produce, against the current size', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    const estimates = await screen.findAllByTestId('preset-estimate');
+    expect(estimates).toHaveLength(4);
+    // Each preset says roughly what it costs and how much it saves, so the
+    // choice can be made without running all four.
+    for (const node of estimates) {
+      expect(node.textContent).toMatch(/≈/);
+      expect(node.textContent).toMatch(/%/);
+    }
+  });
+
+  it('TP-01g — a document that cannot shrink says so instead of promising a reduction', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 250 * 1024,
+      imageCount: 0,
+      compressibilityScore: 0.02,
+      jpxByteShare: 0,
+    });
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    expect(await screen.findByText(/mostly text with no embedded images/i)).toBeTruthy();
+  });
+
+  it('TP-01h — Apply stays available on a non-compressible file, because Strip metadata still helps', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 250 * 1024,
+      imageCount: 0,
+      compressibilityScore: 0.02,
+      jpxByteShare: 0,
+    });
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // The standalone flow disables its controls here, but this panel can also
+    // strip metadata, which shrinks a text-only PDF.
+    expect(screen.getByText('Apply')).not.toBeDisabled();
+  });
+
+  it('TP-01i — turning off downsampling says the estimates no longer hold', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findAllByTestId('preset-estimate');
+
+    expect(screen.queryByText(/estimates assume downsampling/i)).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: /downsample images/i }));
+
+    // The ratios come from presets that downsample; without it they are wrong.
+    expect(await screen.findByText(/estimates assume downsampling/i)).toBeTruthy();
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
