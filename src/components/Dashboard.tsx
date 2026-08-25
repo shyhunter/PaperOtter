@@ -22,7 +22,6 @@ import {
   Search,
   Star,
   GripVertical,
-  Info,
   X,
   FileText,
   ImageIcon,
@@ -36,12 +35,9 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
 import type { SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useDependencies } from '@/hooks/useDependencies';
-import { AboutDialog } from '@/components/AboutDialog';
-import { BuyMeACoffeeButton } from '@/components/BuyMeACoffeeButton';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -245,7 +241,6 @@ export function Dashboard() {
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
-  const [aboutOpen, setAboutOpen] = useState(false);
   const [appVersion, setAppVersion] = useState('1.0.0');
 
   useEffect(() => {
@@ -375,17 +370,9 @@ export function Dashboard() {
                 Your local document toolkit — private, fast, offline.
               </p>
             </div>
+            {/* Theme, About and Buy me a coffee moved to AppChrome, which is on
+                every screen -- reaching them used to mean leaving your tool. */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAboutOpen(true)}
-                className="inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-muted-foreground transition-colors hover:text-foreground hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                title="About Papercut"
-              >
-                <Info className="h-4 w-4" />
-              </button>
-              <BuyMeACoffeeButton />
-              <ThemeToggle />
               {/* Recent Folder */}
               {recentDirs.length > 0 && (
                 <RecentDirsButton
@@ -540,7 +527,6 @@ export function Dashboard() {
       )}
 
       {/* About dialog */}
-      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }

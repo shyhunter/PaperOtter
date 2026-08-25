@@ -61,10 +61,17 @@ export function ToolProvider({ children }: { children: ReactNode }) {
     });
   }, [runGuarded]);
 
+  // Guarded like the other two: replacing the open document tears down the
+  // editor and discards its unsaved edits just as surely as leaving for the
+  // dashboard does. This was reachable before anything in the UI offered it --
+  // double-clicking a PDF in Finder while the editor was dirty came through
+  // here and threw the edits away without asking.
   const openEditor = useCallback((filePath: string) => {
-    setActiveTool(null);
-    setEditorFilePath(filePath);
-  }, []);
+    runGuarded(() => {
+      setActiveTool(null);
+      setEditorFilePath(filePath);
+    });
+  }, [runGuarded]);
 
   const activeToolDef = useMemo(
     () => (activeTool ? TOOL_REGISTRY[activeTool] : null),

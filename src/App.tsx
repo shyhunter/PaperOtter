@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { SplashScreen } from '@/components/SplashScreen';
 import { LandingCard } from '@/components/LandingCard';
 import { ToolHeader } from '@/components/ToolHeader';
+import { AppChrome } from '@/components/AppChrome';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
 import { SaveStep } from '@/components/SaveStep';
@@ -122,6 +123,14 @@ function DedicatedToolFlow() {
     setDedicatedFlowStep(0);
     addRecentDir(filePath);
   }, [setPendingFiles, addRecentDir]);
+
+  // The chrome's Open button puts a new file in pendingFiles; the flow has to
+  // return to step one for it to be picked up, and only the flow knows that.
+  useEffect(() => {
+    function restart() { setDedicatedFlowStep(0); }
+    window.addEventListener('papercut:file-replaced', restart);
+    return () => window.removeEventListener('papercut:file-replaced', restart);
+  }, []);
 
   // Going back to the dashboard unmounts this component, so its state -- and the
   // processor hooks' state, which is hook-local -- is discarded either way.
@@ -468,6 +477,18 @@ function StandardToolFlow() {
       setCurrentStep(1);
     }, 600);
   }, [addRecentDir]);
+
+  // The chrome's Open button puts a new file in pendingFiles. The loader below
+  // only fires from a clean step one, so clearing the current file is what lets
+  // the new one in -- without it the button would appear to do nothing.
+  useEffect(() => {
+    function restart() {
+      setCurrentStep(0);
+      setFileEntry(null);
+    }
+    window.addEventListener('papercut:file-replaced', restart);
+    return () => window.removeEventListener('papercut:file-replaced', restart);
+  }, []);
 
   // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
   useEffect(() => {
@@ -835,6 +856,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      <AppChrome />
       <UpdateChecker />
       {showDashboard && <FirstLaunchBanner />}
       {showEditor && <EditorView filePath={editorFilePath} />}
