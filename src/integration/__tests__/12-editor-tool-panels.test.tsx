@@ -114,6 +114,17 @@ vi.stubGlobal(
 );
 
 beforeEach(() => {
+  // This suite does not clear mocks between tests, and the panels branch on
+  // this result — leaving a previous test's document shape in place changes
+  // what later panels render.
+  vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+    pageCount: 3,
+    fileSizeBytes: 1024 * 1024,
+    imageCount: 4,
+    compressibilityScore: 0.5,
+    jpxByteShare: 0,
+  });
+
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
     writable: true,
@@ -185,7 +196,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     );
 
     await user.click(screen.getByTitle('Compress PDF'));
-    await user.click(screen.getByRole('checkbox', { name: /downsample images/i }));
+    await user.click(screen.getByRole('checkbox', { name: /keep image resolution/i }));
     await user.click(screen.getByText('Apply'));
 
     // Regression: both option checkboxes were rendered, never read, and never
@@ -326,10 +337,33 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await screen.findAllByTestId('preset-estimate');
 
     expect(screen.queryByText(/estimates assume downsampling/i)).toBeNull();
-    await user.click(screen.getByRole('checkbox', { name: /downsample images/i }));
+    await user.click(screen.getByRole('checkbox', { name: /keep image resolution/i }));
 
     // The ratios come from presets that downsample; without it they are wrong.
     expect(await screen.findByText(/estimates assume downsampling/i)).toBeTruthy();
+  });
+
+  it('TP-01j — the resolution option is hidden when the document has no images', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 250 * 1024,
+      imageCount: 0,
+      compressibilityScore: 0.02,
+      jpxByteShare: 0,
+    });
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // Nothing to downsample, so offering the choice is pure noise.
+    expect(screen.queryByRole('checkbox', { name: /keep image resolution/i })).toBeNull();
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
@@ -379,7 +413,9 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     // Advanced options
     expect(screen.getByText('Options')).toBeInTheDocument();
-    expect(screen.getByText('Downsample images')).toBeInTheDocument();
+    // Appears once the document analysis resolves — it is hidden for documents
+    // with no images.
+    expect(await screen.findByText('Keep image resolution')).toBeInTheDocument();
     expect(screen.getByText('Strip metadata')).toBeInTheDocument();
 
     // Apply button

@@ -446,18 +446,29 @@ function CompressPanel() {
       {/* Advanced options */}
       <div className="space-y-1.5 border-t pt-2">
         <span className="text-[10px] font-medium text-muted-foreground">Options</span>
-        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={downsampleImages}
-            onChange={(e) => setDownsampleImages(e.target.checked)}
-          />
-          Downsample images
-        </label>
-        {!downsampleImages && estimates && (
-          <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
-            Estimates assume downsampling — actual sizes will be larger.
-          </p>
+        {/* Only meaningful when there are images to keep the resolution of.
+            Phrased as the thing the user wants, not the mechanism they must
+            switch off to get it: the presets bundle resolution reduction with
+            JPEG re-encoding, and this is the only way to have the second
+            without the first — the right answer for screenshots and line art,
+            where downsampling is what makes small text unreadable. */}
+        {(analysis?.imageCount ?? 0) > 0 && (
+          <>
+            <label className="flex items-center gap-2 text-[11px] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!downsampleImages}
+                onChange={(e) => setDownsampleImages(!e.target.checked)}
+              />
+              Keep image resolution
+            </label>
+            {!downsampleImages && (
+              <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
+                Images are still re-encoded, just not shrunk. Estimates assume
+                downsampling — actual sizes will be larger.
+              </p>
+            )}
+          </>
         )}
         <label className="flex items-center gap-2 text-[11px] cursor-pointer">
           <input
