@@ -208,3 +208,22 @@ describe('switching tools from inside the editor', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('remove metadata on save', () => {
+  it('ED-13: the toggle sits with Save, and starts off', () => {
+    renderToolbar(false);
+
+    const toggle = screen.getByRole('checkbox', { name: /remove metadata/i });
+    // Off by default: saving must never quietly change a document.
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('ED-14: ticking it records the preference', () => {
+    renderToolbar(false);
+
+    const toggle = screen.getByRole('checkbox', { name: /remove metadata/i }) as HTMLInputElement;
+    fireEvent.click(toggle);
+
+    expect(toggle.checked).toBe(true);
+  });
+});

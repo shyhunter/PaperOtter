@@ -10,7 +10,7 @@ import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { diagLog } from '@/lib/diagLog';
 
 export function EditorTopToolbar() {
-  const { state, setCompareMode, revertToOriginal } = useEditorContext();
+  const { state, setCompareMode, revertToOriginal, setStripMetadataOnSave } = useEditorContext();
   const { goToDashboard, setNavigationGuard } = useToolContext();
   const { save, isSaving } = useSaveActions();
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
@@ -119,6 +119,20 @@ export function EditorTopToolbar() {
             )}
           </button>
         </div>
+
+        {/* Remove metadata on save — sits by Save because it governs what is
+            written out, not what any one tool does. */}
+        <label
+          className="ml-3 flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+          title="Remove author, title and other identifying metadata when saving"
+        >
+          <input
+            type="checkbox"
+            checked={state.stripMetadataOnSave}
+            onChange={(e) => setStripMetadataOnSave(e.target.checked)}
+          />
+          <span>Remove metadata</span>
+        </label>
 
         {/* Revert */}
         <div className="ml-2">

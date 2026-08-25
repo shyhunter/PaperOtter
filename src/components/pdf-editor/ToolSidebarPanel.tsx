@@ -11,7 +11,6 @@ import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
-import { stripPdfMetadata } from '@/lib/pdfMetadata';
 import {
   getPdfCompressibilityFromBytes,
   estimateOutputSizeBytes,
@@ -245,7 +244,6 @@ function CompressPanel() {
   const [targetUnit, setTargetUnit] = useState<'MB' | 'KB'>('MB');
 
   // Additional options
-  const [stripMetadata, setStripMetadata] = useState(false);
   const [downsampleImages, setDownsampleImages] = useState(true);
 
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
@@ -328,11 +326,7 @@ function CompressPanel() {
 
       await remove(tempInputPath).catch(() => {});
 
-      // Ghostscript carries the Info dictionary across its presets, so the
-      // metadata strip is a separate pdf-lib pass over its output.
-      let result = new Uint8Array(gsResult);
-      if (stripMetadata) result = await stripPdfMetadata(result);
-
+      const result = new Uint8Array(gsResult);
       setPreviewBytes(result);
       setIsProcessing(false);
       setCompressionResult({
@@ -346,7 +340,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, resolvedPreset, downsampleImages, stripMetadata, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, resolvedPreset, downsampleImages, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -470,14 +464,6 @@ function CompressPanel() {
             )}
           </>
         )}
-        <label className="flex items-center gap-2 text-[11px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={stripMetadata}
-            onChange={(e) => setStripMetadata(e.target.checked)}
-          />
-          Strip metadata
-        </label>
       </div>
 
       {/* Compression result feedback */}

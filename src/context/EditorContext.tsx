@@ -28,6 +28,7 @@ type EditorAction =
   | { type: 'APPLY_PAGE_NUMBERS'; base: Uint8Array; numbered: Uint8Array }
   | { type: 'REMOVE_PAGE_NUMBERS' }
   | { type: 'REVERT_TO_ORIGINAL' }
+  | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -109,6 +110,8 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
         pageNumberBase: null,
         isDirty: true,
       };
+    case 'SET_STRIP_METADATA_ON_SAVE':
+      return { ...state, stripMetadataOnSave: action.value };
     case 'REVERT_TO_ORIGINAL':
       // Every derived piece of edit state has to go with the bytes. Page
       // overlays are applied at save time, so a survivor would be written back
@@ -207,6 +210,8 @@ interface EditorContextValue {
   removePageNumbers: () => void;
   /** Discard every edit and restore the document as it was opened. */
   revertToOriginal: () => void;
+  /** Whether saving should also strip identifying metadata. */
+  setStripMetadataOnSave: (value: boolean) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -251,6 +256,7 @@ function createEmptyState(): EditorViewState {
     pdfBytes: new Uint8Array(0),
     originalPdfBytes: new Uint8Array(0),
     originalPageCount: 0,
+    stripMetadataOnSave: false,
     pageNumberBase: null,
     filePath: null,
     fileName: '',
@@ -319,6 +325,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const revertToOriginal = useCallback(() => {
     dispatch({ type: 'REVERT_TO_ORIGINAL' });
+  }, []);
+
+  const setStripMetadataOnSave = useCallback((value: boolean) => {
+    dispatch({ type: 'SET_STRIP_METADATA_ON_SAVE', value });
   }, []);
 
   const setFilePath = useCallback((path: string) => {
@@ -615,6 +625,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       applyPageNumbers,
       removePageNumbers,
       revertToOriginal,
+      setStripMetadataOnSave,
       setFilePath,
       setFileName,
       initState,
@@ -654,6 +665,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       applyPageNumbers,
       removePageNumbers,
       revertToOriginal,
+      setStripMetadataOnSave,
       setFilePath,
       setFileName,
       initState,
@@ -704,6 +716,7 @@ export function createEditorViewState(
     pdfBytes,
     originalPdfBytes: pdfBytes.slice(), // Snapshot — never modified
     originalPageCount: pageCount,
+    stripMetadataOnSave: false,
     pageNumberBase: null,
     filePath,
     fileName,

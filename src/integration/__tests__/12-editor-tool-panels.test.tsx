@@ -16,7 +16,6 @@ import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
-import { stripPdfMetadata } from '@/lib/pdfMetadata';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -75,10 +74,6 @@ vi.mock('@/lib/pdfProcessor', async (importOriginal) => {
     }),
   };
 });
-
-vi.mock('@/lib/pdfMetadata', () => ({
-  stripPdfMetadata: vi.fn(async (b: Uint8Array) => b),
-}));
 
 vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
@@ -207,44 +202,6 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     });
   });
 
-  it('TP-01d — Strip metadata runs the metadata pass on the compressed result', async () => {
-    const user = userEvent.setup();
-    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Compress PDF'));
-    await user.click(screen.getByRole('checkbox', { name: /strip metadata/i }));
-    await user.click(screen.getByText('Apply'));
-
-    await waitFor(() => expect(stripPdfMetadata).toHaveBeenCalled());
-  });
-
-  it('TP-01e — Strip metadata left unticked does not run the pass', async () => {
-    const user = userEvent.setup();
-    // This suite does not clear mocks between tests.
-    vi.mocked(stripPdfMetadata).mockClear();
-    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Compress PDF'));
-    await user.click(screen.getByText('Apply'));
-
-    await waitFor(() => {
-      expect(vi.mocked(invoke).mock.calls.some(([cmd]) => cmd === 'compress_pdf')).toBe(true);
-    });
-    expect(stripPdfMetadata).not.toHaveBeenCalled();
-  });
-
   /** An image-heavy document that should compress well. */
   function compressible() {
     vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
@@ -252,6 +209,17 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
       fileSizeBytes: 4 * 1024 * 1024,
       imageCount: 12,
       compressibilityScore: 0.8,
+      jpxByteShare: 0,
+    });
+  }
+
+  /** A text-only document that cannot meaningfully shrink. */
+  function textOnly() {
+    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
+      pageCount: 3,
+      fileSizeBytes: 250 * 1024,
+      imageCount: 0,
+      compressibilityScore: 0.02,
       jpxByteShare: 0,
     });
   }
@@ -280,13 +248,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
   it('TP-01g — a document that cannot shrink says so instead of promising a reduction', async () => {
     const user = userEvent.setup();
-    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
-      pageCount: 3,
-      fileSizeBytes: 250 * 1024,
-      imageCount: 0,
-      compressibilityScore: 0.02,
-      jpxByteShare: 0,
-    });
+    textOnly();
 
     render(
       <ToolPanelHarness>
@@ -299,15 +261,9 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(await screen.findByText(/mostly text with no embedded images/i)).toBeTruthy();
   });
 
-  it('TP-01h — Apply stays available on a non-compressible file, because Strip metadata still helps', async () => {
+  it('TP-01h — Apply stays available on a non-compressible file', async () => {
     const user = userEvent.setup();
-    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
-      pageCount: 3,
-      fileSizeBytes: 250 * 1024,
-      imageCount: 0,
-      compressibilityScore: 0.02,
-      jpxByteShare: 0,
-    });
+    textOnly();
 
     render(
       <ToolPanelHarness>
@@ -318,12 +274,12 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await user.click(screen.getByTitle('Compress PDF'));
     await screen.findByText(/mostly text with no embedded images/i);
 
-    // The standalone flow disables its controls here, but this panel can also
-    // strip metadata, which shrinks a text-only PDF.
+    // The standalone flow disables its controls here; this panel does not,
+    // because a preset can still be worth trying on a borderline file.
     expect(screen.getByText('Apply')).not.toBeDisabled();
   });
 
-  it('TP-01i — turning off downsampling says the estimates no longer hold', async () => {
+  it('TP-01i — keeping image resolution says the estimates no longer hold', async () => {
     const user = userEvent.setup();
     compressible();
 
@@ -345,13 +301,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
   it('TP-01j — the resolution option is hidden when the document has no images', async () => {
     const user = userEvent.setup();
-    vi.mocked(getPdfCompressibilityFromBytes).mockResolvedValue({
-      pageCount: 3,
-      fileSizeBytes: 250 * 1024,
-      imageCount: 0,
-      compressibilityScore: 0.02,
-      jpxByteShare: 0,
-    });
+    textOnly();
 
     render(
       <ToolPanelHarness>
@@ -416,7 +366,6 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Appears once the document analysis resolves — it is hidden for documents
     // with no images.
     expect(await screen.findByText('Keep image resolution')).toBeInTheDocument();
-    expect(screen.getByText('Strip metadata')).toBeInTheDocument();
 
     // Apply button
     expect(screen.getByText('Apply')).toBeInTheDocument();
