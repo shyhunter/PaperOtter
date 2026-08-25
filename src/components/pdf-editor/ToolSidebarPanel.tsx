@@ -17,6 +17,7 @@ import {
   type WatermarkOptions,
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
+import { rasteriseSignature } from '@/lib/signatureRaster';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -1268,8 +1269,13 @@ function CropPanel() {
 // ── Sign Panel (placeholder) ─────────────────────────────────────────
 
 /** Handwriting-style fonts for typed signatures */
+// Script uses the OFL font bundled with the app rather than 'Brush Script MT',
+// which only exists on machines that happen to have it. Canvas falls back
+// silently for a font it cannot find, so naming a system face would put a plain
+// signature on the page anywhere it is missing -- the same failure, moved to
+// other people's computers.
 const SIGNATURE_FONTS = [
-  { value: 'cursive', label: 'Script', css: "'Brush Script MT', 'Segoe Script', cursive" },
+  { value: 'cursive', label: 'Script', css: "'Dancing Script', 'Brush Script MT', cursive" },
   { value: 'serif', label: 'Formal', css: "'Georgia', 'Times New Roman', serif" },
   { value: 'sans', label: 'Clean', css: "'Helvetica Neue', Arial, sans-serif" },
 ];
@@ -1295,7 +1301,8 @@ function saveSavedSignatures(sigs: SavedSignature[]) {
 }
 
 function SignPanel() {
-  const { state, setEditorMode, addTextBlock, startEditing } = useEditorContext();
+  const { state, setEditorMode, addImageBlock, markDirty } = useEditorContext();
+  const [placeError, setPlaceError] = useState<string | null>(null);
   const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
@@ -1307,31 +1314,39 @@ function SignPanel() {
 
   const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
 
-  // Place signature as a text block on the current page
-  const handlePlaceSignature = useCallback((text: string, font: string, color: string) => {
+  // Place the signature as a rasterised stamp on the current page.
+  //
+  // Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
+  // script face, so a Script signature used to be silently swapped for italic
+  // Helvetica while the panel went on showing a script preview over it. Drawing
+  // it to a canvas in the real bundled font makes the preview and the page the
+  // same thing, for every style rather than just the two that happened to map.
+  const handlePlaceSignature = useCallback(async (text: string, font: string, color: string) => {
     const pageIndex = state.currentPage;
-    const newBlock = {
+    const fontCss = SIGNATURE_FONTS.find((f) => f.value === font)?.css ?? 'cursive';
+
+    const raster = await rasteriseSignature(text, fontCss, sigSize, color);
+    if (!raster) {
+      setPlaceError('Could not draw the signature. Try a different style or a shorter name.');
+      return;
+    }
+    setPlaceError(null);
+
+    addImageBlock(pageIndex, {
       id: crypto.randomUUID(),
       pageIndex,
       x: 100,
       y: 100,
-      width: Math.max(200, text.length * sigSize * 0.6),
-      height: sigSize * 1.5,
-      text,
-      fontSize: sigSize,
-      fontName: font === 'cursive' ? 'Helvetica' : font === 'serif' ? 'TimesRoman' : 'Helvetica',
-      color,
-      alignment: 'left' as const,
-      bold: false,
-      italic: font === 'cursive',
-      underline: false,
-      lineHeight: 1.2,
+      width: raster.width,
+      height: raster.height,
+      imageBytes: raster.bytes,
+      rotation: 0,
+      flipH: false,
+      flipV: false,
       isNew: true,
-      isModified: true,
-    };
-    addTextBlock(pageIndex, newBlock);
-    startEditing(newBlock.id);
-  }, [state.currentPage, sigSize, addTextBlock, startEditing]);
+    });
+    markDirty();
+  }, [state.currentPage, sigSize, addImageBlock, markDirty]);
 
   const handleSaveSignature = useCallback(() => {
     if (!sigText.trim()) return;
@@ -1442,6 +1457,10 @@ function SignPanel() {
           Save
         </button>
       </div>
+
+      {placeError && (
+        <p className="text-[10px] leading-relaxed text-destructive">{placeError}</p>
+      )}
 
       {/* Saved signatures */}
       {savedSignatures.length > 0 && (

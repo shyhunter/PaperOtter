@@ -9,6 +9,18 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { extractPageText, type ExtractedTextItem } from '@/lib/pdfTextExtract';
 import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
+import { resizeFromCorner, type Corner } from '@/lib/blockResize';
+
+/** Floors for a resized block, in PDF points. */
+const RESIZE_LIMITS = { minWidth: 30, minHeight: 12 };
+
+/** Where each corner handle sits, and what the cursor promises it will do. */
+const CORNERS: { corner: Corner; style: React.CSSProperties; cursor: string }[] = [
+  { corner: 'top-left', style: { top: -5, left: -5 }, cursor: 'nwse-resize' },
+  { corner: 'top-right', style: { top: -5, right: -5 }, cursor: 'nesw-resize' },
+  { corner: 'bottom-left', style: { bottom: -5, left: -5 }, cursor: 'nesw-resize' },
+  { corner: 'bottom-right', style: { bottom: -5, right: -5 }, cursor: 'nwse-resize' },
+];
 import { diagLog } from '@/lib/diagLog';
 
 /** Hook to forward pinch-to-zoom from an overlay div to the editor zoom.
@@ -405,20 +417,26 @@ function TextBlockOverlay({
     [block.text, onStopEditing, onDelete],
   );
 
-  // Resize handle
+  // Resize from any corner. Every move is measured against the block as it was
+  // when the mouse went down, so a long drag cannot accumulate rounding.
   const handleResizeMouseDown = useCallback(
-    (e: ReactMouseEvent) => {
+    (e: ReactMouseEvent, corner: Corner) => {
       e.stopPropagation();
       e.preventDefault();
       const startX = e.clientX;
       const startY = e.clientY;
-      const startW = block.width;
-      const startH = block.height;
+      const start = { x: block.x, y: block.y, width: block.width, height: block.height };
 
       const handleMouseMove = (ev: globalThis.MouseEvent) => {
-        const newW = Math.max(30, startW + (ev.clientX - startX) / zoom);
-        const newH = Math.max(12, startH + (ev.clientY - startY) / zoom);
-        onUpdate({ ...block, width: newW, height: newH, isModified: true });
+        const resized = resizeFromCorner(
+          start,
+          corner,
+          (ev.clientX - startX) / zoom,
+          // Screen down is down the page, which is less Y in PDF coordinates.
+          -(ev.clientY - startY) / zoom,
+          RESIZE_LIMITS,
+        );
+        onUpdate({ ...block, ...resized, isModified: true });
         onDirty();
       };
 
@@ -516,63 +534,30 @@ function TextBlockOverlay({
         </div>
       )}
 
-      {/* Resize handles at corners — shown when selected */}
+      {/* All four corners resize, and each keeps the opposite corner pinned.
+          Three of these used to be decoration -- they looked exactly like the
+          working one and did nothing, which is worse than not drawing them. */}
       {isSelected && !isEditing && (
         <>
-          {/* Bottom-right resize handle */}
-          <div
-            onMouseDown={handleResizeMouseDown}
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              background: '#3b82f6',
-              cursor: 'se-resize',
-              borderRadius: 2,
-              pointerEvents: 'auto',
-            }}
-          />
-          {/* Top-left indicator */}
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              background: '#3b82f6',
-              borderRadius: 2,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Top-right indicator */}
-          <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 8,
-              height: 8,
-              background: '#3b82f6',
-              borderRadius: 2,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Bottom-left indicator */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: -4,
-              left: -4,
-              width: 8,
-              height: 8,
-              background: '#3b82f6',
-              borderRadius: 2,
-              pointerEvents: 'none',
-            }}
-          />
+          {CORNERS.map(({ corner, style, cursor }) => (
+            <div
+              key={corner}
+              data-testid={`resize-${corner}`}
+              title={`Resize from ${corner.replace('-', ' ')}`}
+              onMouseDown={(e) => handleResizeMouseDown(e, corner)}
+              style={{
+                position: 'absolute',
+                ...style,
+                width: 10,
+                height: 10,
+                background: '#3b82f6',
+                border: '1px solid white',
+                cursor,
+                borderRadius: 2,
+                pointerEvents: 'auto',
+              }}
+            />
+          ))}
         </>
       )}
     </div>

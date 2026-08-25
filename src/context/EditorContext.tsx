@@ -15,6 +15,7 @@ import React, {
 import type { ReactNode } from 'react';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
+import type { ImageBlock } from '@/types/editor';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 
 // ── Actions ────────────────────────────────────────────────────────────
@@ -41,6 +42,9 @@ type EditorAction =
   | { type: 'SET_PAGE_TEXT_BLOCKS'; pageIdx: number; blocks: TextBlock[] }
   | { type: 'UPDATE_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
   | { type: 'ADD_TEXT_BLOCK'; pageIdx: number; block: TextBlock }
+  | { type: 'ADD_IMAGE_BLOCK'; pageIdx: number; block: ImageBlock }
+  | { type: 'UPDATE_IMAGE_BLOCK'; pageIdx: number; block: ImageBlock }
+  | { type: 'DELETE_IMAGE_BLOCK'; pageIdx: number; blockId: string }
   | { type: 'DELETE_TEXT_BLOCK'; pageIdx: number; blockId: string }
   | { type: 'SET_COMPARE_MODE'; mode: CompareMode };
 
@@ -171,6 +175,31 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       });
       return { ...state, pages, isDirty: true };
     }
+    case 'ADD_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx ? { ...p, imageBlocks: [...p.imageBlocks, action.block] } : p,
+      );
+      return { ...state, pages, isDirty: true, selectedBlockId: action.block.id };
+    }
+    case 'UPDATE_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx
+          ? { ...p, imageBlocks: p.imageBlocks.map((b) => (b.id === action.block.id ? action.block : b)) }
+          : p,
+      );
+      return { ...state, pages, isDirty: true };
+    }
+    case 'DELETE_IMAGE_BLOCK': {
+      const pages = state.pages.map((p, i) =>
+        i === action.pageIdx
+          ? { ...p, imageBlocks: p.imageBlocks.filter((b) => b.id !== action.blockId) }
+          : p,
+      );
+      return {
+        ...state, pages, isDirty: true,
+        selectedBlockId: state.selectedBlockId === action.blockId ? null : state.selectedBlockId,
+      };
+    }
     case 'DELETE_TEXT_BLOCK': {
       const pages = state.pages.map((p, i) => {
         if (i !== action.pageIdx) return p;
@@ -251,6 +280,10 @@ interface EditorContextValue {
   setPageTextBlocks: (pageIdx: number, blocks: TextBlock[]) => void;
   updateTextBlock: (pageIdx: number, block: TextBlock) => void;
   addTextBlock: (pageIdx: number, block: TextBlock) => void;
+  /** Place a rasterised image -- a signature stamp today -- on a page. */
+  addImageBlock: (pageIdx: number, block: ImageBlock) => void;
+  updateImageBlock: (pageIdx: number, block: ImageBlock) => void;
+  deleteImageBlock: (pageIdx: number, blockId: string) => void;
   deleteTextBlock: (pageIdx: number, blockId: string) => void;
 }
 
@@ -382,6 +415,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const updateTextBlock = useCallback((pageIdx: number, block: TextBlock) => {
     dispatch({ type: 'UPDATE_TEXT_BLOCK', pageIdx, block });
+  }, []);
+
+  const addImageBlock = useCallback((pageIdx: number, block: ImageBlock) => {
+    dispatch({ type: 'ADD_IMAGE_BLOCK', pageIdx, block });
+  }, []);
+
+  const updateImageBlock = useCallback((pageIdx: number, block: ImageBlock) => {
+    dispatch({ type: 'UPDATE_IMAGE_BLOCK', pageIdx, block });
+  }, []);
+
+  const deleteImageBlock = useCallback((pageIdx: number, blockId: string) => {
+    dispatch({ type: 'DELETE_IMAGE_BLOCK', pageIdx, blockId });
   }, []);
 
   const addTextBlock = useCallback((pageIdx: number, block: TextBlock) => {
@@ -652,6 +697,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
+      addImageBlock,
+      updateImageBlock,
+      deleteImageBlock,
       deleteTextBlock,
       // Page management
       selectedPages,
@@ -692,6 +740,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setPageTextBlocks,
       updateTextBlock,
       addTextBlock,
+      addImageBlock,
+      updateImageBlock,
+      deleteImageBlock,
       deleteTextBlock,
       selectedPages,
       togglePageSelection,
