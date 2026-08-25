@@ -144,19 +144,22 @@ type EditorCtx = ReturnType<typeof useEditorContext>;
 function ToolPanelHarness({
   children,
   onContextReady,
+  bytes,
 }: {
   children: React.ReactNode;
   onContextReady?: (ctx: EditorCtx) => void;
+  /** Size-sensitive tests need a realistic document; estimates floor at 1 KB. */
+  bytes?: Uint8Array;
 }) {
   return (
     <EditorProvider>
-      <Initialiser onContextReady={onContextReady} />
+      <Initialiser onContextReady={onContextReady} bytes={bytes} />
       {children}
     </EditorProvider>
   );
 }
 
-function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => void }) {
+function Initialiser({ onContextReady, bytes }: { onContextReady?: (ctx: EditorCtx) => void; bytes?: Uint8Array }) {
   const ctx = useEditorContext();
   const initRef = useRef(false);
 
@@ -164,7 +167,7 @@ function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => 
     if (!initRef.current) {
       initRef.current = true;
       ctx.initState(
-        createEditorViewState(fakePdfBytes(), 3, 'test.pdf', '/tmp/test.pdf', 1.0),
+        createEditorViewState(bytes ?? fakePdfBytes(), 3, 'test.pdf', '/tmp/test.pdf', 1.0),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -414,6 +417,81 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(writes().length).toBeGreaterThan(afterFirst));
 
     expect(lastWrite()).toEqual(replacement);
+  });
+
+  /** A realistic document size — estimates floor at 1 KB, so a 4-byte stub
+   *  makes every preset look identical. */
+  const fourMegabytes = () => new Uint8Array(4 * 1024 * 1024);
+
+  it('TP-01o — Target file size is hidden on a document that cannot be compressed', async () => {
+    const user = userEvent.setup();
+    textOnly();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findByText(/mostly text with no embedded images/i);
+
+    // No number below the current size is reachable here, so asking for one is
+    // meaningless — the banner already explains why.
+    expect(screen.queryByText('Target file size')).toBeNull();
+  });
+
+  it('TP-01p — it is offered on a document that can be compressed', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    expect(await screen.findByText('Target file size')).toBeTruthy();
+  });
+
+  it('TP-01q — an unreachable target says so before anything runs', async () => {
+    const user = userEvent.setup();
+    compressible();
+    vi.mocked(invoke).mockClear();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+    await user.type(screen.getByTitle('Target file size'), '50');
+    await user.selectOptions(screen.getByTitle('Size unit'), 'KB');
+
+    // Costs no processing time: the estimates already say where the floor is.
+    expect(await screen.findByText(/smallest achievable/i)).toBeTruthy();
+    expect(vi.mocked(invoke).mock.calls.some(([cmd]) => cmd === 'compress_pdf')).toBe(false);
+  });
+
+  it('TP-01r — a reachable target does not warn', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+    await user.type(screen.getByTitle('Target file size'), '3');
+
+    expect(screen.queryByText(/smallest achievable/i)).toBeNull();
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {

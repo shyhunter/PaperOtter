@@ -251,6 +251,9 @@ function CompressPanel() {
   const [compressionResult, setCompressionResult] = useState<{
     originalSize: number;
     compressedSize: number;
+    /** The target this run was judged against, frozen at apply time so later
+     *  edits to the field cannot rewrite the verdict. */
+    targetBytes: number | null;
   } | null>(null);
   const [analysis, setAnalysis] = useState<PdfCompressibility | null>(null);
 
@@ -303,6 +306,21 @@ function CompressPanel() {
   const nonCompressibleReason = analysis
     ? getNonCompressibleReason(analysis.compressibilityScore, analysis.jpxByteShare)
     : null;
+
+  // Asking for a size is only meaningful if the document can shrink at all.
+  const canTargetSize = analysis !== null && nonCompressibleReason === null;
+  const targetActive = canTargetSize && useTargetSize;
+
+  const targetBytes = useMemo(() => {
+    const parsed = parseInt(targetSizeValue, 10);
+    if (isNaN(parsed) || parsed < 1) return null;
+    return parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
+  }, [targetSizeValue, targetUnit]);
+
+  // The most aggressive preset's estimate is the floor: nothing here goes below it.
+  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
+  const targetUnreachable =
+    targetActive && targetBytes !== null && floorBytes !== null && targetBytes < floorBytes;
   const nonCompressibleMsg = analysis
     ? nonCompressibleMessage(nonCompressibleReason, analysis.imageCount)
     : null;
@@ -311,7 +329,7 @@ function CompressPanel() {
 
   // Auto-select best preset for target size
   const resolvedPreset = useCallback((): string => {
-    if (!useTargetSize || !targetSizeValue.trim()) return preset;
+    if (!targetActive || !targetSizeValue.trim()) return preset;
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return preset;
     const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
@@ -321,7 +339,7 @@ function CompressPanel() {
     if (ratio < 0.5) return 'ebook';
     if (ratio < 0.8) return 'printer';
     return 'prepress';
-  }, [useTargetSize, targetSizeValue, targetUnit, baseBytes, preset]);
+  }, [targetActive, targetSizeValue, targetUnit, baseBytes, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -353,6 +371,7 @@ function CompressPanel() {
       setCompressionResult({
         originalSize,
         compressedSize: result.byteLength,
+        targetBytes: targetActive ? targetBytes : null,
       });
 
       updatePdfBytes(result);
@@ -361,7 +380,7 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -421,7 +440,11 @@ function CompressPanel() {
         ))}
       </div>
 
-      {/* Target file size */}
+      {/* Target file size — only where a size can actually be aimed at. On a
+          text-only or JPEG2000-dominated document no number below the current
+          size is reachable, so the field would be a trap; the banner above
+          already says why. */}
+      {canTargetSize && (
       <div className="space-y-1.5">
         <label className="flex items-center gap-2 text-[11px] cursor-pointer">
           <input
@@ -456,7 +479,14 @@ function CompressPanel() {
             </select>
           </div>
         )}
+        {targetUnreachable && floorBytes !== null && (
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            Smallest achievable is about {formatBytes(floorBytes)} — compression
+            cannot go below this for this file.
+          </p>
+        )}
       </div>
+      )}
 
       {/* Advanced options */}
       <div className="space-y-1.5 border-t pt-2">
@@ -498,6 +528,22 @@ function CompressPanel() {
             <span className="text-muted-foreground">Compressed</span>
             <span className="font-medium">{formatBytes(compressionResult.compressedSize)}</span>
           </div>
+          {compressionResult.targetBytes !== null && (
+            <div className="flex justify-between text-[10px] pt-1 border-t">
+              <span className="text-muted-foreground">Target</span>
+              <span
+                className={`font-semibold ${
+                  compressionResult.compressedSize <= compressionResult.targetBytes
+                    ? 'text-green-500'
+                    : 'text-amber-500'
+                }`}
+              >
+                {compressionResult.compressedSize <= compressionResult.targetBytes
+                  ? 'met'
+                  : `not met (${formatBytes(compressionResult.targetBytes)})`}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-[10px] pt-1 border-t">
             <span className="text-muted-foreground">Reduction</span>
             <span className={`font-semibold ${reductionPct! > 0 ? 'text-green-500' : 'text-orange-500'}`}>
