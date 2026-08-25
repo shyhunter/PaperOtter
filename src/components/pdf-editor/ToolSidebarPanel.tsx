@@ -18,6 +18,8 @@ import {
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { rasteriseSignature } from '@/lib/signatureRaster';
+import { applyRedactions } from '@/lib/pdfRedact';
+import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -1532,124 +1534,166 @@ function SignPanel() {
 // ── Redact Panel ─────────────────────────────────────────────────────
 
 function RedactPanel() {
-  const { state, setEditorMode, addTextBlock, markDirty } = useEditorContext();
-  const isTextMode = state.editorMode === 'text';
+  const { state, setRedactionDraft, setRedactionColor, updatePdfBytes, markDirty } = useEditorContext();
+  // Memoised so the `?? []` fallback does not hand out a new array each render
+  // and re-create every callback that depends on it.
+  const draft = useMemo(() => state.redactionDraft ?? [], [state.redactionDraft]);
 
-  const [redactColor, setRedactColor] = useState('#000000');
-  const [redactedCount, setRedactedCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchRan, setSearchRan] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
-  // Place a solid redaction rectangle (opaque text block with block character)
-  const handlePlaceRedactBlock = useCallback(() => {
-    const pageIndex = state.currentPage;
-    const newBlock = {
-      id: crypto.randomUUID(),
-      pageIndex,
-      x: 100,
-      y: 300,
-      width: 200,
-      height: 30,
-      text: '█'.repeat(30), // Solid block characters
-      fontSize: 24,
-      fontName: 'Helvetica',
-      color: redactColor,
-      alignment: 'left' as const,
-      bold: false,
-      italic: false,
-      underline: false,
-      lineHeight: 1.0,
-      isNew: true,
-      isModified: true,
-    };
-    addTextBlock(pageIndex, newBlock);
-    markDirty();
-    setRedactedCount((c) => c + 1);
-  }, [state.currentPage, redactColor, addTextBlock, markDirty]);
+  // Opening the tool arms the canvas to take rectangles; leaving it disarms.
+  useEffect(() => {
+    setRedactionDraft([]);
+    return () => setRedactionDraft(null);
+  }, [setRedactionDraft]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    setSearchRan(false);
+
+    const pdfjsLib = await import('pdfjs-dist');
+    let doc: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']> | null = null;
+    try {
+      doc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
+      setSearchResults(await findTextMatches(doc, searchQuery));
+    } catch {
+      setSearchResults([]);
+    } finally {
+      doc?.destroy();
+      setSearchRan(true);
+      setIsSearching(false);
+    }
+  }, [searchQuery, state.pdfBytes]);
+
+  const handleRedactAllMatches = useCallback(() => {
+    setRedactionDraft([
+      ...draft,
+      ...searchResults.map((m) => ({
+        id: m.id, pageIndex: m.pageIndex,
+        x: m.x, y: m.y, width: m.width, height: m.height,
+        source: 'search' as const,
+      })),
+    ]);
+    setSearchResults([]);
+  }, [draft, searchResults, setRedactionDraft]);
+
+  const handleApply = useCallback(async () => {
+    if (draft.length === 0) return;
+    setIsApplying(true);
+    setApplyError(null);
+    try {
+      // The same rasterising apply the standalone tool uses. Drawing a box over
+      // the text would leave it in the file, selectable and extractable.
+      const result = await applyRedactions(state.pdfBytes, draft, state.redactionColor);
+      updatePdfBytes(result);
+      markDirty();
+      setRedactionDraft([]);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [draft, state.pdfBytes, state.redactionColor, updatePdfBytes, markDirty, setRedactionDraft]);
 
   return (
     <div className="space-y-3">
       <PanelHeader toolId="redact-pdf" />
 
-      {/* Method 1: Click to select + delete text */}
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        Drag on the page to cover something. Applying flattens those pages to an
+        image, so the content underneath is removed from the file, not just hidden.
+      </p>
+
+      {/* Find text */}
       <div className="space-y-1.5">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 1: Delete text</span>
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Click a text block to select it, then press <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Delete</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Backspace</kbd>. The area is covered with a white rectangle in the saved PDF.
-        </p>
-      </div>
-
-      {/* Method 2: Place opaque redaction block */}
-      <div className="space-y-1.5 border-t pt-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 2: Cover with redaction block</span>
-
-        <div>
-          <label className="text-[10px] text-muted-foreground">Redaction color</label>
-          <div className="mt-1">
-            <ColorPicker value={redactColor} onChange={setRedactColor} />
-          </div>
-          {isLightColor(redactColor) && (
-            // The block is opaque whatever colour it is, so nothing shows
-            // through. What a pale one costs is the reader's ability to see
-            // that anything was covered at all.
-            <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-              A block this pale is hard to see on a white page. It still covers
-              the content completely.
-            </p>
-          )}
+        <label className="text-[10px] font-medium text-muted-foreground">Find text</label>
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+            placeholder="Name, number…"
+            title="Find text to redact"
+            className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={isSearching || !searchQuery.trim()}
+            className="flex-none px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-50"
+          >
+            {isSearching ? '…' : 'Find'}
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={handlePlaceRedactBlock}
-          className="w-full py-1.5 px-3 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
-        >
-          Place Redaction Block
-        </button>
-        <p className="text-[9px] text-muted-foreground">
-          Drag and resize the block to cover sensitive content. The block is opaque and will permanently cover content when saved.
-        </p>
+        {searchRan && !isSearching && searchResults.length === 0 && (
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            No matches. Pages with no selectable text — a scan, for instance —
+            cannot be searched.
+          </p>
+        )}
+
+        {searchResults.length > 0 && (
+          <button
+            type="button"
+            onClick={handleRedactAllMatches}
+            className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
+          >
+            Cover all {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
+          </button>
+        )}
       </div>
 
-      {/* Method 3: Click-to-place mode */}
+      {/* Colour */}
       <div className="border-t pt-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Method 3: Click-to-place</span>
-        <button
-          type="button"
-          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-          className={`w-full mt-1.5 py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-            isTextMode
-              ? 'bg-green-600 text-white'
-              : 'border border-border hover:bg-muted'
-          }`}
-        >
-          {isTextMode ? (
-            <>
-              <Check className="h-3 w-3" />
-              Click-to-Place Active
-            </>
-          ) : (
-            'Activate Click-to-Place'
-          )}
-        </button>
-        {isTextMode && (
-          <p className="text-[9px] text-muted-foreground mt-1">
-            Click anywhere on the PDF to place a covering block at that position.
+        <label className="text-[10px] font-medium text-muted-foreground">Box colour</label>
+        <div className="mt-1">
+          <ColorPicker value={state.redactionColor} onChange={setRedactionColor} />
+        </div>
+        {isLightColor(state.redactionColor) && (
+          <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            A box this pale is hard to see on a white page. The content underneath
+            is still permanently removed.
           </p>
         )}
       </div>
 
-      {/* Counter */}
-      {redactedCount > 0 && (
-        <div className="rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-2">
-          <p className="text-[10px] text-red-700 dark:text-red-400 font-medium">
-            {redactedCount} redaction block{redactedCount !== 1 ? 's' : ''} placed. Remember to save to make redactions permanent.
-          </p>
-        </div>
-      )}
+      <div className="border-t pt-2 space-y-1.5">
+        <p className="text-[10px] text-muted-foreground">
+          {draft.length} area{draft.length === 1 ? '' : 's'} marked
+        </p>
+        {draft.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setRedactionDraft([])}
+            className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
+          >
+            Clear all
+          </button>
+        )}
+        {applyError && (
+          <p className="text-[10px] leading-relaxed text-destructive">{applyError}</p>
+        )}
+        <button
+          type="button"
+          onClick={handleApply}
+          disabled={draft.length === 0 || isApplying}
+          className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isApplying ? 'Redacting…' : 'Apply'}
+        </button>
+      </div>
     </div>
   );
 }
-
-// ── PDF/A Convert Panel ──────────────────────────────────────────────
 
 function PdfaPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();

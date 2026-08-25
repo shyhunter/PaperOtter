@@ -19,6 +19,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { applyRedactions } from '@/lib/pdfRedact';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -88,6 +89,11 @@ vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
 }));
+
+vi.mock('@/lib/pdfRedact', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfRedact')>();
+  return { ...actual, applyRedactions: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])) };
+});
 
 vi.mock('@/lib/pdfCrop', () => ({
   cropPdf: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
@@ -1214,54 +1220,58 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-07: Redact Panel
-  it('TP-07 — Redact panel shows three redaction methods', async () => {
+  // These replace TP-07/TP-07b, which asserted that the editor placed a text
+  // block of block characters over the content and counted them. That covered
+  // the pixels and left the text in the file, fully extractable -- the tests
+  // were pinning the bug in place.
+  it('TP-07 — the Redact panel arms the canvas and offers real redaction', async () => {
     const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
 
     render(
-      <ToolPanelHarness>
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    expect(ctx!.state.redactionDraft).toBeNull();
+
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    // A non-null draft is what tells the canvas to accept drawn rectangles.
+    expect(ctx!.state.redactionDraft).toEqual([]);
+    expect(screen.getByTitle('Find text to redact')).toBeInTheDocument();
+    expect(screen.getByText(/removed from the file, not just hidden/i)).toBeInTheDocument();
+  });
+
+  it('TP-07b — Apply goes through the rasterising redaction, not a drawn box', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
         <ToolSidebar />
       </ToolPanelHarness>,
     );
 
     await user.click(screen.getByTitle('Redact PDF'));
 
-    expect(screen.getByText('Redact PDF')).toBeInTheDocument();
+    // Nothing marked yet: Apply must not offer to redact nothing.
+    expect(screen.getByText('Apply').closest('button')).toBeDisabled();
 
-    // Method 1
-    expect(screen.getByText('Method 1: Delete text')).toBeInTheDocument();
+    act(() => {
+      ctx!.setRedactionDraft([
+        { id: 'r1', pageIndex: 0, x: 10, y: 10, width: 20, height: 5, source: 'drawn' },
+      ]);
+    });
 
-    // Method 2
-    expect(screen.getByText('Method 2: Cover with redaction block')).toBeInTheDocument();
-    expect(screen.getByText('Place Redaction Block')).toBeInTheDocument();
+    await user.click(screen.getByText('Apply'));
 
-    // Method 3
-    expect(screen.getByText('Method 3: Click-to-place')).toBeInTheDocument();
-    expect(screen.getByText('Activate Click-to-Place')).toBeInTheDocument();
+    await waitFor(() => expect(vi.mocked(applyRedactions)).toHaveBeenCalled());
+    const [, rects] = vi.mocked(applyRedactions).mock.calls[0];
+    expect(rects).toHaveLength(1);
   });
 
-  it('TP-07b — Place Redaction Block increments redaction counter', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Redact PDF'));
-
-    // Click Place Redaction Block
-    await user.click(screen.getByText('Place Redaction Block'));
-
-    // Counter should show
-    expect(screen.getByText(/1 redaction block placed/)).toBeInTheDocument();
-
-    // Place another
-    await user.click(screen.getByText('Place Redaction Block'));
-    expect(screen.getByText(/2 redaction blocks placed/)).toBeInTheDocument();
-  });
-
-  // TP-08: PDF/A Convert Panel
   it('TP-08 — PDF/A Convert panel shows level select and Apply', async () => {
     const user = userEvent.setup();
 
@@ -1404,31 +1414,6 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-13: Redact Click-to-Place mode toggle
-  it('TP-13 — Redact click-to-place toggles editor mode', async () => {
-    let latestCtx: EditorCtx | null = null;
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness onContextReady={(ctx) => { latestCtx = ctx; }}>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
-
-    await user.click(screen.getByTitle('Redact PDF'));
-
-    // Click "Activate Click-to-Place"
-    await user.click(screen.getByText('Activate Click-to-Place'));
-
-    // Should change to text mode
-    expect(latestCtx!.state.editorMode).toBe('text');
-
-    // Button should now say "Click-to-Place Active"
-    expect(screen.getByText('Click-to-Place Active')).toBeInTheDocument();
-  });
-
-  // TP-14: Sign panel Click-to-Place mode toggle
   it('TP-14 — Sign panel click-to-place toggles editor mode', async () => {
     let latestCtx: EditorCtx | null = null;
     const user = userEvent.setup();

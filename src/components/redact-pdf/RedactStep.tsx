@@ -4,20 +4,11 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Search, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
+import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
 import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
-
-interface TextMatch {
-  id: string;
-  pageIndex: number;
-  text: string;
-  x: number; // percentage
-  y: number;
-  width: number;
-  height: number;
-}
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
@@ -38,6 +29,8 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  // So "nothing found" can be said out loud instead of the panel just staying blank.
+  const [searchRan, setSearchRan] = useState(false);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
 
   // Keep PDF doc reference for text search
@@ -97,58 +90,27 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
   // Text search across all pages
   const handleSearch = useCallback(async () => {
-    const doc = pdfDocRef.current;
-    if (!doc || !searchQuery.trim()) return;
+    if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     setSearchResults([]);
+    setSearchRan(false);
 
-    const query = searchQuery.toLowerCase();
-    const matches: TextMatch[] = [];
-
+    // Opens the document here rather than reaching for one loaded elsewhere: a
+    // ref that has not been populated yet -- or was nulled by a cleanup -- made
+    // this return silently, which looks exactly like "no matches".
+    let doc: pdfjsLib.PDFDocumentProxy | null = null;
     try {
-      for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
-        const page = await doc.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const viewport = page.getViewport({ scale: 1 });
-        const pageW = viewport.width;
-        const pageH = viewport.height;
-
-        for (const item of textContent.items) {
-          if (!('str' in item)) continue;
-          const textItem = item as { str: string; transform: number[]; width: number; height: number };
-          if (!textItem.str.toLowerCase().includes(query)) continue;
-
-          // transform: [scaleX, 0, 0, scaleY, x, y]
-          const tx = textItem.transform[4];
-          const ty = textItem.transform[5];
-          const tw = textItem.width;
-          const th = Math.abs(textItem.transform[3]) || textItem.height || 12;
-
-          // PDF coords: origin at bottom-left. Convert to top-left percentages.
-          const xPct = (tx / pageW) * 100;
-          const yPct = ((pageH - ty - th) / pageH) * 100;
-          const wPct = (tw / pageW) * 100;
-          const hPct = (th / pageH) * 100;
-
-          matches.push({
-            id: genId('match'),
-            pageIndex: pageNum - 1,
-            text: textItem.str,
-            x: Math.max(0, xPct),
-            y: Math.max(0, yPct),
-            width: Math.min(wPct, 100 - xPct),
-            height: Math.min(hPct, 100 - yPct),
-          });
-        }
-      }
+      doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+      setSearchResults(await findTextMatches(doc, searchQuery));
     } catch {
-      // Search failed silently
+      setSearchResults([]);
+    } finally {
+      doc?.destroy();
+      setSearchRan(true);
+      setIsSearching(false);
     }
-
-    setSearchResults(matches);
-    setIsSearching(false);
-  }, [searchQuery]);
+  }, [searchQuery, pdfBytes]);
 
   const handleAddSearchResult = useCallback(
     (match: TextMatch) => {
@@ -296,6 +258,14 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           </div>
 
           {/* Search results */}
+          {searchRan && !isSearching && searchResults.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No matches for &ldquo;{searchQuery}&rdquo;. Scanned pages with no
+              selectable text — an image-only scan, for instance — cannot be
+              searched.
+            </p>
+          )}
+
           {searchResults.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">

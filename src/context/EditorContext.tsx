@@ -15,6 +15,8 @@ import React, {
 import type { ReactNode } from 'react';
 import { PDFDocument, PageSizes } from 'pdf-lib';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
+import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
+import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import type { ImageBlock } from '@/types/editor';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 
@@ -32,6 +34,8 @@ type EditorAction =
   | { type: 'REVERT_TO_ORIGINAL' }
   | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
   | { type: 'SET_WATERMARK_DRAFT'; draft: WatermarkOptions | null }
+  | { type: 'SET_REDACTION_DRAFT'; draft: RedactionRect[] | null }
+  | { type: 'SET_REDACTION_COLOR'; color: string }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -121,6 +125,12 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
 
     case 'SET_WATERMARK_DRAFT':
       return { ...state, watermarkDraft: action.draft };
+
+    case 'SET_REDACTION_DRAFT':
+      return { ...state, redactionDraft: action.draft };
+
+    case 'SET_REDACTION_COLOR':
+      return { ...state, redactionColor: action.color };
     case 'REVERT_TO_ORIGINAL':
       // Every derived piece of edit state has to go with the bytes. Page
       // overlays are applied at save time, so a survivor would be written back
@@ -248,6 +258,9 @@ interface EditorContextValue {
   setStripMetadataOnSave: (value: boolean) => void;
   /** Set (or clear, with null) the watermark being configured. */
   setWatermarkDraft: (draft: WatermarkOptions | null) => void;
+  /** Set (or clear, with null) the rectangles marked for redaction. */
+  setRedactionDraft: (draft: RedactionRect[] | null) => void;
+  setRedactionColor: (color: string) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -299,6 +312,8 @@ function createEmptyState(): EditorViewState {
     stripMetadataOnSave: false,
     pageNumberBase: null,
     watermarkDraft: null,
+    redactionDraft: null,
+    redactionColor: DEFAULT_REDACTION_COLOR,
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -374,6 +389,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const setWatermarkDraft = useCallback((draft: WatermarkOptions | null) => {
     dispatch({ type: 'SET_WATERMARK_DRAFT', draft });
+  }, []);
+
+  const setRedactionDraft = useCallback((draft: RedactionRect[] | null) => {
+    dispatch({ type: 'SET_REDACTION_DRAFT', draft });
+  }, []);
+
+  const setRedactionColor = useCallback((color: string) => {
+    dispatch({ type: 'SET_REDACTION_COLOR', color });
   }, []);
 
   const setFilePath = useCallback((path: string) => {
@@ -684,6 +707,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       revertToOriginal,
       setStripMetadataOnSave,
       setWatermarkDraft,
+      setRedactionDraft,
+      setRedactionColor,
       setFilePath,
       setFileName,
       initState,
@@ -728,6 +753,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       revertToOriginal,
       setStripMetadataOnSave,
       setWatermarkDraft,
+      setRedactionDraft,
+      setRedactionColor,
       setFilePath,
       setFileName,
       initState,
@@ -784,6 +811,8 @@ export function createEditorViewState(
     stripMetadataOnSave: false,
     pageNumberBase: null,
     watermarkDraft: null,
+    redactionDraft: null,
+    redactionColor: DEFAULT_REDACTION_COLOR,
     filePath,
     fileName,
     pageCount,
