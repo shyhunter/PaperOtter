@@ -21,7 +21,7 @@ import {
 import type { PdfQualityLevel } from '@/types/file';
 import { PageNumberColorPicker } from '@/components/PageNumberColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 
 interface ToolSidebarPanelProps {
@@ -235,7 +235,7 @@ const QUALITY_ZONES = [
 ] as const;
 
 function CompressPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
 
   // Target file size mode
@@ -486,11 +486,19 @@ function CompressPanel() {
         </div>
       )}
 
-      <ToolSidebarPreview
-        originalBytes={state.pdfBytes}
-        previewBytes={previewBytes}
-        isProcessing={isProcessing}
-      />
+      {/* Compression damage lives in image detail — ringing at edges, blocking in
+          gradients, softened text. None of that is visible in a 100px page
+          thumbnail at any size that fits a 232px sidebar, so the sidebar carries
+          the figures and the comparison happens in the canvas, which is large
+          and zoomable. */}
+      <button
+        type="button"
+        onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed transition-colors"
+      >
+        <Expand className="h-3 w-3" />
+        Compare full size
+      </button>
 
       <ApplyButton
         onClick={handleApply}

@@ -316,6 +316,43 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.queryByRole('checkbox', { name: /keep image resolution/i })).toBeNull();
   });
 
+  it('TP-01k — the compress panel spends its space on numbers, not on tiny thumbnails', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await screen.findAllByTestId('preset-estimate');
+
+    // Two 100px thumbnails cannot show compression artefacts at any page scale
+    // — the damage lives in image detail. The sidebar is for figures.
+    expect(screen.queryByAltText('Before')).toBeNull();
+    expect(screen.queryByAltText('After')).toBeNull();
+  });
+
+  it('TP-01l — it offers a full-size comparison instead', async () => {
+    const user = userEvent.setup();
+    compressible();
+    let ctx: EditorCtx | undefined;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('button', { name: /compare full size/i }));
+
+    // Reuses the editor's existing compare view, which is large and zoomable.
+    await waitFor(() => expect(ctx!.state.compareMode).not.toBe('off'));
+  });
+
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
     const user = userEvent.setup();
 
