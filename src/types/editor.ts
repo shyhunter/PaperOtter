@@ -75,6 +75,9 @@ export interface EditorViewState {
   pdfBytes: Uint8Array;
   /** Snapshot of the original PDF at load time — never modified after init */
   originalPdfBytes: Uint8Array;
+  /** Page count of the original document, so a revert can restore it after
+   * pages were added or deleted. */
+  originalPageCount: number;
   /** Bytes as they were immediately before page numbers were applied, or null.
    * Lets the page-numbers panel take them back off, and lets a colour change
    * re-derive from clean bytes instead of stacking a second set of numbers.
