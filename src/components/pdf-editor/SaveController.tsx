@@ -10,7 +10,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
-import { stripPdfMetadata } from '@/lib/pdfMetadata';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
@@ -40,10 +39,7 @@ export function SaveController() {
       const currentState = stateRef.current;
 
       // Generate final PDF bytes with all edits baked in
-      let finalBytes = await applyAllEdits(currentState.pdfBytes, currentState.pages);
-      // Metadata is about what leaves the machine, so it is stripped on the way
-      // out rather than by whichever tool happened to run last.
-      if (currentState.stripMetadataOnSave) finalBytes = await stripPdfMetadata(finalBytes);
+      const finalBytes = await applyAllEdits(currentState.pdfBytes, currentState.pages);
 
       let targetPath = currentState.filePath;
 
@@ -130,10 +126,7 @@ export function useSaveActions() {
 
     try {
       const currentState = stateRef.current;
-      let finalBytes = await applyAllEdits(currentState.pdfBytes, currentState.pages);
-      // Metadata is about what leaves the machine, so it is stripped on the way
-      // out rather than by whichever tool happened to run last.
-      if (currentState.stripMetadataOnSave) finalBytes = await stripPdfMetadata(finalBytes);
+      const finalBytes = await applyAllEdits(currentState.pdfBytes, currentState.pages);
 
       let targetPath = currentState.filePath;
 

@@ -77,9 +77,6 @@ export interface EditorViewState {
   pdfBytes: Uint8Array;
   /** Snapshot of the original PDF at load time — never modified after init */
   originalPdfBytes: Uint8Array;
-  /** Remove identifying metadata (Info dictionary and XMP) when writing the
-   * file. Off by default: saving must never change a document silently. */
-  stripMetadataOnSave: boolean;
   /** Page count of the original document, so a revert can restore it after
    * pages were added or deleted. */
   originalPageCount: number;

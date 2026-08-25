@@ -32,7 +32,6 @@ type EditorAction =
   | { type: 'APPLY_PAGE_NUMBERS'; base: Uint8Array; numbered: Uint8Array }
   | { type: 'REMOVE_PAGE_NUMBERS' }
   | { type: 'REVERT_TO_ORIGINAL' }
-  | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
   | { type: 'SET_WATERMARK_DRAFT'; draft: WatermarkOptions | null }
   | { type: 'SET_REDACTION_DRAFT'; draft: RedactionRect[] | null }
   | { type: 'SET_REDACTION_COLOR'; color: string }
@@ -120,9 +119,6 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
         pageNumberBase: null,
         isDirty: true,
       };
-    case 'SET_STRIP_METADATA_ON_SAVE':
-      return { ...state, stripMetadataOnSave: action.value };
-
     case 'SET_WATERMARK_DRAFT':
       return { ...state, watermarkDraft: action.draft };
 
@@ -255,7 +251,6 @@ interface EditorContextValue {
   /** Discard every edit and restore the document as it was opened. */
   revertToOriginal: () => void;
   /** Whether saving should also strip identifying metadata. */
-  setStripMetadataOnSave: (value: boolean) => void;
   /** Set (or clear, with null) the watermark being configured. */
   setWatermarkDraft: (draft: WatermarkOptions | null) => void;
   /** Set (or clear, with null) the rectangles marked for redaction. */
@@ -309,7 +304,6 @@ function createEmptyState(): EditorViewState {
     pdfBytes: new Uint8Array(0),
     originalPdfBytes: new Uint8Array(0),
     originalPageCount: 0,
-    stripMetadataOnSave: false,
     pageNumberBase: null,
     watermarkDraft: null,
     redactionDraft: null,
@@ -381,10 +375,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const revertToOriginal = useCallback(() => {
     dispatch({ type: 'REVERT_TO_ORIGINAL' });
-  }, []);
-
-  const setStripMetadataOnSave = useCallback((value: boolean) => {
-    dispatch({ type: 'SET_STRIP_METADATA_ON_SAVE', value });
   }, []);
 
   const setWatermarkDraft = useCallback((draft: WatermarkOptions | null) => {
@@ -705,7 +695,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       applyPageNumbers,
       removePageNumbers,
       revertToOriginal,
-      setStripMetadataOnSave,
       setWatermarkDraft,
       setRedactionDraft,
       setRedactionColor,
@@ -751,7 +740,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       applyPageNumbers,
       removePageNumbers,
       revertToOriginal,
-      setStripMetadataOnSave,
       setWatermarkDraft,
       setRedactionDraft,
       setRedactionColor,
@@ -808,7 +796,6 @@ export function createEditorViewState(
     pdfBytes,
     originalPdfBytes: pdfBytes.slice(), // Snapshot — never modified
     originalPageCount: pageCount,
-    stripMetadataOnSave: false,
     pageNumberBase: null,
     watermarkDraft: null,
     redactionDraft: null,
