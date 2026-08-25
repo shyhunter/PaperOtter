@@ -25,7 +25,7 @@ const ICON_BUTTON =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
 export function AppChrome() {
-  const { activeTool, editorFilePath, openEditor, setPendingFiles } = useToolContext();
+  const { activeTool, editorFilePath, openEditor, replaceDocument } = useToolContext();
   const [aboutOpen, setAboutOpen] = useState(false);
 
   // The dashboard is already a file picker -- drag-and-drop, recent folders and
@@ -45,10 +45,10 @@ export function AppChrome() {
     }
 
     // Inside a tool, staying in that tool is the whole point of the button.
-    // The flows watch pendingFiles and restart themselves from step one.
-    setPendingFiles([result]);
-    window.dispatchEvent(new CustomEvent('papercut:file-replaced'));
-  }, [editorFilePath, openEditor, setPendingFiles]);
+    // replaceDocument stages the file and bumps the epoch the flows are keyed
+    // on, which is what actually makes them pick it up.
+    replaceDocument(result);
+  }, [editorFilePath, openEditor, replaceDocument]);
 
   return (
     <>

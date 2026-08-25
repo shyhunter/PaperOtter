@@ -33,7 +33,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
   const { goToDashboard } = useToolContext();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const initRef = useRef(false);
+  const loadedPathRef = useRef<string | null>(null);
 
   // Track isDirty via ref so event handlers always have the current value
   const isDirtyRef = useRef(false);
@@ -136,13 +136,19 @@ function EditorViewInner({ filePath }: EditorViewProps) {
     }
   }, [filePath, initState, setFitWidthZoom]);
 
+  // Keyed on the path, not a boolean: this component is rendered at a fixed
+  // position with no key, so opening a different document changes the prop
+  // while React keeps the same instance. A mount-only load meant the new file
+  // was picked, accepted, and then silently ignored.
+  //
+  // The ref still does its original job -- StrictMode invokes effects twice, and
+  // this one hands a buffer to pdf.js -- it just remembers which document was
+  // loaded rather than merely that one was.
   useEffect(() => {
-    if (!initRef.current) {
-      initRef.current = true;
-      loadPdf();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (loadedPathRef.current === filePath) return;
+    loadedPathRef.current = filePath;
+    loadPdf();
+  }, [filePath, loadPdf]);
 
   if (isLoading) {
     return (

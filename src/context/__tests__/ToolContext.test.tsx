@@ -70,4 +70,40 @@ describe('ToolContext — navigation guard', () => {
   });
 });
 
+describe('ToolContext — replacing the open document', () => {
+  it('[TC-05] stages the file and marks a new document session', () => {
+    renderCtx((ctx) => ctx.selectTool('watermark'));
+    const before = ctxRef!.documentEpoch;
+
+    act(() => { ctxRef!.replaceDocument('/tmp/b.pdf'); });
+
+    expect(ctxRef!.pendingFiles).toEqual(['/tmp/b.pdf']);
+    // Every flow keeps its own step and bytes in local state and reads
+    // pendingFiles only once, so the epoch is what remounts them. Without it a
+    // flow already past step one ignores the new file entirely.
+    expect(ctxRef!.documentEpoch).not.toBe(before);
+  });
+
+  it('[TC-06] picking the same file twice still starts over', () => {
+    renderCtx((ctx) => ctx.selectTool('watermark'));
+
+    act(() => { ctxRef!.replaceDocument('/tmp/b.pdf'); });
+    const afterFirst = ctxRef!.documentEpoch;
+    act(() => { ctxRef!.replaceDocument('/tmp/b.pdf'); });
+
+    // Keyed on the epoch rather than the path, so re-choosing the file the flow
+    // has already mangled still gives a clean one.
+    expect(ctxRef!.documentEpoch).not.toBe(afterFirst);
+  });
+
+  it('[TC-07] the tool itself is untouched -- that is the point', () => {
+    renderCtx((ctx) => ctx.selectTool('watermark'));
+
+    act(() => { ctxRef!.replaceDocument('/tmp/b.pdf'); });
+
+    expect(ctxRef!.activeTool).toBe('watermark');
+    expect(ctxRef!.editorFilePath).toBeNull();
+  });
+});
+
 void vi;

@@ -124,14 +124,6 @@ function DedicatedToolFlow() {
     addRecentDir(filePath);
   }, [setPendingFiles, addRecentDir]);
 
-  // The chrome's Open button puts a new file in pendingFiles; the flow has to
-  // return to step one for it to be picked up, and only the flow knows that.
-  useEffect(() => {
-    function restart() { setDedicatedFlowStep(0); }
-    window.addEventListener('papercut:file-replaced', restart);
-    return () => window.removeEventListener('papercut:file-replaced', restart);
-  }, []);
-
   // Going back to the dashboard unmounts this component, so its state -- and the
   // processor hooks' state, which is hook-local -- is discarded either way.
   const handleBackToDashboard = useCallback(() => {
@@ -478,18 +470,6 @@ function StandardToolFlow() {
     }, 600);
   }, [addRecentDir]);
 
-  // The chrome's Open button puts a new file in pendingFiles. The loader below
-  // only fires from a clean step one, so clearing the current file is what lets
-  // the new one in -- without it the button would appear to do nothing.
-  useEffect(() => {
-    function restart() {
-      setCurrentStep(0);
-      setFileEntry(null);
-    }
-    window.addEventListener('papercut:file-replaced', restart);
-    return () => window.removeEventListener('papercut:file-replaced', restart);
-  }, []);
-
   // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
   useEffect(() => {
     if (pendingFiles.length > 0 && currentStep === 0 && !fileEntry) {
@@ -797,7 +777,7 @@ function StandardToolFlow() {
 
 
 function AppContent() {
-  const { activeTool, editorFilePath, openEditor, goToDashboard, selectTool } = useToolContext();
+  const { activeTool, editorFilePath, documentEpoch, openEditor, goToDashboard, selectTool } = useToolContext();
 
   // Intercept edit-pdf tool: open file picker then redirect to new editor
   useEffect(() => {
@@ -860,7 +840,10 @@ function AppContent() {
       <UpdateChecker />
       {showDashboard && <FirstLaunchBanner />}
       {showEditor && <EditorView filePath={editorFilePath} />}
-      {showToolFlow && <ToolFlow />}
+      {/* Keyed on the document session: every flow keeps its own step and bytes
+          in local state and reads pendingFiles only once, so a flow already past
+          step one would otherwise ignore a newly chosen file entirely. */}
+      {showToolFlow && <ToolFlow key={documentEpoch} />}
       {showDashboard && <Dashboard />}
       {!showEditor && <PrivacyFooter />}
       <Toaster position="bottom-center" />

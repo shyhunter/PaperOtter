@@ -108,5 +108,8 @@ describe('AppChrome', () => {
     expect(ctxRef!.pendingFiles).toEqual(['/tmp/b.pdf']);
     expect(ctxRef!.editorFilePath).toBeNull();
     expect(ctxRef!.activeTool).toBe('watermark');
+    // And the flow has to actually restart: staging the file alone does nothing
+    // for a flow that is already past step one.
+    expect(ctxRef!.documentEpoch).toBeGreaterThan(0);
   });
 });
