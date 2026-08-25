@@ -1776,6 +1776,28 @@ async fn convert_html_to_pdf_macos(
     }
 }
 
+/// Human-readable OS label plus the real CPU architecture.
+///
+/// The webview's `navigator.platform` reports "MacIntel" on every Mac —
+/// Apple Silicon included — so a crash report built from it can never tell an
+/// aarch64 build from an x86_64 one. That distinction matters here because the
+/// Ghostscript sidecar is architecture-specific.
+fn format_system_info(os: &str, arch: &str) -> String {
+    let label = match os {
+        "macos" => "macOS",
+        "windows" => "Windows",
+        "linux" => "Linux",
+        other => other,
+    };
+    format!("{label} ({arch})")
+}
+
+/// Reports the OS and architecture this binary was actually built for.
+#[tauri::command]
+fn system_info() -> String {
+    format_system_info(std::env::consts::OS, std::env::consts::ARCH)
+}
+
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
@@ -1871,7 +1893,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -1940,6 +1962,36 @@ pub fn run_with_file(open_file: Option<String>) {
 
 #[cfg(test)]
 mod tests {
+
+    // ─── system_info ──────────────────────────────────────────────────────────
+
+    use super::format_system_info;
+
+    #[test]
+    fn system_info_names_macos_and_keeps_the_real_arch() {
+        // navigator.platform reports "MacIntel" on Apple Silicon too, so the
+        // arch must come from the Rust side to be trustworthy.
+        assert_eq!(format_system_info("macos", "aarch64"), "macOS (aarch64)");
+        assert_eq!(format_system_info("macos", "x86_64"), "macOS (x86_64)");
+    }
+
+    #[test]
+    fn system_info_names_windows_and_linux() {
+        assert_eq!(format_system_info("windows", "x86_64"), "Windows (x86_64)");
+        assert_eq!(format_system_info("linux", "aarch64"), "Linux (aarch64)");
+    }
+
+    #[test]
+    fn system_info_passes_through_an_unknown_os_verbatim() {
+        assert_eq!(format_system_info("freebsd", "x86_64"), "freebsd (x86_64)");
+    }
+
+    #[test]
+    fn system_info_reports_this_build_not_a_placeholder() {
+        let info = super::system_info();
+        assert!(info.contains(std::env::consts::ARCH), "got {info}");
+        assert!(!info.contains("MacIntel"), "got {info}");
+    }
     use super::encode_image;
     use image::codecs::jpeg::JpegEncoder;
     use image::codecs::png::{PngEncoder, CompressionType};
