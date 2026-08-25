@@ -58,7 +58,7 @@ vi.stubGlobal(
     observe = vi.fn();
     disconnect = vi.fn();
     unobserve = vi.fn();
-    // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+
     constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
   },
 );
@@ -71,7 +71,7 @@ vi.stubGlobal(
     observe = vi.fn();
     disconnect = vi.fn();
     unobserve = vi.fn();
-    // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+
     constructor(_callback: ResizeObserverCallback) {}
   },
 );

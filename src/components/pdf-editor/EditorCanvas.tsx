@@ -213,7 +213,7 @@ export function EditorCanvas() {
     // Deliberately depends on pageInfos.length, not pageInfos itself, so this
     // doesn't tear down and recreate the observer every time an unrelated page's
     // placeholder size is corrected.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [pageInfos.length, pageCount, setCurrentPage]);
 
   // Register page div refs

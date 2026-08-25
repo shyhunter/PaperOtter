@@ -45,7 +45,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
   // Load initial files on first render if provided
   // Ref guard prevents StrictMode double-effect from duplicating files
   const initialFilesLoaded = useRef(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!initialFilesLoaded.current && initialFiles && initialFiles.length > 0) {
       initialFilesLoaded.current = true;

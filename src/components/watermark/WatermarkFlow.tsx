@@ -94,7 +94,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
   }, [goToStep]);
 
   // Auto-load initial file on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (initialFile) {
       loadFile(initialFile);
