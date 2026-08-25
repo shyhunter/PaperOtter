@@ -13,7 +13,7 @@ import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary';
 import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
-import { I18nProvider } from '@/i18n/context';
+import { useLocale } from '@/i18n/context';
 import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
@@ -862,15 +862,18 @@ function AppContent() {
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  // Subscribes the root to the translation store. Components below call the
+  // module-level t() with no hook of their own; this re-render is what makes
+  // their strings update when the language changes. See i18n/context.tsx —
+  // a <Provider>{children}</Provider> wrapper would not work here.
+  useLocale();
 
   return (
     <AppErrorBoundary>
-      <I18nProvider>
       <ToolProvider>
         {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
         <AppContent />
       </ToolProvider>
-      </I18nProvider>
     </AppErrorBoundary>
   );
 }

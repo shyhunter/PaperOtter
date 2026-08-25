@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import {
   getLocale, plural, setLocale as setLocaleStore, subscribe, t,
   type PluralKey, type TranslationKey,
@@ -7,16 +7,26 @@ import {
 /**
  * React binding for the translation store.
  *
- * The store itself is module-level (see i18n/index.ts) because a handful of
- * user-facing strings live outside components. This provider exists only to make
- * React re-render when the language changes — useSyncExternalStore subscribes to
- * the same store, so a change made anywhere, by a component or not, updates the
- * whole tree.
+ * Components call the module-level `t()` directly and do not subscribe — adding
+ * a hook to every one of 82 components, including nested render helpers and
+ * early returns, is the invasive cost F13a exists to avoid. What makes that
+ * correct is `useLocale()` being called once at the root: on a language change
+ * the root re-renders, recreates its element tree, and every descendant renders
+ * again with the new strings.
+ *
+ * It has to be the root component that *builds* the tree, not a wrapper around
+ * it. A `<I18nProvider>{children}</I18nProvider>` does not work: `children` is
+ * the same element reference on every render, so React bails out of the subtree
+ * and the whole UI silently goes stale. That was the first shape of this file
+ * and I18N-03e is what caught it.
+ *
+ * The exception is a React.memo boundary, which blocks the re-render regardless.
+ * The four in this codebase (EditorCanvas, CompareCanvas, PagePanelThumbnail,
+ * LazyPageThumbnail) all render images rather than text. A memoised component
+ * showing translated text would need its own useLocale() to subscribe.
  */
-export function I18nProvider({ children }: { children: ReactNode }) {
-  // No context value: every consumer subscribes to the store directly, so there
-  // is nothing to pass down and nothing to go stale between them.
-  return <>{children}</>;
+export function useLocale(): string {
+  return useSyncExternalStore(subscribe, getLocale, getLocale);
 }
 
 export interface Translator {
@@ -27,15 +37,12 @@ export interface Translator {
 }
 
 /**
- * Deliberately usable without a provider. During a migration that touches 82
- * files, a hook that throws when someone forgets the wrapper turns a missing
- * provider into a blank screen; this degrades to "correct text, no re-render on
- * language change" instead.
+ * For the places that need the locale itself or need to change it — the language
+ * picker in F13b, and any memoised component displaying text. Ordinary
+ * components should import `t` from '@/i18n' instead.
  */
 export function useT(): Translator {
-  const locale = useSyncExternalStore(subscribe, getLocale, getLocale);
-
+  const locale = useLocale();
   const setLocale = useCallback((next: string) => setLocaleStore(next), []);
-
   return { t, plural, locale, setLocale };
 }
