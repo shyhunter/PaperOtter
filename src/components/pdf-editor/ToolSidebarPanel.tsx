@@ -20,6 +20,7 @@ import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type 
 import { rasteriseSignature } from '@/lib/signatureRaster';
 import { applyRedactions } from '@/lib/pdfRedact';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
+import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -1543,6 +1544,7 @@ function RedactPanel() {
   const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchRan, setSearchRan] = useState(false);
+  const [scope, setScope] = useState<RedactionScope>('match');
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
@@ -1572,17 +1574,20 @@ function RedactPanel() {
     }
   }, [searchQuery, state.pdfBytes]);
 
-  const handleRedactAllMatches = useCallback(() => {
-    setRedactionDraft([
-      ...draft,
-      ...searchResults.map((m) => ({
-        id: m.id, pageIndex: m.pageIndex,
-        x: m.x, y: m.y, width: m.width, height: m.height,
-        source: 'search' as const,
-      })),
-    ]);
-    setSearchResults([]);
-  }, [draft, searchResults, setRedactionDraft]);
+  const addMatch = useCallback(
+    (match: TextMatch) => {
+      if (isAlreadyMarked(match, scope, draft)) return;
+      setRedactionDraft([...draft, matchToRect(match, scope, `redact-${match.id}-${scope}`)]);
+    },
+    [draft, scope, setRedactionDraft],
+  );
+
+  const addAllMatches = useCallback(() => {
+    const added = searchResults
+      .filter((m) => !isAlreadyMarked(m, scope, draft))
+      .map((m) => matchToRect(m, scope, `redact-${m.id}-${scope}`));
+    if (added.length > 0) setRedactionDraft([...draft, ...added]);
+  }, [draft, scope, searchResults, setRedactionDraft]);
 
   const handleApply = useCallback(async () => {
     if (draft.length === 0) return;
@@ -1642,13 +1647,62 @@ function RedactPanel() {
         )}
 
         {searchResults.length > 0 && (
-          <button
-            type="button"
-            onClick={handleRedactAllMatches}
-            className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
-          >
-            Cover all {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
-          </button>
+          <div className="space-y-1.5">
+            {/* Same choice the standalone tool offers, and the same helper
+                decides what each one covers. */}
+            <div className="flex gap-1">
+              {REDACTION_SCOPES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setScope(s.value)}
+                  title={s.hint}
+                  aria-pressed={scope === s.value}
+                  className={`flex-1 px-1.5 py-1 text-[10px] rounded border transition-colors ${
+                    scope === s.value
+                      ? 'border-primary bg-primary/10 font-medium'
+                      : 'border-border text-muted-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* One row per match, so a single occurrence can be covered without
+                covering the rest -- the standalone tool always allowed this. */}
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {searchResults.map((match) => {
+                const added = isAlreadyMarked(match, scope, draft);
+                return (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onClick={() => addMatch(match)}
+                    disabled={added}
+                    title={added ? 'Already marked' : 'Mark this one'}
+                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-left transition-colors ${
+                      added
+                        ? 'border-primary/40 bg-primary/5 text-muted-foreground'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <span className="flex-none text-muted-foreground">p{match.pageIndex + 1}</span>
+                    <span className="truncate">{match.text}</span>
+                    <span className="ml-auto flex-none">{added ? '✓' : '+'}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={addAllMatches}
+              className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
+            >
+              Mark all {searchResults.length}
+            </button>
+          </div>
         )}
       </div>
 

@@ -20,6 +20,7 @@ import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 import { COLOR_PRESETS } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
+import { findTextMatches } from '@/lib/pdfTextSearch';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,8 @@ vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
 }));
+
+vi.mock('@/lib/pdfTextSearch', () => ({ findTextMatches: vi.fn().mockResolvedValue([]) }));
 
 vi.mock('@/lib/pdfRedact', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/pdfRedact')>();
@@ -1242,6 +1245,59 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(ctx!.state.redactionDraft).toEqual([]);
     expect(screen.getByTitle('Find text to redact')).toBeInTheDocument();
     expect(screen.getByText(/removed from the file, not just hidden/i)).toBeInTheDocument();
+  });
+
+  it('TP-07c — matches can be marked one at a time, like the standalone tool', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+    vi.mocked(findTextMatches).mockResolvedValue([
+      { id: 'm1', pageIndex: 0, text: 'document', x: 20, y: 10, width: 8, height: 2,
+        line: { x: 10, y: 10, width: 60, height: 2 } },
+      { id: 'm2', pageIndex: 1, text: 'document', x: 30, y: 40, width: 8, height: 2,
+        line: { x: 10, y: 40, width: 60, height: 2 } },
+    ]);
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    await user.type(screen.getByTitle('Find text to redact'), 'document');
+    await user.click(screen.getByText('Find'));
+
+    const rows = await screen.findAllByTitle('Mark this one');
+    expect(rows).toHaveLength(2);
+
+    // Covering one occurrence must not cover the other.
+    await user.click(rows[0]);
+    expect(ctx!.state.redactionDraft).toHaveLength(1);
+    expect(ctx!.state.redactionDraft![0].pageIndex).toBe(0);
+  });
+
+  it('[TP-07d] the scope choice decides how much of the line is covered', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+    vi.mocked(findTextMatches).mockResolvedValue([
+      { id: 'm1', pageIndex: 0, text: 'document', x: 20, y: 10, width: 8, height: 2,
+        line: { x: 10, y: 10, width: 60, height: 2 } },
+    ]);
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Redact PDF'));
+    await user.type(screen.getByTitle('Find text to redact'), 'document');
+    await user.click(screen.getByText('Find'));
+
+    await user.click(await screen.findByText('Whole line'));
+    await user.click(screen.getAllByTitle('Mark this one')[0]);
+
+    expect(ctx!.state.redactionDraft![0].width).toBe(60);
   });
 
   it('TP-07b — Apply goes through the rasterising redaction, not a drawn box', async () => {

@@ -146,4 +146,55 @@ describe('findTextMatches', () => {
 
     expect(matches).toHaveLength(1);
   });
+
+  it('[TS-12] the box covers the matched word, not the whole line', async () => {
+    // pdf.js routinely emits an entire line as one item. Using the item's own
+    // bounds blacked out the whole sentence to redact one word in it.
+    const line = { str: 'This document describes', transform: [12, 0, 0, 12, 60, 720], width: 230, height: 12 };
+    const doc = {
+      numPages: 1,
+      getPage: vi.fn(async () => ({
+        getTextContent: async () => ({ items: [line] }),
+        getViewport: () => ({ width: 600, height: 800 }),
+      })),
+    };
+
+    const [match] = await findTextMatches(doc, 'document');
+
+    // "document" starts 5 characters in and runs 8 characters, of 23.
+    const perChar = 230 / 23;
+    expect(match.x).toBeCloseTo(((60 + perChar * 5) / 600) * 100, 1);
+    expect(match.width).toBeCloseTo(((perChar * 8) / 600) * 100, 1);
+  });
+
+  it('[TS-13] the whole-line box is offered alongside it', async () => {
+    const line = { str: 'This document describes', transform: [12, 0, 0, 12, 60, 720], width: 230, height: 12 };
+    const doc = {
+      numPages: 1,
+      getPage: vi.fn(async () => ({
+        getTextContent: async () => ({ items: [line] }),
+        getViewport: () => ({ width: 600, height: 800 }),
+      })),
+    };
+
+    const [match] = await findTextMatches(doc, 'document');
+
+    // Both, so the choice is the user's and does not need a second search.
+    expect(match.line.x).toBeCloseTo((60 / 600) * 100, 4);
+    expect(match.line.width).toBeCloseTo((230 / 600) * 100, 4);
+    expect(match.line.width).toBeGreaterThan(match.width);
+  });
+
+  it('[TS-14] a match spanning two items is still tight around the match', async () => {
+    const matches = await findTextMatches(
+      fakeDoc([[item('see docum', 60, 720, 45), item('ent here', 108, 720, 40)]]),
+      'document',
+    );
+
+    expect(matches).toHaveLength(1);
+    // Starts inside the first item, ends inside the second: neither edge should
+    // sit at an item boundary.
+    expect(matches[0].x).toBeGreaterThan((60 / 600) * 100);
+    expect(matches[0].x + matches[0].width).toBeLessThan(((108 + 40) / 600) * 100);
+  });
 });
