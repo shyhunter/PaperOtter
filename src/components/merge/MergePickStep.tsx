@@ -51,7 +51,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
       initialFilesLoaded.current = true;
       addFiles(initialFiles);
     }
-  }, []);
+  }, [addFiles, initialFiles]);
 
   const handleSelectFiles = useCallback(async () => {
     try {

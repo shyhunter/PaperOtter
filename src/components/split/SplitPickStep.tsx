@@ -39,7 +39,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
     if (initialFile) {
       loadFile(initialFile);
     }
-  }, []);
+  }, [initialFile, loadFile]);
 
   const handleSelectFile = useCallback(async () => {
     try {

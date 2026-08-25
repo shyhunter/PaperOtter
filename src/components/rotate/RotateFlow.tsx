@@ -64,7 +64,7 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
     if (initialFile) {
       loadFile(initialFile);
     }
-  }, []);
+  }, [initialFile, loadFile]);
 
   const handleSelectFile = useCallback(async () => {
     try {

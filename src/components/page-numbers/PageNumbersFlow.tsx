@@ -67,7 +67,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
     if (initialFile) {
       loadFile(initialFile);
     }
-  }, []);
+  }, [initialFile, loadFile]);
 
   const handleSelectFile = useCallback(async () => {
     try {

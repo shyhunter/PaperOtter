@@ -99,7 +99,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     if (initialFile) {
       loadFile(initialFile);
     }
-  }, []);
+  }, [initialFile, loadFile]);
 
   const handleSelectFile = useCallback(async () => {
     try {
