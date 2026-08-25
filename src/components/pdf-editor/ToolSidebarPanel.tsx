@@ -8,7 +8,14 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
-import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
+import {
+  addWatermark,
+  addWatermarkSinglePage,
+  DEFAULT_WATERMARK_OPTIONS,
+  WATERMARK_FONT_SIZE_MAX,
+  WATERMARK_FONT_SIZE_MIN,
+  type WatermarkOptions,
+} from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
@@ -759,8 +766,33 @@ function RotatePanel() {
 // ── Watermark Panel ──────────────────────────────────────────────────
 
 function WatermarkPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
-  const [options, setOptions] = useState<WatermarkOptions>({ ...DEFAULT_WATERMARK_OPTIONS });
+  const { state, updatePdfBytes, markDirty, setWatermarkDraft } = useEditorContext();
+
+  // The draft lives in context so the canvas can draw it and the user can drag
+  // it. This panel and the overlay are two views of one value, which is why
+  // neither can fall out of step with the other.
+  const options = state.watermarkDraft ?? DEFAULT_WATERMARK_OPTIONS;
+
+  // Read through a ref, not the closure: setOptions must stay stable for the
+  // preview's dependency list, and a stale capture would silently undo a drag
+  // the moment a sidebar field changed.
+  const draftRef = useRef(state.watermarkDraft);
+  draftRef.current = state.watermarkDraft;
+
+  const setOptions = useCallback(
+    (update: (previous: WatermarkOptions) => WatermarkOptions) => {
+      setWatermarkDraft(update(draftRef.current ?? DEFAULT_WATERMARK_OPTIONS));
+    },
+    [setWatermarkDraft],
+  );
+
+  // Opening the tool starts a draft; leaving it takes the overlay off the
+  // canvas. Null doing double duty means there is no second flag to forget.
+  useEffect(() => {
+    setWatermarkDraft({ ...DEFAULT_WATERMARK_OPTIONS });
+    return () => setWatermarkDraft(null);
+  }, [setWatermarkDraft]);
+
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -776,7 +808,8 @@ function WatermarkPanel() {
   const { previewBytes, isProcessing } = useDebouncedPreview(
     state.pdfBytes,
     runPreview,
-    [options.text, options.fontSize, options.opacity, options.rotation, options.color, state.currentPage],
+    [options.text, options.fontSize, options.opacity, options.rotation, options.color,
+     options.centerX, options.centerY, state.currentPage],
   );
 
   // Apply watermark to ALL pages (full processing, runs only on explicit user action).
@@ -789,6 +822,11 @@ function WatermarkPanel() {
       const result = await addWatermark(state.pdfBytes, options);
       updatePdfBytes(result);
       markDirty();
+      // The watermark is in the document now. Leaving the draft alive would
+      // draw a live overlay on top of the one just baked in, showing two where
+      // the user will get one -- and inviting a second Apply that really would
+      // stack them.
+      setWatermarkDraft(null);
       setApplySuccess(true);
       setTimeout(() => setApplySuccess(false), 2000);
     } catch (err) {
@@ -796,7 +834,7 @@ function WatermarkPanel() {
     } finally {
       setIsApplying(false);
     }
-  }, [options, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [options, state.pdfBytes, updatePdfBytes, markDirty, setWatermarkDraft]);
 
   return (
     <div className="space-y-3">
@@ -822,8 +860,8 @@ function WatermarkPanel() {
               value={options.fontSize}
               onChange={(e) => setOptions((o) => ({ ...o, fontSize: Number(e.target.value) || 12 }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-              min={8}
-              max={120}
+              min={WATERMARK_FONT_SIZE_MIN}
+              max={WATERMARK_FONT_SIZE_MAX}
             />
           </div>
           <div>

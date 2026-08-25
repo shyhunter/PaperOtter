@@ -14,6 +14,7 @@ import React, {
 } from 'react';
 import type { ReactNode } from 'react';
 import { PDFDocument, PageSizes } from 'pdf-lib';
+import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 
 // ── Actions ────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ type EditorAction =
   | { type: 'REMOVE_PAGE_NUMBERS' }
   | { type: 'REVERT_TO_ORIGINAL' }
   | { type: 'SET_STRIP_METADATA_ON_SAVE'; value: boolean }
+  | { type: 'SET_WATERMARK_DRAFT'; draft: WatermarkOptions | null }
   | { type: 'SET_FILE_PATH'; path: string }
   | { type: 'SET_FILE_NAME'; name: string }
   | { type: 'INIT'; state: EditorViewState }
@@ -112,6 +114,9 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       };
     case 'SET_STRIP_METADATA_ON_SAVE':
       return { ...state, stripMetadataOnSave: action.value };
+
+    case 'SET_WATERMARK_DRAFT':
+      return { ...state, watermarkDraft: action.draft };
     case 'REVERT_TO_ORIGINAL':
       // Every derived piece of edit state has to go with the bytes. Page
       // overlays are applied at save time, so a survivor would be written back
@@ -212,6 +217,8 @@ interface EditorContextValue {
   revertToOriginal: () => void;
   /** Whether saving should also strip identifying metadata. */
   setStripMetadataOnSave: (value: boolean) => void;
+  /** Set (or clear, with null) the watermark being configured. */
+  setWatermarkDraft: (draft: WatermarkOptions | null) => void;
   setFilePath: (path: string) => void;
   setFileName: (name: string) => void;
   /** Initialize full editor state (used by EditorView on PDF load) */
@@ -258,6 +265,7 @@ function createEmptyState(): EditorViewState {
     originalPageCount: 0,
     stripMetadataOnSave: false,
     pageNumberBase: null,
+    watermarkDraft: null,
     filePath: null,
     fileName: '',
     pageCount: 0,
@@ -329,6 +337,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const setStripMetadataOnSave = useCallback((value: boolean) => {
     dispatch({ type: 'SET_STRIP_METADATA_ON_SAVE', value });
+  }, []);
+
+  const setWatermarkDraft = useCallback((draft: WatermarkOptions | null) => {
+    dispatch({ type: 'SET_WATERMARK_DRAFT', draft });
   }, []);
 
   const setFilePath = useCallback((path: string) => {
@@ -626,6 +638,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       removePageNumbers,
       revertToOriginal,
       setStripMetadataOnSave,
+      setWatermarkDraft,
       setFilePath,
       setFileName,
       initState,
@@ -666,6 +679,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       removePageNumbers,
       revertToOriginal,
       setStripMetadataOnSave,
+      setWatermarkDraft,
       setFilePath,
       setFileName,
       initState,
@@ -718,6 +732,7 @@ export function createEditorViewState(
     originalPageCount: pageCount,
     stripMetadataOnSave: false,
     pageNumberBase: null,
+    watermarkDraft: null,
     filePath,
     fileName,
     pageCount,

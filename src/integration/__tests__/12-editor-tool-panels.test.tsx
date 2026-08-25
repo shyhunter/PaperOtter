@@ -54,10 +54,17 @@ vi.mock('@/lib/pdfRotate', () => ({
   rotatePdf: vi.fn().mockResolvedValue({ bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]) }),
 }));
 
-vi.mock('@/lib/pdfWatermark', () => ({
-  addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
-  DEFAULT_WATERMARK_OPTIONS: { text: '', fontSize: 48, opacity: 0.3, rotation: -45, color: '#808080', centerX: 0.5, centerY: 0.5 },
-}));
+// Partial: only the pdf-lib drawing call is stubbed. The defaults and the
+// font-size bounds stay real, so a change to either shows up here instead of
+// being papered over by a mock that has drifted from the module.
+vi.mock('@/lib/pdfWatermark', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfWatermark')>();
+  return {
+    ...actual,
+    addWatermark: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+    DEFAULT_WATERMARK_OPTIONS: { ...actual.DEFAULT_WATERMARK_OPTIONS, text: '' },
+  };
+});
 
 // Partial: the estimate maths and the canonical non-compressible wording stay
 // real, only the document analysis is stubbed.
@@ -804,6 +811,48 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     const applyBtn = screen.getByText('Apply');
     // When text is empty, Apply should be disabled
     expect(applyBtn.closest('button')).toBeDisabled();
+  });
+
+  // The overlay on the canvas and the fields in this panel are two views of one
+  // draft. These pin down when that draft exists, because null is also what
+  // tells the canvas to draw nothing.
+  it('TP-03c — opening the panel starts a draft, leaving it takes the overlay away', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    expect(ctx!.state.watermarkDraft).toBeNull();
+
+    await user.click(screen.getByTitle('Watermark'));
+    expect(ctx!.state.watermarkDraft).not.toBeNull();
+
+    // Switching tools unmounts the panel; the canvas must stop drawing it.
+    await user.click(screen.getByTitle('Rotate PDF'));
+    expect(ctx!.state.watermarkDraft).toBeNull();
+  });
+
+  it('TP-03d — applying clears the draft, so the page is not watermarked twice over', async () => {
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Watermark'));
+    await user.type(screen.getByPlaceholderText('CONFIDENTIAL'), 'SECRET');
+    await user.click(screen.getByText('Apply'));
+
+    // Once it is in the document, a live overlay of the same text on top of it
+    // would show the user two watermarks where they will get one.
+    await waitFor(() => expect(ctx!.state.watermarkDraft).toBeNull());
   });
 
   // TP-04: Page Numbers Panel

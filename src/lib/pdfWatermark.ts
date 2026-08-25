@@ -27,6 +27,11 @@ export const DEFAULT_WATERMARK_OPTIONS: WatermarkOptions = {
   centerY: 0.5,
 };
 
+/** Bounds for the watermark's font size, shared by the sidebar field and the
+ *  canvas resize handle so the two cannot disagree about what is allowed. */
+export const WATERMARK_FONT_SIZE_MIN = 8;
+export const WATERMARK_FONT_SIZE_MAX = 200;
+
 function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0.5;
   return Math.min(1, Math.max(0, n));
