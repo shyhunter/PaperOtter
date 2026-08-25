@@ -11,6 +11,7 @@ import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
 import { addWatermark, DEFAULT_WATERMARK_OPTIONS, addWatermarkSinglePage, type WatermarkOptions } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { DEFAULT_NUMBER_COLOR } from '@/lib/pageNumberColors';
+import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
   getPdfCompressibilityFromBytes,
   estimateOutputSizeBytes,
@@ -311,14 +312,22 @@ function CompressPanel() {
   const canTargetSize = analysis !== null && nonCompressibleReason === null;
   const targetActive = canTargetSize && useTargetSize;
 
+  // The most aggressive preset's estimate is the floor: nothing here goes below it.
+  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
+
+  // A unit the document cannot sensibly be measured in is the same trap as a
+  // target it cannot reach. Applying another tool can raise the floor past the
+  // point where KB is usable, so the unit in force is derived rather than
+  // stored -- a stale KB selection can never survive into a target.
+  const offerKb = floorBytes === null || offersKbUnit(floorBytes);
+  const unit: 'MB' | 'KB' = offerKb ? targetUnit : 'MB';
+
   const targetBytes = useMemo(() => {
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return null;
-    return parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
-  }, [targetSizeValue, targetUnit]);
+    return parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
+  }, [targetSizeValue, unit]);
 
-  // The most aggressive preset's estimate is the floor: nothing here goes below it.
-  const floorBytes = estimates ? Math.min(...Object.values(estimates)) : null;
   const targetUnreachable =
     targetActive && targetBytes !== null && floorBytes !== null && targetBytes < floorBytes;
   const nonCompressibleMsg = analysis
@@ -332,14 +341,14 @@ function CompressPanel() {
     if (!targetActive || !targetSizeValue.trim()) return preset;
     const parsed = parseInt(targetSizeValue, 10);
     if (isNaN(parsed) || parsed < 1) return preset;
-    const targetBytes = parsed * (targetUnit === 'MB' ? 1024 * 1024 : 1024);
+    const targetBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
     const ratio = targetBytes / baseBytes.byteLength;
     // Pick the most aggressive preset that might meet the target
     if (ratio < 0.3) return 'screen';
     if (ratio < 0.5) return 'ebook';
     if (ratio < 0.8) return 'printer';
     return 'prepress';
-  }, [targetActive, targetSizeValue, targetUnit, baseBytes, preset]);
+  }, [targetActive, targetSizeValue, unit, baseBytes, preset]);
 
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
@@ -460,30 +469,53 @@ function CompressPanel() {
               type="number"
               value={targetSizeValue}
               onChange={(e) => setTargetSizeValue(e.target.value)}
-              placeholder="e.g. 5"
+              placeholder={floorBytes !== null ? `e.g. ${smallestReachableTarget(floorBytes, unit)}` : 'e.g. 5'}
               title="Target file size"
-              min={1}
+              min={floorBytes !== null ? smallestReachableTarget(floorBytes, unit) : 1}
               // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
               // and a number input's intrinsic width is wider than the 232px
               // sidebar, so without it the field pushes MB/KB out of view.
               className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
             />
-            <select
-              value={targetUnit}
-              onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
-              title="Size unit"
-              className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
-            >
-              <option value="MB">MB</option>
-              <option value="KB">KB</option>
-            </select>
+            {offerKb ? (
+              <select
+                data-testid="target-unit"
+                value={targetUnit}
+                onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
+                title="Size unit"
+                className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
+              >
+                <option value="MB">MB</option>
+                <option value="KB">KB</option>
+              </select>
+            ) : (
+              // A static label, not a dropdown with KB greyed out: a two-option
+              // select with one option dead reads as broken and invites clicking.
+              // "MB" as plain text states the true thing — this file is measured
+              // in megabytes.
+              <span
+                data-testid="target-unit"
+                className="flex-none px-1.5 py-1 text-xs text-muted-foreground"
+              >
+                MB
+              </span>
+            )}
           </div>
         )}
-        {targetUnreachable && floorBytes !== null && (
-          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-            Smallest achievable is about {formatBytes(floorBytes)} — compression
-            cannot go below this for this file.
-          </p>
+        {useTargetSize && floorBytes !== null && (
+          targetUnreachable ? (
+            <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+              Smallest achievable is about {formatBytes(floorBytes)} — compression
+              cannot go below this for this file.
+            </p>
+          ) : (
+            // Stated up front rather than only after a rejected value: the floor
+            // is known the moment the estimates are, so making the user discover
+            // it by failing is a choice, not a limitation.
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              Can compress to about {formatBytes(floorBytes)} at best.
+            </p>
+          )
         )}
       </div>
       )}

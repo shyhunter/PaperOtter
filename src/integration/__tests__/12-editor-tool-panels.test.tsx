@@ -469,8 +469,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Compress PDF'));
     await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
-    await user.type(screen.getByTitle('Target file size'), '50');
-    await user.selectOptions(screen.getByTitle('Size unit'), 'KB');
+    // 1 MB, against a ~1.2 MB floor. KB is not offered on this document at all.
+    await user.type(screen.getByTitle('Target file size'), '1');
 
     // Costs no processing time: the estimates already say where the floor is.
     expect(await screen.findByText(/smallest achievable/i)).toBeTruthy();
@@ -492,6 +492,61 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await user.type(screen.getByTitle('Target file size'), '3');
 
     expect(screen.queryByText(/smallest achievable/i)).toBeNull();
+  });
+
+
+  // A unit the document cannot be measured in is the same trap as a target it
+  // cannot reach -- the panel already knows the floor before the user types.
+  it('TP-01s — KB is withheld when no KB-scale target is reachable', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    // Floor is ~1.2 MB here: every reachable KB value is five digits.
+    expect(screen.queryByTitle('Size unit')).toBeNull();
+    expect(screen.getByTestId('target-unit').textContent).toBe('MB');
+  });
+
+  it('TP-01t — KB stays available when the floor is KB-scale', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    expect(await screen.findByTitle('Size unit')).toBeTruthy();
+  });
+
+  it('TP-01u — the floor is stated before anything is typed', async () => {
+    const user = userEvent.setup();
+    compressible();
+
+    render(
+      <ToolPanelHarness bytes={fourMegabytes()}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(await screen.findByRole('checkbox', { name: /target file size/i }));
+
+    // Learning the limit must not cost the user a rejected attempt.
+    expect(await screen.findByText(/can compress to about/i)).toBeTruthy();
+    expect(screen.getByTitle('Target file size').getAttribute('placeholder')).toBe('e.g. 2');
   });
 
   it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
