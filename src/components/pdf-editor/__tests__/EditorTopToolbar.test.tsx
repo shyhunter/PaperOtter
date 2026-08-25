@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
-import { ToolProvider } from '@/context/ToolContext';
+import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import { EditorTopToolbar } from '@/components/pdf-editor/EditorTopToolbar';
 import { useSaveActions } from '@/components/pdf-editor/SaveController';
 
@@ -34,7 +34,25 @@ function Harness({ dirty }: { dirty: boolean }) {
     if (dirty) ctx.updatePdfBytes(EDITED);
   }, [ctx, dirty]);
 
-  return <EditorTopToolbar />;
+  return (
+    <>
+      <EditorTopToolbar />
+      <SwitchToolButton />
+    </>
+  );
+}
+
+/** Stands in for editor-sidebar navigation, which switches tools directly. */
+function SwitchToolButton() {
+  const { selectTool, editorFilePath } = useToolContext();
+  return (
+    <>
+      <button type="button" onClick={() => selectTool('merge-pdf')}>
+        Switch tool
+      </button>
+      <span data-testid="editor-open">{editorFilePath === null ? 'closed' : 'open'}</span>
+    </>
+  );
 }
 
 function renderToolbar(dirty: boolean) {
@@ -157,5 +175,36 @@ describe('reverting to the original', () => {
     // already saved, the restored original still needs writing back.
     await waitFor(() => expect(screen.getByTitle('Unsaved changes')).toBeTruthy());
     confirmSpy.mockRestore();
+  });
+});
+
+describe('switching tools from inside the editor', () => {
+  it('ED-10: a dirty document prompts instead of being silently abandoned', async () => {
+    renderToolbar(true);
+
+    // selectTool clears editorFilePath, which tears the editor down. Reachable
+    // the moment editor-sidebar navigation is wired to "papercut:open-tool".
+    fireEvent.click(screen.getByRole('button', { name: 'Switch tool' }));
+
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('ED-11: Cancel leaves the editor open', async () => {
+    renderToolbar(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch tool' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /^cancel$/i }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('ED-12: a clean document switches straight away', () => {
+    renderToolbar(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch tool' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

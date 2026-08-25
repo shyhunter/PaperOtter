@@ -1,6 +1,6 @@
 // EditorTopToolbar: fixed top bar for the PDF editor.
 // Shows breadcrumb row (Dashboard > filename.pdf) with save button and formatting toolbar row below it.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, Save, Columns2, Undo2 } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import { useToolContext } from '@/context/ToolContext';
@@ -11,10 +11,27 @@ import { diagLog } from '@/lib/diagLog';
 
 export function EditorTopToolbar() {
   const { state, setCompareMode, revertToOriginal } = useEditorContext();
-  const { goToDashboard } = useToolContext();
+  const { goToDashboard, setNavigationGuard } = useToolContext();
   const { save, isSaving } = useSaveActions();
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
-  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  // The navigation this prompt is holding up, or null when nothing is pending.
+  const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
+
+  // Read inside the guard, which is registered once and must not capture a
+  // stale isDirty.
+  const isDirtyRef = useRef(state.isDirty);
+  isDirtyRef.current = state.isDirty;
+
+  // Every route out of the editor tears down its unsaved state, so all of them
+  // go through here rather than each growing its own prompt.
+  useEffect(() => {
+    setNavigationGuard((proceed) => {
+      if (!isDirtyRef.current) return true;
+      setPendingNav(() => proceed);
+      return false;
+    });
+    return () => setNavigationGuard(null);
+  }, [setNavigationGuard]);
 
   const handleSaveClick = useCallback(async () => {
     const success = await save();
@@ -26,34 +43,30 @@ export function EditorTopToolbar() {
 
   const handleBackToDashboard = useCallback(() => {
     diagLog(`dashboard.click isDirty=${state.isDirty}`);
-    if (state.isDirty) {
-      // Leaving is the user's decision to make, in a dialog that can express
-      // all three answers. Navigating here is what used to lose people's work.
-      setShowUnsavedPrompt(true);
-      return;
-    }
-    diagLog('dashboard.goToDashboard');
+    // The guard turns this into a prompt when there are unsaved changes.
     goToDashboard();
   }, [state.isDirty, goToDashboard]);
 
   const handlePromptSave = useCallback(async () => {
-    diagLog('dashboard.prompt.save');
+    diagLog('prompt.save');
     const saved = await save();
     // Backing out of the OS save dialog must leave the document untouched.
     if (!saved) return;
-    setShowUnsavedPrompt(false);
-    goToDashboard();
-  }, [save, goToDashboard]);
+    const proceed = pendingNav;
+    setPendingNav(null);
+    proceed?.();
+  }, [save, pendingNav]);
 
   const handlePromptDiscard = useCallback(() => {
-    diagLog('dashboard.prompt.discard');
-    setShowUnsavedPrompt(false);
-    goToDashboard();
-  }, [goToDashboard]);
+    diagLog('prompt.discard');
+    const proceed = pendingNav;
+    setPendingNav(null);
+    proceed?.();
+  }, [pendingNav]);
 
   const handlePromptCancel = useCallback(() => {
-    diagLog('dashboard.prompt.cancel');
-    setShowUnsavedPrompt(false);
+    diagLog('prompt.cancel');
+    setPendingNav(null);
   }, []);
 
   const handleRevert = useCallback(() => {
@@ -147,7 +160,7 @@ export function EditorTopToolbar() {
       <FormattingToolbar />
 
       <UnsavedChangesDialog
-        open={showUnsavedPrompt}
+        open={pendingNav !== null}
         fileName={state.fileName}
         isSaving={isSaving}
         onSave={handlePromptSave}

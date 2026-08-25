@@ -83,6 +83,7 @@ vi.mock('@/context/EditorContext', () => ({
 vi.mock('@/context/ToolContext', () => ({
   useToolContext: vi.fn(() => ({
     goToDashboard: vi.fn(),
+    setNavigationGuard: vi.fn(),
     activeTool: null,
     activeToolDef: null,
     pendingFiles: [],
