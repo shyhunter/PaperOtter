@@ -358,13 +358,16 @@ function CompressPanel() {
               placeholder="e.g. 5"
               title="Target file size"
               min={1}
-              className="flex-1 px-2 py-1 text-xs border rounded bg-background"
+              // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
+              // and a number input's intrinsic width is wider than the 232px
+              // sidebar, so without it the field pushes MB/KB out of view.
+              className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
             />
             <select
               value={targetUnit}
               onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
               title="Size unit"
-              className="px-1.5 py-1 text-xs border rounded bg-background"
+              className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
             >
               <option value="MB">MB</option>
               <option value="KB">KB</option>

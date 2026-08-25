@@ -149,6 +149,27 @@ function Initialiser({ onContextReady }: { onContextReady?: (ctx: EditorCtx) => 
 
 describe('Suite 12 — PDF Editor: Tool Panels', () => {
   // TP-01: Compress Panel
+  it('TP-01b — the target-size field leaves room for the MB/KB selector', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByRole('checkbox', { name: /target file size/i }));
+
+    const field = screen.getByTitle('Target file size');
+
+    // A flex item defaults to min-width:auto, and a number input's intrinsic
+    // width (~20 characters plus spinners) exceeds the 232px sidebar. Without
+    // min-w-0 the field refuses to shrink and pushes MB/KB out of view.
+    expect(field.className).toContain('min-w-0');
+    expect(screen.getByTitle('Size unit')).toBeTruthy();
+  });
+
   it('TP-01 — Compress panel shows quality presets, target size toggle, and options', async () => {
     const user = userEvent.setup();
 
