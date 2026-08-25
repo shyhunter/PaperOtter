@@ -177,18 +177,33 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
 
 // ── SaveStep Component ────────────────────────────────────────────────────────
 
-export function SaveStep({
-  processedBytes,
+/**
+ * Two save modes with genuinely different lifecycles: multi-file waits for an
+ * explicit click, single-file auto-opens the OS dialog on mount. They are
+ * separate components so each mode's hooks run unconditionally, and so the
+ * single-file auto-trigger effect can never fire in multi-file mode.
+ */
+export function SaveStep(props: SaveStepProps) {
+  if (props.multiFileOutputs && props.multiFileOutputs.length > 0) {
+    return <MultiFileSave {...props} multiFileOutputs={props.multiFileOutputs} />;
+  }
+  return <SingleFileSave {...props} />;
+}
+
+type MultiFileSaveProps = SaveStepProps & {
+  multiFileOutputs: NonNullable<SaveStepProps['multiFileOutputs']>;
+};
+
+function MultiFileSave({
   sourceFileName,
   defaultSaveName,
-  saveFilters,
   savedFilePath,
   onDismissSaveConfirmation,
   onSaveComplete,
   onCancel,
   onBack,
   multiFileOutputs,
-}: SaveStepProps) {
+}: MultiFileSaveProps) {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [multiSaveMode, setMultiSaveMode] = useState<'folder' | 'zip'>('folder');
@@ -285,112 +300,124 @@ export function SaveStep({
     }
   }, [multiFileOutputs, multiSaveMode, defaultSaveName, sourceFileName, onSaveComplete, onCancel]);
 
-  // ── Multi-file mode: show save mode selector instead of auto-triggering ──
-  if (multiFileOutputs && multiFileOutputs.length > 0) {
-    // Show confirmation card when done
-    if (savedFilePath && onDismissSaveConfirmation) {
-      return (
-        <div className="flex flex-1 flex-col">
-          <SaveConfirmation savedPath={savedFilePath} onDismiss={onDismissSaveConfirmation} />
-          <div className="flex-1" />
-          <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
-            <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-              Back
-            </Button>
-            <div className="flex-1" />
-            <Button size="sm" onClick={handleMultiFileSave}>
-              Save Again
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    if (saveState === 'writing' || saveState === 'dialog-open') {
-      return (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="text-center space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              {saveState === 'dialog-open' ? 'Choose a save location…' : multiProgress ?? 'Saving…'}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (saveState === 'error' && error) {
-      return (
-        <div className="flex flex-1 items-center justify-center p-6">
-          <div className="w-full max-w-sm space-y-4">
-            <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-              <p className="text-xs font-medium text-destructive">Save failed</p>
-              <p className="text-xs text-destructive/80 mt-1">{error}</p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-                Back
-              </Button>
-              <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Default: show save mode picker
+  // Show confirmation card when done
+  if (savedFilePath && onDismissSaveConfirmation) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center p-6">
+      <div className="flex flex-1 flex-col">
+        <SaveConfirmation savedPath={savedFilePath} onDismiss={onDismissSaveConfirmation} />
+        <div className="flex-1" />
+        <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+          <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+            Back
+          </Button>
+          <div className="flex-1" />
+          <Button size="sm" onClick={handleMultiFileSave}>
+            Save Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (saveState === 'writing' || saveState === 'dialog-open') {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="text-center space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            {saveState === 'dialog-open' ? 'Choose a save location…' : multiProgress ?? 'Saving…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (saveState === 'error' && error) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
-          <div className="text-center space-y-1">
-            <p className="text-sm font-semibold text-foreground">
-              Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
-            </p>
-            <p className="text-xs text-muted-foreground">Choose how to save the split files.</p>
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
+            <p className="text-xs font-medium text-destructive">Save failed</p>
+            <p className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
-
-          <div className="space-y-2">
-            <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
-              <input
-                type="radio"
-                name="multi-save-mode"
-                checked={multiSaveMode === 'folder'}
-                onChange={() => setMultiSaveMode('folder')}
-                className="accent-primary"
-              />
-              <div>
-                <p className="text-sm font-medium text-foreground">Save to Folder</p>
-                <p className="text-xs text-muted-foreground">Each file saved individually with auto-naming</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
-              <input
-                type="radio"
-                name="multi-save-mode"
-                checked={multiSaveMode === 'zip'}
-                onChange={() => setMultiSaveMode('zip')}
-                className="accent-primary"
-              />
-              <div>
-                <p className="text-sm font-medium text-foreground">Save as ZIP</p>
-                <p className="text-xs text-muted-foreground">All files bundled into a single ZIP archive</p>
-              </div>
-            </label>
-          </div>
-
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
               Back
             </Button>
             <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-              Save
+              Try Again
             </Button>
           </div>
         </div>
       </div>
     );
   }
+
+  // Default: show save mode picker
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-4">
+        <div className="text-center space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
+          </p>
+          <p className="text-xs text-muted-foreground">Choose how to save the split files.</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+            <input
+              type="radio"
+              name="multi-save-mode"
+              checked={multiSaveMode === 'folder'}
+              onChange={() => setMultiSaveMode('folder')}
+              className="accent-primary"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Save to Folder</p>
+              <p className="text-xs text-muted-foreground">Each file saved individually with auto-naming</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+            <input
+              type="radio"
+              name="multi-save-mode"
+              checked={multiSaveMode === 'zip'}
+              onChange={() => setMultiSaveMode('zip')}
+              className="accent-primary"
+            />
+            <div>
+              <p className="text-sm font-medium text-foreground">Save as ZIP</p>
+              <p className="text-xs text-muted-foreground">All files bundled into a single ZIP archive</p>
+            </div>
+          </label>
+        </div>
+
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+            Back
+          </Button>
+          <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
+            Save
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SingleFileSave({
+  processedBytes,
+  sourceFileName,
+  defaultSaveName,
+  saveFilters,
+  savedFilePath,
+  onDismissSaveConfirmation,
+  onSaveComplete,
+  onCancel,
+  onBack,
+}: SaveStepProps) {
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   // ── Single-file save (original behavior) ─────────────────────────────────
   const handleSave = useCallback(async () => {
