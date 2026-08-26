@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, globSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import { sourceFiles } from '@/i18n/__tests__/sourceFiles';
 
 /**
  * [I18N-08] No user-visible English literal outside the dictionaries.
@@ -37,7 +38,16 @@ describe('user-visible text comes from the dictionary', () => {
   ]);
 
   const ATTRS = new Set(['title', 'aria-label', 'placeholder', 'alt']);
-  const files = globSync('src/**/*.tsx').filter((f) => !f.includes('__tests__'));
+  const files = sourceFiles(['.tsx']);
+
+  // A scanner that walks nothing passes every check it makes. `fs.globSync`
+  // returned undefined on Node 20 and these suites failed to load outright --
+  // loudly, as it happens, but a walk that silently found no files would be
+  // worse: green, and checking nothing. 50 is far below the real count and
+  // far above zero.
+  it('scans a plausible number of component files', () => {
+    expect(files.length).toBeGreaterThan(50);
+  });
 
   it('[I18N-08] no hardcoded English in JSX text, labels or templates', () => {
     const found: string[] = [];

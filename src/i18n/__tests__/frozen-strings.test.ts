@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { globSync } from 'node:fs';
 import ts from 'typescript';
+import { sourceFiles } from '@/i18n/__tests__/sourceFiles';
 
 /**
  * [I18N-07] No translated string may be resolved at module load.
@@ -21,8 +21,16 @@ import ts from 'typescript';
  * Every such call must move inside a function so it re-runs per render.
  */
 describe('translated strings are resolved at render, not at import', () => {
-  const files = globSync('src/**/*.{ts,tsx}', { cwd: process.cwd() })
-    .filter((f) => !f.includes('__tests__') && !f.includes(join('src', 'i18n')));
+  const files = sourceFiles(['.ts', '.tsx']).filter((f) => !f.includes(join('src', 'i18n')));
+
+  // A scanner that walks nothing passes every check it makes. `fs.globSync`
+  // returned undefined on Node 20 and these suites failed to load outright --
+  // loudly, as it happens, but a walk that silently found no files would be
+  // worse: green, and checking nothing. 100 is far below the real count and
+  // far above zero.
+  it('scans a plausible number of source files', () => {
+    expect(files.length).toBeGreaterThan(100);
+  });
 
   it('[I18N-07] no t() or plural() call runs at module load', () => {
     const frozen: string[] = [];
