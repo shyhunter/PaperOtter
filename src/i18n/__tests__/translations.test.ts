@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { en, type Dictionary } from '@/i18n/en';
 import { de } from '@/i18n/de';
 import { fr } from '@/i18n/fr';
+import { es } from '@/i18n/es';
 import { t, plural, setLocale, resetI18n, LOCALE_REVIEW } from '@/i18n';
 
 /** Every translation, checked by the same rules. Adding one here covers it. */
 const TRANSLATIONS: Array<[string, Dictionary]> = [
   ['de', de],
   ['fr', fr],
+  ['es', es],
 ];
 
 // ─── Translations (I18N-06) ──────────────────────────────────────────────────
