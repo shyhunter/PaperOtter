@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { t } from '@/i18n';
 
 export interface PageDimensions {
   /** Rendered width in CSS pixels (at current scale) */
@@ -92,7 +93,7 @@ export function PagePreview({
         onDimensionsReady?.(dims);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to render page');
+          setError(err instanceof Error ? err.message : t('pageCanvas.failedToRenderPage'));
         }
       } finally {
         if (!cancelled) {

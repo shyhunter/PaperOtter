@@ -68,7 +68,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -89,7 +89,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Make the error more user-friendly for wrong password
-      if (message.includes('Wrong password') || message.includes('failed') || message.includes('Failed')) {
+      if (message.includes(t('unlockPdfFlow.wrongPassword')) || message.includes('failed') || message.includes('Failed')) {
         setProcessError(t('unlockPdfFlow.incorrectPasswordOrThePdf'));
       } else {
         setProcessError(message);
@@ -221,7 +221,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
                       {t('unlockPdf.unlocking')}
                     </>
                   ) : (
-                    'Unlock PDF'
+                    t('tool.unlockPdf.name')
                   )}
                 </Button>
               </div>

@@ -56,7 +56,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
       }
       onFilePicked(result, format);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setError(message);
     } finally {
       setIsLoading(false);

@@ -136,7 +136,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
 
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -160,7 +160,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -181,7 +181,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       setResultBytes(new Uint8Array(processedBytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed.';
+      const message = err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);

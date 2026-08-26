@@ -4,6 +4,7 @@
 // CRITICAL: Uses pdfBytes.slice() for React StrictMode safety.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { t } from '@/i18n';
 
 export interface CanvasDimensions {
   /** Rendered canvas width in CSS pixels */
@@ -98,7 +99,7 @@ export function PageCanvas({ pdfBytes, pageIndex, scale, children, onDimensions 
         onDimensions?.(dims);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to render page');
+          setError(err instanceof Error ? err.message : t('pageCanvas.failedToRenderPage'));
         }
       } finally {
         if (!cancelled) setIsLoading(false);

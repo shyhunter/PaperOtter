@@ -88,7 +88,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
       const result = await mergePdfs(files);
       onMerged(result.bytes);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Merge failed.';
+      const message = err instanceof Error ? err.message : t('mergeOrderStep.mergeFailed');
       setError(message);
       setIsMerging(false);
     }

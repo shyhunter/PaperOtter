@@ -74,7 +74,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
             diagLog('closeRequested.ask.before');
             const confirmed = await ask(
               'You have unsaved changes. Close without saving?',
-              { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+              { title: t('editorView.unsavedChanges'), kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
             );
             diagLog(`closeRequested.ask.after confirmed=${confirmed}`);
             if (confirmed) {

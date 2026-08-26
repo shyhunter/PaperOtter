@@ -415,7 +415,7 @@ export function SignaturePlaceStep({
                 {t('common.applying')}
               </>
             ) : (
-              'Apply Signature'
+              t('signaturePlaceStep.applySignature')
             )}
           </Button>
           <Button variant="outline" size="sm" onClick={onBack} className="w-full">

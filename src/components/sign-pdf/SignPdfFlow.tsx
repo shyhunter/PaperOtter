@@ -82,7 +82,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
       setPdfBytes(new Uint8Array(bytes));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);

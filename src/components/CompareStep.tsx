@@ -333,8 +333,8 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
               {result.wasAlreadyOptimal
                 ? nonCompressibleReason === 'jpx'
                   ? nonCompressibleMessage(nonCompressibleReason, result.imageCount)
-                  : 'This file is already at maximum compression for all quality settings.'
-                : 'Try a lower quality level to reduce further.'}
+                  : t('compareStep.thisFileIsAlreadyAt')
+                : t('compareStep.tryALowerQualityLevel')}
             </span>{' '}
             <button
               type="button"
@@ -380,7 +380,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         )}
         {result.wasAlreadyOptimal && (
           <span className="text-muted-foreground hidden sm:inline">
-            {nonCompressibleReason === 'jpx' ? "Images already JPEG2000-encoded — can't compress further" : 'File already optimal'}
+            {nonCompressibleReason === 'jpx' ? "Images already JPEG2000-encoded — can't compress further" : t('compareStep.fileAlreadyOptimal')}
           </span>
         )}
         <div className="flex-1" />

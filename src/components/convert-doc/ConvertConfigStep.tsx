@@ -141,7 +141,7 @@ export function ConvertConfigStep({
       const result = await convertDocument(filePath, sourceFormat, options);
       onConvertComplete(result);
     } catch (err: unknown) {
-      const message = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Conversion failed.';
+      const message = typeof err === 'string' ? err : err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -352,10 +352,10 @@ export function ConvertConfigStep({
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Top', value: marginTop, setter: setMarginTop },
-                { label: 'Right', value: marginRight, setter: setMarginRight },
-                { label: 'Bottom', value: marginBottom, setter: setMarginBottom },
-                { label: 'Left', value: marginLeft, setter: setMarginLeft },
+                { label: t('convertConfigStep.top'), value: marginTop, setter: setMarginTop },
+                { label: t('rotate.right'), value: marginRight, setter: setMarginRight },
+                { label: t('convertConfigStep.bottom'), value: marginBottom, setter: setMarginBottom },
+                { label: t('rotate.left'), value: marginLeft, setter: setMarginLeft },
               ].map(({ label, value, setter }) => (
                 <div key={label} className="space-y-0.5">
                   <label className="text-[10px] text-muted-foreground">{label}</label>

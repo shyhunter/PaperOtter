@@ -20,24 +20,24 @@ interface PageNumbersConfigureStepProps {
 }
 
 const POSITIONS: { label: string; value: NumberPosition }[] = [
-  { label: 'Top Left', value: 'top-left' },
-  { label: 'Top Center', value: 'top-center' },
-  { label: 'Top Right', value: 'top-right' },
-  { label: 'Bottom Left', value: 'bottom-left' },
-  { label: 'Bottom Center', value: 'bottom-center' },
-  { label: 'Bottom Right', value: 'bottom-right' },
+  { label: t('pdfEditor.topLeft'), value: 'top-left' },
+  { label: t('pdfEditor.topCenter'), value: 'top-center' },
+  { label: t('pdfEditor.topRight'), value: 'top-right' },
+  { label: t('pdfEditor.bottomLeft'), value: 'bottom-left' },
+  { label: t('pdfEditor.bottomCenter'), value: 'bottom-center' },
+  { label: t('pdfEditor.bottomRight'), value: 'bottom-right' },
 ];
 
 const FORMATS: { label: string; value: NumberFormat; example: string }[] = [
   { label: '1, 2, 3', value: 'numeric', example: '1' },
-  { label: 'i, ii, iii', value: 'roman', example: 'i' },
+  { label: t('pageNumbersConfigureStep.iIiIii'), value: 'roman', example: 'i' },
   { label: 'A, B, C', value: 'alphabetic', example: 'A' },
 ];
 
 const FONT_SIZES: { label: string; value: number }[] = [
-  { label: 'Small', value: 10 },
-  { label: 'Medium', value: 12 },
-  { label: 'Large', value: 14 },
+  { label: t('watermarkFlow.small'), value: 10 },
+  { label: t('watermarkFlow.medium'), value: 12 },
+  { label: t('watermarkFlow.large'), value: 14 },
 ];
 
 export function PageNumbersConfigureStep({
@@ -222,7 +222,7 @@ export function PageNumbersConfigureStep({
               {t('common.applying')}
             </>
           ) : (
-            'Apply Page Numbers'
+            t('pageNumbersConfigureStep.applyPageNumbers')
           )}
         </Button>
       </div>

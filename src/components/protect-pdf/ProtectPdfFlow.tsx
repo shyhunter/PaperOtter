@@ -71,7 +71,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -248,7 +248,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       {t('protectPdf.encrypting')}
                     </>
                   ) : (
-                    'Protect PDF'
+                    t('tool.protectPdf.name')
                   )}
                 </Button>
               </div>

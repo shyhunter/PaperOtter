@@ -103,7 +103,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       setOutputFormat(detectFormatFromPath(path));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -127,7 +127,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -157,7 +157,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       setResultBytes(new Uint8Array(bytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Rotation failed.';
+      const message = err instanceof Error ? err.message : t('rotateImageFlow.rotationFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);

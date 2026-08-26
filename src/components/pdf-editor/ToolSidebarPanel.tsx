@@ -164,7 +164,7 @@ function useApply(
     setSuccess(false);
     try {
       const bytes = previewBytes ?? (runIfNoPreview ? await runIfNoPreview() : null);
-      if (!bytes) throw new Error('No preview available');
+      if (!bytes) throw new Error(t('toolSidebarPanel.noPreviewAvailable'));
       updatePdfBytes(bytes);
       markDirty();
       setSuccess(true);
@@ -241,10 +241,10 @@ function formatBytes(bytes: number): string {
 
 /** Quality zones matching the full compress tool */
 const QUALITY_ZONES = [
-  { value: 'screen', quality: 'web' as PdfQualityLevel, label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
-  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
-  { value: 'printer', quality: 'print' as PdfQualityLevel, label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
-  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+  { value: 'screen', quality: 'web' as PdfQualityLevel, label: t('toolSidebarPanel.webScreen'), dpi: '72–150 dpi', desc: t('toolSidebarPanel.smallestFileBestForScreen') },
+  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: t('toolSidebarPanel.mediumEbook'), dpi: '150 dpi', desc: t('toolSidebarPanel.goodForReadingOnDevices') },
+  { value: 'printer', quality: 'print' as PdfQualityLevel, label: t('toolSidebarPanel.highPrint'), dpi: '300 dpi', desc: t('toolSidebarPanel.suitableForPrinting') },
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: t('toolSidebarPanel.maximumPrepress'), dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
 ] as const;
 
 function CompressPanel() {
@@ -626,10 +626,10 @@ function CompressPanel() {
 
 /** Compass direction entries for the rotate tool */
 const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegrees | 0 }[] = [
-  { label: 'Original', short: '↑', degrees: 0 },
-  { label: 'Turn Right', short: '→', degrees: 90 },
-  { label: 'Upside Down', short: '↓', degrees: 180 },
-  { label: 'Turn Left', short: '←', degrees: 270 },
+  { label: t('imageCompare.original'), short: '↑', degrees: 0 },
+  { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
+  { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
+  { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
 ];
 
 function RotatePanel() {
@@ -1279,9 +1279,9 @@ function CropPanel() {
 // signature on the page anywhere it is missing -- the same failure, moved to
 // other people's computers.
 const SIGNATURE_FONTS = [
-  { value: 'cursive', label: 'Script', css: "'Dancing Script', 'Brush Script MT', cursive" },
-  { value: 'serif', label: 'Formal', css: "'Georgia', 'Times New Roman', serif" },
-  { value: 'sans', label: 'Clean', css: "'Helvetica Neue', Arial, sans-serif" },
+  { value: 'cursive', label: t('toolSidebarPanel.script'), css: "'Dancing Script', 'Brush Script MT', cursive" },
+  { value: 'serif', label: t('signatureTyped.formal'), css: "'Georgia', 'Times New Roman', serif" },
+  { value: 'sans', label: t('toolSidebarPanel.clean'), css: "'Helvetica Neue', Arial, sans-serif" },
 ];
 
 const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';

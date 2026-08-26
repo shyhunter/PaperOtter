@@ -33,10 +33,10 @@ export interface ConfigureStepProps {
 
 /** Slider zone boundaries and their quality mappings */
 const ZONES = [
-  { min: 0,  max: 25,  quality: 'web' as PdfQualityLevel,     label: 'Web',     dpi: '72 dpi',  desc: 'Smallest file' },
-  { min: 25, max: 50,  quality: 'screen' as PdfQualityLevel,  label: 'Screen',  dpi: '150 dpi', desc: 'Balanced' },
-  { min: 50, max: 75,  quality: 'print' as PdfQualityLevel,   label: 'Print',   dpi: '300 dpi', desc: 'High quality' },
-  { min: 75, max: 100, quality: 'archive' as PdfQualityLevel, label: 'Archive', dpi: 'Lossless', desc: 'No recompression' },
+  { min: 0,  max: 25,  quality: 'web' as PdfQualityLevel,     label: t('imageConfigureStep.web'),     dpi: '72 dpi',  desc: t('configureStep.smallestFile') },
+  { min: 25, max: 50,  quality: 'screen' as PdfQualityLevel,  label: t('configureStep.screen'),  dpi: '150 dpi', desc: 'Balanced' },
+  { min: 50, max: 75,  quality: 'print' as PdfQualityLevel,   label: t('configureStep.print'),   dpi: '300 dpi', desc: t('configureStep.highQuality') },
+  { min: 75, max: 100, quality: 'archive' as PdfQualityLevel, label: t('configureStep.archive'), dpi: 'Lossless', desc: t('configureStep.noRecompression') },
 ];
 
 /** Map slider value (0-100) to quality level */
@@ -62,10 +62,10 @@ function getActiveZone(value: number) {
 }
 
 const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
-  { value: 'A4',     label: 'A4 (210 × 297 mm)' },
-  { value: 'A3',     label: 'A3 (297 × 420 mm)' },
-  { value: 'Letter', label: 'Letter (216 × 279 mm)' },
-  { value: 'custom', label: 'Custom…' },
+  { value: 'A4',     label: t('configureStep.a4210297Mm') },
+  { value: 'A3',     label: t('configureStep.a3297420Mm') },
+  { value: 'Letter', label: t('configureStep.letter216279Mm') },
+  { value: 'custom', label: t('configureStep.custom') },
 ];
 
 

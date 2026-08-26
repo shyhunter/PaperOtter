@@ -298,7 +298,7 @@ export function ExportPanel({
             <Download className="w-3.5 h-3.5 me-2" />
             {selectedFormat
               ? `Export as ${FORMAT_LABELS[selectedFormat]}`
-              : 'Select format'}
+              : t('exportPanel.selectFormat')}
           </>
         )}
       </Button>

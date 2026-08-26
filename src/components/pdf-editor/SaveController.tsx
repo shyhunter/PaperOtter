@@ -18,7 +18,7 @@ function showSavedToast(savedPath: string) {
   toast.success(`Saved to ${fileName}`, {
     duration: 5000,
     action: {
-      label: 'Show in Finder',
+      label: t('save.showInFinder'),
       onClick: () => {
         invoke('reveal_in_finder', { path: savedPath }).catch(() => {});
       },
@@ -73,7 +73,7 @@ export function SaveController() {
 
       showSavedToast(targetPath);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
+      const msg = err instanceof Error ? err.message : t('save.failed');
       toast.error(t('pdfEditor.failedToSave'), { description: msg });
     } finally {
       setIsSaving(false);
@@ -157,7 +157,7 @@ export function useSaveActions() {
       showSavedToast(targetPath);
       return true;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
+      const msg = err instanceof Error ? err.message : t('save.failed');
       toast.error(t('pdfEditor.failedToSave'), { description: msg });
       return false;
     } finally {

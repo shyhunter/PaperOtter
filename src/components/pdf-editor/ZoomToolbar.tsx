@@ -11,7 +11,7 @@ const PRESETS: { label: string; value: ZoomPreset }[] = [
   { label: '75%', value: 0.75 },
   { label: '100%', value: 1.0 },
   { label: '150%', value: 1.5 },
-  { label: 'Fit Width', value: 'fit-width' },
+  { label: t('zoomToolbar.fitWidth'), value: 'fit-width' },
 ];
 
 export function ZoomToolbar() {

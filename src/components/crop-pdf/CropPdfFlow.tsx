@@ -15,10 +15,10 @@ import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 const MARGIN_PRESETS: { label: string; mm: number }[] = [
-  { label: 'None', mm: 0 },
-  { label: 'Small', mm: 5 },
-  { label: 'Medium', mm: 10 },
-  { label: 'Large', mm: 20 },
+  { label: t('cropPdfFlow.none'), mm: 0 },
+  { label: t('watermarkFlow.small'), mm: 5 },
+  { label: t('watermarkFlow.medium'), mm: 10 },
+  { label: t('watermarkFlow.large'), mm: 20 },
 ];
 
 interface CropPdfFlowProps {
@@ -100,7 +100,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -153,7 +153,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Crop failed.';
+      const message = err instanceof Error ? err.message : t('cropPdfFlow.cropFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -307,7 +307,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('cropPdf.cropping')}</>
                 ) : (
-                  'Apply Crop'
+                  t('cropPdfFlow.applyCrop')
                 )}
               </Button>
             </div>

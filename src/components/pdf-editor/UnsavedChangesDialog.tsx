@@ -58,7 +58,7 @@ export function UnsavedChangesDialog({
               {t('common.unsavedChanges')}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{fileName || 'This document'}</span>{' '}
+              <span className="font-medium text-foreground">{fileName || t('unsavedChangesDialog.thisDocument')}</span>{' '}
               has changes that have not been saved. Saving replaces the original file.
             </p>
           </div>

@@ -44,8 +44,8 @@ const MARGIN_VALUES: Record<MarginId, number> = {
 
 const MARGIN_LABELS: Record<MarginId, string> = {
   none: 'None',
-  small: 'Small (10mm)',
-  medium: 'Medium (20mm)',
+  small: t('jpgToPdfFlow.small10mm'),
+  medium: t('jpgToPdfFlow.medium20mm'),
 };
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       }
       setImages((prev) => [...prev, ...newEntries]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoading(false);
@@ -208,7 +208,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       const paths = Array.isArray(result) ? result : [result];
       await addImages(paths);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [addImages]);
@@ -328,7 +328,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       setResultBytes(new Uint8Array(pdfBytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create PDF.';
+      const message = err instanceof Error ? err.message : t('jpgToPdfFlow.failedToCreatePdf');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -559,7 +559,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                       {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (
-                    'Create PDF'
+                    t('jpgToPdfFlow.createPdf')
                   )}
                 </Button>
               </div>

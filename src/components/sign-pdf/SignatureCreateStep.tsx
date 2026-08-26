@@ -16,9 +16,9 @@ interface SignatureCreateStepProps {
 type TabId = 'draw' | 'type' | 'upload';
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'draw', label: 'Draw' },
-  { id: 'type', label: 'Type' },
-  { id: 'upload', label: 'Upload' },
+  { id: 'draw', label: t('signatureCreateStep.draw') },
+  { id: 'type', label: t('signatureCreateStep.type') },
+  { id: 'upload', label: t('signatureCreateStep.upload') },
 ];
 
 export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCreateStepProps) {

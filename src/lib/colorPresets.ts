@@ -1,4 +1,5 @@
-/**
+
+import { t } from '@/i18n';/**
  * The app's single colour vocabulary.
  *
  * Kept apart from the pdf-lib drawing code so the UI can read it without
@@ -29,17 +30,17 @@ export const DEFAULT_TEXT_COLOR = '#000000';
  * full-bleed images needs it, even though it is invisible on plain white.
  */
 export const COLOR_PRESETS: readonly ColorPreset[] = [
-  { label: 'Black', hex: DEFAULT_TEXT_COLOR },
-  { label: 'White', hex: '#FFFFFF' },
-  { label: 'Charcoal', hex: '#333333' },
-  { label: 'Grey', hex: '#808080' },
-  { label: 'Red', hex: '#DC2626' },
-  { label: 'Orange', hex: '#F59E0B' },
-  { label: 'Green', hex: '#16A34A' },
-  { label: 'Blue', hex: '#2563EB' },
-  { label: 'Navy', hex: '#1A365D' },
-  { label: 'Purple', hex: '#7C3AED' },
-  { label: 'Pink', hex: '#EC4899' },
+  { label: t('colorPresets.black'), hex: DEFAULT_TEXT_COLOR },
+  { label: t('colorPresets.white'), hex: '#FFFFFF' },
+  { label: t('colorPresets.charcoal'), hex: '#333333' },
+  { label: t('colorPresets.grey'), hex: '#808080' },
+  { label: t('colorPresets.red'), hex: '#DC2626' },
+  { label: t('colorPresets.orange'), hex: '#F59E0B' },
+  { label: t('colorPresets.green'), hex: '#16A34A' },
+  { label: t('colorPresets.blue'), hex: '#2563EB' },
+  { label: t('colorPresets.navy'), hex: '#1A365D' },
+  { label: t('colorPresets.purple'), hex: '#7C3AED' },
+  { label: t('colorPresets.pink'), hex: '#EC4899' },
 ];
 
 const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;

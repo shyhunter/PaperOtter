@@ -115,7 +115,7 @@ export function EditorLayout({
           ),
         });
       } catch (err) {
-        console.error('Text extraction failed for page', currentPage, err);
+        console.error(t('editorLayout.textExtractionFailedForPage'), currentPage, err);
       }
     }
 
@@ -149,7 +149,7 @@ export function EditorLayout({
           ),
         });
       } catch (err) {
-        console.error('Image extraction failed for page', currentPage, err);
+        console.error(t('editorLayout.imageExtractionFailedForPage'), currentPage, err);
       }
     }
 

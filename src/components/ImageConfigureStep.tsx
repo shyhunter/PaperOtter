@@ -45,9 +45,9 @@ interface ResizePreset {
 
 const RESIZE_PRESETS: ResizePreset[] = [
   { label: 'HD', width: 1920, height: 1080 },
-  { label: 'Web', width: 1280, height: 720 },
-  { label: 'Square', width: 1080, height: 1080 },
-  { label: 'Thumb', width: 400, height: 400 },
+  { label: t('imageConfigureStep.web'), width: 1280, height: 720 },
+  { label: t('imageConfigureStep.square'), width: 1080, height: 1080 },
+  { label: t('imageConfigureStep.thumb'), width: 400, height: 400 },
 ];
 
 export function ImageConfigureStep({

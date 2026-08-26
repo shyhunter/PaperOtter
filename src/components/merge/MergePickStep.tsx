@@ -66,7 +66,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
       const paths = Array.isArray(result) ? result : [result];
       await addFiles(paths);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [addFiles]);

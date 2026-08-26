@@ -34,9 +34,9 @@ import { t } from '@/i18n';
  *  pdf-lib only supports the 14 standard fonts grouped into 3 families.
  *  We show familiar aliases so users pick recognizable names. */
 const FONT_OPTIONS = [
-  { value: 'Helvetica', label: 'Helvetica / Arial (Sans-serif)' },
-  { value: 'TimesRoman', label: 'Times New Roman (Serif)' },
-  { value: 'Courier', label: 'Courier New (Monospace)' },
+  { value: 'Helvetica', label: t('editorToolbar.helveticaArialSansSerif') },
+  { value: 'TimesRoman', label: t('editorToolbar.timesNewRomanSerif') },
+  { value: 'Courier', label: t('editorToolbar.courierNewMonospace') },
 ];
 
 /** Preset colors for text */

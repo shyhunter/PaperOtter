@@ -167,7 +167,7 @@ export function SplitSelectStep({
 
         {/* Mode tabs */}
         <div className="flex gap-1 p-1 rounded-lg bg-muted">
-          {([['range', 'By Range'], ['every-n', 'Every N Pages'], ['individual', 'Extract All']] as const).map(([key, label]) => (
+          {([['range', t('splitSelectStep.byRange')], ['every-n', t('splitSelectStep.everyNPages')], ['individual', t('splitSelectStep.extractAll')]] as const).map(([key, label]) => (
             <button
               key={key}
               type="button"

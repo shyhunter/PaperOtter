@@ -143,12 +143,12 @@ export function LandingCard({
                     dragState === 'over-invalid' && 'text-destructive',
                     dragState === 'idle' && 'text-foreground',
                   )}>
-                    {dragState === 'over-valid' && 'Drop to open'}
-                    {dragState === 'over-invalid' && 'Unsupported file'}
-                    {dragState === 'idle' && 'Drop file here'}
+                    {dragState === 'over-valid' && t('landingCard.dropToOpen')}
+                    {dragState === 'over-invalid' && t('landingCard.unsupportedFile')}
+                    {dragState === 'idle' && t('landingCard.dropFileHere')}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {dragState === 'idle' ? 'Anywhere on the window' : '\u00a0'}
+                    {dragState === 'idle' ? t('landingCard.anywhereOnTheWindow') : '\u00a0'}
                   </p>
                 </div>
               </div>

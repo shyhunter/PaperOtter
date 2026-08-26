@@ -9,10 +9,10 @@ interface SignatureTypedProps {
 }
 
 const FONTS: { label: string; family: string }[] = [
-  { label: 'Flowing', family: 'Dancing Script' },
-  { label: 'Casual', family: 'Caveat' },
-  { label: 'Formal', family: 'Great Vibes' },
-  { label: 'Mono', family: 'monospace' },
+  { label: t('signatureTyped.flowing'), family: 'Dancing Script' },
+  { label: t('signatureTyped.casual'), family: 'Caveat' },
+  { label: t('signatureTyped.formal'), family: 'Great Vibes' },
+  { label: t('signatureTyped.mono'), family: 'monospace' },
 ];
 
 const CANVAS_WIDTH = 600;

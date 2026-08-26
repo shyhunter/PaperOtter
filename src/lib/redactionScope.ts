@@ -1,5 +1,6 @@
 import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
 import type { TextMatch } from '@/lib/pdfTextSearch';
+import { t } from '@/i18n';
 
 /**
  * How much of a line a text match should cover.
@@ -11,8 +12,8 @@ import type { TextMatch } from '@/lib/pdfTextSearch';
 export type RedactionScope = 'match' | 'line';
 
 export const REDACTION_SCOPES: { value: RedactionScope; label: string; hint: string }[] = [
-  { value: 'match', label: 'Just the match', hint: 'Covers only the found text' },
-  { value: 'line', label: 'Whole line', hint: 'Covers the whole line it sits on' },
+  { value: 'match', label: t('redactionScope.justTheMatch'), hint: t('redactionScope.coversOnlyTheFoundText') },
+  { value: 'line', label: t('redactionScope.wholeLine'), hint: t('redactionScope.coversTheWholeLineIt') },
 ];
 
 /** Two rectangles are the same mark if they start within half a percent. */

@@ -65,8 +65,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 const CATEGORY_LABELS: Record<ToolCategory, string> = {
   pdf: 'PDF Tools',
-  image: 'Image Tools',
-  document: 'Document Tools',
+  image: t('dashboard.imageTools'),
+  document: t('dashboard.documentTools'),
 };
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];

@@ -90,7 +90,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -144,7 +144,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to organize PDF.';
+      const message = err instanceof Error ? err.message : t('organizePdfFlow.failedToOrganizePdf');
       setProcessError(message);
     } finally {
       setIsProcessing(false);

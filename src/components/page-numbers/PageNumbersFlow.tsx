@@ -80,7 +80,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -93,7 +93,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add page numbers.';
+      const message = err instanceof Error ? err.message : t('pageNumbersFlow.failedToAddPageNumbers');
       setLoadError(message);
     } finally {
       setIsProcessing(false);

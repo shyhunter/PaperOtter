@@ -44,7 +44,7 @@ export function CrashReporter({
     };
   }, []);
 
-  const errorMessage = error?.message ?? 'Unknown error';
+  const errorMessage = error?.message ?? t('crashReporter.unknownError');
   const truncatedStack = componentStack
     ? componentStack.slice(0, 500) + (componentStack.length > 500 ? '\n...(truncated)' : '')
     : null;

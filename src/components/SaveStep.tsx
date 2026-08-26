@@ -223,7 +223,7 @@ function MultiFileSave({
       try {
         folderPath = await openDialog({ directory: true, multiple: false }) as string | null;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not open folder picker.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenFolderPicker');
         setError(message);
         setSaveState('error');
         return;
@@ -248,7 +248,7 @@ function MultiFileSave({
         setSaveState('idle');
         onSaveComplete(folderPath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not write files.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFiles');
         setError(message);
         setMultiProgress(null);
         setSaveState('error');
@@ -256,7 +256,7 @@ function MultiFileSave({
     } else {
       // ZIP save — create ZIP in memory, then save as file
       setSaveState('writing');
-      setMultiProgress('Creating ZIP…');
+      setMultiProgress(t('saveStep.creatingZip'));
 
       try {
         const { zipSync } = await import('fflate');
@@ -276,7 +276,7 @@ function MultiFileSave({
             defaultPath: zipName,
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Could not open save dialog.';
+          const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenSaveDialog');
           setError(message);
           setSaveState('error');
           return;
@@ -293,7 +293,7 @@ function MultiFileSave({
         setSaveState('idle');
         onSaveComplete(savePath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not create ZIP.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotCreateZip');
         setError(message);
         setMultiProgress(null);
         setSaveState('error');
@@ -454,7 +454,7 @@ function SingleFileSave({
         setSaveState('idle');
         onSaveComplete(e2eSavePath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not write file.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFile');
         setError(message);
         setSaveState('error');
       }
@@ -468,7 +468,7 @@ function SingleFileSave({
         defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open save dialog.';
+      const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenSaveDialog');
       setError(message);
       setSaveState('error');
       return;
@@ -490,7 +490,7 @@ function SingleFileSave({
       const message =
         err instanceof Error
           ? err.message
-          : 'Could not write file. Check that you have permission to write to the selected location.';
+          : t('saveStep.couldNotWriteFileCheck');
       setError(message);
       setSaveState('error');
     }

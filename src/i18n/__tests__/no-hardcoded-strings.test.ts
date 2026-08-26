@@ -20,6 +20,10 @@ const SRC = join(process.cwd(), 'src');
 const PROPER_NOUNS = new Set([
   'Papercut', 'GitHub', 'Tauri + React', 'Ghostscript', 'LibreOffice',
   'Calibre', 'Rust', 'React', 'MIT', 'PDF', 'JPG', 'PNG', 'WebP',
+  // Font families and product names — CSS values and trademarks, never translated.
+  'Times New Roman', 'Times Roman', 'Courier New', 'Helvetica Neue',
+  'Brush Script MT', 'Dancing Script', 'Great Vibes', 'Microsoft Word',
+  'Helvetica', 'Courier', 'Caveat', 'Georgia', 'Arial',
 ]);
 
 /**
@@ -28,7 +32,15 @@ const PROPER_NOUNS = new Set([
  * that the string is not user-facing, and it should be re-checked when the file
  * it names changes.
  */
-const ALLOWLIST = new Set<string>([]);
+const ALLOWLIST = new Set<string>([
+  // Sample text rendered inside a watermark/signature preview. It is content
+  // being previewed, not interface copy, and is Latin filler in every language.
+  'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+  // Internal invariants that abort before any UI renders.
+  'Cannot get canvas context',
+  'Canvas to blob failed',
+  'Custom quality must be resolved to a preset before processing',
+]);
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -57,6 +69,15 @@ const DESCRIPTION = /description:\s*'((?:[^'\\]|\\.){6,160})'/g;
 const NAME_FIELD = /name: '((?:[^'\\]|\\.){3,160})'/g;
 const ERROR_SETTER = /set[A-Z]\w*Error\(\s*'((?:[^'\\]|\\.){6,160})'/g;
 const TERNARY = /\?\s*'([A-Z](?:[^'\\]|\\.){4,160})'\s*:\s*'([A-Z](?:[^'\\]|\\.){4,160})'/g;
+// Option-list entries: `{ value: 'top-left', label: 'Top Left' }`. The value is
+// an identifier and must not be touched; the label is what the user reads.
+const LABEL_FIELD = /(?:label|hint):\s*'((?:[^'\\]|\\.){3,160})'/g;
+// The fallback half of an error ternary: `err instanceof Error ? err.message :
+// 'Could not open the file picker.'` — one literal, so TERNARY never sees it,
+// and it is precisely where bad news to the user lives. Anchored on the `?` so
+// it does not match every capitalised object value: `fontName: 'Helvetica'` is
+// an identifier the renderer depends on, not copy.
+const FALLBACK = /\?[^'\n]{0,80}?:\s*'([A-Z][^']{4,140})'/g;
 
 /** A dotted lower-camel token is a translation key, not prose. */
 const KEY_SHAPED = /^[a-z][A-Za-z0-9]*\.[A-Za-z0-9_.]+$/;
@@ -70,7 +91,8 @@ const DEVELOPER_MESSAGES = /must be used within|is not a function|invariant/i;
 
 function findings(text: string): string[] {
   const found: string[] = [];
-  const patterns = [JSX_TEXT, TEXT_PROP, TOAST, DESCRIPTION, NAME_FIELD, ERROR_SETTER, TERNARY];
+  const patterns = [JSX_TEXT, TEXT_PROP, TOAST, DESCRIPTION, NAME_FIELD, ERROR_SETTER,
+                    TERNARY, LABEL_FIELD, FALLBACK];
   for (const rx of patterns) {
     rx.lastIndex = 0;
     let m: RegExpExecArray | null;
@@ -121,6 +143,9 @@ describe('no hardcoded user-facing English', () => {
     expect(findings("setSaveError('The disk is full')")).toContain('The disk is full');
     expect(findings("open ? 'Hide the details' : 'Show the details'"))
       .toEqual(['Hide the details', 'Show the details']);
+    expect(findings("{ value: 'top-left', label: 'Top Left' }")).toContain('Top Left');
+    expect(findings("err instanceof Error ? err.message : 'Could not open the picker'"))
+      .toContain('Could not open the picker');
   });
 
   it('[I18N-04c] the guard does not flag type annotations or translated calls', () => {

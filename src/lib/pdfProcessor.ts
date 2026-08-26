@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream, PDFArray, PDFRef } from 'pdf-lib';
 import { invoke } from '@tauri-apps/api/core';
 import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset, PdfQualityLevel } from '@/types/file';
-import { plural } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 // Quality level → Ghostscript -dPDFSETTINGS preset mapping.
 // These are GS native preset names — must match the compress_pdf allow-list in Rust.
@@ -65,7 +65,7 @@ export function getNonCompressibleReason(
 export function nonCompressibleMessage(reason: NonCompressibleReason, imageCount: number): string | null {
   switch (reason) {
     case 'text-only':
-      return 'This file is mostly text with no embedded images — compression has minimal effect on text-only PDFs.';
+      return t('pdfProcessor.thisFileIsMostlyText');
     case 'jpx':
       return `This PDF contains ${plural('count.image', imageCount)}, already JPEG2000-encoded — Ghostscript can't compress them further.`;
     case null:
@@ -97,7 +97,7 @@ function getTargetPageSize(preset: PdfPagePreset, widthMm: number | null, height
     case 'Letter': return PageSizes.Letter;  // [612, 792]
     case 'custom': {
       if (widthMm == null || heightMm == null) {
-        throw new Error('Custom page size requires both width and height in mm');
+        throw new Error(t('pdfProcessor.customPageSizeRequiresBoth'));
       }
       return [mmToPoints(widthMm), mmToPoints(heightMm)];
     }

@@ -74,7 +74,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -207,7 +207,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                       {t('repairPdf.repairing')}
                     </>
                   ) : (
-                    'Repair PDF'
+                    t('tool.repairPdf.name')
                   )}
                 </Button>
               </div>

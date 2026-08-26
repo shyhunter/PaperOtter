@@ -37,10 +37,10 @@ interface FormatOption {
 const FORMAT_OPTIONS: FormatOption[] = [
   { value: 'jpeg', label: 'JPG', group: 'image' },
   { value: 'png', label: 'PNG', group: 'image' },
-  { value: 'docx', label: 'Word', group: 'document', engine: 'libreoffice' },
+  { value: 'docx', label: t('pdfToJpgFlow.word'), group: 'document', engine: 'libreoffice' },
   { value: 'epub', label: 'EPUB', group: 'ebook', engine: 'calibre' },
   { value: 'mobi', label: 'MOBI', group: 'ebook', engine: 'calibre' },
-  { value: 'azw3', label: 'Kindle', group: 'ebook', engine: 'calibre' },
+  { value: 'azw3', label: t('pdfToJpgFlow.kindle'), group: 'ebook', engine: 'calibre' },
 ];
 
 type ScaleOption = { label: string; dpiLabel: string; scale: number };
@@ -239,7 +239,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -298,7 +298,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         goToStep(2);
       } else {
         // Document/ebook conversion: extract selected pages → temp PDF → convert
-        setProcessProgress('Extracting selected pages...');
+        setProcessProgress(t('pdfToJpgFlow.extractingSelectedPages'));
         const extractedPdf = await extractPages(pdfBytes, sortedSelectedPages);
 
         // Write to temp file for converter
@@ -317,7 +317,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         goToStep(2);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed.';
+      const message = err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);

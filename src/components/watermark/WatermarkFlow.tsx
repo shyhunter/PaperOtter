@@ -21,9 +21,9 @@ interface WatermarkFlowProps {
 }
 
 const FONT_SIZES: { label: string; value: number }[] = [
-  { label: 'Small', value: 24 },
-  { label: 'Medium', value: 48 },
-  { label: 'Large', value: 72 },
+  { label: t('watermarkFlow.small'), value: 24 },
+  { label: t('watermarkFlow.medium'), value: 48 },
+  { label: t('watermarkFlow.large'), value: 72 },
 ];
 
 const ROTATIONS: { label: string; value: number }[] = [
@@ -105,7 +105,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -160,7 +160,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to apply watermark.';
+      const message = err instanceof Error ? err.message : t('watermarkFlow.failedToApplyWatermark');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -341,7 +341,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                     {t('common.applying')}
                   </>
                 ) : (
-                  'Apply Watermark'
+                  t('watermarkFlow.applyWatermark')
                 )}
               </Button>
             </div>

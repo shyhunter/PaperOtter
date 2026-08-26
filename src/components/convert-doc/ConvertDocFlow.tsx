@@ -21,14 +21,14 @@ function buildSaveFilters(
   if (archive) return [{ name: t('filter.zipArchive'), extensions: ['zip'] }];
   const labels: Record<ConvertFormat, string> = {
     pdf: 'PDF Document',
-    docx: 'Word Document',
-    doc: 'Word 97-2003 Document',
+    docx: t('convertDocFlow.wordDocument'),
+    doc: t('convertDocFlow.word972003Document'),
     odt: 'OpenDocument Text',
     epub: 'EPUB Ebook',
     mobi: 'MOBI Ebook',
     azw3: 'AZW3 Ebook',
-    txt: 'Plain Text',
-    rtf: 'Rich Text Format',
+    txt: t('convertDocFlow.plainText'),
+    rtf: t('convertDocFlow.richTextFormat'),
     md: 'Markdown',
     html: 'HTML',
     json: 'JSON',

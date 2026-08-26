@@ -19,6 +19,7 @@ import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import type { ImageBlock } from '@/types/editor';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
+import { t } from '@/i18n';
 
 // ── Actions ────────────────────────────────────────────────────────────
 
@@ -547,7 +548,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       const sourceDoc = await PDFDocument.load(sourcePdfBytes, { ignoreEncryption: true });
       const sourcePageCount = sourceDoc.getPageCount();
       if (sourcePageCount === 0) {
-        alert('The selected PDF has no pages.');
+        alert(t('editorContext.theSelectedPdfHasNo'));
         return;
       }
       const indices = Array.from({ length: sourcePageCount }, (_, i) => i);

@@ -77,7 +77,7 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
