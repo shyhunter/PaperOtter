@@ -316,7 +316,9 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     name: 'tool.ocrPdf.name',
     description: 'tool.ocrPdf.desc',
     category: 'pdf',
-    icon: 'ScanText',
+    // Eye against redact's EyeOff, on purpose: redaction takes content out of
+    // sight, this puts content the machine could not see back within reach.
+    icon: 'Eye',
     acceptsFormats: ['pdf'],
     steps: [
       { label: 'step.selectPdf', description: 'tool.ocrPdf.step1' },
