@@ -978,6 +978,13 @@ export const en = {
   'ocrLang.italian': 'Italian',
   'ocrLang.dutch': 'Dutch',
   'ocrLang.polish': 'Polish',
+
+  // ── Redaction search on a scan ──────────────────────────────────────────
+  'redactPdf.noMatches': 'No matches for “{query}”. A scanned page has no selectable text, so it cannot be searched until it has been read.',
+  'redactPdf.noMatchesInScan': 'No matches for “{query}” in the text read from this scan.',
+  'redactPdf.readScanAndSearch': 'Read the text and search again',
+  'redactPdf.readingScan': 'Reading the scan…',
+  'redactPdf.scanBoxesApproximate': 'These boxes come from text read off a scan, so they are approximate. Check the placement before applying — redaction cannot be undone.',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

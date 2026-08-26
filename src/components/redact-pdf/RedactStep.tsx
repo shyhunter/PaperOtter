@@ -1,11 +1,13 @@
 // RedactStep: Page navigation + rectangle drawing + text search UI for PDF redaction.
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Search, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trash2, Loader2, ScanText } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
 import { cn } from '@/lib/utils';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
+import { findTextMatchesInOcr } from '@/lib/ocrTextSearch';
+import { recognisePdf, type OcrPage } from '@/lib/ocrProcessor';
 import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
 import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
@@ -15,6 +17,8 @@ import { plural, t } from '@/i18n';
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
+  /** Path on disk. OCR reads from the file; null disables the scan fallback. */
+  sourcePath?: string | null;
   onComplete: (redactions: RedactionRect[], color: string) => void;
   onBack: () => void;
 }
@@ -24,7 +28,12 @@ function genId(prefix: string): string {
   return `${prefix}-${nextId++}`;
 }
 
-export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
+export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactStepProps) {
+  // Text recognised from a scan, kept so a second search does not re-read the
+  // document — recognition is seconds per page.
+  const [ocrPages, setOcrPages] = useState<OcrPage[] | null>(null);
+  const [isReadingScan, setIsReadingScan] = useState(false);
+  const [scanReadError, setScanReadError] = useState<string | null>(null);
   const [allRedactions, setAllRedactions] = useState<RedactionRect[]>([]);
   const [boxColor, setBoxColor] = useState(DEFAULT_REDACTION_COLOR);
   const [currentPage, setCurrentPage] = useState(0);
@@ -103,6 +112,15 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
     // Opens the document here rather than reaching for one loaded elsewhere: a
     // ref that has not been populated yet -- or was nulled by a cleanup -- made
     // this return silently, which looks exactly like "no matches".
+    // Once a scan has been read, search that instead: a page with no text layer
+    // returns nothing from pdf.js no matter how many times it is asked.
+    if (ocrPages) {
+      setSearchResults(findTextMatchesInOcr(ocrPages, searchQuery));
+      setSearchRan(true);
+      setIsSearching(false);
+      return;
+    }
+
     let doc: pdfjsLib.PDFDocumentProxy | null = null;
     try {
       doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
@@ -114,7 +132,24 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
       setSearchRan(true);
       setIsSearching(false);
     }
-  }, [searchQuery, pdfBytes]);
+  }, [searchQuery, pdfBytes, ocrPages]);
+
+  /** Reads a scanned document, then repeats the search against what was read. */
+  const handleReadScan = useCallback(async () => {
+    if (!sourcePath) return;
+    setIsReadingScan(true);
+    setScanReadError(null);
+    try {
+      const pages = await recognisePdf(sourcePath, { languages: ['en-US'] });
+      setOcrPages(pages);
+      setSearchResults(findTextMatchesInOcr(pages, searchQuery));
+      setSearchRan(true);
+    } catch (err) {
+      setScanReadError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsReadingScan(false);
+    }
+  }, [sourcePath, searchQuery]);
 
   const handleAddSearchResult = useCallback(
     (match: TextMatch) => {
@@ -225,11 +260,49 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
           {/* Search results */}
           {searchRan && !isSearching && searchResults.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              No matches for &ldquo;{searchQuery}&rdquo;. Scanned pages with no
-              selectable text — an image-only scan, for instance — cannot be
-              searched.
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {ocrPages
+                  ? t('redactPdf.noMatchesInScan', { query: searchQuery })
+                  : t('redactPdf.noMatches', { query: searchQuery })}
+              </p>
+
+              {/* A scan has no text layer, so searching it again changes nothing.
+                  Reading it first is what makes the search possible at all. */}
+              {!ocrPages && sourcePath && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReadScan}
+                    disabled={isReadingScan}
+                    className="w-full"
+                  >
+                    {isReadingScan ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />
+                        {t('redactPdf.readingScan')}
+                      </>
+                    ) : (
+                      <>
+                        <ScanText className="w-3.5 h-3.5 me-2" />
+                        {t('redactPdf.readScanAndSearch')}
+                      </>
+                    )}
+                  </Button>
+                  {scanReadError && (
+                    <p className="text-xs text-destructive">{scanReadError}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {ocrPages && searchResults.length > 0 && (
+            // Boxes on a scan are interpolated across a whole line of recognised
+            // text, so they are close but not exact. Saying so matters here: this
+            // covers content permanently.
+            <p className="text-xs text-muted-foreground">{t('redactPdf.scanBoxesApproximate')}</p>
           )}
 
           {searchResults.length > 0 && (

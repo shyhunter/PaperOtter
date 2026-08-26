@@ -44,6 +44,10 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
     setPendingFiles([]);
   }
 
+  // OCR reads from the file rather than the bytes already in memory, so the
+  // path has to survive alongside them.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
+
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
     setLoadError(null);
@@ -51,6 +55,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       const bytes = await readFile(filePath);
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       setPdfBytes(bytes);
+      setSourcePath(filePath);
       setFileName(name);
       goToStep(1);
     } catch (err) {
@@ -153,6 +158,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             ) : (
               <RedactStep
                 pdfBytes={pdfBytes}
+                sourcePath={sourcePath}
                 onComplete={handleRedactComplete}
                 onBack={() => goToStep(0)}
               />

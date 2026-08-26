@@ -3209,6 +3209,23 @@ mod tests {
             let _ = std::fs::remove_file(&out);
         }
 
+
+        /// Prints real OCR output as JSON, for use as a TypeScript test fixture.
+        /// Ignored by default; run with:
+        ///   cargo test --lib dump_real_ocr_output -- --ignored --nocapture
+        ///
+        /// The TS search tests must be driven by what the engine actually emits,
+        /// not by what it is assumed to emit. A previous search fix in this repo
+        /// shipped broken for exactly that reason.
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn dump_real_ocr_output() {
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            println!("{}", serde_json::to_string_pretty(&pages).unwrap());
+        }
+
         #[cfg(not(target_os = "macos"))]
         #[test]
         fn platforms_without_an_engine_say_so_plainly() {

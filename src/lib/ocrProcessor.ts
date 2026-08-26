@@ -79,6 +79,21 @@ export interface OcrOptions {
 }
 
 /**
+ * Reads a scanned PDF without writing anything.
+ *
+ * Redaction search needs the text and where it sits, not a new file — building a
+ * searchable PDF it would immediately throw away is wasted work on a document
+ * that takes seconds per page.
+ */
+export async function recognisePdf(sourcePath: string, options: OcrOptions): Promise<OcrPage[]> {
+  const json: string = await invoke('ocr_pdf', {
+    sourcePath,
+    languages: options.languages,
+  });
+  return JSON.parse(json);
+}
+
+/**
  * Reads a scanned PDF and returns a searchable copy of it.
  *
  * Two Rust calls rather than one: recognition is the slow part and its output is
