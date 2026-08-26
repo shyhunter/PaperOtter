@@ -10,6 +10,7 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 mod heic;
+mod ocr;
 
 /// Validates a source file path from the frontend.
 /// Blocks null bytes, path traversal, and overly long paths.
@@ -481,6 +482,36 @@ fn heic_frame_count(source_path: String) -> Result<usize, String> {
     let source_bytes = std::fs::read(&source_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
     heic::frame_count(&source_bytes)
+}
+
+/// Reads the text on a scanned PDF and where it sits.
+///
+/// Returns JSON: one entry per page with its size in points and the recognised
+/// blocks positioned in PDF user space, ready for the caller to lay an invisible
+/// text layer over. Building that layer is done with pdf-lib on the TypeScript
+/// side, where this app's PDF writing already lives.
+///
+/// Recognition is CPU-bound and can take seconds per page, so it runs on a
+/// blocking thread and emits `ocr-progress` as `[page, total]` before each page —
+/// a long document must not look like a hang.
+#[tauri::command]
+async fn ocr_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+    languages: Vec<String>,
+) -> Result<String, String> {
+    validate_source_path(&source_path)?;
+
+    let handle = app.clone();
+    let pages = tauri::async_runtime::spawn_blocking(move || {
+        ocr::recognize_pdf(&source_path, &languages, |index, total| {
+            let _ = handle.emit("ocr-progress", (index, total));
+        })
+    })
+    .await
+    .map_err(|e| format!("Text recognition could not be started: {e}"))??;
+
+    serde_json::to_string(&pages).map_err(|e| format!("Could not encode the result: {e}"))
 }
 
 /// Cancel an in-progress compression by killing the GS child process.
@@ -1994,7 +2025,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -2871,6 +2902,130 @@ mod tests {
         }
     }
 
+
+
+    // ─── OCR-01 — Text recognition on a scanned PDF ────────────────────────────
+    //
+    // Runs on Apple Vision (see ocr.rs), so the tests that actually recognise
+    // text are macOS-gated and DO NOT run on the ubuntu CI runner — the same
+    // arrangement as the HEIC decode tests. What runs everywhere is the honest
+    // error on a platform with no engine.
+    //
+    // test-fixtures/scanned.pdf is a genuinely image-only PDF: two A4 pages,
+    // each a rasterised image of known text with no text layer at all. The known
+    // wording is what lets these assert on the result rather than merely on the
+    // fact that something came back.
+
+    mod ocr_recognition {
+        use super::super::ocr;
+        use super::fixture_integration::read_fixture;
+
+        fn fixture_path(name: &str) -> String {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .parent().expect("workspace root")
+                .join("test-fixtures").join(name)
+                .to_string_lossy().to_string()
+        }
+
+        #[test]
+        fn the_fixture_really_is_image_only() {
+            // If this ever gains a text layer the OCR tests below become
+            // meaningless without failing — they would be reading the layer.
+            let bytes = read_fixture("scanned.pdf");
+            let raw = String::from_utf8_lossy(&bytes);
+            assert!(!raw.contains("MUSTERMANN"), "fixture must not carry a text layer");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_scanned_page_yields_the_text_that_is_on_it() {
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("scanned.pdf must be recognised");
+            assert_eq!(pages.len(), 2, "both pages must be read");
+
+            let page_one: String = pages[0].blocks.iter().map(|b| b.text.as_str())
+                .collect::<Vec<_>>().join(" ");
+            assert!(page_one.contains("MUSTERMANN"), "got: {page_one}");
+            assert!(page_one.contains("RESIDENCE PERMIT"), "got: {page_one}");
+
+            let page_two: String = pages[1].blocks.iter().map(|b| b.text.as_str())
+                .collect::<Vec<_>>().join(" ");
+            assert!(page_two.contains("BERLIN"), "got: {page_two}");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn text_is_positioned_inside_the_page_it_came_from() {
+            // The acceptance criterion is that the text layer aligns with the
+            // page. Boxes outside the page mean the layer lands nowhere useful,
+            // and a coordinate flip would put every line on the wrong half.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let page = &pages[0];
+            assert!((page.width - 595.0).abs() < 2.0, "A4 width in points, got {}", page.width);
+            assert!((page.height - 842.0).abs() < 2.0, "A4 height in points, got {}", page.height);
+
+            for block in &page.blocks {
+                assert!(block.x >= 0.0 && block.x + block.width <= page.width + 1.0,
+                        "{:?} runs off the page horizontally", block);
+                assert!(block.y >= 0.0 && block.y + block.height <= page.height + 1.0,
+                        "{:?} runs off the page vertically", block);
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_heading_sits_above_the_body_text() {
+            // Pins the vertical origin. Vision and PDF both put y=0 at the
+            // bottom; if that were flipped the page would still "look fine" in
+            // every box-bounds check above while reading upside down.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let find = |needle: &str| pages[0].blocks.iter()
+                .find(|b| b.text.contains(needle))
+                .unwrap_or_else(|| panic!("missing {needle}"))
+                .y;
+            assert!(find("RESIDENCE") > find("Nationality"),
+                    "the title must sit higher up the page than the last line");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn every_page_is_reported_before_it_is_worked_on() {
+            let mut seen = Vec::new();
+            ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()],
+                               |i, total| seen.push((i, total)))
+                .expect("must recognise");
+            assert_eq!(seen, vec![(0, 2), (1, 2)]);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn clean_print_comes_back_confident() {
+            // The flip side of reporting confidence: on a clean render it must
+            // actually be high, or a low-confidence warning would fire always.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let worst = pages[0].blocks.iter().map(|b| b.confidence).fold(1.0f32, f32::min);
+            assert!(worst > 0.5, "clean text should not read as uncertain, got {worst}");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_file_that_is_not_a_pdf_fails_clearly() {
+            let err = ocr::recognize_pdf(&fixture_path("sample.jpg"), &[], |_, _| {})
+                .expect_err("a JPEG is not a PDF");
+            assert!(err.contains("could not be opened"), "got: {err}");
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        #[test]
+        fn platforms_without_an_engine_say_so_plainly() {
+            let err = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &[], |_, _| {})
+                .expect_err("must not recognise off macOS");
+            assert!(err.contains("macOS"), "got: {err}");
+        }
+    }
 
     // ─── DEP-02 — Ghostscript availability must mean "it works" ────────────────
     //

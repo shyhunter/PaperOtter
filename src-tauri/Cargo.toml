@@ -69,7 +69,7 @@ objc2-web-kit = { version = "0.3", default-features = false, features = [
     "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
 ] }
 objc2-pdf-kit = { version = "0.3", default-features = false, features = [
-    "std", "PDFDocument", "PDFPage",
+    "std", "PDFDocument", "PDFPage", "objc2-core-graphics",
 ] }
 
 # HEIC decoding via the OS. Every iPhone photo is HEIC by default, and no
@@ -83,6 +83,15 @@ objc2-core-graphics = { version = "0.3", default-features = false, features = [
 ] }
 objc2-image-io = { version = "0.3", default-features = false, features = [
     "std", "CGImageSource", "objc2-core-graphics",
+] }
+
+# OCR via the OS. Vision is the engine Preview and Photos use, covers 30
+# languages including the German and Turkish that F13b targets, and needs no
+# bundled binary, no language data and no P012 provenance — unlike Tesseract,
+# which is ~10 dylibs once leptonica and the image libraries are counted.
+objc2-vision = { version = "0.3", default-features = false, features = [
+    "std", "VNRequest", "VNRecognizeTextRequest", "VNObservation",
+    "VNRequestHandler", "VNTypes", "objc2-core-graphics", "objc2-core-foundation",
 ] }
 
 
