@@ -20,6 +20,7 @@ export type ToolId =
   | 'redact-pdf'
   | 'pdfa-convert'
   | 'repair-pdf'
+  | 'ocr-pdf'
   | 'edit-pdf'
   | 'convert-doc';
 
@@ -308,6 +309,19 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'step.selectPdf', description: 'tool.repairPdf.step2' },
       { label: 'step.repair', description: 'tool.editPdf.step1' },
       { label: 'step.save', description: 'tool.editPdf.step2' },
+    ],
+  },
+  'ocr-pdf': {
+    id: 'ocr-pdf',
+    name: 'tool.ocrPdf.name',
+    description: 'tool.ocrPdf.desc',
+    category: 'pdf',
+    icon: 'ScanText',
+    acceptsFormats: ['pdf'],
+    steps: [
+      { label: 'step.selectPdf', description: 'tool.ocrPdf.step1' },
+      { label: 'step.recognise', description: 'tool.ocrPdf.step2' },
+      { label: 'step.save', description: 'tool.ocrPdf.step3' },
     ],
   },
   'edit-pdf': {

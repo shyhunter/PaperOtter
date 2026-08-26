@@ -53,6 +53,7 @@ import { BatchSummaryStep } from '@/components/batch/BatchSummaryStep';
 import { BatchRunStep } from '@/components/batch/BatchRunStep';
 import { processPdf } from '@/lib/pdfProcessor';
 import { processImage } from '@/lib/imageProcessor';
+import { OcrPdfFlow } from '@/components/ocr-pdf/OcrPdfFlow';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -96,6 +97,7 @@ const DEDICATED_TOOLS = new Set<string>([
   'convert-doc',
   'pdfa-convert',
   'repair-pdf',
+  'ocr-pdf',
 ]);
 
 /**
@@ -330,6 +332,15 @@ function DedicatedToolFlow() {
   }
 
   // Repair PDF — dedicated flow
+  if (activeTool === 'ocr-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
+        <OcrPdfFlow onStepChange={setDedicatedFlowStep} />
+      </>
+    );
+  }
+
   if (activeTool === 'repair-pdf') {
     return (
       <>
