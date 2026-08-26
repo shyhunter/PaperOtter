@@ -366,6 +366,76 @@ jobs:
           Stop-Process -Id $proc.Id -Force
           Write-Host "=== Windows smoke test PASSED ==="
 
+      # ── Windows: the bundled Ghostscript must actually load and compress ──
+      #
+      # This is the check the build job cannot make. There, the exe and gsdll64.dll
+      # sit in the same folder, so gs runs whatever happens. In the *installed*
+      # layout the sidecar goes next to Papercut.exe while the DLL goes under
+      # resources\, and gswin64c.exe is only a thin wrapper around that DLL — so
+      # the interesting failure only exists after installation.
+      #
+      # Runs against the installed tree, replicating what with_windows_dll_path
+      # does in lib.rs: prepend the resource directory to the child's PATH.
+      - name: "Windows: bundled Ghostscript loads and compresses"
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $searchRoots = @($env:LOCALAPPDATA, $env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:APPDATA) | Where-Object { $_ }
+
+          $gs = $null; $dll = $null
+          foreach ($root in $searchRoots) {
+            if (-Not $gs)  { $gs  = (Get-ChildItem -Path $root -Recurse -Filter 'gs.exe'       -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
+            if (-Not $dll) { $dll = (Get-ChildItem -Path $root -Recurse -Filter 'gsdll64.dll'  -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
+          }
+
+          if (-Not $gs) {
+            Write-Host "FAIL: no Ghostscript sidecar in the installed app."
+            Write-Host "PDF compression would silently require the user to install Ghostscript."
+            exit 1
+          }
+          if (-Not $dll) {
+            Write-Host "FAIL: gsdll64.dll was not bundled. gs.exe is only a wrapper around it"
+            Write-Host "and cannot start without it."
+            exit 1
+          }
+          Write-Host "sidecar: $gs"
+          Write-Host "dll:     $dll"
+
+          # Exactly what with_windows_dll_path does before spawning.
+          $env:PATH = "$([System.IO.Path]::GetDirectoryName($dll));$env:PATH"
+
+          & $gs --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: bundled Ghostscript did not start."; exit 1 }
+
+          # And that it does real work, not just print a version. This job does
+          # not check out the repo, so Ghostscript generates its own input: a
+          # PostScript page through the pdfwrite device, which is the same device
+          # PDF compression uses.
+          # Built as an array rather than a here-string: a here-string would put
+          # "%!PS" at column 0, and YAML reads a leading % as a directive.
+          $ps = @(
+            '%!PS',
+            '/Helvetica findfont 24 scalefont setfont',
+            '72 720 moveto (Papercut Ghostscript smoke test) show',
+            'showpage'
+          )
+          Set-Content -Path smoke.ps -Value $ps -Encoding ascii
+
+          & $gs -q -dNOPAUSE -dBATCH -dSAFER -dPDFSETTINGS=/screen `
+                -sDEVICE=pdfwrite -sOutputFile=out.pdf smoke.ps
+          if ($LASTEXITCODE -ne 0 -or -Not (Test-Path out.pdf)) {
+            Write-Host "FAIL: bundled Ghostscript could not produce a PDF."
+            exit 1
+          }
+          $header = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes("out.pdf")[0..4])
+          if ($header -ne "%PDF-") {
+            Write-Host "FAIL: output is not a PDF (header: '$header')"
+            exit 1
+          }
+          Write-Host "PASS: bundled Ghostscript produced a valid PDF ($((Get-Item out.pdf).Length) bytes)"
+          Write-Host "=== Windows Ghostscript smoke test PASSED ==="
+
       # ── Linux (AppImage) ──
       - name: "Linux: Install display dependencies"
         if: matrix.type == 'appimage'

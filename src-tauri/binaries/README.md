@@ -38,10 +38,24 @@ resources bundle into a different directory than the executable, so:
 - `with_windows_dll_path` in `lib.rs` prepends the resource directory to the child
   process's `PATH` before spawning.
 
-**None of that has been run on Windows.** It will pass CI regardless, because in
-CI the exe and the DLL sit in the same directory — the bundled layout is the case
-that can break. Until someone runs the built installer on a real Windows machine
-and compresses a PDF, Windows must not be described as installation-free.
+The *build* job cannot catch a failure here: there the exe and DLL sit in the
+same folder, so Ghostscript runs whatever happens. The interesting failure only
+exists after installation, where the sidecar lands beside `Papercut.exe` and the
+DLL under `resources\`.
+
+So the **smoke-test** job checks it instead. That job already installs the NSIS
+package on a Windows runner, so it works against the real installed layout: it
+locates the installed `gs.exe` and `gsdll64.dll`, prepends the DLL's directory to
+`PATH` exactly as `with_windows_dll_path` does, and has Ghostscript produce a PDF
+through the same `pdfwrite` device compression uses. The release fails if the
+sidecar is missing, the DLL is missing, Ghostscript will not start, or the output
+is not a PDF.
+
+**This has not run yet** — it executes on the next release tag. Until that run is
+green, Windows is implemented but unproven, and should not be described as
+installation-free. What it still does not cover is the app driving Ghostscript
+through its own UI; that would need WebDriver, which this project deliberately
+dropped from CI on cost grounds.
 
 ## Do not use a package manager's binary directly
 
