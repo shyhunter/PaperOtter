@@ -13,6 +13,14 @@ import { join, relative } from 'node:path';
 // It reads source as text rather than parsing it. That is crude, but the failure
 // mode is the safe one: a shape it cannot see is a miss, never a false alarm on
 // working code.
+//
+// It did miss a shape, and a large one. A sentence wrapping a JSX expression --
+// `This will create {n} files.` -- is three text nodes, none of which look like
+// a sentence to a line-oriented scan. Around a hundred strings lived in that
+// blind spot. I18N-08 in hardcoded-jsx.test.ts parses the AST and covers it.
+// Neither test supersedes the other: this one still catches toast() calls,
+// `description:`/`label:` properties and error setters that I18N-08 does not
+// look at.
 
 const SRC = join(process.cwd(), 'src');
 

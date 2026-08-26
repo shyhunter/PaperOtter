@@ -128,7 +128,9 @@ export function SplitSelectStep({
           return pages;
         });
         return groups.map((pages) => ({
-          label: pages.length === 1 ? `Page ${pages[0]}` : `Pages ${pages[0]}–${pages[pages.length - 1]}`,
+          label: pages.length === 1
+            ? t('split.pageN', { page: pages[0] })
+            : t('split.pagesRange', { from: pages[0], to: pages[pages.length - 1] }),
           count: pages.length,
         }));
       }
@@ -137,7 +139,7 @@ export function SplitSelectStep({
         for (let i = 1; i <= pageCount; i += everyN) {
           const end = Math.min(i + everyN - 1, pageCount);
           groups.push({
-            label: i === end ? `Page ${i}` : `Pages ${i}–${end}`,
+            label: i === end ? t('split.pageN', { page: i }) : t('split.pagesRange', { from: i, to: end }),
             count: end - i + 1,
           });
         }
@@ -145,7 +147,7 @@ export function SplitSelectStep({
       }
       case 'individual':
         return Array.from({ length: pageCount }, (_, i) => ({
-          label: `Page ${i + 1}`,
+          label: t('split.pageN', { page: i + 1 }),
           count: 1,
         }));
     }
@@ -255,7 +257,7 @@ export function SplitSelectStep({
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              This will create {plural('count.file', Math.ceil(pageCount / everyN))}.
+              {t('split.thisWillCreate', { files: plural('count.file', Math.ceil(pageCount / everyN)) })}
             </p>
           </div>
         )}
@@ -267,7 +269,7 @@ export function SplitSelectStep({
               {t('split.extractEachPageAsA')}
             </p>
             <p className="text-sm font-medium text-foreground mt-1">
-              This will create {plural('count.file', pageCount)}.
+              {t('split.thisWillCreate', { files: plural('count.file', pageCount) })}
             </p>
           </div>
         )}
@@ -275,7 +277,7 @@ export function SplitSelectStep({
         {/* Preview panel */}
         {previewInfo && previewInfo.length > 0 && previewInfo.length <= 20 && (
           <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Output files ({previewInfo.length})</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">{t('split.outputFiles', { count: previewInfo.length })}</p>
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {previewInfo.map((item, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">

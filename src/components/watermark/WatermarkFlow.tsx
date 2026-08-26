@@ -251,7 +251,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {/* Opacity slider */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Opacity: {Math.round(opacity * 100)}%
+                    {t('toolSidebarPanel.opacity', { percent: Math.round(opacity * 100) })}
                   </label>
                   <input
                     type="range"

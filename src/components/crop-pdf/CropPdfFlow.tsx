@@ -208,7 +208,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
 
                 {/* Page dimensions info */}
                 <p className="text-xs text-muted-foreground">
-                  Page size: {Math.round(pointsToMm(pageWidth))} × {Math.round(pointsToMm(pageHeight))} mm
+                  {t('cropPdfFlow.pageSizeMm', { width: Math.round(pointsToMm(pageWidth)), height: Math.round(pointsToMm(pageHeight)) })}
                 </p>
 
                 {/* Presets */}

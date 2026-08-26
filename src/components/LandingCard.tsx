@@ -209,8 +209,7 @@ export function LandingCard({
                 {t('landingCard.fileTooLarge')}
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
-                This file is {formatMB(fileSizeLimitBytes)}.{' '}
-                Files over 100 MB are not supported. Please use a smaller file.
+                {t('landingCard.fileTooLargeDetail', { size: formatMB(fileSizeLimitBytes) })}
               </p>
             </div>
             <div className="flex justify-end">
@@ -242,8 +241,7 @@ export function LandingCard({
                 {t('landingCard.damagedOrInvalidPdf')}
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
-                "{corruptPdfBlock.name}" could not be opened — it appears to be damaged or not a valid PDF.
-                The Repair PDF tool may be able to recover it.
+                {t('landingCard.couldNotBeOpened', { name: corruptPdfBlock.name })}
               </p>
             </div>
             <div className="flex gap-2 justify-end">

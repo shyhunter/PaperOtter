@@ -47,6 +47,18 @@ function fontOptions() {
 
 /** Preset colors for text */
 /** Local-storage key for custom colors */
+type Alignment = 'left' | 'center' | 'right' | 'justify';
+
+function alignmentLabel(alignment: Alignment): string {
+  const labels: Record<Alignment, string> = {
+    left: t('common.left'),
+    center: t('common.center'),
+    right: t('common.right'),
+    justify: t('common.justify'),
+  };
+  return labels[alignment];
+}
+
 const CUSTOM_COLORS_KEY = 'papercut-custom-colors';
 
 interface EditorToolbarProps {
@@ -420,7 +432,7 @@ export function EditorToolbar({
                   key={c}
                   onClick={() => handleColorChange(c)}
                   onContextMenu={(e) => { e.preventDefault(); removeCustomColor(c); }}
-                  title={`${c} — right-click to remove`}
+                  title={t('editorToolbar.colourRightClickToRemove', { colour: c })}
                   className={cn(
                     'w-7 h-7 rounded-md border-2 transition-all',
                     selectedBlock.color === c
@@ -494,7 +506,7 @@ export function EditorToolbar({
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => handleAlignmentChange(value)}
-                  title={`Align ${value}`}
+                  title={t('editorToolbar.alignNamed', { alignment: alignmentLabel(value) })}
                 >
                   <Icon className="w-4 h-4" />
                 </Button>

@@ -232,7 +232,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {sourceFormatLabel} &middot; {formatFileSize(fileSize)}
+                  {sourceFormatLabel} · {formatFileSize(fileSize)}
                 </p>
               </div>
 
@@ -325,7 +325,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                       {t('convertImage.converting')}
                     </>
                   ) : (
-                    `Convert to ${FORMAT_LABELS[outputFormat]}`
+                    t('convertImageFlow.convertToFormat', { format: FORMAT_LABELS[outputFormat] })
                   )}
                 </Button>
               </div>

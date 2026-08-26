@@ -52,7 +52,7 @@ export function UpdateChecker() {
     <div className="flex items-center justify-between px-4 py-2 bg-accent/50 border-b border-border/40">
       <div className="flex items-center gap-2 text-sm text-foreground">
         <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-        <span>Papercut v{release.version} is available.</span>
+        <span>{t('updateChecker.versionAvailable', { version: release.version })}</span>
         <button
           type="button"
           onClick={() => openUrl(release.url).catch(() => {})}

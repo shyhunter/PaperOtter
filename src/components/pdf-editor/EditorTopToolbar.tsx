@@ -154,7 +154,7 @@ export function EditorTopToolbar() {
 
         <div className="flex-1" />
         <div className="text-xs text-muted-foreground">
-          Page {state.currentPage + 1} of {state.pageCount}
+          {t('common.pageOf', { page: state.currentPage + 1, total: state.pageCount })}
         </div>
       </div>
 

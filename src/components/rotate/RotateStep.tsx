@@ -104,8 +104,8 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('common.rotatePages')}</h2>
           <p className="text-sm text-muted-foreground">
-            Select pages, then rotate them left or right.
-            {rotatedCount > 0 && ` ${plural('count.page', rotatedCount)} rotated.`}
+            {t('rotate.selectPagesThenRotate')}
+            {rotatedCount > 0 && ` ${t('rotate.nPagesRotated', { pages: plural('count.page', rotatedCount) })}`}
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
             </Button>
             {selectedCount > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {selectedCount} selected
+                {t('pdfToJpgFlow.nSelected', { count: selectedCount })}
               </Badge>
             )}
           </div>

@@ -13,13 +13,13 @@ export function ThemeToggle() {
   };
 
   const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? t('themeToggle.light') : t('themeToggle.system');
+  const label = theme === 'dark' ? t('themeToggle.dark') : theme === 'light' ? t('themeToggle.light') : t('themeToggle.system');
 
   return (
     <button
       type="button"
       onClick={next}
-      title={`Theme: ${label}`}
+      title={t('themeToggle.themeNamed', { theme: label })}
       className="flex items-center justify-center h-8 w-8 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
     >
       <Icon className="h-4 w-4" />

@@ -14,6 +14,17 @@ import { resizeFromCorner, type Corner } from '@/lib/blockResize';
 /** Floors for a resized block, in PDF points. */
 const RESIZE_LIMITS = { minWidth: 30, minHeight: 12 };
 
+/** Corner names for the resize handles, so the tooltip is not English-only. */
+function cornerLabel(corner: Corner): string {
+  const labels: Record<Corner, string> = {
+    'top-left': t('pdfEditor.topLeft'),
+    'top-right': t('pdfEditor.topRight'),
+    'bottom-left': t('pdfEditor.bottomLeft'),
+    'bottom-right': t('pdfEditor.bottomRight'),
+  };
+  return labels[corner];
+}
+
 /** Where each corner handle sits, and what the cursor promises it will do. */
 const CORNERS: { corner: Corner; style: React.CSSProperties; cursor: string }[] = [
   { corner: 'top-left', style: { top: -5, left: -5 }, cursor: 'nwse-resize' },
@@ -22,6 +33,7 @@ const CORNERS: { corner: Corner; style: React.CSSProperties; cursor: string }[] 
   { corner: 'bottom-right', style: { bottom: -5, right: -5 }, cursor: 'nwse-resize' },
 ];
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 /** Hook to forward pinch-to-zoom from an overlay div to the editor zoom.
  *  Needed because WKWebView gesture events don't always bubble through overlays. */
@@ -226,7 +238,7 @@ export function TextEditingLayer({ pageIndex, pageWidth: _pageWidth, pageHeight,
       const block = textBlocks.find((b) => b.id === blockId);
       if (!block) return;
 
-      const action = window.confirm(`Delete text block "${block.text.slice(0, 30)}..."?`);
+      const action = window.confirm(t('textEditingLayer.deleteTextBlockConfirm', { text: block.text.slice(0, 30) }));
       if (action) {
         deleteTextBlock(pageIndex, blockId);
       }
@@ -543,7 +555,7 @@ function TextBlockOverlay({
             <div
               key={corner}
               data-testid={`resize-${corner}`}
-              title={`Resize from ${corner.replace('-', ' ')}`}
+              title={t('imageBlockLayer.resizeFromCorner', { corner: cornerLabel(corner) })}
               onMouseDown={(e) => handleResizeMouseDown(e, corner)}
               style={{
                 position: 'absolute',

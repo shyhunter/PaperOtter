@@ -201,7 +201,7 @@ function ToolResultFeedback({
     <div className="rounded border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 p-2 space-y-1">
       <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
         <Check className="h-3 w-3" />
-        {toolLabel} applied successfully
+        {t('toolSidebarPanel.appliedSuccessfully', { tool: toolLabel })}
       </div>
       <div className="flex justify-between text-[10px]">
         <span className="text-muted-foreground">{t('compare.before')}</span>
@@ -257,6 +257,18 @@ const QUALITY_ZONES = [
 ] as const;
 
 type ZoneValue = (typeof QUALITY_ZONES)[number]['value'];
+
+type MarginSide = 'top' | 'bottom' | 'left' | 'right';
+
+function sideLabel(side: MarginSide): string {
+  const labels: Record<MarginSide, string> = {
+    top: t('common.top'),
+    bottom: t('common.bottom'),
+    left: t('common.left'),
+    right: t('common.right'),
+  };
+  return labels[side];
+}
 
 function zoneLabel(value: ZoneValue): string {
   const labels: Record<ZoneValue, string> = {
@@ -548,15 +560,14 @@ function CompressPanel() {
         {useTargetSize && floorBytes !== null && (
           targetUnreachable ? (
             <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-              Smallest achievable is about {formatBytes(floorBytes)} — compression
-              cannot go below this for this file.
+              {t('toolSidebarPanel.smallestAchievable', { size: formatBytes(floorBytes) })}
             </p>
           ) : (
             // Stated up front rather than only after a rejected value: the floor
             // is known the moment the estimates are, so making the user discover
             // it by failing is a choice, not a limitation.
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              Can compress to about {formatBytes(floorBytes)} at best.
+              {t('toolSidebarPanel.canCompressToAbout', { size: formatBytes(floorBytes) })}
             </p>
           )
         )}
@@ -584,8 +595,7 @@ function CompressPanel() {
             </label>
             {!downsampleImages && (
               <p className="text-[10px] text-muted-foreground ps-5 leading-relaxed">
-                Images are still re-encoded, just not shrunk. Estimates assume
-                downsampling — actual sizes will be larger.
+                {t('toolSidebarPanel.imagesStillReEncoded')}
               </p>
             )}
           </>
@@ -614,8 +624,8 @@ function CompressPanel() {
                 }`}
               >
                 {compressionResult.compressedSize <= compressionResult.targetBytes
-                  ? 'met'
-                  : `not met (${formatBytes(compressionResult.targetBytes)})`}
+                  ? t('toolSidebarPanel.targetMet')
+                  : t('toolSidebarPanel.targetNotMet', { size: formatBytes(compressionResult.targetBytes) })}
               </span>
             </div>
           )}
@@ -776,10 +786,10 @@ function RotatePanel() {
 
       <p className="text-[10px] text-muted-foreground">
         {applyToAll
-          ? `Rotating all ${state.pageCount} pages`
+          ? t('toolSidebarPanel.rotatingAllPages', { count: state.pageCount })
           : targetPages.length > 1
-            ? `Rotating ${targetPages.length} selected pages`
-            : `Rotating page ${targetPages[0] + 1}`}
+            ? t('toolSidebarPanel.rotatingSelectedPages', { count: targetPages.length })
+            : t('toolSidebarPanel.rotatingPage', { page: targetPages[0] + 1 })}
       </p>
 
       <ToolSidebarPreview
@@ -917,7 +927,7 @@ function WatermarkPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">
-            Opacity: {Math.round(options.opacity * 100)}%
+            {t('toolSidebarPanel.opacity', { percent: Math.round(options.opacity * 100) })}
           </label>
           <input
             type="range"
@@ -1269,7 +1279,7 @@ function CropPanel() {
           <div className="grid grid-cols-2 gap-2">
             {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
               <div key={side}>
-                <label className="text-[10px] text-muted-foreground capitalize">{side}</label>
+                <label className="text-[10px] text-muted-foreground">{sideLabel(side)}</label>
                 <input
                   type="number"
                   value={margins[side]}
@@ -1277,7 +1287,7 @@ function CropPanel() {
                   className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
                   min={0}
                   max={100}
-                  title={`${side} margin (mm)`}
+                  title={t('toolSidebarPanel.marginMm', { side: sideLabel(side) })}
                 />
               </div>
             ))}
@@ -1518,7 +1528,7 @@ function SignPanel() {
             onClick={() => setShowSaved(!showSaved)}
             className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
-            Saved signatures ({savedSignatures.length}) {showSaved ? '▾' : '▸'}
+            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '▾' : '▸'}
           </button>
           {showSaved && savedSignatures.map((sig, idx) => (
             <div key={sig.createdAt} className="flex items-center gap-1.5 p-1.5 rounded border hover:bg-muted/50 group">
@@ -1657,8 +1667,7 @@ function RedactPanel() {
       <PanelHeader toolId="redact-pdf" />
 
       <p className="text-[10px] leading-relaxed text-muted-foreground">
-        Drag on the page to cover something. Applying flattens those pages to an
-        image, so the content underneath is removed from the file, not just hidden.
+        {t('toolSidebarPanel.dragOnThePageToCover')}
       </p>
 
       {/* Find text */}
@@ -1686,8 +1695,7 @@ function RedactPanel() {
 
         {searchRan && !isSearching && searchResults.length === 0 && (
           <p className="text-[10px] leading-relaxed text-muted-foreground">
-            No matches. Pages with no selectable text — a scan, for instance —
-            cannot be searched.
+            {t('toolSidebarPanel.noMatchesNoSelectableText')}
           </p>
         )}
 
@@ -1745,7 +1753,7 @@ function RedactPanel() {
               onClick={addAllMatches}
               className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
             >
-              Mark all {searchResults.length}
+              {t('toolSidebarPanel.markAll', { count: searchResults.length })}
             </button>
           </div>
         )}
@@ -1759,15 +1767,14 @@ function RedactPanel() {
         </div>
         {isLightColor(state.redactionColor) && (
           <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-            A box this pale is hard to see on a white page. The content underneath
-            is still permanently removed.
+            {t('toolSidebarPanel.paleBoxWarning')}
           </p>
         )}
       </div>
 
       <div className="border-t pt-2 space-y-1.5">
         <p className="text-[10px] text-muted-foreground">
-          {draft.length} area{draft.length === 1 ? '' : 's'} marked
+          {plural('count.areaMarked', draft.length)}
         </p>
         {draft.length > 0 && (
           <button
@@ -1853,7 +1860,7 @@ function PdfaPanel() {
         <ToolResultFeedback
           originalSize={resultInfo.originalSize}
           resultSize={resultInfo.resultSize}
-          toolLabel={`PDF/A-${pdfaLevel} conversion`}
+          toolLabel={t('toolSidebarPanel.pdfaConversion', { level: pdfaLevel })}
         />
       )}
 

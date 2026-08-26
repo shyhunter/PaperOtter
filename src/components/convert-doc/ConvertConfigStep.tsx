@@ -156,7 +156,7 @@ export function ConvertConfigStep({
         <div className="text-center">
           <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {FORMAT_LABELS[sourceFormat]} format
+            {t('convertConfigStep.formatNamed', { format: FORMAT_LABELS[sourceFormat] })}
           </p>
         </div>
 
@@ -264,7 +264,7 @@ export function ConvertConfigStep({
                 )}
               >
                 <span className="font-medium block">{t('convertDoc.byChapter')}</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5 block">.zip, one file per heading</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">{t('convertConfigStep.zipOneFilePerHeading')}</span>
               </button>
             </div>
           </div>
@@ -435,7 +435,7 @@ export function ConvertConfigStep({
               {t('convertDoc.detectingTools')}
             </>
           ) : (
-            `Convert to ${FORMAT_LABELS[outputFormat]}`
+            t('convertImageFlow.convertToFormat', { format: FORMAT_LABELS[outputFormat] })
           )}
         </Button>
       </div>

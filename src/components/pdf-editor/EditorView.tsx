@@ -216,8 +216,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           </div>
           {repairFailed && (
             <p className="text-xs text-muted-foreground">
-              This file could not be repaired. Whatever is wrong with it is
-              beyond what a rebuild can recover.
+              {t('editorView.couldNotBeRepaired')}
             </p>
           )}
 

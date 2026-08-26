@@ -335,7 +335,7 @@ export function SignaturePlaceStep({
             >
               {Array.from({ length: totalPages }, (_, i) => (
                 <option key={i} value={i}>
-                  Page {i + 1} of {totalPages}
+                  {t('common.pageOf', { page: i + 1, total: totalPages })}
                 </option>
               ))}
             </select>

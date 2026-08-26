@@ -141,7 +141,7 @@ export function ExportPanel({
       if (savePath) {
         await writeFile(savePath, result.outputBytes);
         const sizeMb = (result.outputSize / 1024 / 1024).toFixed(1);
-        setSuccess(`Saved as ${FORMAT_LABELS[selectedFormat]} (${sizeMb} MB)`);
+        setSuccess(t('exportPanel.savedAsFormat', { format: FORMAT_LABELS[selectedFormat], size: sizeMb }));
         onExportComplete?.();
       }
     } catch (err) {
@@ -210,7 +210,7 @@ export function ExportPanel({
         onClick={() => setShowTypography(!showTypography)}
         className="text-xs text-muted-foreground hover:text-foreground text-start transition-colors"
       >
-        {showTypography ? '▾' : '▸'} Typography options
+        {showTypography ? '▾' : '▸'} {t('exportPanel.typographyOptions')}
       </button>
 
       {showTypography && (
@@ -297,7 +297,7 @@ export function ExportPanel({
           <>
             <Download className="w-3.5 h-3.5 me-2" />
             {selectedFormat
-              ? `Export as ${FORMAT_LABELS[selectedFormat]}`
+              ? t('exportPanel.exportAsFormat', { format: FORMAT_LABELS[selectedFormat] })
               : t('exportPanel.selectFormat')}
           </>
         )}

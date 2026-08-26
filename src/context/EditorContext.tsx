@@ -506,7 +506,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'INIT', state: { ...state, pdfBytes: newBytes, pages: newPages, pageCount: numPages, isDirty: true } });
     } catch (err) {
       console.error('reorderPages failed:', err);
-      alert(`Failed to reorder pages: ${err instanceof Error ? err.message : String(err)}`);
+      alert(t('editorContext.failedToReorderPages', { error: err instanceof Error ? err.message : String(err) }));
     }
   }, [state]);
 
@@ -582,7 +582,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       });
     } catch (err) {
       console.error('addPagesFromPdf failed:', err);
-      alert(`Failed to add pages: ${err instanceof Error ? err.message : String(err)}`);
+      alert(t('editorContext.failedToAddPages', { error: err instanceof Error ? err.message : String(err) }));
     }
   }, [state]);
 

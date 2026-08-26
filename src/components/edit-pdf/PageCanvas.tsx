@@ -58,7 +58,7 @@ export function PageCanvas({ pdfBytes, pageIndex, scale, children, onDimensions 
 
         const pageNum = pageIndex + 1;
         if (pageNum < 1 || pageNum > pdfDoc.numPages) {
-          setError(`Page ${pageNum} out of range (1-${pdfDoc.numPages})`);
+          setError(t('pageCanvas.pageOutOfRange', { page: pageNum, total: pdfDoc.numPages }));
           setIsLoading(false);
           return;
         }

@@ -175,7 +175,7 @@ export function ConfigureStep({
       }
       const customBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
       if (customBytes >= fileSizeBytes) {
-        setCustomError(`Target must be smaller than original (${formatBytes(fileSizeBytes)})`);
+        setCustomError(t('configureStep.targetMustBeSmaller', { size: formatBytes(fileSizeBytes) }));
         return;
       }
       // Resolve custom to a real quality preset
@@ -391,7 +391,7 @@ export function ConfigureStep({
                       <div data-testid="target-below-min-warning" className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
                         <p className="text-xs text-amber-700 dark:text-amber-400">
-                          Target may not be achievable — estimated minimum is ~{formatBytes(minAchievable)}.
+                          {t('configureStep.targetMayNotBeAchievable', { size: formatBytes(minAchievable) })}
                         </p>
                       </div>
                     );
@@ -402,8 +402,7 @@ export function ConfigureStep({
                     the user discover it by entering a rejected value is a
                     choice, not a limitation. */}
                 <p className="text-xs text-muted-foreground">
-                  Can compress to about {formatBytes(floorBytes)} at best. Maximum file
-                  size — the best compression preset will be chosen automatically.
+                  {t('configureStep.canCompressToAboutMax', { size: formatBytes(floorBytes) })}
                 </p>
               </div>
             )}
@@ -416,8 +415,8 @@ export function ConfigureStep({
               <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
               <p className="text-xs text-muted-foreground">
                 {compressibilityScore >= 0.5
-                  ? `This PDF contains ${plural('count.image', imageCount)} — compression will reduce file size significantly.`
-                  : `This PDF contains ${plural('count.image', imageCount)} — moderate compression savings expected.`}
+                  ? t('configureStep.containsImagesHighSavings', { images: plural('count.image', imageCount) })
+                  : t('configureStep.containsImagesModerateSavings', { images: plural('count.image', imageCount) })}
               </p>
             </div>
           )}
@@ -544,8 +543,8 @@ export function ConfigureStep({
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground text-center">
               {progress
-                ? `Processing page ${progress.current} of ${progress.total}…`
-                : 'Processing…'}
+                ? t('configureStep.processingPageOf', { current: progress.current, total: progress.total })
+                : t('common.processing')}
             </p>
             <Progress value={progressPct} className="h-1.5" />
           </div>

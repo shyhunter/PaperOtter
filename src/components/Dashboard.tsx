@@ -547,7 +547,7 @@ export function Dashboard() {
         {searchQuery.trim() && !hasSearchResults && (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">
-              No tools match &ldquo;{searchQuery}&rdquo;
+              {t('dashboard.noToolsMatch', { query: searchQuery })}
             </p>
           </div>
         )}

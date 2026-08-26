@@ -103,7 +103,7 @@ function LazyThumbnail({
           : 'border-transparent hover:border-muted-foreground/30'
         }
       `}
-      aria-label={`Page ${pageIndex + 1}`}
+      aria-label={t('split.pageN', { page: pageIndex + 1 })}
       aria-current={isActive ? 'page' : undefined}
     >
       <div className="relative bg-white rounded overflow-hidden" style={{ width: 120, minHeight: 80 }}>

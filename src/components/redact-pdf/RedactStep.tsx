@@ -188,7 +188,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm text-muted-foreground">
-              Page {currentPage + 1} of {totalPages}
+              {t('common.pageOf', { page: currentPage + 1, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -331,7 +331,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground">
-                  {searchResults.length} match{searchResults.length !== 1 ? 'es' : ''} found
+                  {t('redactPdf.matchesFound', { matches: plural('count.match', searchResults.length) })}
                 </p>
                 <button
                   type="button"
@@ -382,8 +382,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
               // the page is replaced by a flat image. What a pale box costs is
               // the reader's ability to tell that anything was removed at all.
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                A box this pale is hard to see on a white page. The content
-                underneath is still permanently removed.
+                {t('toolSidebarPanel.paleBoxWarning')}
               </p>
             )}
           </div>
@@ -401,7 +400,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
                     .sort((a, b) => a[0] - b[0])
                     .map(([page, count]) => (
                       <span key={page} className="me-2">
-                        Page {page + 1}: {count}
+                        {t('redactPdf.pageCount', { page: page + 1, count })}
                       </span>
                     ))}
                 </div>
@@ -430,7 +429,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
           onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
         >
-          Apply Redactions ({allRedactions.length})
+          {t('redactPdf.applyRedactions', { count: allRedactions.length })}
         </Button>
       </div>
     </div>

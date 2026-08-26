@@ -387,7 +387,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           onClick={() => handleMoveUp(i)}
                           disabled={i === 0}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label={`Move ${img.fileName} up`}
+                          aria-label={t('jpgToPdfFlow.moveUpNamed', { name: img.fileName })}
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
@@ -396,7 +396,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           onClick={() => handleMoveDown(i)}
                           disabled={i === images.length - 1}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label={`Move ${img.fileName} down`}
+                          aria-label={t('jpgToPdfFlow.moveDownNamed', { name: img.fileName })}
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
@@ -404,7 +404,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           type="button"
                           onClick={() => handleRemove(i)}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                          aria-label={`Remove ${img.fileName}`}
+                          aria-label={t('common.removeNamed', { name: img.fileName })}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -460,7 +460,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               <div className="text-center space-y-1">
                 <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.configurePdf')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {plural('count.image', images.length)} selected
+                  {t('jpgToPdfFlow.imagesSelected', { images: plural('count.image', images.length) })}
                 </p>
               </div>
 

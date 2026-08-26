@@ -39,7 +39,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
   const handleCreated = useCallback((dataUrl: string, type: SavedSignature['type']) => {
     setPendingDataUrl(dataUrl);
     setPendingType(type);
-    setSigName(`Signature ${signatures.length + 1}`);
+    setSigName(t('signatureCreateStep.signatureN', { n: signatures.length + 1 }));
   }, [signatures.length]);
 
   const handleSaveAndProceed = useCallback(async () => {
@@ -47,7 +47,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
     setIsSaving(true);
     try {
       await saveSignature({
-        name: sigName.trim() || `Signature ${signatures.length + 1}`,
+        name: sigName.trim() || t('signatureCreateStep.signatureN', { n: signatures.length + 1 }),
         type: pendingType,
         dataUrl: pendingDataUrl,
       });

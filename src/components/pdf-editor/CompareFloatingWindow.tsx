@@ -158,7 +158,7 @@ function PreviewPanel({
                   {url && (
                     <img
                       src={url}
-                      alt={`${label} page ${pageIndex + 1}`}
+                      alt={t('compareOverlay.labelledPage', { label, page: pageIndex + 1 })}
                       className="w-full h-full block"
                     />
                   )}
@@ -283,8 +283,8 @@ export function CompareFloatingWindow() {
                 : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
             )}>
               {currentSize <= originalSize
-                ? `${Math.round(((originalSize - currentSize) / originalSize) * 100)}% smaller`
-                : `${Math.round(((currentSize - originalSize) / originalSize) * 100)}% larger`
+                ? t('compareFloatingWindow.percentSmaller', { percent: Math.round(((originalSize - currentSize) / originalSize) * 100) })
+                : t('compareFloatingWindow.percentLarger', { percent: Math.round(((currentSize - originalSize) / originalSize) * 100) })
               }
             </span>
           )}

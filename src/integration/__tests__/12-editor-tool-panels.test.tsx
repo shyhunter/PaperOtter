@@ -21,6 +21,7 @@ import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 import { colorPresets } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
 import { findTextMatches } from '@/lib/pdfTextSearch';
+import { t } from '@/i18n';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -1141,11 +1142,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     const allEqualCheckbox = screen.getByRole('checkbox');
     await user.click(allEqualCheckbox);
 
-    // Should show individual side inputs
-    expect(screen.getByText('top')).toBeInTheDocument();
-    expect(screen.getByText('bottom')).toBeInTheDocument();
-    expect(screen.getByText('left')).toBeInTheDocument();
-    expect(screen.getByText('right')).toBeInTheDocument();
+    // Should show individual side inputs. These read the dictionary rather than
+    // the raw 'top'/'bottom' union members: the label used to be the value
+    // itself with a CSS capitalize, which is a label no non-English user could
+    // read. Asserting the English word would pin that bug back in place.
+    expect(screen.getByText(t('common.top'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.bottom'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.left'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.right'))).toBeInTheDocument();
   });
 
   it('TP-05c — Crop preview processes only the current page; Apply processes the full document', async () => {

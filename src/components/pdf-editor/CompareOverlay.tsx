@@ -268,7 +268,7 @@ export function CompareOverlay({
                       }}
                     >
                       {url && (
-                        <img src={url} alt={`Before page ${i + 1}`} className="w-full h-full block" />
+                        <img src={url} alt={t('compareOverlay.beforePage', { page: i + 1 })} className="w-full h-full block" />
                       )}
                     </div>
                   );
@@ -306,7 +306,7 @@ export function CompareOverlay({
                       }}
                     >
                       {url && (
-                        <img src={url} alt={`After page ${i + 1}`} className="w-full h-full block" />
+                        <img src={url} alt={t('compareOverlay.afterPage', { page: i + 1 })} className="w-full h-full block" />
                       )}
                     </div>
                   );
@@ -339,7 +339,7 @@ export function CompareOverlay({
                 >
                   {/* After (full) */}
                   {(afterUrl || beforeUrl) && (
-                    <img src={afterUrl || beforeUrl} alt={`After page ${i + 1}`} className="absolute inset-0 w-full h-full block" />
+                    <img src={afterUrl || beforeUrl} alt={t('compareOverlay.afterPage', { page: i + 1 })} className="absolute inset-0 w-full h-full block" />
                   )}
                   {/* Before (clipped) */}
                   <div
@@ -349,7 +349,7 @@ export function CompareOverlay({
                     {beforeUrl && (
                       <img
                         src={beforeUrl}
-                        alt={`Before page ${i + 1}`}
+                        alt={t('compareOverlay.beforePage', { page: i + 1 })}
                         className="absolute inset-0 h-full block"
                         style={{ width: `${100 / (sliderPos / 100)}%`, maxWidth: 'none' }}
                       />

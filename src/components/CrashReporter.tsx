@@ -193,8 +193,7 @@ export function CrashReporter({
 
         {/* Privacy note */}
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-          No data is sent automatically. The report opens as a draft email in your mail app
-          — you choose whether to send it.
+          {t('crashReporter.noDataSentAutomatically')}
         </p>
       </div>
     </div>

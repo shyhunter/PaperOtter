@@ -166,9 +166,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Repair attempts to fix structural issues in corrupted or malformed PDFs by
-                  re-processing through Ghostscript. This can resolve issues with broken
-                  cross-references, missing objects, and other structural problems.
+                  {t('repairPdf.repairExplanation')}
                 </p>
               </div>
 
@@ -221,7 +219,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
             {/* File size comparison + status */}
             <div className="border-b border-border bg-card px-4 py-3 space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                Original: {formatFileSize(sourceFileSize)} &rarr; Repaired: {formatFileSize(resultBytes.byteLength)}
+                {t('repairPdf.originalToRepaired', { original: formatFileSize(sourceFileSize), repaired: formatFileSize(resultBytes.byteLength) })}
               </p>
 
               {isFileSizeSimilar && (

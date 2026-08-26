@@ -131,7 +131,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       // Only show error if not a user cancellation
       if (err instanceof Error && !err.message.includes('cancel')) {
         console.error('Insert from PDF failed:', err);
-        alert(`Failed to insert pages: ${err.message}`);
+        alert(t('pagePanel.failedToInsertPages', { error: err.message }));
       }
     }
   }, [addPagesFromPdf, insertAfter]);

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, memo, type RefObject } from 'react';
 import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThumbnail';
 import { Check } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 interface PagePanelThumbnailProps {
   pdfBytes: Uint8Array;
@@ -124,7 +125,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
         ${borderClass}
         ${isDragSource ? 'opacity-40' : ''}
       `}
-      aria-label={`Page ${pageIndex + 1}`}
+      aria-label={t('split.pageN', { page: pageIndex + 1 })}
       aria-current={isCurrent ? 'page' : undefined}
       data-page-idx={pageIndex}
     >

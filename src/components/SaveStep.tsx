@@ -161,7 +161,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
             type="button"
             onClick={handleOpenFile}
             className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-start"
-            title={`Open: ${savedPath}`}
+            title={t('saveStep.openPath', { path: savedPath })}
           >
             {savedPath}
           </button>
@@ -246,7 +246,7 @@ function MultiFileSave({
         const renamed: string[] = [];
         for (let i = 0; i < multiFileOutputs.length; i++) {
           const output = multiFileOutputs[i];
-          setMultiProgress(`Saving ${i + 1}/${multiFileOutputs.length}…`);
+          setMultiProgress(t('saveStep.savingProgress', { current: i + 1, total: multiFileOutputs.length }));
           const filePath = await uniqueOutputPath(folderPath, output.fileName, reserved);
           if (!filePath.endsWith(`/${output.fileName}`)) {
             renamed.push(getFileName(filePath));
@@ -549,7 +549,7 @@ function SingleFileSave({
             {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('saveStep.saving')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {saveState === 'writing' ? `Writing ${defaultSaveName ?? buildDefaultSaveName(sourceFileName)}` : ''}
+            {saveState === 'writing' ? t('saveStep.writingFile', { name: defaultSaveName ?? buildDefaultSaveName(sourceFileName) }) : ''}
           </p>
         </div>
       </div>

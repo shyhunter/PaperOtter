@@ -297,7 +297,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('organizePdf.processing')}</>
                 ) : (
-                  `Apply (${plural('count.page', pages.length)})`
+                  t('organizePdfFlow.applyPages', { pages: plural('count.page', pages.length) })
                 )}
               </Button>
             </div>

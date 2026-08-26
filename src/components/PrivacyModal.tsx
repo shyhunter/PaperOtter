@@ -54,7 +54,7 @@ export function PrivacyModal({ open, onClose }: PrivacyModalProps) {
               {t('privacy.technicalDetails')}
             </summary>
             <ul className="mt-2 space-y-2 text-xs text-muted-foreground list-disc list-inside">
-              <li>Network access is scoped to exactly two read-only endpoints — checking for app updates and fetching the feedback contact address — enforced by Tauri capability config. No other network access is possible.</li>
+              <li>{t('privacy.detailNetworkScope')}</li>
               <li>{t('privacy.detailCsp')}</li>
               <li>{t('privacy.detailNoSdk')}</li>
               <li>{t('privacy.detailLocal')}</li>

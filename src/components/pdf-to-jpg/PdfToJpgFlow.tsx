@@ -291,7 +291,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
           outputFormat,
           quality,
           (current, total) => {
-            setProcessProgress(`Rendering page ${current} of ${total}...`);
+            setProcessProgress(t('pdfToJpgFlow.renderingPageOf', { current, total }));
           },
         );
 
@@ -313,7 +313,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         const tempPath = await join(tmpBase, `papercut_convert_${ts}.pdf`);
         await writeFile(tempPath, extractedPdf);
 
-        setProcessProgress(`Converting to ${outputFormat.toUpperCase()}...`);
+        setProcessProgress(t('pdfToJpgFlow.convertingTo', { format: outputFormat.toUpperCase() }));
         const result = await convertDocument(tempPath, 'pdf', { outputFormat: outputFormat as ConvertFormat });
 
         // Clean up temp file
@@ -389,7 +389,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   {plural('count.page', pageCount)}
                   {selectedPages.size < pageCount && (
                     <span className="ms-1 text-primary font-medium">
-                      ({selectedPages.size} selected)
+                      {t('pdfToJpgFlow.nSelectedParens', { count: selectedPages.size })}
                     </span>
                   )}
                 </p>
@@ -407,7 +407,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                         type="button"
                         onClick={() => setOutputFormat(fmt.value)}
                         disabled={isProcessing || !!unavailable}
-                        title={unavailable ? `${fmt.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre')} not installed` : fmt.label}
+                        title={unavailable ? t('pdfToJpgFlow.engineNotInstalled', { engine: fmt.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre') }) : fmt.label}
                         className={cn(
                           'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                           'disabled:cursor-not-allowed disabled:opacity-40',
@@ -424,7 +424,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
                 {engineUnavailable && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    {selectedFormatOption?.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre')} is not installed. Install it to enable this format.
+                    {t('pdfToJpgFlow.engineNotInstalledHint', { engine: selectedFormatOption?.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre') })}
                   </p>
                 )}
 
@@ -504,10 +504,12 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                      {processProgress ?? 'Converting...'}
+                      {processProgress ?? t('convertImage.converting')}
                     </>
                   ) : (
-                    `Convert${selectedPages.size < pageCount ? ` (${selectedPages.size} pages)` : ''}`
+                    selectedPages.size < pageCount
+                      ? t('pdfToJpgFlow.convertNPages', { pages: selectedPages.size })
+                      : t('pdfToJpg.convertPdf')
                   )}
                 </Button>
               </div>
@@ -533,7 +535,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                     </Button>
                     {selectedPages.size > 0 && selectedPages.size < pageCount && (
                       <Badge variant="secondary" className="text-xs">
-                        {selectedPages.size} selected
+                        {t('pdfToJpgFlow.nSelected', { count: selectedPages.size })}
                       </Badge>
                     )}
                   </div>

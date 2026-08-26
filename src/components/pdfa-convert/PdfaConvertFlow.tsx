@@ -259,7 +259,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
             {/* File size comparison */}
             <div className="border-b border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground text-center">
-                Original: {formatFileSize(sourceFileSize)} &rarr; PDF/A: {formatFileSize(resultBytes.byteLength)}
+                {t('pdfaConvert.originalToPdfa', { original: formatFileSize(sourceFileSize), pdfa: formatFileSize(resultBytes.byteLength) })}
               </p>
             </div>
 

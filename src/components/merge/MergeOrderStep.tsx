@@ -100,7 +100,10 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('merge.orderMerge')}</h2>
           <p className="text-sm text-muted-foreground">
-            Drag to reorder. Total: {plural('count.page', totalPages)} from {files.length} files.
+            {t('mergeOrderStep.dragToReorderTotal', {
+              pages: plural('count.page', totalPages),
+              files: plural('count.file', files.length),
+            })}
           </p>
         </div>
 
@@ -125,7 +128,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
               {file.thumbnailUrl ? (
                 <img
                   src={file.thumbnailUrl}
-                  alt={`Page 1 of ${file.fileName}`}
+                  alt={t('merge.pageOneOf', { name: file.fileName })}
                   className="w-10 h-12 object-cover rounded border border-border flex-none"
                 />
               ) : (

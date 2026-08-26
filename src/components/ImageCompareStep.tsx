@@ -104,7 +104,7 @@ export function ImageCompareStep({
   const formatChanged = sourceFormatLabel !== outputFormatLabel;
 
   const qualityLabel = result.outputFormat === 'png'
-    ? `Compression: ${Math.round((100 - result.quality) * 9 / 100)}/9`
+    ? t('imageConfigureStep.compressionOutOfNine', { level: Math.round((100 - result.quality) * 9 / 100) })
     : `${result.quality}%`;
 
   return (
@@ -146,7 +146,7 @@ export function ImageCompareStep({
           </span>
         )}
         <span className="text-muted-foreground whitespace-nowrap">
-          Quality: {qualityLabel}
+          {t('imageCompareStep.qualityValue', { value: qualityLabel })}
         </span>
         <div className="flex-1" />
         <button

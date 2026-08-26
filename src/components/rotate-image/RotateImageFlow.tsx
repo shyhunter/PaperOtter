@@ -240,7 +240,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   </Button>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
-                  Current: {rotation} degrees clockwise
+                  {t('rotateImageFlow.currentDegreesClockwise', { degrees: rotation })}
                 </p>
               </div>
 

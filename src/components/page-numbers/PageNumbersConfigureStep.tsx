@@ -189,7 +189,11 @@ export function PageNumbersConfigureStep({
 
           {/* Info */}
           <p className="text-xs text-muted-foreground">
-            {plural('count.page', pageCount)} &middot; numbering: {formatNumber(startNumber, format)}–{formatNumber(startNumber + pageCount - 1, format)}
+            {t('pageNumbersConfigureStep.pagesNumbering', {
+              pages: plural('count.page', pageCount),
+              from: formatNumber(startNumber, format),
+              to: formatNumber(startNumber + pageCount - 1, format),
+            })}
           </p>
 
           {error && (

@@ -15,7 +15,7 @@ import { t } from '@/i18n';
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
   const fileName = savedPath.split('/').pop() ?? savedPath.split('\\').pop() ?? 'file';
-  toast.success(`Saved to ${fileName}`, {
+  toast.success(t('saveController.savedTo', { name: fileName }), {
     duration: 5000,
     action: {
       label: t('save.showInFinder'),

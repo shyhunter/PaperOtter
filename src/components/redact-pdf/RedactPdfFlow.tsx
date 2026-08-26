@@ -182,8 +182,10 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                {plural('count.redaction', redactionCount)} applied across{' '}
-                {plural('count.page', redactedPageCount)}
+                {t('redactPdf.appliedAcross', {
+                  redactions: plural('count.redaction', redactionCount),
+                  pages: plural('count.page', redactedPageCount),
+                })}
               </p>
             </div>
 

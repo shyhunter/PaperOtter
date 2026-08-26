@@ -188,7 +188,7 @@ function PreviewPanel({
                   {url && (
                     <img
                       src={url}
-                      alt={`${label} page ${pageIndex + 1}`}
+                      alt={t('compareOverlay.labelledPage', { label, page: pageIndex + 1 })}
                       className="w-full h-full block"
                     />
                   )}
@@ -327,9 +327,9 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {!result.targetMet && result.bestAchievableSizeBytes != null && (
         <div data-testid="target-not-met-banner" className="mx-4 mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 flex-none">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-            Target size not achievable —{' '}
+            {t('compareStep.targetSizeNotAchievable')}{' '}
             <span className="font-normal">
-              best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
+              {t('compareStep.bestResult', { size: formatBytes(result.bestAchievableSizeBytes) })}{' '}
               {result.wasAlreadyOptimal
                 ? nonCompressibleReason === 'jpx'
                   ? nonCompressibleMessage(nonCompressibleReason, result.imageCount)

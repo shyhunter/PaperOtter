@@ -90,7 +90,7 @@ export function ImageConfigureStep({
   function getQualityLabel(): string {
     if (outputFormat === 'png') {
       const compressionDisplay = Math.round(((100 - quality) * 9) / 100);
-      return `Compression: ${compressionDisplay}/9`;
+      return t('imageConfigureStep.compressionOutOfNine', { level: compressionDisplay });
     }
     return `${quality}%`;
   }
@@ -357,7 +357,7 @@ export function ImageConfigureStep({
                       htmlFor={`${formId}-width`}
                       className="text-xs text-muted-foreground"
                     >
-                      Width{resizeUnit === 'pixels' ? ' (px)' : ' (%)'}
+                      {resizeUnit === 'pixels' ? t('imageConfigureStep.widthPx') : t('imageConfigureStep.widthPercent')}
                     </label>
                     <input
                       id={`${formId}-width`}
@@ -377,7 +377,7 @@ export function ImageConfigureStep({
                         htmlFor={`${formId}-height`}
                         className="text-xs text-muted-foreground"
                       >
-                        Height{resizeUnit === 'pixels' ? ' (px)' : ' (%)'}
+                        {resizeUnit === 'pixels' ? t('imageConfigureStep.heightPx') : t('imageConfigureStep.heightPercent')}
                       </label>
                       {/* Aspect ratio lock toggle */}
                       <button
