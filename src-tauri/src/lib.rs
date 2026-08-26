@@ -2666,6 +2666,59 @@ mod tests {
         assert!(msg.contains("no error output"));
     }
 
+
+    // ─── GS-SIDECAR-02 — the bundled binary must run on someone else's machine ─
+    //
+    // Regression test (P009). The Ghostscript this repo shipped until 2026-08-26
+    // was copied from Homebrew and referenced eleven libraries by absolute path
+    // under /opt/homebrew. Those exist only on a machine with Homebrew and the
+    // matching packages, so the "bundled" binary ran on a developer's machine and
+    // essentially nowhere else — PDF compression was broken for every real user.
+    //
+    // The existing GS-SIDECAR-01 could not catch it: the file was present and the
+    // right size. What matters is not that a binary exists but that it can load.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn the_bundled_ghostscript_has_no_package_manager_dependencies() {
+        let binary = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("binaries")
+            .join("gs-aarch64-apple-darwin");
+        if !binary.exists() {
+            return; // other targets legitimately ship a stub
+        }
+        // A stub script is not a Mach-O binary; otool would fail on it, and a
+        // stub is a deliberate state rather than a regression.
+        let head = std::fs::read(&binary).expect("must read the sidecar");
+        if head.starts_with(b"#") {
+            return;
+        }
+
+        let output = std::process::Command::new("otool")
+            .arg("-L")
+            .arg(&binary)
+            .output()
+            .expect("otool must run");
+        let linked = String::from_utf8_lossy(&output.stdout);
+
+        let foreign: Vec<&str> = linked
+            .lines()
+            .map(str::trim)
+            .filter(|l| l.starts_with('/'))
+            // otool's first line is the binary's own path, terminated by ':'
+            .filter(|l| !l.ends_with(':'))
+            .filter(|l| !l.starts_with("/usr/lib") && !l.starts_with("/System"))
+            .collect();
+
+        assert!(
+            foreign.is_empty(),
+            "the bundled Ghostscript depends on libraries that will not exist on a \
+             user's machine, so PDF compression will fail with a dyld error. Build it \
+             with scripts/build_ghostscript_sidecar.sh, which links Ghostscript's own \
+             copies instead. Offending references:\n{}",
+            foreign.join("\n")
+        );
+    }
+
     // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────
     //
     // Papercut ships Ghostscript as a sidecar binary in src-tauri/binaries/.

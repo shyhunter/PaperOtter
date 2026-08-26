@@ -1,93 +1,91 @@
 # Sidecar Binaries
 
-Papercut bundles Ghostscript as a Tauri sidecar so users don't need to install it separately.
+Papercut bundles Ghostscript as a Tauri sidecar so users do not have to install
+anything to compress, protect, unlock, repair or PDF/A-convert a document.
 
-> ⚠️ **Only `gs-aarch64-apple-darwin` is a real Ghostscript binary today.**
-> The other three files are placeholder stubs that print "gs not bundled on this
-> platform" and exit 1. On Intel macOS, Windows and Linux the app therefore falls
-> back to a system-installed Ghostscript, and PDF compression only works if the
-> user has installed it themselves. `is_ghostscript_available` runs `gs --version`
-> and checks the output rather than trusting that the sidecar file exists, so the
-> tool is correctly reported as unavailable and the install hint is shown.
->
-> Replacing these stubs with real binaries is a release-packaging task: each one
-> needs its source URL and SHA-256 recorded below, per P012.
+## Status
 
-## Binary Naming Convention
+| Target | Bundled | Self-contained | Notes |
+|---|---|---|---|
+| `gs-aarch64-apple-darwin` | ✅ real binary | ✅ verified | Built by `scripts/build_ghostscript_sidecar.sh` |
+| `gs-x86_64-apple-darwin` | ❌ stub | — | Prints a message and exits 1 |
+| `gs-x86_64-pc-windows-msvc.exe` | ❌ stub | — | Prints a message and exits 1 |
+| `gs-x86_64-unknown-linux-gnu` | ❌ stub | — | Prints a message and exits 1 |
 
-Tauri resolves sidecar binaries by target triple. The binary must be named:
+On a target with a stub, `spawn_gs` falls back to a system-installed Ghostscript
+via PATH, and `is_ghostscript_available` reports the tool unavailable if there is
+none, so the user gets a per-platform install hint rather than a broken tool.
+
+## Do not use a package manager's binary directly
+
+The binary this repo shipped until 2026-08-26 was copied straight from Homebrew.
+It referenced **eleven** Homebrew libraries by absolute path:
 
 ```
-gs-{target-triple}
+/opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib
+/opt/homebrew/opt/libtiff/lib/libtiff.6.dylib
+/opt/homebrew/opt/freetype/lib/libfreetype.6.dylib
+…
 ```
 
-| Platform          | Binary name                          |
-|-------------------|--------------------------------------|
-| macOS ARM (M1+)   | `gs-aarch64-apple-darwin`           |
-| macOS Intel        | `gs-x86_64-apple-darwin`            |
-| Windows 64-bit     | `gs-x86_64-pc-windows-msvc.exe`     |
-| Linux 64-bit       | `gs-x86_64-unknown-linux-gnu`       |
+`/opt/homebrew` exists only on a machine with Homebrew and those exact packages.
+So the "bundled" Ghostscript ran on a developer's machine and essentially nowhere
+else — PDF compression was broken for real users on **all four** platforms, three
+by stub and one by missing libraries. The symptom is a dyld error, and
+`format_gs_crash_error` still carries a branch for it, which is how we know it
+was hit in the wild and answered with a better error message rather than a fix.
 
-## How to Obtain
-
-### macOS (Homebrew)
-
-```bash
-brew install ghostscript
-cp $(which gs) src-tauri/binaries/gs-aarch64-apple-darwin   # Apple Silicon
-cp $(which gs) src-tauri/binaries/gs-x86_64-apple-darwin    # Intel
-```
-
-### Windows
-
-1. Download Ghostscript from https://ghostscript.com/releases/gsdnld.html
-2. Copy `gswin64c.exe` to `src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe`
-
-### Linux
-
-```bash
-sudo apt install ghostscript   # or equivalent for your distro
-cp $(which gs) src-tauri/binaries/gs-x86_64-unknown-linux-gnu
-```
-
-## Notes
-
-- The macOS ARM binary is `.gitignore`d (too large for git). The other three (`gs-x86_64-apple-darwin`, `gs-x86_64-pc-windows-msvc.exe`, `gs-x86_64-unknown-linux-gnu`) are committed as **placeholder stubs** so Tauri's `externalBin` check passes; the real per-platform binary is built/installed by CI or `cargo tauri build`.
-- The app falls back to system-installed Ghostscript if the sidecar binary is not found.
-- Ensure the binary is executable (`chmod +x`) on macOS/Linux.
+**Always build with `scripts/build_ghostscript_sidecar.sh`.** It configures
+without any `--with-system-*` option, so Ghostscript links its bundled copies of
+jpeg, libpng, zlib, freetype, lcms2, jbig2dec, openjpeg and libtiff, and it
+**refuses to install a binary that is not self-contained** — the check that would
+have caught the original problem.
 
 ## Provenance & Verification (project rule P012)
 
-Sidecar binaries run with the host app's privileges — a compromised binary = full RCE on every user machine. We document source + SHA-256 so each install can be verified.
+Sidecar binaries run with the host app's privileges — a compromised binary is
+full RCE on every user machine. Source and SHA-256 are recorded so any build can
+be verified.
 
-### Source
-
-| Platform | Upstream source |
+| Item | Value |
 |---|---|
-| macOS (Homebrew) | `brew install ghostscript` — formula: https://formulae.brew.sh/formula/ghostscript |
-| Windows | https://ghostscript.com/releases/gsdnld.html (official AGPL release) |
-| Linux | distro package manager (`apt`, `dnf`, etc.) |
+| Version | Ghostscript 10.06.0 |
+| Source | https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/tag/gs10060 |
+| Source tarball SHA-256 | `5bd6da34794928cc7e616f288e32bd0be7f9a5ca2d3c206a0af2c19a4e3a318f` |
+| Build | `./configure --without-x --disable-cups --disable-dbus --without-tesseract` |
+| Patches applied | none |
+| `gs-aarch64-apple-darwin` SHA-256 | `a4dc57a388bb3f3a00f51d2e8ad6ab4850fe33581956bd7412ca6b1956dd43fc` |
+| Size | 26 MB |
 
-### Verify your local binary
-
-After installing, compare the SHA-256:
+Verify a checkout with:
 
 ```bash
 shasum -a 256 src-tauri/binaries/gs-aarch64-apple-darwin
-# expected (Homebrew ghostscript ≈ 10.x on macOS arm64):
-#   bd8bb465e572652647eb517862301ac51556e058b4025f9e28e9433f98a04a43
+otool -L src-tauri/binaries/gs-aarch64-apple-darwin | grep -v '/usr/lib\|/System'   # must be empty
 ```
 
-If the SHA differs, you are running a different Ghostscript version or build. Update this table when you upgrade so other contributors can verify against a known-good hash.
+## Licence
 
-### Update the SHA when you upgrade
+Ghostscript 10.06.0 is **AGPL-3.0**, not MIT. Distributing it obliges us to offer
+its corresponding source. See `THIRD-PARTY-LICENSES.md` at the repo root. No
+patches are applied, so the upstream tarball above is that source.
 
-```bash
-# After installing a new gs version:
-shasum -a 256 src-tauri/binaries/gs-aarch64-apple-darwin > /tmp/gs-sha.txt
-# Then update this README with the new value + the upstream version (gs --version).
-```
+## Remaining platforms
 
-### License note (not security, but worth knowing)
+The same script produces the other three targets, but each must be built **on**
+(or cross-compiled for) that platform:
 
-Ghostscript is dual-licensed (AGPL or commercial). Bundling it in a proprietary distribution requires a commercial license from Artifex. Using it in an open-source AGPL-compatible project is fine. Confirm Papercut's distribution model matches.
+- `gs-x86_64-apple-darwin` — build on an Intel Mac, or under Rosetta with an
+  x86_64 toolchain.
+- `gs-x86_64-unknown-linux-gnu` — build in a glibc container matching the oldest
+  supported distro.
+- `gs-x86_64-pc-windows-msvc.exe` — Artifex publishes a self-contained Windows
+  binary; verify its SHA-256 against ghostscript.com and record it here rather
+  than rebuilding.
+
+Until each is done and verified self-contained, leave the stub in place: a stub
+falls back to the user's own Ghostscript, whereas a broken binary does not.
+
+## Binary Naming Convention
+
+Tauri resolves sidecars by target triple — the file must be named `gs-{triple}`.
