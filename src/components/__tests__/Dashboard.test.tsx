@@ -22,8 +22,8 @@ vi.mock('@tauri-apps/api/webview', () => ({
 
 const tool: ToolDefinition = {
   id: 'compress-pdf',
-  name: 'Compress PDF',
-  description: 'Reduce PDF file size',
+  name: 'tool.compressPdf.name',
+  description: 'tool.compressPdf.desc',
   category: 'pdf',
   icon: 'FileDown',
   acceptsFormats: ['pdf'],

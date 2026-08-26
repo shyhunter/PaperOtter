@@ -22,6 +22,7 @@ import type { ToolId } from '@/types/tools';
 import { EDITOR_SIDEBAR_TOOLS, TOOL_REGISTRY } from '@/types/tools';
 import { ToolSidebarPanel } from './ToolSidebarPanel';
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 // Map icon names from TOOL_REGISTRY to Lucide components
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -81,7 +82,7 @@ export function ToolSidebar() {
             <button
               key={id}
               onClick={() => handleIconClick(id)}
-              title={def.name}
+              title={t(def.name)}
               className={`relative w-10 h-10 flex items-center justify-center rounded-sm transition-colors ${
                 isActive
                   ? 'text-foreground'

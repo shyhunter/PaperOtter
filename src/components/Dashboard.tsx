@@ -130,9 +130,9 @@ export function ToolCard({
       >
         {Icon && <Icon className={`h-7 w-7 transition-transform duration-200 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
-          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <h3 className="text-sm font-medium text-foreground">{t(tool.name)}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {disabled ? disabledHint : tool.description}
+            {disabled ? disabledHint : t(tool.description)}
           </p>
         </div>
       </button>
@@ -194,9 +194,9 @@ function FavoriteCard({
       >
         {Icon && <Icon className={`h-7 w-7 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
-          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <h3 className="text-sm font-medium text-foreground">{t(tool.name)}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {disabled ? disabledHint : tool.description}
+            {disabled ? disabledHint : t(tool.description)}
           </p>
         </div>
       </button>
@@ -269,8 +269,10 @@ export function Dashboard() {
     for (const category of CATEGORY_ORDER) {
       result[category] = groups[category].filter(
         (tool) =>
-          tool.name.toLowerCase().includes(q) ||
-          tool.description.toLowerCase().includes(q),
+          // Search the displayed language, not the key — searching "Zusammenführen"
+          // must find Merge PDF once the UI is in German.
+          t(tool.name).toLowerCase().includes(q) ||
+          t(tool.description).toLowerCase().includes(q),
       );
     }
     return result;

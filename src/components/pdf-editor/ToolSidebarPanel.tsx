@@ -225,8 +225,8 @@ function PanelHeader({ toolId }: { toolId: ToolId }) {
   const tool = TOOL_REGISTRY[toolId];
   return (
     <div className="mb-3">
-      <h3 className="text-xs font-semibold">{tool.name}</h3>
-      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tool.description}</p>
+      <h3 className="text-xs font-semibold">{t(tool.name)}</h3>
+      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{t(tool.description)}</p>
     </div>
   );
 }

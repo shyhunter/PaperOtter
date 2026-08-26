@@ -33,7 +33,7 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
         </button>
         <span className="text-muted-foreground/50 text-[clamp(0.75rem,0.9vw,0.9rem)]">/</span>
         <span className="text-[clamp(0.75rem,0.9vw,0.9rem)] text-foreground font-medium">
-          {activeToolDef.name}
+          {t(activeToolDef.name)}
         </span>
         {/* Recent Folder — right-aligned, always visible */}
         {recentDirs && onRecentFileSelected && (
