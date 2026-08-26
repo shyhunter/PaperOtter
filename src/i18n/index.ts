@@ -1,5 +1,6 @@
 import { en, type Dictionary, type PluralKey, type TranslationKey } from '@/i18n/en';
 import { de } from '@/i18n/de';
+import { fr } from '@/i18n/fr';
 
 export { en };
 export type { Dictionary, PluralKey, TranslationKey };
@@ -21,7 +22,28 @@ export type { Dictionary, PluralKey, TranslationKey };
 const dictionaries = new Map<string, Dictionary>([
   ['en', en],
   ['de', de],
+  ['fr', fr],
 ]);
+
+/**
+ * Whether a translation has been checked by someone who speaks the language.
+ *
+ * The brief is blunt about why this is tracked rather than assumed: Papercut's
+ * copy resists machine translation, and a subtly wrong redaction warning in a
+ * privacy tool is worse than English. An unchecked translation is "a liability
+ * that cannot be seen" — so it is written down.
+ *
+ * 'source'     — the language the copy was written in.
+ * 'reviewed'   — a speaker has read it against the interface.
+ * 'unreviewed' — produced but not yet checked by a human.
+ */
+export type ReviewStatus = 'source' | 'reviewed' | 'unreviewed';
+
+export const LOCALE_REVIEW: Record<string, ReviewStatus> = {
+  en: 'source',
+  de: 'unreviewed', // maintainer review pending — TEST_PLAN REL-04a
+  fr: 'unreviewed', // no French reviewer yet — TEST_PLAN REL-04b
+};
 
 let currentLocale = 'en';
 const listeners = new Set<() => void>();
@@ -60,6 +82,7 @@ export function resetI18n(): void {
   dictionaries.clear();
   dictionaries.set('en', en);
   dictionaries.set('de', de);
+  dictionaries.set('fr', fr);
   currentLocale = 'en';
   listeners.clear();
 }
