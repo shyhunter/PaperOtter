@@ -18,6 +18,8 @@ vi.mock('@tauri-apps/plugin-fs', () => {
     readFile: vi.fn().mockResolvedValue(defaultFileBytes),
     writeFile: vi.fn(),
     remove: vi.fn().mockResolvedValue(undefined),
+    // Default: nothing exists yet. Tests that care override per-path.
+    exists: vi.fn().mockResolvedValue(false),
   };
 });
 

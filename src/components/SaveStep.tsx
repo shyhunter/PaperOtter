@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { plural, t } from '@/i18n';
+import { uniqueOutputPath } from '@/lib/outputPath';
+import { getFileName } from '@/lib/fileValidation';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -238,11 +240,23 @@ function MultiFileSave({
 
       setSaveState('writing');
       try {
+        // Reserve names across the whole batch: nothing is on disk yet, so
+        // exists() alone cannot see two outputs claiming the same name.
+        const reserved = new Set<string>();
+        const renamed: string[] = [];
         for (let i = 0; i < multiFileOutputs.length; i++) {
           const output = multiFileOutputs[i];
           setMultiProgress(`Saving ${i + 1}/${multiFileOutputs.length}…`);
-          const filePath = `${folderPath}/${output.fileName}`;
+          const filePath = await uniqueOutputPath(folderPath, output.fileName, reserved);
+          if (!filePath.endsWith(`/${output.fileName}`)) {
+            renamed.push(getFileName(filePath));
+          }
           await writeFile(filePath, output.bytes);
+        }
+        if (renamed.length > 0) {
+          // Say so rather than leaving the user to notice: they asked for one set
+          // of names and got another, even though nothing was destroyed.
+          toast(t('save.renamedToAvoidOverwrite', { names: renamed.join(', ') }));
         }
         setMultiProgress(null);
         setSaveState('idle');
@@ -359,7 +373,7 @@ function MultiFileSave({
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center space-y-1">
           <p className="text-sm font-semibold text-foreground">
-            Save {plural('count.file', multiFileOutputs.length)}
+            {t('save.saveNFiles', { files: plural('count.file', multiFileOutputs.length) })}
           </p>
           <p className="text-xs text-muted-foreground">{t('save.chooseSplitMode')}</p>
         </div>

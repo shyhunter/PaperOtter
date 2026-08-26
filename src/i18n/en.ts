@@ -928,6 +928,8 @@ export const en = {
   'colorPresets.navy': 'Navy',
   'colorPresets.purple': 'Purple',
   'colorPresets.pink': 'Pink',
+  'save.saveNFiles': 'Save {files}',
+  'save.renamedToAvoidOverwrite': 'Renamed to avoid overwriting: {names}',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */
