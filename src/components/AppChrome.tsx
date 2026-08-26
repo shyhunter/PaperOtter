@@ -9,6 +9,7 @@ import { FolderOpen, Info } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AboutDialog } from '@/components/AboutDialog';
 import { BuyMeACoffeeButton } from '@/components/BuyMeACoffeeButton';
+import { LanguagePicker } from '@/components/LanguagePicker';
 import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
 
@@ -74,6 +75,7 @@ export function AppChrome() {
         >
           <Info className="h-4 w-4" />
         </button>
+        <LanguagePicker />
         <BuyMeACoffeeButton />
         <ThemeToggle />
       </div>

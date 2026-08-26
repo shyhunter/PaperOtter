@@ -977,6 +977,7 @@ export const en = {
   'redactPdf.readScanAndSearch': 'Read the text and search again',
   'redactPdf.readingScan': 'Reading the scan…',
   'redactPdf.scanBoxesApproximate': 'These boxes come from text read off a scan, so they are approximate. Check the placement before applying — redaction cannot be undone.',
+  'chrome.language': 'Language',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

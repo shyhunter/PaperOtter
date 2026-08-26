@@ -54,6 +54,8 @@ import { BatchRunStep } from '@/components/batch/BatchRunStep';
 import { processPdf } from '@/lib/pdfProcessor';
 import { processImage } from '@/lib/imageProcessor';
 import { OcrPdfFlow } from '@/components/ocr-pdf/OcrPdfFlow';
+import { resolveInitialLocale } from '@/i18n/preference';
+import { setLocale } from '@/i18n';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -950,6 +952,12 @@ function App() {
   // their strings update when the language changes. See i18n/context.tsx —
   // a <Provider>{children}</Provider> wrapper would not work here.
   useLocale();
+
+  // Follow the OS language on first run, or the remembered choice after that.
+  // Runs once: switching language later goes through the picker.
+  useEffect(() => {
+    void resolveInitialLocale().then(setLocale);
+  }, []);
 
   return (
     <AppErrorBoundary>
