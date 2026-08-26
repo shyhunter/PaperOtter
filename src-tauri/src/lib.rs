@@ -155,6 +155,7 @@ fn spawn_gs(
 ) -> Result<(tauri::async_runtime::Receiver<CommandEvent>, CommandChild), String> {
     // 1. Try bundled sidecar first
     if let Ok(sidecar_cmd) = app.shell().sidecar("gs") {
+        let sidecar_cmd = with_windows_dll_path(app, sidecar_cmd);
         if let Ok(result) = sidecar_cmd.args(&args).spawn() {
             return Ok(result);
         }
@@ -186,6 +187,42 @@ fn sidecar_reports_version(exit_ok: bool, stdout: &str) -> bool {
             .chars()
             .next()
             .is_some_and(|c| c.is_ascii_digit())
+}
+
+/// Lets the bundled Ghostscript find gsdll64.dll on Windows.
+///
+/// Windows Ghostscript is not one file: gswin64c.exe is a thin wrapper around
+/// gsdll64.dll and will not start without it. A Tauri sidecar is a single file
+/// and resources are bundled into a different directory than the executable, so
+/// the DLL is shipped as a resource and its directory is prepended to the child
+/// process's PATH here.
+///
+/// This is the one part of the Ghostscript work that has not been run on the
+/// platform it targets — see src-tauri/binaries/README.md. On macOS and Linux it
+/// is a no-op, because Ghostscript there is genuinely a single binary.
+#[cfg(target_os = "windows")]
+fn with_windows_dll_path(
+    app: &tauri::AppHandle,
+    cmd: tauri_plugin_shell::process::Command,
+) -> tauri_plugin_shell::process::Command {
+    use tauri::Manager;
+
+    let Ok(resource_dir) = app.path().resource_dir() else {
+        return cmd;
+    };
+    let existing = std::env::var("PATH").unwrap_or_default();
+    cmd.env(
+        "PATH",
+        format!("{};{}", resource_dir.display(), existing),
+    )
+}
+
+#[cfg(not(target_os = "windows"))]
+fn with_windows_dll_path(
+    _app: &tauri::AppHandle,
+    cmd: tauri_plugin_shell::process::Command,
+) -> tauri_plugin_shell::process::Command {
+    cmd
 }
 
 /// Check if Ghostscript is available (sidecar or system).

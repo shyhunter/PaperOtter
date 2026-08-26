@@ -5,16 +5,43 @@ anything to compress, protect, unlock, repair or PDF/A-convert a document.
 
 ## Status
 
-| Target | Bundled | Self-contained | Notes |
-|---|---|---|---|
-| `gs-aarch64-apple-darwin` | ✅ real binary | ✅ verified | Built by `scripts/build_ghostscript_sidecar.sh` |
-| `gs-x86_64-apple-darwin` | ❌ stub | — | Prints a message and exits 1 |
-| `gs-x86_64-pc-windows-msvc.exe` | ❌ stub | — | Prints a message and exits 1 |
-| `gs-x86_64-unknown-linux-gnu` | ❌ stub | — | Prints a message and exits 1 |
+The goal is that **no user has to install anything**, on any operating system.
 
-On a target with a stub, `spawn_gs` falls back to a system-installed Ghostscript
-via PATH, and `is_ghostscript_available` reports the tool unavailable if there is
+| Target | How it is produced | Self-contained | Actually run on that platform |
+|---|---|---|---|
+| `gs-aarch64-apple-darwin` | committed; `scripts/build_ghostscript_sidecar.sh` | verified by `otool` | yes |
+| `gs-x86_64-apple-darwin` | committed; cross-compiled `clang -arch x86_64` | verified by `otool` | yes, under Rosetta |
+| `gs-x86_64-unknown-linux-gnu` | committed; built in a `linux/amd64` container | verified by `ldd` | yes, in a clean `ubuntu:22.04` container |
+| `gs-x86_64-pc-windows-msvc.exe` | fetched in CI from Artifex's installer | n/a — needs `gsdll64.dll` | **not yet** |
+
+Three of the four are committed because they were built and tested here. Linux is
+arguably the best-verified of them: it was built in a `linux/amd64` container and
+then run in a *clean* `ubuntu:22.04` container with no Ghostscript installed,
+which is closer to a real user's machine than testing macOS binaries on a
+developer Mac that has Homebrew.
+
+Windows is the exception. Its Ghostscript ships as an installer containing an exe
+plus a DLL, and it cannot be built or extracted from macOS, so it is fetched on
+the Windows runner at release time.
+
+Any target still carrying a stub falls back to a system-installed Ghostscript via
+PATH, and `is_ghostscript_available` reports the tool unavailable if there is
 none, so the user gets a per-platform install hint rather than a broken tool.
+
+### Windows needs a real test before it can be claimed
+
+Windows Ghostscript is **not one file**: `gswin64c.exe` is a thin wrapper around
+`gsdll64.dll` and will not start without it. A Tauri sidecar is a single file, and
+resources bundle into a different directory than the executable, so:
+
+- `gsdll64.dll` ships as a Windows-only resource (`tauri.windows.conf.json`), and
+- `with_windows_dll_path` in `lib.rs` prepends the resource directory to the child
+  process's `PATH` before spawning.
+
+**None of that has been run on Windows.** It will pass CI regardless, because in
+CI the exe and the DLL sit in the same directory — the bundled layout is the case
+that can break. Until someone runs the built installer on a real Windows machine
+and compresses a PDF, Windows must not be described as installation-free.
 
 ## Do not use a package manager's binary directly
 
@@ -54,8 +81,11 @@ be verified.
 | Source tarball SHA-256 | `5bd6da34794928cc7e616f288e32bd0be7f9a5ca2d3c206a0af2c19a4e3a318f` |
 | Build | `./configure --without-x --disable-cups --disable-dbus --without-tesseract` |
 | Patches applied | none |
-| `gs-aarch64-apple-darwin` SHA-256 | `a4dc57a388bb3f3a00f51d2e8ad6ab4850fe33581956bd7412ca6b1956dd43fc` |
-| Size | 26 MB |
+| Source tarball SHA-512 | matches Artifex's published `SHA512SUMS` for `gs10060` (verified 2026-08-26) |
+| `gs-aarch64-apple-darwin` SHA-256 | `a4dc57a388bb3f3a00f51d2e8ad6ab4850fe33581956bd7412ca6b1956dd43fc` (26 MB) |
+| `gs-x86_64-apple-darwin` SHA-256 | `a79b950f6afa9eff24280939e4fad378322e356bc48fa50bed4ded5155d6ca96` (27 MB) |
+| `gs-x86_64-unknown-linux-gnu` SHA-256 | `4dd99daf72a1dbc83b250d4eff3c60a1a6c0fcc6e422e96d50991782f89b5a42` (28 MB) |
+| Windows installer SHA-256 | `8d552205c0fe87a16bac2f377c8a1b090cfcbc610db7c281bd6a646b39c9c468`, pinned in `release.yml`; its SHA-512 matches Artifex's published sums |
 
 Verify a checkout with:
 
@@ -70,21 +100,33 @@ Ghostscript 10.06.0 is **AGPL-3.0**, not MIT. Distributing it obliges us to offe
 its corresponding source. See `THIRD-PARTY-LICENSES.md` at the repo root. No
 patches are applied, so the upstream tarball above is that source.
 
-## Remaining platforms
+## Reproducing the committed macOS binaries
 
-The same script produces the other three targets, but each must be built **on**
-(or cross-compiled for) that platform:
+```bash
+scripts/build_ghostscript_sidecar.sh                       # host arch
+scripts/build_ghostscript_sidecar.sh x86_64-apple-darwin   # Intel, cross-compiled
+```
 
-- `gs-x86_64-apple-darwin` — build on an Intel Mac, or under Rosetta with an
-  x86_64 toolchain.
-- `gs-x86_64-unknown-linux-gnu` — build in a glibc container matching the oldest
-  supported distro.
-- `gs-x86_64-pc-windows-msvc.exe` — Artifex publishes a self-contained Windows
-  binary; verify its SHA-256 against ghostscript.com and record it here rather
-  than rebuilding.
+The script verifies the source tarball's SHA-256 before building and refuses to
+install a binary that is not self-contained.
 
-Until each is done and verified self-contained, leave the stub in place: a stub
-falls back to the user's own Ghostscript, whereas a broken binary does not.
+### Reproducing the Linux binary
+
+```bash
+docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work ubuntu:22.04 bash -c '
+  apt-get update -qq && apt-get install -y -qq build-essential
+  tar xzf ghostscript-10.06.0.tar.gz && cd ghostscript-10.06.0
+  ./configure --without-x --disable-cups --disable-dbus --without-tesseract
+  make -j"$(nproc)" && ldd bin/gs'
+```
+
+## Release-time steps
+
+`.github/workflows/release.yml` fetches Windows Ghostscript on the Windows runner
+before `tauri build`, verifying the installer's SHA-256 first (P012), and fails
+the release on **any** platform whose sidecar is under 1 MB — the signal that a
+placeholder stub is about to ship, which would silently push the Ghostscript
+install back onto the user.
 
 ## Binary Naming Convention
 
