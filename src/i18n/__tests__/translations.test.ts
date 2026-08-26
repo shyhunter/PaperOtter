@@ -3,6 +3,7 @@ import { en, type Dictionary } from '@/i18n/en';
 import { de } from '@/i18n/de';
 import { fr } from '@/i18n/fr';
 import { es } from '@/i18n/es';
+import { tr } from '@/i18n/tr';
 import { t, plural, setLocale, resetI18n, LOCALE_REVIEW } from '@/i18n';
 
 /** Every translation, checked by the same rules. Adding one here covers it. */
@@ -10,6 +11,7 @@ const TRANSLATIONS: Array<[string, Dictionary]> = [
   ['de', de],
   ['fr', fr],
   ['es', es],
+  ['tr', tr],
 ];
 
 // ─── Translations (I18N-06) ──────────────────────────────────────────────────
@@ -36,6 +38,16 @@ describe('German dictionary', () => {
     // Product names are deliberately absent so they stay identical.
     setLocale('de');
     expect(t('pdfToJpgFlow.calibre')).toBe(en['pdfToJpgFlow.calibre']);
+  });
+
+  it('[I18N-06i] Turkish does not pluralise a noun after a number', () => {
+    // "5 sayfalar" is wrong Turkish; "5 sayfa" is correct. Any hand-rolled
+    // n === 1 ? singular : plural would produce the wrong form here, which is
+    // the whole reason plural() goes through Intl.PluralRules.
+    setLocale('tr');
+    expect(plural('count.page', 1)).toBe('1 sayfa');
+    expect(plural('count.page', 5)).toBe('5 sayfa');
+    expect(plural('count.file', 12)).toBe('12 dosya');
   });
 
   it('[I18N-06c] plurals work in German', () => {
