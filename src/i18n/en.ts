@@ -930,6 +930,14 @@ export const en = {
   'colorPresets.pink': 'Pink',
   'save.saveNFiles': 'Save {files}',
   'save.renamedToAvoidOverwrite': 'Renamed to avoid overwriting: {names}',
+
+  // ── Batch processing ────────────────────────────────────────────────────
+  'batch.stoppedEarly': 'This run was stopped before every file was processed.',
+  'batch.filesReady': '{files} ready to save',
+  'batch.totalSaving': 'Saved {saved} in total — {output} to write.',
+  'batch.couldNotBeProcessed': '{files} could not be processed',
+  'batch.processingFile': 'Processing {current} of {total} — {name}',
+  'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type — a batch has to be one type.',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

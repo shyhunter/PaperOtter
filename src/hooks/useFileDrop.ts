@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from 'react';
 import { isSupportedFile } from '@/lib/fileValidation';
 import type { DragState } from '@/types/file';
 
-export function useFileDrop(onFileDrop: (path: string) => void) {
+/**
+ * @param onFileDrop Called with the first supported file and any others dropped
+ *   alongside it. The extras drive batch processing; an empty array is the
+ *   ordinary single-file case. Called with '' when nothing dropped was supported.
+ */
+export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) => void) {
   const [dragState, setDragState] = useState<DragState>('idle');
   // Use ref to avoid re-registering the listener on every render
   const onFileDropRef = useRef(onFileDrop);
@@ -28,7 +33,7 @@ export function useFileDrop(onFileDrop: (path: string) => void) {
             // paths not yet available — show neutral state; will update on 'over'
             setDragState('over-invalid');
           } else {
-            const valid = paths.length === 1 && isSupportedFile(paths[0]);
+            const valid = paths.some(isSupportedFile);
             setDragState(valid ? 'over-valid' : 'over-invalid');
           }
 
@@ -36,18 +41,21 @@ export function useFileDrop(onFileDrop: (path: string) => void) {
           // Update validity as cursor moves (in case paths became available)
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
           if (paths.length > 0) {
-            const valid = paths.length === 1 && isSupportedFile(paths[0]);
+            const valid = paths.some(isSupportedFile);
             setDragState(valid ? 'over-valid' : 'over-invalid');
           }
 
         } else if (type === 'drop') {
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
           setDragState('idle');
-          if (paths.length === 1 && isSupportedFile(paths[0])) {
-            onFileDropRef.current(paths[0]);
+          // Unsupported files are dropped from the list rather than failing the
+          // whole drop: a folder of scans easily picks up a stray .DS_Store.
+          const supported = paths.filter(isSupportedFile);
+          if (supported.length > 0) {
+            onFileDropRef.current(supported[0], supported.slice(1));
           } else {
             // Call with empty string to signal invalid drop to parent
-            onFileDropRef.current('');
+            onFileDropRef.current('', []);
           }
 
         } else {

@@ -48,6 +48,11 @@ import { EditorView } from '@/components/pdf-editor/EditorView';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 import { t } from '@/i18n';
+import { useBatchProcessor } from '@/hooks/useBatchProcessor';
+import { BatchSummaryStep } from '@/components/batch/BatchSummaryStep';
+import { BatchRunStep } from '@/components/batch/BatchRunStep';
+import { processPdf } from '@/lib/pdfProcessor';
+import { processImage } from '@/lib/imageProcessor';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -342,6 +347,10 @@ function StandardToolFlow() {
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
+  // Every file in the current batch, first included. Length <= 1 means the
+  // ordinary single-file flow, which is untouched.
+  const [batchPaths, setBatchPaths] = useState<string[]>([]);
+  const batchProcessor = useBatchProcessor();
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
   const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
@@ -408,7 +417,7 @@ function StandardToolFlow() {
   }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
-  const handleFileSelected = useCallback(async (filePath: string) => {
+  const handleFileSelected = useCallback(async (filePath: string, alsoSelected: string[] = []) => {
     if (!filePath) {
       setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
@@ -471,9 +480,18 @@ function StandardToolFlow() {
       }
     }
 
+    // Only files of the same type join the batch — the options chosen on the
+    // Configure step are type-specific, so a PDF and a JPEG cannot share a run.
+    const sameType = alsoSelected.filter((p) => detectFormat(p) === format);
+    const skipped = alsoSelected.length - sameType.length;
+    if (skipped > 0) {
+      toast(t('batch.skippedDifferentType', { count: skipped }));
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
+      setBatchPaths(sameType.length > 0 ? [filePath, ...sameType] : []);
       addRecentDir(filePath); // persist directory for next session
       setIsLoading(false);
       setCurrentStep(1);
@@ -483,9 +501,10 @@ function StandardToolFlow() {
   // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
   useEffect(() => {
     if (pendingFiles.length > 0 && currentStep === 0 && !fileEntry) {
-      const file = pendingFiles[0];
+      const [file, ...rest] = pendingFiles;
       setPendingFiles([]);
-      handleFileSelected(file);
+      // rest carries the other files staged on the dashboard, which start a batch.
+      handleFileSelected(file, rest);
     }
   }, [pendingFiles, currentStep, fileEntry, handleFileSelected, setPendingFiles]);
 
@@ -600,9 +619,24 @@ function StandardToolFlow() {
       if (!fileEntry) return;
       lastPdfOptionsRef.current = options;
       setLastPdfQualityLevel(options.qualityLevel);
+
+      if (batchPaths.length > 1) {
+        setCurrentStep(2);
+        void batchProcessor.run(batchPaths, async (path) => {
+          const result = await processPdf(path, options);
+          return {
+            fileName: `${getFileName(path).replace(/\.pdf$/i, '')}-optimised.pdf`,
+            bytes: result.bytes,
+            inputSizeBytes: result.inputSizeBytes,
+            outputSizeBytes: result.outputSizeBytes,
+          };
+        });
+        return;
+      }
+
       pdfProcessor.run(fileEntry.path, options);
     },
-    [fileEntry, pdfProcessor],
+    [fileEntry, pdfProcessor, batchPaths, batchProcessor],
   );
 
   // Retry PDF processing with the last options after cancellation
@@ -620,9 +654,24 @@ function StandardToolFlow() {
       if (!fileEntry) return;
       // Clear suppress flag so the advance effect triggers when isProcessing becomes true.
       suppressImageAdvance.current = false;
+
+      if (batchPaths.length > 1) {
+        setCurrentStep(2);
+        void batchProcessor.run(batchPaths, async (path) => {
+          const result = await processImage(path, options);
+          return {
+            fileName: buildImageSaveFileName(getFileName(path), options.outputFormat),
+            bytes: result.bytes,
+            inputSizeBytes: result.inputSizeBytes,
+            outputSizeBytes: result.outputSizeBytes,
+          };
+        });
+        return;
+      }
+
       imageProcessor.run(fileEntry.path, options);
     },
-    [fileEntry, imageProcessor],
+    [fileEntry, imageProcessor, batchPaths, batchProcessor],
   );
 
   const handleSave = useCallback(() => {
@@ -652,9 +701,11 @@ function StandardToolFlow() {
     suppressImageAdvance.current = false;
     setCurrentStep(0);
     setFileEntry(null);
+    setBatchPaths([]);
     pdfProcessor.reset();
     imageProcessor.reset();
-  }, [pdfProcessor, imageProcessor]);
+    batchProcessor.reset();
+  }, [pdfProcessor, imageProcessor, batchProcessor]);
 
   return (
     <>
@@ -713,6 +764,26 @@ function StandardToolFlow() {
           />
         )}
       </StepErrorBoundary>
+
+      {/* Step 2: Batch — running, then summary. Replaces Compare, which has no
+          meaning for twelve files at once. */}
+      {currentStep === 2 && batchPaths.length > 1 && batchProcessor.isRunning && (
+        <BatchRunStep progress={batchProcessor.progress} onCancel={batchProcessor.cancel} />
+      )}
+      {currentStep === 2 && batchPaths.length > 1 && !batchProcessor.isRunning && batchProcessor.result && (
+        <BatchSummaryStep
+          succeeded={batchProcessor.result.succeeded.map((s) => ({
+            path: s.path,
+            fileName: s.output.fileName,
+            inputSizeBytes: s.output.inputSizeBytes,
+            outputSizeBytes: s.output.outputSizeBytes,
+          }))}
+          failed={batchProcessor.result.failed}
+          cancelled={batchProcessor.result.cancelled}
+          onSave={() => setCurrentStep(3)}
+          onBack={handleBackFromConfigure}
+        />
+      )}
 
       {/* Step 2: Compare — image */}
       <StepErrorBoundary stepName="Compare">

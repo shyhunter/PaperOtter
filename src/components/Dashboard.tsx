@@ -75,6 +75,8 @@ interface StagedFile {
   path: string;
   name: string;
   format: SupportedFormat;
+  /** Other files of the same type dropped alongside this one — drives a batch. */
+  alsoDropped?: string[];
 }
 
 const FORMAT_ICONS: Record<SupportedFormat, LucideIcon> = {
@@ -331,6 +333,9 @@ export function Dashboard() {
             path: filePath,
             name: filePath.split('/').pop() ?? filePath,
             format,
+            // Everything else dropped of the same type, so choosing a tool starts
+            // a batch rather than silently discarding eleven of twelve scans.
+            alsoDropped: validPaths.slice(1).filter((p) => detectFormat(p) === format),
           });
         } else {
           setIsDragOver(false);
@@ -357,7 +362,7 @@ export function Dashboard() {
 
   const handleToolClick = useCallback((tool: ToolDefinition) => {
     if (stagedFile && tool.acceptsFormats.includes(stagedFile.format)) {
-      setPendingFiles([stagedFile.path]);
+      setPendingFiles([stagedFile.path, ...(stagedFile.alsoDropped ?? [])]);
       setStagedFile(null);
     }
     selectTool(tool.id);
