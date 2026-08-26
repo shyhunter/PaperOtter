@@ -6,6 +6,7 @@ import { es } from '@/i18n/es';
 import { tr } from '@/i18n/tr';
 import { it as itDict } from '@/i18n/it';
 import { nl } from '@/i18n/nl';
+import { pl } from '@/i18n/pl';
 import { t, plural, setLocale, resetI18n, registerDictionary, LOCALE_REVIEW } from '@/i18n';
 
 /** Every translation, checked by the same rules. Adding one here covers it. */
@@ -16,6 +17,7 @@ const TRANSLATIONS: Array<[string, Dictionary]> = [
   ['tr', tr],
   ['it', itDict],
   ['nl', nl],
+  ['pl', pl],
 ];
 
 // ─── Translations (I18N-06) ──────────────────────────────────────────────────
@@ -30,6 +32,22 @@ afterEach(resetI18n);
 
 /** Strings that tell the user something is destroyed, lost or has failed. */
 const SAFETY = /permanent|cannot be undone|destroy|remove|delete|overwrit|lost|irrevers|password|redact|corrupt|fail|not a valid|too large|empty/i;
+
+/**
+ * The English source a translated key should be compared against.
+ *
+ * Languages with more plural categories than English carry keys English does not
+ * have -- Polish needs `_few` and `_many` where English stops at `_one`/`_other`.
+ * At runtime `plural()` falls back to `_other`, so that is the string those
+ * variants have to match.
+ */
+function englishFor(key: string): string {
+  const direct = (en as Record<string, string>)[key];
+  if (direct !== undefined) return direct;
+
+  const stem = key.replace(/_(zero|one|two|few|many|other)$/, '');
+  return (en as Record<string, string>)[`${stem}_other`] ?? '';
+}
 
 describe('German dictionary', () => {
   it('[I18N-06a] renders German once selected', () => {
@@ -85,7 +103,7 @@ describe('German dictionary', () => {
     // renders the token itself. Both look like the app is broken.
     const tokens = (s: string) => (s.match(/\{(\w+)\}/g) ?? []).sort();
     for (const [key, translated] of Object.entries(dict) as [keyof typeof en, string][]) {
-      expect(tokens(translated), `placeholders differ for ${key}`).toEqual(tokens(en[key]));
+      expect(tokens(translated), `placeholders differ for ${key}`).toEqual(tokens(englishFor(key)));
     }
   });
 
@@ -101,7 +119,8 @@ describe('German dictionary', () => {
   });
 
   it.each(TRANSLATIONS)('[I18N-06f] %s covers nearly all of the interface', (_locale, dict) => {
-    const coverage = Object.keys(dict).length / Object.keys(en).length;
+    const translated = Object.keys(dict).filter((key) => key in en);
+    const coverage = translated.length / Object.keys(en).length;
     expect(coverage).toBeGreaterThan(0.9);
   });
 
