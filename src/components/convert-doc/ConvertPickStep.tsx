@@ -41,7 +41,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'Document Files', extensions: DOC_EXTENSIONS }],
+        filters: [{ name: t('filter.documentFiles'), extensions: DOC_EXTENSIONS }],
       });
       if (!result || typeof result !== 'string') {
         setIsLoading(false);

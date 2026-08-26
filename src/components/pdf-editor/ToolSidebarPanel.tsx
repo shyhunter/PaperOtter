@@ -134,7 +134,7 @@ function ApplyButton({
             {t('pdfEditor.applied')}
           </>
         ) : (
-          'Apply'
+          t('toolSidebarPanel.apply')
         )}
       </button>
       {error && (
@@ -1331,7 +1331,7 @@ function SignPanel() {
 
     const raster = await rasteriseSignature(text, fontCss, sigSize, color);
     if (!raster) {
-      setPlaceError('Could not draw the signature. Try a different style or a shorter name.');
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
       return;
     }
     setPlaceError(null);
@@ -1681,7 +1681,7 @@ function RedactPanel() {
                     type="button"
                     onClick={() => addMatch(match)}
                     disabled={added}
-                    title={added ? 'Already marked' : 'Mark this one'}
+                    title={added ? t('toolSidebarPanel.alreadyMarked') : t('toolSidebarPanel.markThisOne')}
                     className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-start transition-colors ${
                       added
                         ? 'border-primary/40 bg-primary/5 text-muted-foreground'
@@ -1743,7 +1743,7 @@ function RedactPanel() {
           disabled={draft.length === 0 || isApplying}
           className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isApplying ? 'Redacting…' : 'Apply'}
+          {isApplying ? t('toolSidebarPanel.redacting') : t('toolSidebarPanel.apply')}
         </button>
       </div>
     </div>

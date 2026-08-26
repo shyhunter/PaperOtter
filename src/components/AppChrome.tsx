@@ -14,7 +14,7 @@ import { t } from '@/i18n';
 
 /** Every format any tool accepts, so the picker never hides a file the app can open. */
 const OPEN_FILTERS = [
-  { name: 'Documents & Images', extensions: [
+  { name: t('filter.documentsImages'), extensions: [
     'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif',
     'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
   ] },

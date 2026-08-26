@@ -234,7 +234,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       await loadFile(result);
@@ -401,7 +401,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                         type="button"
                         onClick={() => setOutputFormat(fmt.value)}
                         disabled={isProcessing || !!unavailable}
-                        title={unavailable ? `${fmt.engine === 'libreoffice' ? 'LibreOffice' : 'Calibre'} not installed` : fmt.label}
+                        title={unavailable ? `${fmt.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre')} not installed` : fmt.label}
                         className={cn(
                           'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                           'disabled:cursor-not-allowed disabled:opacity-40',
@@ -418,7 +418,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
                 {engineUnavailable && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    {selectedFormatOption?.engine === 'libreoffice' ? 'LibreOffice' : 'Calibre'} is not installed. Install it to enable this format.
+                    {selectedFormatOption?.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre')} is not installed. Install it to enable this format.
                   </p>
                 )}
 

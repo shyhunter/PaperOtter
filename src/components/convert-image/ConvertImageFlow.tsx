@@ -49,9 +49,9 @@ function buildSaveName(sourceFileName: string, outputFormat: ImageOutputFormat):
 
 function buildSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
   switch (outputFormat) {
-    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
-    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
-    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+    case 'jpeg': return [{ name: t('filter.jpegImage'), extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: t('filter.pngImage'),  extensions: ['png'] }];
+    case 'webp': return [{ name: t('filter.webpImage'), extensions: ['webp'] }];
   }
 }
 
@@ -155,7 +155,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'Image Files', extensions: IMAGE_EXTENSIONS }],
+        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
       });
       if (!result) return;
       await loadFile(result);

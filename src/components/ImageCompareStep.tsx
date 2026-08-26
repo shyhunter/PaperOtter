@@ -162,7 +162,7 @@ export function ImageCompareStep({
           title={t('compare.copyStats')}
         >
           {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-          <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
+          <span>{copiedStats ? t('imageCompareStep.copied') : t('imageCompareStep.copyStats')}</span>
         </button>
       </div>
 

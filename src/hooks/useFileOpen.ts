@@ -2,6 +2,7 @@
 // Requires "dialog:allow-open" in src-tauri/capabilities/default.json (added in plan 01-01)
 import { open } from '@tauri-apps/plugin-dialog';
 import { isSupportedFile } from '@/lib/fileValidation';
+import { t } from '@/i18n';
 
 export async function openFilePicker(): Promise<string | null> {
   const result = await open({
@@ -9,7 +10,7 @@ export async function openFilePicker(): Promise<string | null> {
     directory: false,
     filters: [
       {
-        name: 'Supported Files',
+        name: t('filter.supportedFiles'),
         extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
       },
     ],

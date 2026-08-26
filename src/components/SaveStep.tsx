@@ -231,7 +231,7 @@ function MultiFileSave({
 
       if (!folderPath) {
         setSaveState('idle');
-        toast('Save cancelled', { description: 'You can try again any time.' });
+        toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
         onCancel();
         return;
       }
@@ -272,7 +272,7 @@ function MultiFileSave({
         let savePath: string | null = null;
         try {
           savePath = await save({
-            filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+            filters: [{ name: t('filter.zipArchive'), extensions: ['zip'] }],
             defaultPath: zipName,
           });
         } catch (err) {
@@ -284,7 +284,7 @@ function MultiFileSave({
 
         if (!savePath) {
           setSaveState('idle');
-          toast('Save cancelled', { description: 'You can try again any time.' });
+          toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
           onCancel();
           return;
         }
@@ -325,7 +325,7 @@ function MultiFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-2">
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? 'Choose a save location…' : multiProgress ?? 'Saving…'}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : multiProgress ?? t('saveStep.saving')}
           </p>
         </div>
       </div>
@@ -433,7 +433,7 @@ function SingleFileSave({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__E2E_SAVE_OPTS__ = {
         options: {
-          filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
           defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
         },
       };
@@ -464,7 +464,7 @@ function SingleFileSave({
     let savePath: string | null = null;
     try {
       savePath = await save({
-        filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+        filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
       });
     } catch (err) {
@@ -476,7 +476,7 @@ function SingleFileSave({
 
     if (!savePath) {
       setSaveState('idle');
-      toast('Save cancelled', { description: 'You can try again any time.' });
+      toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
       onCancel();
       return;
     }
@@ -532,7 +532,7 @@ function SingleFileSave({
         <div className="text-center space-y-3">
           <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? 'Choose a save location…' : 'Saving…'}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('saveStep.saving')}
           </p>
           <p className="text-xs text-muted-foreground">
             {saveState === 'writing' ? `Writing ${defaultSaveName ?? buildDefaultSaveName(sourceFileName)}` : ''}

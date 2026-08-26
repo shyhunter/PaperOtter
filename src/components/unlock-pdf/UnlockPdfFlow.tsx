@@ -57,7 +57,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -90,7 +90,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
       const message = err instanceof Error ? err.message : String(err);
       // Make the error more user-friendly for wrong password
       if (message.includes('Wrong password') || message.includes('failed') || message.includes('Failed')) {
-        setProcessError('Incorrect password or the PDF is not password-protected.');
+        setProcessError(t('unlockPdfFlow.incorrectPasswordOrThePdf'));
       } else {
         setProcessError(message);
       }
@@ -235,7 +235,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

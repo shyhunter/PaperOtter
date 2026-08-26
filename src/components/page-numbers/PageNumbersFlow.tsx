@@ -74,7 +74,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       const path = typeof result === 'string' ? result : result;

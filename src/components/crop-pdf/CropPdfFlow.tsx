@@ -95,7 +95,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       await loadFile(result);

@@ -99,7 +99,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       const path = typeof result === 'string' ? result : result;
@@ -318,7 +318,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 )}
                 {!previewUrl && !isGeneratingPreview && (
                   <p className="text-xs text-muted-foreground">
-                    {text.trim() ? 'Preview will appear here' : 'Enter watermark text to see preview'}
+                    {text.trim() ? t('common.previewWillAppearHere') : t('watermarkFlow.enterWatermarkTextToSee')}
                   </p>
                 )}
               </div>

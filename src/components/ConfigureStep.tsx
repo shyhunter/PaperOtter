@@ -141,7 +141,7 @@ export function ConfigureStep({
       // Validate custom target size
       const parsed = parseInt(customSizeValue, 10);
       if (!customSizeValue.trim() || isNaN(parsed) || parsed < 1) {
-        setCustomError('Enter a valid target size');
+        setCustomError(t('configureStep.enterAValidTargetSize'));
         return;
       }
       const customBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
@@ -555,7 +555,7 @@ export function ConfigureStep({
           onClick={handleSubmit}
           disabled={isProcessing || isNonCompressible}
         >
-          {isProcessing ? 'Processing…' : isNonCompressible ? 'Compression not available' : 'Generate Preview'}
+          {isProcessing ? 'Processing…' : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
         </Button>
       </div>
     </div>

@@ -64,9 +64,9 @@ function buildImageSaveFileName(sourceFileName: string, outputFormat: ImageOutpu
 
 function buildImageSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
   switch (outputFormat) {
-    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
-    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
-    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+    case 'jpeg': return [{ name: t('filter.jpegImage'), extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: t('filter.pngImage'),  extensions: ['png'] }];
+    case 'webp': return [{ name: t('filter.webpImage'), extensions: ['webp'] }];
   }
 }
 
@@ -442,7 +442,7 @@ function StandardToolFlow() {
     }
 
     if (sizeBytes === 0) {
-      setEmptyFileError('This file is empty. Please try a different file.');
+      setEmptyFileError(t('app.thisFileIsEmptyPlease'));
       setTimeout(() => setEmptyFileError(null), 2500);
       return;
     }
@@ -590,7 +590,7 @@ function StandardToolFlow() {
       // null = user cancelled — do nothing
     } catch {
       toast.error(t('app.couldNotOpenFilePicker'), {
-        description: 'Please try again.',
+        description: t('app.pleaseTryAgain'),
       });
     }
   }, [handleFileSelected]);
@@ -798,7 +798,7 @@ function AppContent() {
       const result = await open({
         multiple: false,
         directory: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (cancelled) return;
       if (typeof result === 'string') {

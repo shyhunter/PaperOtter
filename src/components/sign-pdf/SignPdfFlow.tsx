@@ -69,7 +69,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -170,7 +170,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

@@ -63,7 +63,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -240,7 +240,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}
-              saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+              saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
               savedFilePath={savedFilePath}
               onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(path) => setSavedFilePath(path)}

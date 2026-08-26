@@ -219,7 +219,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
               disabled={isSaving}
               className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             >
-              {isSaving ? 'Saving...' : 'Save & Use'}
+              {isSaving ? t('pdfEditor.saving') : t('signatureCreateStep.saveUse')}
             </button>
           </div>
         </div>

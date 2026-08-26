@@ -20,9 +20,9 @@ interface PdfaOption {
 }
 
 const PDFA_OPTIONS: PdfaOption[] = [
-  { level: '1', label: 'PDF/A-1b', description: 'Basic compatibility' },
-  { level: '2', label: 'PDF/A-2b', description: 'Modern standard, supports transparency' },
-  { level: '3', label: 'PDF/A-3b', description: 'Latest, supports attachments' },
+  { level: '1', label: 'PDF/A-1b', description: t('pdfaConvertFlow.basicCompatibility') },
+  { level: '2', label: 'PDF/A-2b', description: t('pdfaConvertFlow.modernStandardSupportsTransparency') },
+  { level: '3', label: 'PDF/A-3b', description: t('pdfaConvertFlow.latestSupportsAttachments') },
 ];
 
 function formatFileSize(bytes: number): string {
@@ -78,7 +78,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -261,7 +261,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}
-              saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+              saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
               savedFilePath={savedFilePath}
               onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(path) => setSavedFilePath(path)}

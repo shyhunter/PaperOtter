@@ -141,7 +141,7 @@ export function ToolCard({
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
           className="absolute top-2 end-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          title={isFavorite ? t('dashboard.removeFromFavorites') : t('dashboard.addToFavorites')}
         >
           <Star className="h-4 w-4" />
         </button>
@@ -209,7 +209,7 @@ function FavoriteCard({
             ? 'text-primary opacity-100 bg-primary/10'
             : 'text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 hover:text-muted-foreground'
         }`}
-        title={isSwapSource ? 'Click another card to swap' : 'Click to reorder'}
+        title={isSwapSource ? t('dashboard.clickAnotherCardToSwap') : t('dashboard.clickToReorder')}
       >
         <GripVertical className="h-4 w-4" />
       </button>

@@ -202,7 +202,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     try {
       const result = await open({
         multiple: true,
-        filters: [{ name: 'Image Files', extensions: IMAGE_EXTENSIONS }],
+        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
       });
       if (!result) return;
       const paths = Array.isArray(result) ? result : [result];
@@ -429,7 +429,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   className="flex-1"
                 >
                   <FilePlus className="w-4 h-4 me-2" />
-                  {images.length === 0 ? 'Select Images' : 'Add More'}
+                  {images.length === 0 ? t('jpgToPdfFlow.selectImages') : t('mergePickStep.addMore')}
                 </Button>
 
                 <Button
@@ -573,7 +573,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName="images.pdf"
             defaultSaveName="images.pdf"
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

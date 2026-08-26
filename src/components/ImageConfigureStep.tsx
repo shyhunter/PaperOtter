@@ -147,7 +147,7 @@ export function ImageConfigureStep({
 
       if (!Number.isFinite(w) || w <= 0 || !Number.isFinite(h) || h <= 0 ||
           !Number.isInteger(w) || !Number.isInteger(h)) {
-        setDimensionError('Width and height must be positive numbers');
+        setDimensionError(t('imageConfigureStep.widthAndHeightMustBe'));
         return;
       }
     }
@@ -239,7 +239,7 @@ export function ImageConfigureStep({
                 htmlFor={`${formId}-quality`}
                 className="text-xs text-muted-foreground"
               >
-                {outputFormat === 'png' ? 'Compression' : 'Quality'}
+                {outputFormat === 'png' ? t('imageConfigureStep.compression') : t('common.quality')}
               </label>
               <span className="text-xs font-medium text-foreground tabular-nums">
                 {getQualityLabel()}
@@ -380,8 +380,8 @@ export function ImageConfigureStep({
                         data-locked={aspectLocked ? 'true' : 'false'}
                         onClick={() => setAspectLocked((v) => !v)}
                         disabled={isProcessing}
-                        aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
-                        title={aspectLocked ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
+                        aria-label={aspectLocked ? t('imageConfigureStep.unlockAspectRatio') : t('imageConfigureStep.lockAspectRatio')}
+                        title={aspectLocked ? t('imageConfigureStep.aspectRatioLocked') : t('imageConfigureStep.aspectRatioUnlocked')}
                         className={cn(
                           'rounded p-0.5 transition-colors',
                           'disabled:cursor-not-allowed disabled:opacity-50',
@@ -455,7 +455,7 @@ export function ImageConfigureStep({
           onClick={handleSubmit}
           disabled={isProcessing}
         >
-          {isProcessing ? 'Processing…' : 'Generate Preview'}
+          {isProcessing ? t('common.processing') : t('imageConfigureStep.generatePreview')}
         </Button>
       </div>
     </div>

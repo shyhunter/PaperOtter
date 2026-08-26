@@ -1,5 +1,6 @@
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { t } from '@/i18n';
 
 const CYCLE: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
 
@@ -12,7 +13,7 @@ export function ThemeToggle() {
   };
 
   const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
+  const label = theme === 'dark' ? 'Dark' : theme === 'light' ? t('themeToggle.light') : t('themeToggle.system');
 
   return (
     <button

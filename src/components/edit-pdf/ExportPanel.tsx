@@ -198,7 +198,7 @@ export function ExportPanel({
                 className="flex-1 text-xs"
                 onClick={() => setEpubLayout(layout)}
               >
-                {layout === 'reflowable' ? 'Reflowable' : 'Fixed'}
+                {layout === 'reflowable' ? t('convertDoc.reflowable') : t('exportPanel.fixed')}
               </Button>
             ))}
           </div>

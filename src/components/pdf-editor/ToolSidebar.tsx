@@ -111,7 +111,7 @@ export function ToolSidebar() {
               setActiveTool(lastToolRef.current);
             }
           }}
-          title={isExpanded ? 'Close panel' : 'Open panel'}
+          title={isExpanded ? t('toolSidebar.closePanel') : t('toolSidebar.openPanel')}
           className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-sm transition-colors"
         >
           {isExpanded ? (

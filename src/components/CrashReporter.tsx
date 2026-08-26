@@ -127,7 +127,7 @@ export function CrashReporter({
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-            {showDetails ? 'Hide error details' : 'Show error details'}
+            {showDetails ? t('crashReporter.hideErrorDetails') : t('crashReporter.showErrorDetails')}
           </button>
           {showDetails && (
             <div className="mt-2 space-y-2">
@@ -155,7 +155,7 @@ export function CrashReporter({
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-            {showPreview ? 'Hide report preview' : 'Preview what will be sent'}
+            {showPreview ? t('crashReporter.hideReportPreview') : t('crashReporter.previewWhatWillBeSent')}
           </button>
           {showPreview && (
             <div className="mt-2 rounded bg-muted p-3 text-xs text-muted-foreground overflow-auto max-h-48">

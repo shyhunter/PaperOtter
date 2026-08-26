@@ -121,7 +121,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       const result = await open({
         multiple: false,
         directory: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (typeof result === 'string') {
         const bytes = await readFile(result);

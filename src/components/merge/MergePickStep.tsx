@@ -58,7 +58,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
     try {
       const result = await open({
         multiple: true,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
 
       if (!result) return; // user cancelled
@@ -138,7 +138,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
             className="flex-1"
           >
             <FilePlus className="w-4 h-4 me-2" />
-            {files.length === 0 ? 'Select PDFs' : 'Add More'}
+            {files.length === 0 ? t('mergePickStep.selectPdfs') : t('mergePickStep.addMore')}
           </Button>
 
           <Button

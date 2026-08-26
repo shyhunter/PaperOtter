@@ -63,7 +63,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
         multiple: false,
         filters: [
           {
-            name: 'Images',
+            name: t('filter.images'),
             extensions: ['png', 'jpg', 'jpeg', 'webp'],
           },
         ],
@@ -100,7 +100,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
         disabled={isLoading}
         className="self-start rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-40"
       >
-        {isLoading ? 'Loading...' : 'Choose Image...'}
+        {isLoading ? t('common.loadingDots') : t('signatureUpload.chooseImage')}
       </button>
 
       {/* Preview */}

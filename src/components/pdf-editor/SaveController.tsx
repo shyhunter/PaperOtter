@@ -51,7 +51,7 @@ export function SaveController() {
           defaultPath: targetPath
             ? targetPath.replace(/[^/\\]+$/, defaultName)
             : defaultName,
-          filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         });
         if (!selected) {
           setIsSaving(false);
@@ -137,7 +137,7 @@ export function useSaveActions() {
           defaultPath: targetPath
             ? targetPath.replace(/[^/\\]+$/, defaultName)
             : defaultName,
-          filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         });
         if (!selected) {
           setIsSaving(false);

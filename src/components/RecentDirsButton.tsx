@@ -16,7 +16,7 @@ async function openFromDir(dir: string): Promise<string | null> {
     multiple: false,
     directory: false,
     defaultPath: dir,
-    filters: [{ name: 'Supported Files', extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'] }],
+    filters: [{ name: t('filter.supportedFiles'), extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'] }],
   });
   return typeof result === 'string' ? result : null;
 }

@@ -48,18 +48,44 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 const JSX_TEXT = /(?<![=-])>\s*([A-Z][^<>{}\n]{2,160}?)\s*</g;
 // User-facing string props. Others (className, data-testid, type) are not copy.
 const TEXT_PROP = /(?:placeholder|title|aria-label|alt|label)="([^"]{3,160})"/g;
+// Copy that never appears as JSX text. The first version of this guard scanned
+// only the two patterns above and reported the extraction complete while 122
+// strings were still hardcoded — 176 of them the entire tool registry, whose
+// names and descriptions are object values, not markup.
+const TOAST = /toast(?:\.\w+)?\(\s*'((?:[^'\\]|\\.){6,160})'/g;
+const DESCRIPTION = /description:\s*'((?:[^'\\]|\\.){6,160})'/g;
+const NAME_FIELD = /name: '((?:[^'\\]|\\.){3,160})'/g;
+const ERROR_SETTER = /set[A-Z]\w*Error\(\s*'((?:[^'\\]|\\.){6,160})'/g;
+const TERNARY = /\?\s*'([A-Z](?:[^'\\]|\\.){4,160})'\s*:\s*'([A-Z](?:[^'\\]|\\.){4,160})'/g;
+
+/** A dotted lower-camel token is a translation key, not prose. */
+const KEY_SHAPED = /^[a-z][A-Za-z0-9]*\.[A-Za-z0-9_.]+$/;
+
+/**
+ * Developer-facing messages. These are never shown to a user — they fire when a
+ * hook is used outside its provider, which is a programming error — so
+ * translating them would only make debugging harder.
+ */
+const DEVELOPER_MESSAGES = /must be used within|is not a function|invariant/i;
 
 function findings(text: string): string[] {
   const found: string[] = [];
-  for (const rx of [JSX_TEXT, TEXT_PROP]) {
+  const patterns = [JSX_TEXT, TEXT_PROP, TOAST, DESCRIPTION, NAME_FIELD, ERROR_SETTER, TERNARY];
+  for (const rx of patterns) {
     rx.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = rx.exec(text)) !== null) {
-      const value = m[1].trim();
-      if (!/[a-z]{2}/.test(value)) continue;        // needs real words
-      if (PROPER_NOUNS.has(value)) continue;
-      if (ALLOWLIST.has(value)) continue;
-      found.push(value);
+      // TERNARY captures both branches; the rest capture one.
+      for (const raw of m.slice(1)) {
+        if (!raw) continue;
+        const value = raw.trim();
+        if (!/[a-z]{2}/.test(value)) continue;      // needs real words
+        if (KEY_SHAPED.test(value)) continue;       // already a translation key
+        if (DEVELOPER_MESSAGES.test(value)) continue;
+        if (PROPER_NOUNS.has(value)) continue;
+        if (ALLOWLIST.has(value)) continue;
+        found.push(value);
+      }
     }
   }
   return found;
@@ -89,11 +115,20 @@ describe('no hardcoded user-facing English', () => {
     // proving nothing. This pins that the scanner detects both shapes.
     expect(findings('<span>Save your document</span>')).toContain('Save your document');
     expect(findings('<button title="Close the dialog" />')).toContain('Close the dialog');
+    expect(findings("toast.error('Could not save the file')")).toContain('Could not save the file');
+    expect(findings("{ description: 'Reduce PDF file size' }")).toContain('Reduce PDF file size');
+    expect(findings("  name: 'Compress PDF',")).toContain('Compress PDF');
+    expect(findings("setSaveError('The disk is full')")).toContain('The disk is full');
+    expect(findings("open ? 'Hide the details' : 'Show the details'"))
+      .toEqual(['Hide the details', 'Show the details']);
   });
 
   it('[I18N-04c] the guard does not flag type annotations or translated calls', () => {
     expect(findings('(s: State) => Partial<State>')).toEqual([]);
     expect(findings("<span>{t('common.save')}</span>")).toEqual([]);
     expect(findings('<span>Papercut</span>')).toEqual([]);
+    expect(findings("  name: 'tool.compressPdf.name',")).toEqual([]);
+    expect(findings("{ description: 'tool.compressPdf.desc' }")).toEqual([]);
+    expect(findings("throw new Error('useToolContext must be used within a provider')")).toEqual([]);
   });
 });
