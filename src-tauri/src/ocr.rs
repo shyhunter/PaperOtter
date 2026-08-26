@@ -15,11 +15,11 @@
 //! is done with pdf-lib on the TypeScript side, where the rest of this app's PDF
 //! writing already lives.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// One recognised run of text, positioned in PDF user space (points, origin at
 /// the bottom-left) so the caller can place invisible text directly over it.
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OcrBlock {
     pub text: String,
     pub x: f64,
@@ -31,7 +31,7 @@ pub struct OcrBlock {
     pub confidence: f32,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OcrPage {
     pub index: usize,
     /// Page size in points, so the text layer lands on the right page geometry.
@@ -165,6 +165,123 @@ mod imp {
         Ok(blocks)
     }
 
+
+    use objc2_core_foundation::{
+        CFAttributedString, CFData, CFDictionary, CFMutableData, CFString, CFURL,
+    };
+    use objc2_core_graphics::{
+        CGDataConsumer, CGPDFBox, CGPDFContextClose,
+        CGPDFContextCreate, CGPDFDocument, CGPDFPage, CGTextDrawingMode,
+    };
+    use objc2_core_text::{kCTFontAttributeName, CTFont, CTLine};
+
+    /// Lays invisible text over a copy of the source PDF.
+    pub fn build_searchable_pdf(source_path: &str, pages: &[super::OcrPage]) -> Result<Vec<u8>, String> {
+        // SAFETY: the byte slice is a valid POSIX path for the lifetime of the call.
+        let url = unsafe {
+            CFURL::from_file_system_representation(
+                None,
+                source_path.as_ptr(),
+                source_path.len() as isize,
+                false,
+            )
+        }
+        .ok_or_else(|| "This PDF path could not be read.".to_string())?;
+        let source = CGPDFDocument::with_url(Some(&url))
+            .ok_or_else(|| "This PDF could not be opened.".to_string())?;
+
+        let data = CFMutableData::new(None, 0)
+            .ok_or_else(|| "Could not allocate the output buffer.".to_string())?;
+        let consumer = CGDataConsumer::with_cf_data(Some(&data))
+            .ok_or_else(|| "Could not start writing the PDF.".to_string())?;
+        // SAFETY: consumer outlives the context, which is dropped before `data`
+        // is read back below.
+        let ctx = unsafe { CGPDFContextCreate(Some(&consumer), std::ptr::null(), None) }
+            .ok_or_else(|| "Could not create the output PDF.".to_string())?;
+
+        let page_count = CGPDFDocument::number_of_pages(Some(&source));
+        for index in 0..page_count {
+            // CGPDFDocument pages are 1-based.
+            let Some(src_page) = CGPDFDocument::page(Some(&source), index + 1) else { continue };
+            let media = CGPDFPage::box_rect(Some(&src_page), CGPDFBox::MediaBox);
+
+            let page_rect = media;
+            // SAFETY: page_rect is a valid rect for the page being started.
+            unsafe { CGContext::begin_page(Some(&ctx), &raw const page_rect) };
+            CGContext::draw_pdf_page(Some(&ctx), Some(&src_page));
+
+            if let Some(ocr) = pages.iter().find(|p| p.index == index as usize) {
+                draw_invisible_text(&ctx, ocr);
+            }
+            CGContext::end_page(Some(&ctx));
+        }
+        CGPDFContextClose(Some(&ctx));
+        drop(ctx);
+
+        Ok(CFData::to_vec(&data))
+    }
+
+    /// Draws each recognised block as invisible text at the position it was read
+    /// from, sized so the run spans the box it came from — a text layer that does
+    /// not line up selects the wrong words even though search still works.
+    fn draw_invisible_text(ctx: &CGContext, page: &super::OcrPage) {
+        CGContext::set_text_drawing_mode(Some(ctx), CGTextDrawingMode::Invisible);
+
+        for block in &page.blocks {
+            if block.text.trim().is_empty() || block.width <= 0.0 || block.height <= 0.0 {
+                continue;
+            }
+            // Measure at a nominal size, then scale so the run matches the box.
+            let nominal = 12.0_f64;
+            let Some(line) = make_line(&block.text, nominal) else { continue };
+            let measured = unsafe {
+                line.typographic_bounds(std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut())
+            };
+            if measured <= 0.0 {
+                continue;
+            }
+            let size = (nominal * block.width / measured).clamp(1.0, 400.0);
+            let Some(sized) = make_line(&block.text, size) else { continue };
+
+            CGContext::set_text_position(Some(ctx), block.x, block.y);
+            unsafe { sized.draw(ctx) };
+        }
+    }
+
+    fn make_line(text: &str, size: f64) -> Option<objc2_core_foundation::CFRetained<CTLine>> {
+        // Helvetica is a starting point, not a constraint: Core Text substitutes
+        // per glyph, so Turkish, Greek, Cyrillic and CJK all render from whatever
+        // system font covers them.
+        let font = unsafe { CTFont::with_name(&CFString::from_str("Helvetica"), size, std::ptr::null()) };
+        let mut keys = [unsafe { kCTFontAttributeName } as *const _ as *const std::ffi::c_void];
+        let mut values = [&*font as *const _ as *const std::ffi::c_void];
+        // SAFETY: one key/value pair, both alive for the duration of the call.
+        let attrs = unsafe {
+            CFDictionary::new(
+                None,
+                keys.as_mut_ptr(),
+                values.as_mut_ptr(),
+                1,
+                std::ptr::null(),
+                std::ptr::null(),
+            )
+        }?;
+        // SAFETY: string and attributes both outlive the call.
+        let attributed = unsafe {
+            CFAttributedString::new(None, Some(&CFString::from_str(text)), Some(&attrs))
+        }?;
+        Some(unsafe { CTLine::with_attributed_string(&attributed) })
+    }
+
+    /// Reads whatever text layer a PDF already carries.
+    #[cfg(test)]
+    pub fn extract_text(path: &str) -> Result<String, String> {
+        let url = NSURL::fileURLWithPath(&NSString::from_str(path));
+        let document = unsafe { PDFDocument::initWithURL(PDFDocument::alloc(), &url) }
+            .ok_or_else(|| "This PDF could not be opened.".to_string())?;
+        Ok(unsafe { document.string() }.map(|s| s.to_string()).unwrap_or_default())
+    }
+
     /// Reads every page of a PDF. `on_page` fires before each page so a long
     /// document reports progress instead of appearing to hang.
     pub fn recognize_pdf(
@@ -210,3 +327,38 @@ mod imp {
 }
 
 pub use imp::recognize_pdf;
+
+// ─── Searchable output ───────────────────────────────────────────────────────
+
+/// Reads whatever text layer a PDF already has.
+///
+/// Used to prove that the layer written by build_searchable_pdf is genuinely
+/// extractable — read back through PDFKit, a different API than wrote it, rather
+/// than trusting that the drawing calls did what they claimed.
+#[cfg(all(target_os = "macos", test))]
+pub fn extract_text(path: &str) -> Result<String, String> {
+    imp::extract_text(path)
+}
+
+/// Writes a copy of the PDF with an invisible text layer over each page.
+///
+/// Built with Core Graphics rather than pdf-lib, which is what the rest of this
+/// app writes PDFs with. pdf-lib's standard fonts are WinAnsi and cannot encode
+/// Turkish — `Ş` throws — so a searchable layer would need an embedded Unicode
+/// font, meaning a new dependency and a font asset that would still only cover
+/// the Latin half of the 30 languages Vision reads. macOS system fonts cover all
+/// of them, with Core Text falling back automatically per glyph.
+///
+/// The page content is drawn as a PDF page, not rasterised, so images and vectors
+/// survive at full quality. What does not survive is non-visual structure —
+/// bookmarks, form fields, tagging. On a scanned document, the only input where
+/// OCR makes sense, there is none.
+#[cfg(target_os = "macos")]
+pub fn build_searchable_pdf(source_path: &str, pages: &[OcrPage]) -> Result<Vec<u8>, String> {
+    imp::build_searchable_pdf(source_path, pages)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn build_searchable_pdf(_source_path: &str, _pages: &[OcrPage]) -> Result<Vec<u8>, String> {
+    Err(NO_ENGINE.to_string())
+}

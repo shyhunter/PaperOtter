@@ -514,6 +514,27 @@ async fn ocr_pdf(
     serde_json::to_string(&pages).map_err(|e| format!("Could not encode the result: {e}"))
 }
 
+/// Writes a searchable copy of a scanned PDF from text already recognised.
+///
+/// Split from `ocr_pdf` on purpose. Recognition is the slow part and its result
+/// is useful on its own — the UI shows what was found and how confident it is
+/// before anything is written, and redaction search uses the same data. Passing
+/// it back here avoids recognising the document twice.
+#[tauri::command]
+async fn write_searchable_pdf(source_path: String, pages_json: String) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
+    let pages: Vec<ocr::OcrPage> = serde_json::from_str(&pages_json)
+        .map_err(|e| format!("Could not read the recognised text: {e}"))?;
+
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        ocr::build_searchable_pdf(&source_path, &pages)
+    })
+    .await
+    .map_err(|e| format!("Writing the searchable PDF could not be started: {e}"))??;
+
+    Ok(Response::new(bytes))
+}
+
 /// Cancel an in-progress compression by killing the GS child process.
 /// Fire-and-forget from the TypeScript side — no return value needed.
 #[tauri::command]
@@ -2025,7 +2046,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -3016,6 +3037,86 @@ mod tests {
             let err = ocr::recognize_pdf(&fixture_path("sample.jpg"), &[], |_, _| {})
                 .expect_err("a JPEG is not a PDF");
             assert!(err.contains("could not be opened"), "got: {err}");
+        }
+
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_output_pdf_is_actually_searchable() {
+            // The whole point of OCR, and the one claim worth proving end to end:
+            // recognise a page that has no text, write the layer, then read the
+            // text back out of the result with a different API than wrote it.
+            use std::io::Write;
+
+            let src = fixture_path("scanned.pdf");
+            let pages = ocr::recognize_pdf(&src, &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let bytes = ocr::build_searchable_pdf(&src, &pages)
+                .expect("must build a searchable PDF");
+            assert!(bytes.starts_with(b"%PDF-"), "output must be a PDF");
+
+            let out = std::env::temp_dir().join("papercut-ocr-searchable.pdf");
+            std::fs::File::create(&out).unwrap().write_all(&bytes).unwrap();
+
+            let extracted = ocr::extract_text(out.to_str().unwrap())
+                .expect("must read the result back");
+            assert!(extracted.contains("MUSTERMANN"), "extracted: {extracted}");
+            assert!(extracted.contains("BERLIN"), "extracted: {extracted}");
+
+            let _ = std::fs::remove_file(&out);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_source_pdf_still_has_no_text_of_its_own() {
+            // Pins that the assertion above is really testing the layer we wrote.
+            // If the fixture ever gained a text layer, that test would pass while
+            // build_searchable_pdf did nothing at all.
+            let extracted = ocr::extract_text(&fixture_path("scanned.pdf"))
+                .expect("must open the fixture");
+            assert!(
+                !extracted.contains("MUSTERMANN"),
+                "the source must have no text layer, got: {extracted}"
+            );
+        }
+
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_text_layer_survives_beyond_latin_1() {
+            // pdf-lib's standard fonts are WinAnsi and throw on "Ş", which is why
+            // the layer is written with Core Text instead: system fonts cover
+            // every language Vision can read, substituting per glyph. Turkish and
+            // German are what F13b targets; Greek and Japanese are here to pin
+            // that the fallback is real rather than a wider single font.
+            use std::io::Write;
+
+            let phrases = [
+                "Şişli Güngören İstanbul",   // Turkish
+                "Müller Straße Köln",         // German
+                "Ελληνικά κείμενο",           // Greek
+                "日本語のテキスト",              // Japanese
+            ];
+            let blocks: Vec<_> = phrases.iter().enumerate().map(|(i, text)| ocr::OcrBlock {
+                text: (*text).to_string(),
+                x: 50.0,
+                y: 700.0 - (i as f64 * 60.0),
+                width: 300.0,
+                height: 20.0,
+                confidence: 1.0,
+            }).collect();
+            let page = ocr::OcrPage { index: 0, width: 595.0, height: 842.0, blocks };
+
+            let bytes = ocr::build_searchable_pdf(&fixture_path("scanned.pdf"), &[page])
+                .expect("must build");
+            let out = std::env::temp_dir().join("papercut-ocr-unicode.pdf");
+            std::fs::File::create(&out).unwrap().write_all(&bytes).unwrap();
+
+            let extracted = ocr::extract_text(out.to_str().unwrap()).expect("must read back");
+            for phrase in phrases {
+                assert!(extracted.contains(phrase), "{phrase:?} did not survive: {extracted}");
+            }
+            let _ = std::fs::remove_file(&out);
         }
 
         #[cfg(not(target_os = "macos"))]
