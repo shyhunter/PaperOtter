@@ -3,6 +3,7 @@ import { de } from '@/i18n/de';
 import { fr } from '@/i18n/fr';
 import { es } from '@/i18n/es';
 import { tr } from '@/i18n/tr';
+import { it } from '@/i18n/it';
 
 export { en };
 export type { Dictionary, PluralKey, TranslationKey };
@@ -27,6 +28,7 @@ const dictionaries = new Map<string, Dictionary>([
   ['fr', fr],
   ['es', es],
   ['tr', tr],
+  ['it', it],
 ]);
 
 /**
@@ -49,6 +51,7 @@ export const LOCALE_REVIEW: Record<string, ReviewStatus> = {
   fr: 'unreviewed', // no French reviewer yet — TEST_PLAN REL-04b
   es: 'unreviewed',
   tr: 'unreviewed', // maintainer can verify Turkish — TEST_PLAN REL-04a
+  it: 'unreviewed',
 };
 
 let currentLocale = 'en';
@@ -91,6 +94,7 @@ export function resetI18n(): void {
   dictionaries.set('fr', fr);
   dictionaries.set('es', es);
   dictionaries.set('tr', tr);
+  dictionaries.set('it', it);
   currentLocale = 'en';
   listeners.clear();
 }

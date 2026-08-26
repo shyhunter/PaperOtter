@@ -4,7 +4,8 @@ import { de } from '@/i18n/de';
 import { fr } from '@/i18n/fr';
 import { es } from '@/i18n/es';
 import { tr } from '@/i18n/tr';
-import { t, plural, setLocale, resetI18n, LOCALE_REVIEW } from '@/i18n';
+import { it as itDict } from '@/i18n/it';
+import { t, plural, setLocale, resetI18n, registerDictionary, LOCALE_REVIEW } from '@/i18n';
 
 /** Every translation, checked by the same rules. Adding one here covers it. */
 const TRANSLATIONS: Array<[string, Dictionary]> = [
@@ -12,6 +13,7 @@ const TRANSLATIONS: Array<[string, Dictionary]> = [
   ['fr', fr],
   ['es', es],
   ['tr', tr],
+  ['it', itDict],
 ];
 
 // ─── Translations (I18N-06) ──────────────────────────────────────────────────
@@ -38,6 +40,24 @@ describe('German dictionary', () => {
     // Product names are deliberately absent so they stay identical.
     setLocale('de');
     expect(t('pdfToJpgFlow.calibre')).toBe(en['pdfToJpgFlow.calibre']);
+  });
+
+  it('[I18N-06j] a language with more than two plural forms can express them', () => {
+    // Polish has one / few / many: 1 strona, 2 strony, 5 stron. English needs
+    // only _one and _other, so the dictionary type has to allow categories
+    // English never uses — otherwise Polish silently falls back to _other and
+    // renders "2 stron", which is wrong.
+    registerDictionary('pl', {
+      'count.page_one': '{count} strona',
+      'count.page_few': '{count} strony',
+      'count.page_many': '{count} stron',
+      'count.page_other': '{count} strony',
+    });
+    setLocale('pl');
+    expect(plural('count.page', 1)).toBe('1 strona');
+    expect(plural('count.page', 2)).toBe('2 strony');
+    expect(plural('count.page', 5)).toBe('5 stron');
+    expect(plural('count.page', 22)).toBe('22 strony');
   });
 
   it('[I18N-06i] Turkish does not pluralise a noun after a number', () => {

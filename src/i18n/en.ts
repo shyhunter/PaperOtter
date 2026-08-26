@@ -984,16 +984,26 @@ export const en = {
 export type TranslationKey = keyof typeof en;
 
 /**
- * A translation of English. Partial on purpose: an incomplete language is
- * normal, and every gap falls back to English rather than showing a raw key.
+ * Every plural category Intl can produce. English uses only one/other, but other
+ * languages need more, and a dictionary has to be able to express them.
  */
-export type Dictionary = Partial<Record<TranslationKey, string>>;
+type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
 
 /**
+ * A translation of English. Partial on purpose: an incomplete language is
+ * normal, and every gap falls back to English rather than showing a raw key.
+ *
+ * Plural stems may carry categories English does not have. Polish needs three —
+ * "1 strona", "2 strony", "5 stron" — and typing the dictionary strictly against
+ * English keys would make `count.page_few` a compile error, leaving Polish to
+ * fall back to _other and render "2 stron", which is wrong. The type therefore
+ * admits any Intl category on any stem that has plural forms.
+ */
+/**
  * The stems of plural entries — `count.page` for the `count.page_one` /
- * `count.page_other` pair. Derived from the dictionary, so `plural()`
- * only accepts a key that genuinely has plural forms, and `t()` cannot be used
- * on one by mistake.
+ * `count.page_other` pair. Derived from the dictionary, so `plural()` only
+ * accepts a key that genuinely has plural forms, and `t()` cannot be used on one
+ * by mistake.
  */
 export type PluralKey =
   TranslationKey extends infer K
@@ -1001,3 +1011,8 @@ export type PluralKey =
       ? Stem
       : never
     : never;
+
+export type Dictionary =
+  Partial<Record<TranslationKey, string>> &
+  Partial<Record<`${PluralKey}_${PluralCategory}`, string>>;
+
