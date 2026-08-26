@@ -105,4 +105,64 @@ describe('user-visible text comes from the dictionary', () => {
 
     expect(found, 'these strings are English for every user').toEqual([]);
   });
+
+  /**
+   * [I18N-13] A string rendered from a JSX expression is still user copy.
+   *
+   * `{isSearching ? '…' : 'Find'}` is not a JSX text node and not an attribute,
+   * so I18N-08 above never sees it and neither does I18N-04. Two dozen strings
+   * lived in that third gap, including the editor's own Find button and the
+   * "Don't Save" in the unsaved-changes dialog.
+   *
+   * Only element *content* counts. `variant={active ? 'default' : 'outline'}` is
+   * an attribute, and `{mode === 'range' && …}` compares against an enum member
+   * -- neither is text anyone reads.
+   */
+  it('[I18N-13] no hardcoded English rendered from a JSX expression', () => {
+    const found: string[] = [];
+
+    for (const file of files) {
+      const source = ts.createSourceFile(
+        file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX,
+      );
+
+      const visit = (node: ts.Node): void => {
+        const rendersContent =
+          ts.isJsxExpression(node) &&
+          node.expression !== undefined &&
+          (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent));
+
+        if (rendersContent) {
+          const literals: ts.StringLiteral[] = [];
+          const collect = (expression: ts.Expression): void => {
+            if (ts.isStringLiteral(expression)) literals.push(expression);
+            else if (ts.isParenthesizedExpression(expression)) collect(expression.expression);
+            else if (ts.isConditionalExpression(expression)) {
+              collect(expression.whenTrue);
+              collect(expression.whenFalse);
+            } else if (
+              ts.isBinaryExpression(expression) &&
+              [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken,
+                ts.SyntaxKind.QuestionQuestionToken].includes(expression.operatorToken.kind)
+            ) {
+              // Only the value side: the left of `&&` is the guard, not the text.
+              collect(expression.right);
+            }
+          };
+          collect((node as ts.JsxExpression).expression!);
+
+          for (const literal of literals) {
+            if (!/[A-Za-z]{2,}/.test(literal.text) || ALLOWED.has(literal.text.trim())) continue;
+            const { line } = source.getLineAndCharacterOfPosition(literal.getStart());
+            found.push(`${file}:${line + 1} ${literal.text}`);
+          }
+        }
+
+        node.forEachChild(visit);
+      };
+      visit(source);
+    }
+
+    expect(found, 'these strings are English for every user').toEqual([]);
+  });
 });

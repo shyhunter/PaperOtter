@@ -364,7 +364,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
                         }
                         disabled={alreadyAdded}
                       >
-                        {alreadyAdded ? 'Added' : 'Add'}
+                        {alreadyAdded ? t('common.added') : t('common.add')}
                       </button>
                     </div>
                   );

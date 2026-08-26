@@ -238,7 +238,7 @@ export function ConfigureStep({
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-none mt-0.5" />
               <p className="text-xs text-amber-700 dark:text-amber-400">
                 {nonCompressibleMsg}
-                {!resizeEnabled && ' Enable page resize below to still process this file.'}
+                {!resizeEnabled && ` ${t('configureStep.enableResizeToStillProcess')}`}
               </p>
             </div>
           )}
@@ -583,7 +583,7 @@ export function ConfigureStep({
           onClick={handleSubmit}
           disabled={isProcessing || isNonCompressible}
         >
-          {isProcessing ? 'Processing…' : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
+          {isProcessing ? t('common.processing') : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
         </Button>
       </div>
     </div>

@@ -67,7 +67,7 @@ export function nonCompressibleMessage(reason: NonCompressibleReason, imageCount
     case 'text-only':
       return t('pdfProcessor.thisFileIsMostlyText');
     case 'jpx':
-      return `This PDF contains ${plural('count.image', imageCount)}, already JPEG2000-encoded — Ghostscript can't compress them further.`;
+      return t('pdfProcessor.jpxAlreadyEncoded', { images: plural('count.image', imageCount) });
     case null:
       return null;
   }

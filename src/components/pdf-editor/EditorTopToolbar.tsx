@@ -94,7 +94,7 @@ export function EditorTopToolbar() {
           </button>
           <ChevronRight className="w-3 h-3 text-muted-foreground" />
           <span className="text-foreground font-medium truncate max-w-[200px]">
-            {state.fileName || 'Untitled.pdf'}
+            {state.fileName || t('pdfEditor.untitledPdf')}
           </span>
           {state.isDirty && (
             <span className="text-muted-foreground ms-1" title={t('common.unsavedChanges')}>

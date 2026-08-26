@@ -72,7 +72,9 @@ export function ConvertCompareStep({
               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
           )}>
-            {sizeChangePct}% {grew ? 'larger' : 'smaller'}
+            {grew
+              ? t('common.percentLarger', { percent: sizeChangePct })
+              : t('common.percentSmaller', { percent: sizeChangePct })}
           </span>
         )}
       </div>

@@ -303,7 +303,7 @@ export function SplitSelectStep({
               {t('split.splitting')}
             </>
           ) : (
-            'Split'
+            t('split.split')
           )}
         </Button>
       </div>

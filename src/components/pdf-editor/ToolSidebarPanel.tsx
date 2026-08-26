@@ -1574,7 +1574,7 @@ function SignPanel() {
               {t('pdfEditor.placementModeActive')}
             </>
           ) : (
-            'Click-to-Place Mode'
+            t('toolSidebarPanel.clickToPlaceMode')
           )}
         </button>
         {isTextMode && (
@@ -1689,7 +1689,7 @@ function RedactPanel() {
             disabled={isSearching || !searchQuery.trim()}
             className="flex-none px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-50"
           >
-            {isSearching ? '…' : 'Find'}
+            {isSearching ? '…' : t('common.find')}
           </button>
         </div>
 

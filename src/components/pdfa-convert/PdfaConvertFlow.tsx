@@ -245,7 +245,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                       {t('convertImage.converting')}
                     </>
                   ) : (
-                    'Convert'
+                    t('common.convert')
                   )}
                 </Button>
               </div>

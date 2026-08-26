@@ -69,10 +69,10 @@ export function UnsavedChangesDialog({
             {t('common.cancel')}
           </Button>
           <Button variant="outline" size="sm" onClick={onDiscard} disabled={isSaving}>
-            {"Don't Save"}
+            {t('unsavedChangesDialog.dontSave')}
           </Button>
           <Button size="sm" onClick={onSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? t('pdfEditor.saving') : t('common.save')}
           </Button>
         </div>
       </div>

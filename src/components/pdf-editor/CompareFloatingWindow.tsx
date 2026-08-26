@@ -283,8 +283,8 @@ export function CompareFloatingWindow() {
                 : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
             )}>
               {currentSize <= originalSize
-                ? t('compareFloatingWindow.percentSmaller', { percent: Math.round(((originalSize - currentSize) / originalSize) * 100) })
-                : t('compareFloatingWindow.percentLarger', { percent: Math.round(((currentSize - originalSize) / originalSize) * 100) })
+                ? t('common.percentSmaller', { percent: Math.round(((originalSize - currentSize) / originalSize) * 100) })
+                : t('common.percentLarger', { percent: Math.round(((currentSize - originalSize) / originalSize) * 100) })
               }
             </span>
           )}

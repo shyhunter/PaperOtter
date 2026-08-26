@@ -132,7 +132,9 @@ export function ImageCompareStep({
               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
           )}>
-            {Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'}
+            {grew
+              ? t('common.percentLarger', { percent: Math.abs(savingsPct) })
+              : t('common.percentSmaller', { percent: Math.abs(savingsPct) })}
           </span>
         )}
         {dimensionsChanged && (

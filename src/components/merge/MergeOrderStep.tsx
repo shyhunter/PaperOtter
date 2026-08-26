@@ -186,7 +186,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
               {t('merge.merging')}
             </>
           ) : (
-            'Merge & Save'
+            t('merge.mergeAndSave')
           )}
         </Button>
       </div>

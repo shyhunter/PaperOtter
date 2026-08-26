@@ -1080,6 +1080,21 @@ export const en = {
   'count.areaMarked_one': '{count} area marked',
   'count.areaMarked_other': '{count} areas marked',
   'editorView.couldNotBeRepaired': 'This file could not be repaired. Whatever is wrong with it is beyond what a rebuild can recover.',
+  'common.add': 'Add',
+  'common.added': 'Added',
+  'common.applyAndSave': 'Apply & save',
+  'common.convert': 'Convert',
+  'common.find': 'Find',
+  'common.percentLarger': '{percent}% larger',
+  'common.percentSmaller': '{percent}% smaller',
+  'compareStep.jpxAlreadyEncoded': 'Images already JPEG2000-encoded — can\'t compress further',
+  'configureStep.enableResizeToStillProcess': 'Enable page resize below to still process this file.',
+  'merge.mergeAndSave': 'Merge & save',
+  'pdfEditor.untitledPdf': 'Untitled.pdf',
+  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded — Ghostscript can\'t compress them further.',
+  'split.split': 'Split',
+  'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
+  'unsavedChangesDialog.dontSave': 'Don\'t save',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

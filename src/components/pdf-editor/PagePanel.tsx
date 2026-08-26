@@ -17,7 +17,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { useEditorContext } from '@/context/EditorContext';
 import { PagePanelThumbnail } from './PagePanelThumbnail';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
 
 const PANEL_WIDTH = 180;
 const COLLAPSED_WIDTH = 28;
@@ -393,7 +393,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
 
         {/* Page count display */}
         <span className="ms-auto text-[10px] text-muted-foreground">
-          {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+          {plural('count.page', pageCount)}
         </span>
       </div>
     </div>

@@ -243,7 +243,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
               {t('common.applying')}
             </>
           ) : (
-            'Apply & Save'
+            t('common.applyAndSave')
           )}
         </Button>
       </div>

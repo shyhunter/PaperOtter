@@ -369,7 +369,9 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
           )}>
-            {Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'}
+            {grew
+              ? t('common.percentLarger', { percent: Math.abs(savingsPct) })
+              : t('common.percentSmaller', { percent: Math.abs(savingsPct) })}
           </span>
         )}
         <span className="text-muted-foreground whitespace-nowrap">
@@ -380,7 +382,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         )}
         {result.wasAlreadyOptimal && (
           <span className="text-muted-foreground hidden sm:inline">
-            {nonCompressibleReason === 'jpx' ? "Images already JPEG2000-encoded — can't compress further" : t('compareStep.fileAlreadyOptimal')}
+            {nonCompressibleReason === 'jpx' ? t('compareStep.jpxAlreadyEncoded') : t('compareStep.fileAlreadyOptimal')}
           </span>
         )}
         <div className="flex-1" />

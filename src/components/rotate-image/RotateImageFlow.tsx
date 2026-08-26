@@ -323,7 +323,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                       {t('rotateImage.rotating')}
                     </>
                   ) : (
-                    'Apply & Save'
+                    t('common.applyAndSave')
                   )}
                 </Button>
               </div>

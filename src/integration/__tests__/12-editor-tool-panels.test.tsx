@@ -1200,8 +1200,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Save button
     expect(screen.getByText('Save')).toBeInTheDocument();
 
-    // Click-to-Place Mode button
-    expect(screen.getByText('Click-to-Place Mode')).toBeInTheDocument();
+    // Click-to-place mode button
+    expect(screen.getByText('Click-to-place mode')).toBeInTheDocument();
   });
 
   it('TP-06b — Typing a name shows signature preview and enables Place', async () => {
@@ -1488,7 +1488,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Sign PDF'));
 
-    await user.click(screen.getByText('Click-to-Place Mode'));
+    await user.click(screen.getByText('Click-to-place mode'));
 
     expect(latestCtx!.state.editorMode).toBe('text');
     expect(screen.getByText('Placement Mode Active')).toBeInTheDocument();
