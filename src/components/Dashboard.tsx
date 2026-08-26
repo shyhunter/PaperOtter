@@ -118,13 +118,18 @@ export function ToolCard({
 }) {
   const Icon = ICON_MAP[tool.icon];
   return (
-    <div className="relative group/card">
+    // h-full on both: the grid stretches this wrapper to the tallest card in the
+    // row, and the wrapper has to pass that height on to the button or the card
+    // floats short inside its own cell. Descriptions run from 29 to 56
+    // characters, so some wrap to two lines and some to one — without this, the
+    // cards are visibly different heights.
+    <div className="relative group/card h-full">
       <button
         type="button"
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
-        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+        className={`h-full w-full flex flex-col items-center justify-start gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : 'cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5'

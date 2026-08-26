@@ -35,7 +35,11 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
-import { t } from '@/i18n';
+import { plural, t } from '@/i18n';
+import { useLocale } from '@/i18n/context';
+import { listen } from '@tauri-apps/api/event';
+import { ocrPdf, type OcrSummary } from '@/lib/ocrProcessor';
+import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -2060,6 +2064,137 @@ function UnlockPanel() {
   );
 }
 
+
+// ── Make Searchable (OCR) Panel ──────────────────────────────────────
+
+function OcrPanel() {
+  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const locale = useLocale();
+  const [languages, setLanguages] = useState<OcrLanguage[]>([]);
+  const [language, setLanguage] = useState('en-US');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [summary, setSummary] = useState<OcrSummary | null>(null);
+  const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
+
+  useEffect(() => {
+    let cancelled = false;
+    listOcrLanguages(locale).then((list) => {
+      if (cancelled) return;
+      setLanguages(list);
+      const match = list.find((l) => l.tag.split('-')[0] === locale.split('-')[0]);
+      if (match) setLanguage(match.tag);
+    });
+    return () => { cancelled = true; };
+  }, [locale]);
+
+  // Recognition is seconds per page, so a long document must not look stuck.
+  useEffect(() => {
+    const unlisten = listen<[number, number]>('ocr-progress', (event) => {
+      const [index, total] = event.payload;
+      setProgress({ current: index + 1, total });
+    });
+    return () => { void unlisten.then((fn) => fn()); };
+  }, []);
+
+  const handleApply = useCallback(async () => {
+    setIsProcessing(true);
+    setSummary(null);
+    setProgress(null);
+    try {
+      // OCR reads from a file; the editor holds bytes. Same temp-file round trip
+      // the other Ghostscript-backed panels use.
+      const { tempDir, join } = await import('@tauri-apps/api/path');
+      const tempInputPath = await join(await tempDir(), `papercut_ocr_${Date.now()}.pdf`);
+
+      const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
+      await writeFile(tempInputPath, state.pdfBytes);
+
+      const result = await ocrPdf(tempInputPath, { languages: [language] });
+      await remove(tempInputPath).catch(() => {});
+
+      setIsProcessing(false);
+      setSummary(result.summary);
+
+      // Nothing readable means there is nothing to apply. Replacing the document
+      // with a copy carrying an empty text layer would look like success.
+      if (!result.summary.foundText) return;
+
+      await apply(() => Promise.resolve(result.bytes));
+    } catch (err) {
+      setIsProcessing(false);
+      await apply(() => Promise.reject(err));
+    } finally {
+      setProgress(null);
+    }
+  }, [state.pdfBytes, language, apply]);
+
+  return (
+    <div className="space-y-3">
+      <PanelHeader toolId="ocr-pdf" />
+      <p className="text-[10px] text-muted-foreground">{t('ocr.intro')}</p>
+
+      <div className="space-y-1">
+        <label htmlFor="editor-ocr-language" className="text-[10px] text-muted-foreground">
+          {t('ocr.language')}
+        </label>
+        <select
+          id="editor-ocr-language"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          disabled={isProcessing}
+          className="w-full rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+        >
+          {languages.map((l) => (
+            <option key={l.tag} value={l.tag}>{l.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {isProcessing && progress && (
+        <p className="text-[10px] text-muted-foreground">
+          {t('ocr.readingPage', { current: progress.current, total: progress.total })}
+        </p>
+      )}
+
+      {summary && !summary.foundText && (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1.5">
+          <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
+            {t('ocr.nothingFound')}
+          </p>
+          <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">
+            {t('ocr.nothingFoundHint')}
+          </p>
+        </div>
+      )}
+
+      {summary?.foundText && (
+        <div className="space-y-1">
+          <p className="text-[10px] text-muted-foreground">
+            {t('ocr.foundWords', {
+              words: plural('count.word', summary.wordCount),
+              pages: plural('count.page', summary.pageCount),
+            })}
+          </p>
+          {summary.lowConfidence && (
+            <p className="text-[10px] text-amber-700 dark:text-amber-400">
+              {t('ocr.lowConfidence')} {t('ocr.lowConfidenceHint')}
+            </p>
+          )}
+        </div>
+      )}
+
+      <ApplyButton
+        onClick={handleApply}
+        disabled={false}
+        isApplying={isApplying || isProcessing}
+        success={success}
+        error={error}
+      />
+    </div>
+  );
+}
+
 // ── Panel Router ─────────────────────────────────────────────────────
 
 export function ToolSidebarPanel({ toolId }: ToolSidebarPanelProps) {
@@ -2086,6 +2221,8 @@ export function ToolSidebarPanel({ toolId }: ToolSidebarPanelProps) {
       return <ProtectPanel />;
     case 'unlock-pdf':
       return <UnlockPanel />;
+    case 'ocr-pdf':
+      return <OcrPanel />;
     default:
       return (
         <div className="text-[10px] text-muted-foreground p-2">

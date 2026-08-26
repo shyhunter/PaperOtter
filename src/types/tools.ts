@@ -367,6 +367,7 @@ export const EDITOR_SIDEBAR_TOOLS: ToolId[] = [
   'crop-pdf',
   'sign-pdf',
   'redact-pdf',
+  'ocr-pdf',
   'pdfa-convert',
   'repair-pdf',
   'protect-pdf',
