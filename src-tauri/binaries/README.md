@@ -2,6 +2,17 @@
 
 Papercut bundles Ghostscript as a Tauri sidecar so users don't need to install it separately.
 
+> ⚠️ **Only `gs-aarch64-apple-darwin` is a real Ghostscript binary today.**
+> The other three files are placeholder stubs that print "gs not bundled on this
+> platform" and exit 1. On Intel macOS, Windows and Linux the app therefore falls
+> back to a system-installed Ghostscript, and PDF compression only works if the
+> user has installed it themselves. `is_ghostscript_available` runs `gs --version`
+> and checks the output rather than trusting that the sidecar file exists, so the
+> tool is correctly reported as unavailable and the install hint is shown.
+>
+> Replacing these stubs with real binaries is a release-packaging task: each one
+> needs its source URL and SHA-256 recorded below, per P012.
+
 ## Binary Naming Convention
 
 Tauri resolves sidecar binaries by target triple. The binary must be named:

@@ -938,6 +938,13 @@ export const en = {
   'batch.couldNotBeProcessed': '{files} could not be processed',
   'batch.processingFile': 'Processing {current} of {total} — {name}',
   'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type — a batch has to be one type.',
+
+  // ── Dependency hints ────────────────────────────────────────────────────
+  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript. Install it with: brew install ghostscript',
+  'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
+  'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
+  'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',
+  'deps.libreoffice': 'Install LibreOffice for document conversion — libreoffice.org/download',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

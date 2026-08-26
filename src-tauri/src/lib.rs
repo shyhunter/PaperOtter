@@ -171,14 +171,41 @@ fn spawn_gs(
         ))
 }
 
+/// Whether a `gs --version` probe looks like a real Ghostscript.
+///
+/// Ghostscript prints a bare version ("10.02.1"). The placeholder sidecars this
+/// project ships for three of its four targets print "gs not bundled on this
+/// platform" and exit 1, so both the exit status and the shape of the output are
+/// checked — a stub that forgot to exit non-zero would otherwise read as a
+/// working install.
+fn sidecar_reports_version(exit_ok: bool, stdout: &str) -> bool {
+    exit_ok
+        && stdout
+            .trim()
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit())
+}
+
 /// Check if Ghostscript is available (sidecar or system).
 /// Used by detect_converters to report GS availability.
-fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
-    // Check sidecar availability — if sidecar command can be created, the binary exists
-    if app.shell().sidecar("gs").is_ok() {
-        return true;
+///
+/// Actually runs the sidecar rather than trusting that a command object could be
+/// built — `sidecar()` succeeds whether or not the binary exists or works, so the
+/// previous check reported Ghostscript available on every platform and the
+/// disabled-tool state with its install hint could never appear.
+async fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
+    if let Ok(cmd) = app.shell().sidecar("gs") {
+        if let Ok(output) = cmd.arg("--version").output().await {
+            if sidecar_reports_version(
+                output.status.success(),
+                &String::from_utf8_lossy(&output.stdout),
+            ) {
+                return true;
+            }
+        }
     }
-    // Fallback to system PATH
+    // Fallback to system PATH — reached whenever the bundled sidecar is a stub.
     find_system_ghostscript().is_ok()
 }
 
@@ -1286,7 +1313,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     results.insert("pandoc", pandoc_ok);
 
     // Ghostscript (bundled sidecar or system-installed)
-    let gs_ok = is_ghostscript_available(&app);
+    let gs_ok = is_ghostscript_available(&app).await;
     results.insert("ghostscript", gs_ok);
 
     // Native webview HTML → PDF export (WKWebView createPDF) — macOS only for now.
@@ -2841,6 +2868,45 @@ mod tests {
             let err = decode_input_image(&read_fixture("sample.heic"))
                 .expect_err("HEIC must not decode off macOS");
             assert!(err.contains("macOS"), "error must name the platform limit, got: {err}");
+        }
+    }
+
+
+    // ─── DEP-02 — Ghostscript availability must mean "it works" ────────────────
+    //
+    // is_ghostscript_available returned true whenever a sidecar *command object*
+    // could be constructed, which it always can — the file's existence is never
+    // checked, let alone whether it runs. Three of the four bundled sidecars are
+    // stub scripts that print "gs not bundled on this platform" and exit 1, so
+    // the app reported Ghostscript available on every platform and the disabled
+    // state with its install hint never appeared.
+
+    mod ghostscript_probe {
+        use super::super::sidecar_reports_version;
+
+        #[test]
+        fn a_real_ghostscript_version_counts_as_available() {
+            assert!(sidecar_reports_version(true, "10.02.1\n"));
+            assert!(sidecar_reports_version(true, "9.56.1"));
+        }
+
+        #[test]
+        fn the_bundled_stub_does_not_count_as_available() {
+            // Exactly what the three placeholder sidecars emit today.
+            assert!(!sidecar_reports_version(false, "gs not bundled on this platform\n"));
+        }
+
+        #[test]
+        fn a_zero_exit_with_prose_is_still_not_a_version() {
+            // Guards the weaker check of trusting the exit code alone: a stub that
+            // forgot to exit non-zero would otherwise read as a working install.
+            assert!(!sidecar_reports_version(true, "gs not bundled on this platform"));
+            assert!(!sidecar_reports_version(true, ""));
+        }
+
+        #[test]
+        fn leading_whitespace_does_not_hide_the_version() {
+            assert!(sidecar_reports_version(true, "  10.02.1  "));
         }
     }
 
