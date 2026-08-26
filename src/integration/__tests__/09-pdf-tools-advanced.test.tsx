@@ -369,14 +369,14 @@ describe('Suite 09c — Crop PDF', () => {
 describe('Suite 09d — Organize PDF', () => {
   // OP-01 ─────────────────────────────────────────────────────────────────────
   it('OP-01 — navigating to Organize PDF shows the landing page', async () => {
-    await navigateToTool(/^Organize PDF/);
+    await navigateToTool(/^Organise PDF/);
     expect(screen.getByText('Reorder, delete, or duplicate pages in a PDF.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^select pdf$/i })).toBeInTheDocument();
   });
 
   // OP-02 ─────────────────────────────────────────────────────────────────────
   it('OP-02 — selecting a PDF advances to the organize pages step', async () => {
-    const { user } = await navigateToTool(/^Organize PDF/);
+    const { user } = await navigateToTool(/^Organise PDF/);
     await selectPdfFile(user, '/test/document.pdf');
     // The Apply button with page count confirms we're on the organize step
     await screen.findByRole('button', { name: /apply.*pages/i }, { timeout: 2000 });
@@ -385,7 +385,7 @@ describe('Suite 09d — Organize PDF', () => {
 
   // OP-03 ─────────────────────────────────────────────────────────────────────
   it('OP-03 — organize step shows page count from the loaded PDF', async () => {
-    const { user } = await navigateToTool(/^Organize PDF/);
+    const { user } = await navigateToTool(/^Organise PDF/);
     await selectPdfFile(user, '/test/document.pdf');
     // The Apply button shows the page count (3 pages from our mock)
     await screen.findByRole('button', { name: /apply.*3 pages/i }, { timeout: 2000 });
@@ -394,7 +394,7 @@ describe('Suite 09d — Organize PDF', () => {
 
   // OP-04 ─────────────────────────────────────────────────────────────────────
   it('OP-04 — Apply button is enabled when pages are loaded', async () => {
-    const { user } = await navigateToTool(/^Organize PDF/);
+    const { user } = await navigateToTool(/^Organise PDF/);
     await selectPdfFile(user, '/test/document.pdf');
     await screen.findByRole('button', { name: /apply.*pages/i }, { timeout: 2000 });
 
@@ -403,7 +403,7 @@ describe('Suite 09d — Organize PDF', () => {
 
   // OP-05 ─────────────────────────────────────────────────────────────────────
   it('OP-05 — clicking Apply advances to the save step', async () => {
-    const { user } = await navigateToTool(/^Organize PDF/);
+    const { user } = await navigateToTool(/^Organise PDF/);
     await selectPdfFile(user, '/test/document.pdf');
     await screen.findByRole('button', { name: /apply.*pages/i }, { timeout: 2000 });
 

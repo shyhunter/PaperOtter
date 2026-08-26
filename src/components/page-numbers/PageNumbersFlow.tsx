@@ -80,7 +80,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -120,7 +120,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                    {t('common.loadingDots')}
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>

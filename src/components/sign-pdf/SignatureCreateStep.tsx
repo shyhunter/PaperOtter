@@ -92,7 +92,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
           {t('signPdf.savedSignatures')}
         </h3>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">{t('common.loadingDots')}</p>
+          <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
         ) : signatures.length === 0 ? (
           <div className="rounded-lg border border-border bg-muted/30 px-4 py-6 text-center">
             <p className="text-sm text-muted-foreground">{t('signPdf.noSavedSignatures')}</p>

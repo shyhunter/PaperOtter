@@ -71,7 +71,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -125,7 +125,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                    {t('common.loadingDots')}
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
@@ -193,7 +193,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={isProcessing}
-                      placeholder={t('protectPdf.confirmPassword2')}
+                      placeholder={t('protectPdf.confirmPassword')}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                     />
                     <button

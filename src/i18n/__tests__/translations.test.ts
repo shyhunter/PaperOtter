@@ -151,3 +151,57 @@ describe('German dictionary', () => {
     expect(identical.length / Object.keys(dict).length).toBeLessThan(0.1);
   });
 });
+
+describe('one name for one thing', () => {
+  // The reported complaint was that the interface called the same thing by two
+  // names. It did: Color and Colour, Favorites and Favourites, "Select pages"
+  // and "Select Pages", "Loading..." and "Loading…", plus two outright duplicate
+  // keys (confirmPassword2, startAt2). These pin the vocabulary down.
+
+  const values = Object.entries(en) as [string, string][];
+
+  it('[I18N-10] no English string is spelled two ways', () => {
+    const byNormalised = new Map<string, Map<string, string[]>>();
+    for (const [key, value] of values) {
+      const normalised = value.toLowerCase().replace(/[.…:]+$/, '').trim();
+      if (!normalised) continue;
+      const forms = byNormalised.get(normalised) ?? new Map<string, string[]>();
+      forms.set(value, [...(forms.get(value) ?? []), key]);
+      byNormalised.set(normalised, forms);
+    }
+
+    // "Save" and "Save…" are a real distinction, not a slip: the ellipsis is the
+    // long-standing convention for a control that opens a dialog rather than
+    // acting immediately.
+    const DELIBERATE = new Set(['save']);
+
+    const inconsistent = [...byNormalised.entries()]
+      .filter(([normalised, forms]) => forms.size > 1 && !DELIBERATE.has(normalised))
+      .map(([, forms]) => [...forms.entries()].map(([v, keys]) => `${v} (${keys.join(', ')})`).join(' vs '));
+
+    expect(inconsistent, 'same text, two spellings').toEqual([]);
+  });
+
+  it('[I18N-11] English copy uses one spelling convention', () => {
+    // British throughout, because the copy already was in the places that
+    // mattered -- "optimise", "recognise", "colour" -- and half a dictionary of
+    // each is what produced the complaint.
+    const AMERICAN = /\b(colors?|favorites?|organiz\w*|minimiz\w*|customiz\w*|recogniz\w*|optimiz\w*)\b/i;
+
+    const offenders = values
+      .filter(([, value]) => AMERICAN.test(value))
+      .map(([key, value]) => `${key}: ${value}`);
+
+    expect(offenders, 'American spelling in a British-English dictionary').toEqual([]);
+  });
+
+  it('[I18N-12] ellipses are the single character, never three dots', () => {
+    // "Loading..." and "Loading…" are different strings to every lookup, and
+    // three dots render narrower than the real glyph next to it in the same list.
+    const offenders = values
+      .filter(([, value]) => value.includes('...'))
+      .map(([key, value]) => `${key}: ${value}`);
+
+    expect(offenders, 'three dots instead of …').toEqual([]);
+  });
+});

@@ -107,27 +107,26 @@ export const en = {
 
   // ── rotateImage ─────────────────────────────────────────────────────────
   'rotateImage.left90': 'Left 90',
-  'common.loadingDots': 'Loading...',
   'common.preview': 'Preview',
   'common.quality': 'Quality',
   'rotateImage.right90': 'Right 90',
   'rotateImage.rotateImage': 'Rotate Image',
-  'rotateImage.rotating': 'Rotating...',
+  'rotateImage.rotating': 'Rotating…',
   'rotateImage.rotation': 'Rotation',
   'common.selectImage': 'Select Image',
   'rotateImage.selectAnImageToRotate': 'Select an image to rotate 90, 180, or 270 degrees.',
 
   // ── convertImage ────────────────────────────────────────────────────────
   'convertImage.convertImage': 'Convert Image',
-  'convertImage.converting': 'Converting...',
+  'convertImage.converting': 'Converting…',
   'convertImage.selectAnImageToConvert': 'Select an image to convert between formats.',
 
   // ── jpgToPdf ────────────────────────────────────────────────────────────
   'jpgToPdf.configurePdf': 'Configure PDF',
   'jpgToPdf.continue': 'Continue',
-  'jpgToPdf.creatingPdf': 'Creating PDF...',
+  'jpgToPdf.creatingPdf': 'Creating PDF…',
   'jpgToPdf.jpgToPdf': 'JPG to PDF',
-  'jpgToPdf.loadingImages': 'Loading images...',
+  'jpgToPdf.loadingImages': 'Loading images…',
   'jpgToPdf.margin': 'Margin',
   'jpgToPdf.orientation': 'Orientation',
   'jpgToPdf.selectOneOrMoreImages': 'Select one or more images to convert into a single PDF.',
@@ -144,16 +143,14 @@ export const en = {
   // ── convertDoc ──────────────────────────────────────────────────────────
   'convertDoc.converted': 'Converted',
   'convertDoc.processAnother': 'Process Another',
-  'convertDoc.save': 'Save...',
 
   // ── convertDoc ──────────────────────────────────────────────────────────
   'convertDoc.byChapter': 'By chapter',
-  'convertDoc.detectingTools': 'Detecting tools...',
+  'convertDoc.detectingTools': 'Detecting tools…',
   'convertDoc.documentConversionRequiresACompatible': 'Document conversion requires a compatible application such as Microsoft Word, LibreOffice, or similar.',
   'convertDoc.epubLayout': 'EPUB Layout',
   'convertDoc.fixedLayout': 'Fixed Layout',
   'convertDoc.font': 'Font',
-  'convertDoc.fontSize': 'Font size',
   'convertDoc.lineSpacing': 'Line spacing',
   'convertDoc.linkAll': 'Link all',
   'convertDoc.marginsMm': 'Margins (mm)',
@@ -179,9 +176,9 @@ export const en = {
   'cropPdf.cropMargins': 'Crop Margins',
   'cropPdf.cropPdf': 'Crop PDF',
   'cropPdf.cropPreview': 'Crop preview',
-  'cropPdf.cropping': 'Cropping...',
+  'cropPdf.cropping': 'Cropping…',
   'cropPdf.equalMargins': 'Equal margins',
-  'cropPdf.loadingPreview': 'Loading preview...',
+  'cropPdf.loadingPreview': 'Loading preview…',
   'cropPdf.selectAPdfToCrop': 'Select a PDF to crop margins.',
 
   // ── merge ───────────────────────────────────────────────────────────────
@@ -199,18 +196,17 @@ export const en = {
   // ── organizePdf ─────────────────────────────────────────────────────────
   'organizePdf.delete': 'Delete',
   'organizePdf.duplicate': 'Duplicate',
-  'organizePdf.organizePdf': 'Organize PDF',
-  'organizePdf.processing': 'Processing...',
+  'organizePdf.organizePdf': 'Organise PDF',
   'organizePdf.reorderDeleteOrDuplicatePages': 'Reorder, delete, or duplicate pages in a PDF.',
   'common.reset': 'Reset',
   'organizePdf.reverse': 'Reverse',
 
   // ── pageNumbers ─────────────────────────────────────────────────────────
-  'common.applying': 'Applying...',
+  'common.applying': 'Applying…',
   'pageNumbers.colour': 'Colour',
-  'common.fontSize': 'Font Size',
+  'common.fontSize': 'Font size',
   'pageNumbers.format': 'Format',
-  'common.generatingPreview': 'Generating preview...',
+  'common.generatingPreview': 'Generating preview…',
   'pageNumbers.pageNumberOptions': 'Page Number Options',
   'pageNumbers.pageNumbersPreview': 'Page numbers preview',
   'pageNumbers.position': 'Position',
@@ -229,12 +225,11 @@ export const en = {
 
   // ── protectPdf ──────────────────────────────────────────────────────────
   'protectPdf.addPasswordEncryptionToA': 'Add password encryption to a PDF file.',
-  'protectPdf.confirmPassword': 'Confirm Password',
-  'protectPdf.confirmPassword2': 'Confirm password',
-  'protectPdf.encrypting': 'Encrypting...',
+  'protectPdf.confirmPassword': 'Confirm password',
+  'protectPdf.encrypting': 'Encrypting…',
   'protectPdf.enterPassword': 'Enter password',
   'protectPdf.password': 'Password',
-  'protectPdf.passwordsDoNotMatch': 'Passwords do not match.',
+  'protectPdf.passwordsDoNotMatch': 'Passwords do not match',
   'protectPdf.protectPdf': 'Protect PDF',
   'protectPdf.setPassword': 'Set Password',
 
@@ -242,7 +237,7 @@ export const en = {
   'redactPdf.removeRedaction': 'Remove redaction',
 
   // ── redactPdf ───────────────────────────────────────────────────────────
-  'redactPdf.applyingRedactions': 'Applying redactions...',
+  'redactPdf.applyingRedactions': 'Applying redactions…',
   'redactPdf.redactPdf': 'Redact PDF',
   'redactPdf.redactedPagesHaveBeenFlattened': 'Redacted pages have been flattened to images. Text on those pages is no longer selectable.',
   'redactPdf.renderingPagesAndRemovingContent': 'Rendering pages and removing content permanently',
@@ -251,10 +246,10 @@ export const en = {
   // ── redactPdf ───────────────────────────────────────────────────────────
   'redactPdf.addAll': 'Add all',
   'redactPdf.boxColour': 'Box colour',
-  'redactPdf.clearAll': 'Clear All',
+  'redactPdf.clearAll': 'Clear all',
   'redactPdf.drawRectanglesOnThePage': 'Draw rectangles on the page to mark areas for redaction. Use text search below to find and redact specific text.',
   'redactPdf.redactionTools': 'Redaction Tools',
-  'redactPdf.searchText': 'Search text...',
+  'redactPdf.searchText': 'Search text…',
   'redactPdf.summary': 'Summary',
   'redactPdf.textSearch': 'Text Search',
 
@@ -264,7 +259,7 @@ export const en = {
   'repairPdf.pdfRepair': 'PDF Repair',
   'repairPdf.repairPdf': 'Repair PDF',
   'repairPdf.repairCompleteIfTheDocument': 'Repair complete. If the document had structural issues, they have been addressed.',
-  'repairPdf.repairing': 'Repairing...',
+  'repairPdf.repairing': 'Repairing…',
 
   // ── rotate ──────────────────────────────────────────────────────────────
   'common.rotatePages': 'Rotate Pages',
@@ -273,7 +268,6 @@ export const en = {
   // ── rotate ──────────────────────────────────────────────────────────────
   'rotate.allLeft': 'All Left',
   'rotate.allRight': 'All Right',
-  'rotate.applying': 'Applying…',
   'rotate.left': 'Left',
   'rotate.right': 'Right',
   'rotate.rotateSelectedPagesLeft': 'Rotate selected pages left',
@@ -297,7 +291,7 @@ export const en = {
   'signPdf.newSignature': 'New signature',
   'signPdf.noSavedSignatures': 'No saved signatures',
   'signPdf.savedSignatures': 'Saved Signatures',
-  'signPdf.signatureName': 'Signature name...',
+  'signPdf.signatureName': 'Signature name…',
 
   // ── signPdf ─────────────────────────────────────────────────────────────
   'signPdf.allPages': 'All pages',
@@ -309,7 +303,7 @@ export const en = {
   'signPdf.signature': 'Signature',
 
   // ── signPdf ─────────────────────────────────────────────────────────────
-  'signPdf.typeYourNameOrSignature': 'Type your name or signature...',
+  'signPdf.typeYourNameOrSignature': 'Type your name or signature…',
 
   // ── signPdf ─────────────────────────────────────────────────────────────
   'signPdf.selectAnImageFilePng': 'Select an image file (PNG, JPG, or WebP)',
@@ -322,21 +316,20 @@ export const en = {
   // ── split ───────────────────────────────────────────────────────────────
   'split.extractEachPageAsA': 'Extract each page as a separate PDF.',
   'split.pageRangesEG1': 'Page ranges (e.g., 1-3, 5, 7-10)',
-  'split.selectPages': 'Select Pages',
   'split.splitEveryNPages': 'Split every N pages',
   'split.splitting': 'Splitting…',
 
   // ── unlockPdf ───────────────────────────────────────────────────────────
-  'unlockPdf.enterPassword': 'Enter Password',
+  'unlockPdf.enterPassword': 'Enter password',
   'unlockPdf.enterThePdfPassword': 'Enter the PDF password',
   'unlockPdf.pdfPassword': 'PDF Password',
   'unlockPdf.removePasswordProtectionFromA': 'Remove password protection from a PDF file.',
   'unlockPdf.unlockPdf': 'Unlock PDF',
-  'unlockPdf.unlocking': 'Unlocking...',
+  'unlockPdf.unlocking': 'Unlocking…',
 
   // ── watermark ───────────────────────────────────────────────────────────
   'watermark.addWatermark': 'Add Watermark',
-  'watermark.color': 'Color',
+  'watermark.color': 'Colour',
   'watermark.enterWatermarkText': 'Enter watermark text',
   'watermark.selectAPdfToAdd': 'Select a PDF to add a text watermark.',
   'watermark.text': 'Text',
@@ -364,8 +357,8 @@ export const en = {
   'editPdf.clickInsertImageToAdd': 'Click "Insert Image" to add an image, or select an existing image to edit it.',
   'editPdf.clickATextBlockOr': 'Click a text block or image on the page to select and edit it.',
   'editPdf.clickAnywhereOnThePage': 'Click anywhere on the page to add a new text block.',
-  'editPdf.currentColor': 'Current Color',
-  'editPdf.customColors': 'Custom Colors',
+  'editPdf.currentColor': 'Current Colour',
+  'editPdf.customColors': 'Custom Colours',
   'editPdf.deleteImage': 'Delete Image',
   'editPdf.deleteText': 'Delete Text',
   'editPdf.flip': 'Flip',
@@ -375,14 +368,14 @@ export const en = {
   'editPdf.insertImage': 'Insert Image',
   'common.italic': 'Italic',
   'editPdf.mode': 'Mode',
-  'editPdf.pickColor': 'Pick color',
+  'editPdf.pickColor': 'Pick colour',
   'editPdf.redo': 'Redo',
   'editPdf.replaceImage': 'Replace Image',
   'editPdf.rotate': 'Rotate',
   'editPdf.rotate180': 'Rotate 180',
   'editPdf.rotate90Clockwise': 'Rotate 90 clockwise',
   'editPdf.rotate90CounterClockwise': 'Rotate 90 counter-clockwise',
-  'editPdf.saveCurrentColor': 'Save current color',
+  'editPdf.saveCurrentColor': 'Save current colour',
   'editPdf.select': 'Select',
   'editPdf.selectImageFileToInsert': 'Select image file to insert',
   'editPdf.selectMode': 'Select mode',
@@ -415,13 +408,12 @@ export const en = {
   'pdfEditor.closeComparisonEsc': 'Close comparison (Esc)',
   'pdfEditor.compareOriginalVsCurrent': 'Compare: Original vs Current',
   'pdfEditor.current': 'Current',
-  'pdfEditor.renderingPreview': 'Rendering preview...',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.beforeAfter': 'Before / After',
   'pdfEditor.beforeAfterComparison': 'Before / After Comparison',
   'pdfEditor.comparisonSlider': 'Comparison slider',
-  'pdfEditor.minimize': 'Minimize',
+  'pdfEditor.minimize': 'Minimise',
   'pdfEditor.overlaySlider': 'Overlay slider',
   'pdfEditor.sideBySide': 'Side by side',
 
@@ -436,14 +428,14 @@ export const en = {
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.backToDashboard': 'Back to Dashboard',
-  'pdfEditor.loadingPdf': 'Loading PDF...',
+  'pdfEditor.loadingPdf': 'Loading PDF…',
   'pdfEditor.unableToOpenFile': 'Unable to open file',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.addTextModeClickOn': 'Add text mode (click on page to add)',
   'pdfEditor.decreaseFontSize': 'Decrease font size',
   'pdfEditor.increaseFontSize': 'Increase font size',
-  'pdfEditor.textColor': 'Text color',
+  'pdfEditor.textColor': 'Text colour',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.placedSignature': 'Placed signature',
@@ -454,14 +446,14 @@ export const en = {
   'pdfEditor.deleteSelectedPages': 'Delete selected pages',
   'pdfEditor.duplicateSelectedPages': 'Duplicate selected pages',
   'pdfEditor.expandPagePanel': 'Expand page panel',
-  'pdfEditor.fromPdfFile': 'From PDF file...',
+  'pdfEditor.fromPdfFile': 'From PDF file…',
   'pdfEditor.insertPage': 'Insert page',
   'pdfEditor.movePageDown': 'Move page down',
   'pdfEditor.movePageUp': 'Move page up',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.failedToSave': 'Failed to save',
-  'pdfEditor.saving': 'Saving...',
+  'pdfEditor.saving': 'Saving…',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.allEqual': 'All equal',
@@ -473,7 +465,6 @@ export const en = {
   'pdfEditor.bottomCenter': 'Bottom Center',
   'pdfEditor.bottomLeft': 'Bottom Left',
   'pdfEditor.bottomRight': 'Bottom Right',
-  'pdfEditor.clearAll': 'Clear all',
   'pdfEditor.clickAnywhereOnThePdf': 'Click anywhere on the PDF to place a text block.',
   'pdfEditor.compareFullSize': 'Compare full size',
   'pdfEditor.compressed': 'Compressed',
@@ -493,7 +484,6 @@ export const en = {
   'pdfEditor.pdfA1MostCompatible': 'PDF/A-1 (most compatible)',
   'pdfEditor.pdfA2Recommended': 'PDF/A-2 (recommended)',
   'pdfEditor.pdfA3FullFeatures': 'PDF/A-3 (full features)',
-  'pdfEditor.passwordsDoNotMatch': 'Passwords do not match',
   'pdfEditor.placeOnPage': 'Place on Page',
   'pdfEditor.placementModeActive': 'Placement Mode Active',
   'pdfEditor.qualityPreset': 'Quality Preset',
@@ -504,8 +494,7 @@ export const en = {
   'pdfEditor.signatureText': 'Signature text',
   'pdfEditor.sizeChange': 'Size change',
   'pdfEditor.sizeUnit': 'Size unit',
-  'pdfEditor.startAt': 'Start At',
-  'pdfEditor.startAt2': 'Start at',
+  'pdfEditor.startAt': 'Start at',
   'pdfEditor.target': 'Target',
   'pdfEditor.targetFileSize': 'Target file size',
   'pdfEditor.toolPanelNotYetImplemented': 'Tool panel not yet implemented.',
@@ -530,7 +519,7 @@ export const en = {
   'pdfEditor.zoomPresets': 'Zoom presets',
 
   // ── app ─────────────────────────────────────────────────────────────────
-  'app.couldNotOpenFilePicker': 'Could not open file picker',
+  'app.couldNotOpenFilePicker': 'Could not open file picker.',
   'app.thisFileAppearsToBe': 'This file appears to be corrupt. Please try a different file.',
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
@@ -556,10 +545,10 @@ export const en = {
   // ── dashboard ───────────────────────────────────────────────────────────
   'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder &middot; Click &#9733; on any tool to add',
   'dashboard.dropFileToGetStarted': 'Drop file to get started',
-  'dashboard.myFavorites': 'My Favorites',
+  'dashboard.myFavorites': 'My Favourites',
   'dashboard.readyToProcessChooseA': 'Ready to process — choose a tool below',
-  'dashboard.removeFromFavorites': 'Remove from favorites',
-  'dashboard.searchTools': 'Search tools...',
+  'dashboard.removeFromFavorites': 'Remove from favourites',
+  'dashboard.searchTools': 'Search tools…',
   'dashboard.swapHere': 'Swap here',
 
   // ── firstLaunchBanner ───────────────────────────────────────────────────
@@ -570,7 +559,7 @@ export const en = {
   'landingCard.compressResizeConvertStaysOn': 'Compress, resize, convert — stays on your device',
   'landingCard.damagedOrInvalidPdf': 'Damaged or Invalid PDF',
   'landingCard.fileTooLarge': 'File too large',
-  'landingCard.loadingFile': 'Loading file...',
+  'landingCard.loadingFile': 'Loading file…',
   'landingCard.openFile': 'Open file',
   'landingCard.pdfJpgPngWebp': 'PDF, JPG, PNG, WebP',
   'landingCard.pickADifferentFile': 'Pick a Different File',
@@ -585,7 +574,6 @@ export const en = {
 
   // ── splashScreen ────────────────────────────────────────────────────────
   'splashScreen.papercutLogo': 'Papercut logo',
-  'splashScreen.yourLocalDocumentToolkitPrivate': 'Your local document toolkit — private, fast, offline',
 
   // ── updateChecker ───────────────────────────────────────────────────────
   'updateChecker.dismissUpdateBanner': 'Dismiss update banner',
@@ -641,7 +629,7 @@ export const en = {
   'tool.splitPdf.name': 'Split PDF',
   'tool.splitPdf.desc': 'Extract or separate pages from a PDF',
   'tool.splitPdf.step1': 'Open a PDF file',
-  'step.selectPages': 'Select Pages',
+  'step.selectPages': 'Select pages',
   'tool.splitPdf.step2': 'Choose pages to extract',
   'tool.rotatePdf.name': 'Rotate PDF',
   'tool.rotatePdf.desc': 'Rotate individual or all pages in a PDF',
@@ -687,13 +675,13 @@ export const en = {
   'tool.cropPdf.desc': 'Crop margins or select a region on pages',
   'tool.cropPdf.step1': 'Save watermarked PDF',
   'tool.cropPdf.step2': 'Open a PDF file',
-  'tool.organizePdf.name': 'Organize PDF',
+  'tool.organizePdf.name': 'Organise PDF',
   'tool.organizePdf.desc': 'Reorder, delete, or duplicate pages',
   'tool.organizePdf.step1': 'Save cropped PDF',
   'tool.organizePdf.step2': 'Open a PDF file',
   'tool.signPdf.name': 'Sign PDF',
   'tool.signPdf.desc': 'Add a visual signature stamp to PDF pages',
-  'tool.signPdf.step1': 'Save organized PDF',
+  'tool.signPdf.step1': 'Save organised PDF',
   'step.selectPdf': 'Select PDF',
   'tool.signPdf.step2': 'Open a PDF file',
   'step.signature': 'Signature',
@@ -737,7 +725,7 @@ export const en = {
   'tool.rotateImage.step3': 'Save rotated image',
   'tool.convertImage.step3': 'Save converted image',
   'step.crop': 'Crop',
-  'step.organize': 'Organize',
+  'step.organize': 'Organise',
   'step.place': 'Place',
   'step.redact': 'Redact',
 
@@ -751,12 +739,11 @@ export const en = {
   'imageCompareStep.copyStats': 'Copy stats',
   'imageCompareStep.copied': 'Copied',
   'dashboard.clickAnotherCardToSwap': 'Click another card to swap',
-  'dashboard.addToFavorites': 'Add to favorites',
+  'dashboard.addToFavorites': 'Add to favourites',
   'dashboard.clickToReorder': 'Click to reorder',
   'saveStep.youCanTryAgainAny': 'You can try again any time.',
   'saveStep.chooseASaveLocation': 'Choose a save location…',
   'saveStep.saveCancelled': 'Save cancelled',
-  'saveStep.saving': 'Saving…',
   'imageConfigureStep.widthAndHeightMustBe': 'Width and height must be positive numbers',
   'imageConfigureStep.aspectRatioUnlocked': 'Aspect ratio unlocked',
   'imageConfigureStep.aspectRatioLocked': 'Aspect ratio locked',
@@ -779,12 +766,11 @@ export const en = {
   'pdfaConvertFlow.basicCompatibility': 'Basic compatibility',
   'jpgToPdfFlow.selectImages': 'Select Images',
   'signatureCreateStep.saveUse': 'Save & Use',
-  'signatureUpload.chooseImage': 'Choose Image...',
+  'signatureUpload.chooseImage': 'Choose Image…',
   'watermarkFlow.enterWatermarkTextToSee': 'Enter watermark text to see preview',
   'toolSidebar.closePanel': 'Close panel',
   'toolSidebar.openPanel': 'Open panel',
   'editorView.tryToRepair': 'Try to repair',
-  'editorView.repairing': 'Repairing…',
   'toolSidebarPanel.couldNotDrawTheSignature': 'Could not draw the signature. Try a different style or a shorter name.',
   'toolSidebarPanel.alreadyMarked': 'Already marked',
   'toolSidebarPanel.markThisOne': 'Mark this one',
@@ -826,11 +812,10 @@ export const en = {
   'configureStep.noRecompression': 'No recompression',
   'configureStep.smallestFile': 'Smallest file',
   'configureStep.highQuality': 'High quality',
-  'repairPdfFlow.couldNotOpenFilePicker': 'Could not open file picker.',
   'splitSelectStep.everyNPages': 'Every N Pages',
   'splitSelectStep.extractAll': 'Extract All',
   'splitSelectStep.byRange': 'By Range',
-  'pdfToJpgFlow.extractingSelectedPages': 'Extracting selected pages...',
+  'pdfToJpgFlow.extractingSelectedPages': 'Extracting selected pages…',
   'pdfToJpgFlow.conversionFailed': 'Conversion failed.',
   'editorLayout.imageExtractionFailedForPage': 'Image extraction failed for page',
   'editorLayout.textExtractionFailedForPage': 'Text extraction failed for page',
@@ -841,7 +826,7 @@ export const en = {
   'mergeOrderStep.mergeFailed': 'Merge failed.',
   'unlockPdfFlow.wrongPassword': 'Wrong password',
   'convertImageFlow.failedToLoadImage': 'Failed to load image.',
-  'organizePdfFlow.failedToOrganizePdf': 'Failed to organize PDF.',
+  'organizePdfFlow.failedToOrganizePdf': 'Failed to organise PDF.',
   'jpgToPdfFlow.failedToCreatePdf': 'Failed to create PDF.',
   'jpgToPdfFlow.medium20mm': 'Medium (20mm)',
   'jpgToPdfFlow.small10mm': 'Small (10mm)',
@@ -861,7 +846,6 @@ export const en = {
   'convertDocFlow.plainText': 'Plain Text',
   'unsavedChangesDialog.thisDocument': 'This document',
   'zoomToolbar.fitWidth': 'Fit Width',
-  'editorView.unsavedChanges': 'Unsaved Changes',
   'toolSidebarPanel.smallestFileBestForScreen': 'Smallest file — best for screen viewing',
   'toolSidebarPanel.goodForReadingOnDevices': 'Good for reading on devices',
   'toolSidebarPanel.suitableForPrinting': 'Suitable for printing',
@@ -1043,12 +1027,12 @@ export const en = {
   'pageNumbersConfigureStep.pagesNumbering': '{pages} · numbering: {from}–{to}',
   'pagePanel.failedToInsertPages': 'Failed to insert pages: {error}',
   'pdfToJpgFlow.convertNPages': 'Convert ({pages} pages)',
-  'pdfToJpgFlow.convertingTo': 'Converting to {format}...',
+  'pdfToJpgFlow.convertingTo': 'Converting to {format}…',
   'pdfToJpgFlow.engineNotInstalled': '{engine} not installed',
   'pdfToJpgFlow.engineNotInstalledHint': '{engine} is not installed. Install it to enable this format.',
   'pdfToJpgFlow.nSelected': '{count} selected',
   'pdfToJpgFlow.nSelectedParens': '({count} selected)',
-  'pdfToJpgFlow.renderingPageOf': 'Rendering page {current} of {total}...',
+  'pdfToJpgFlow.renderingPageOf': 'Rendering page {current} of {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
   'privacy.detailNetworkScope': 'Network access is scoped to exactly two read-only endpoints — checking for app updates and fetching the feedback contact address — enforced by Tauri capability config. No other network access is possible.',
   'redactPdf.appliedAcross': '{redactions} applied across {pages}',

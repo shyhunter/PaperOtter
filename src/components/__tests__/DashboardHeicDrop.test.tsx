@@ -40,9 +40,9 @@ vi.mock('@/context/ToolContext', () => ({
   useToolContext: () => ({ selectTool, setPendingFiles }),
 }));
 vi.mock('@/hooks/useRecentDirs', () => ({ useRecentDirs: () => ({ dirs: [] }) }));
-vi.mock('@/hooks/useFavorites', () => ({
-  useFavorites: () => ({
-    favorites: [], toggleFavorite: vi.fn(), reorderFavorites: vi.fn(), isFavorite: () => false,
+vi.mock('@/hooks/useFavourites', () => ({
+  useFavourites: () => ({
+    favourites: [], toggleFavorite: vi.fn(), reorderFavourites: vi.fn(), isFavorite: () => false,
   }),
 }));
 vi.mock('@/hooks/useDependencies', () => ({

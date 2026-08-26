@@ -110,3 +110,14 @@ describe('locale state', () => {
     expect(t('common.cancel')).toBe(en['common.cancel']);
   });
 });
+
+describe('document language', () => {
+  it('[I18N-09a] setLocale works with no DOM at all', () => {
+    // This suite runs in the node environment on purpose: the module is imported
+    // by pdfUtils and fileValidation, which have no document. setLocale writes
+    // <html lang> and must not assume it can. The DOM half is I18N-09b, in
+    // context.test.tsx.
+    expect(typeof document).toBe('undefined');
+    expect(() => setLocale('en')).not.toThrow();
+  });
+});

@@ -105,3 +105,19 @@ describe('locale re-rendering', () => {
     expect(screen.getByTestId('text')).toHaveTextContent('Cancel');
   });
 });
+
+describe('document language', () => {
+  it('[I18N-09b] setLocale updates <html lang>', () => {
+    // CSS `text-transform: uppercase` reads this, and it is locale-sensitive.
+    // The dashboard section headings are uppercased in CSS; under lang="en"
+    // Turkish "iş" uppercases to "IŞ" where it must be "İŞ" -- a letter Turkish
+    // does not have. It also picks the screen-reader voice.
+    registerDictionary('tr', { 'common.save': 'Kaydet' });
+
+    setLocale('tr');
+    expect(document.documentElement.lang).toBe('tr');
+
+    setLocale('en');
+    expect(document.documentElement.lang).toBe('en');
+  });
+});

@@ -240,7 +240,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 me-2 animate-spin" />
-              {t('rotate.applying')}
+              {t('common.applying')}
             </>
           ) : (
             'Apply & Save'

@@ -130,7 +130,7 @@ export function ConvertCompareStep({
           {t('convertDoc.processAnother')}
         </button>
         <Button size="sm" onClick={onSave} className="flex-none">
-          {t('convertDoc.save')}
+          {t('common.saveEllipsis')}
         </Button>
       </div>
     </div>

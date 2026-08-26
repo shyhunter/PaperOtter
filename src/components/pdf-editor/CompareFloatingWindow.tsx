@@ -137,7 +137,7 @@ function PreviewPanel({
         ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">{t('pdfEditor.renderingPreview')}</span>
+            <span className="text-sm text-muted-foreground">{t('compare.rendering')}</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>

@@ -792,14 +792,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByPlaceholderText('CONFIDENTIAL')).toBeInTheDocument();
 
     // Font Size and Rotation labels
-    expect(screen.getByText('Font Size')).toBeInTheDocument();
+    expect(screen.getByText('Font size')).toBeInTheDocument();
     expect(screen.getByText('Rotation')).toBeInTheDocument();
 
     // Opacity slider
     expect(screen.getByText(/Opacity:/)).toBeInTheDocument();
 
     // The shared colour picker, not the watermark's own three-colour vocabulary.
-    expect(screen.getByText('Color')).toBeInTheDocument();
+    expect(screen.getByText('Colour')).toBeInTheDocument();
     for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
@@ -935,8 +935,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Page Numbers')).toBeInTheDocument();
     expect(screen.getByText('Position')).toBeInTheDocument();
     expect(screen.getByText('Format')).toBeInTheDocument();
-    expect(screen.getByText('Start At')).toBeInTheDocument();
-    expect(screen.getByText('Font Size')).toBeInTheDocument();
+    expect(screen.getByText('Start at')).toBeInTheDocument();
+    expect(screen.getByText('Font size')).toBeInTheDocument();
 
     // Position select with options
     const posSelect = screen.getAllByRole('combobox')[0];
@@ -1384,7 +1384,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     expect(screen.getByText('Protect PDF')).toBeInTheDocument();
     expect(screen.getByText('Password')).toBeInTheDocument();
-    expect(screen.getByText('Confirm Password')).toBeInTheDocument();
+    expect(screen.getByText('Confirm password')).toBeInTheDocument();
 
     // Type mismatched passwords
     const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
@@ -1470,7 +1470,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Switch to Protect
     await user.click(screen.getByTitle('Protect PDF'));
     expect(screen.queryByPlaceholderText('CONFIDENTIAL')).not.toBeInTheDocument();
-    expect(screen.getByText('Confirm Password')).toBeInTheDocument();
+    expect(screen.getByText('Confirm password')).toBeInTheDocument();
   });
 
   // TP-13: Redact Click-to-Place mode toggle

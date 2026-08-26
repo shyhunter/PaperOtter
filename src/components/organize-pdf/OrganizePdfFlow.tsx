@@ -90,7 +90,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -167,7 +167,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               )}
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loadingDots')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
                 ) : (
                   <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
@@ -295,7 +295,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <div className="flex-1" />
               <Button size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('organizePdf.processing')}</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.processing')}</>
                 ) : (
                   t('organizePdfFlow.applyPages', { pages: plural('count.page', pages.length) })
                 )}

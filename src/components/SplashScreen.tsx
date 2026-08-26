@@ -54,7 +54,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         Papercut
       </h1>
       <p className="splash-text-in-delayed mt-2 text-sm text-muted-foreground">
-        {t('splashScreen.yourLocalDocumentToolkitPrivate')}
+        {t('common.yourLocalDocumentToolkitPrivate')}
       </p>
       <p className="splash-text-in-delayed mt-1 text-xs text-muted-foreground/50">
         v{version}

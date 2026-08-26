@@ -293,7 +293,7 @@ export function ConvertConfigStep({
             {/* Font size */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-muted-foreground">{t('convertDoc.fontSize')}</label>
+                <label className="text-xs text-muted-foreground">{t('common.fontSize')}</label>
                 <span className="text-xs font-medium text-foreground tabular-nums">{fontSize}pt</span>
               </div>
               <input

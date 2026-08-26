@@ -339,7 +339,7 @@ function MultiFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-2">
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : multiProgress ?? t('saveStep.saving')}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : multiProgress ?? t('pdfEditor.saving')}
           </p>
         </div>
       </div>
@@ -546,7 +546,7 @@ function SingleFileSave({
         <div className="text-center space-y-3">
           <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('saveStep.saving')}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('pdfEditor.saving')}
           </p>
           <p className="text-xs text-muted-foreground">
             {saveState === 'writing' ? t('saveStep.writingFile', { name: defaultSaveName ?? buildDefaultSaveName(sourceFileName) }) : ''}

@@ -74,7 +74,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
             diagLog('closeRequested.ask.before');
             const confirmed = await ask(
               'You have unsaved changes. Close without saving?',
-              { title: t('editorView.unsavedChanges'), kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+              { title: t('common.unsavedChanges'), kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
             );
             diagLog(`closeRequested.ask.after confirmed=${confirmed}`);
             if (confirmed) {
@@ -222,7 +222,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
 
           <Button onClick={tryRepair} disabled={isRepairing} className="w-full">
             <Wrench className="h-4 w-4 me-2" />
-            {isRepairing ? t('editorView.repairing') : t('editorView.tryToRepair')}
+            {isRepairing ? t('repairPdf.repairing') : t('editorView.tryToRepair')}
           </Button>
 
           <Button onClick={goToDashboard} variant="outline" className="w-full">

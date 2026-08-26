@@ -217,7 +217,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       const paths = Array.isArray(result) ? result : [result];
       await addImages(paths);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [addImages]);

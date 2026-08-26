@@ -52,7 +52,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('repairPdfFlow.couldNotOpenFilePicker');
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setError(message);
     }
   }, [loadFile]);

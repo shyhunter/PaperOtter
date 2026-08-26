@@ -87,6 +87,16 @@ export function getLocale(): string {
 export function setLocale(locale: string): void {
   if (!dictionaries.has(locale)) return;
   currentLocale = locale;
+
+  // The document language, not just a nicety. CSS `text-transform: uppercase`
+  // is locale-sensitive and reads it: the dashboard section headings are
+  // uppercased in CSS, and under lang="en" Turkish "iş" becomes "IŞ" where it
+  // must be "İŞ" -- a letter Turkish readers do not have. It also decides which
+  // voice a screen reader uses and which hyphenation rules apply.
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale;
+  }
+
   listeners.forEach((fn) => fn());
 }
 

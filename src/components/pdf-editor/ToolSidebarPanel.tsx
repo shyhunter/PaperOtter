@@ -1061,7 +1061,7 @@ function PageNumbersPanel() {
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.startAt')}</label>
             <NumberField
-              aria-label={t('pdfEditor.startAt2')}
+              aria-label={t('pdfEditor.startAt')}
               value={options.startNumber}
               onChange={(n) => setOptions((o) => ({ ...o, startNumber: n }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
@@ -1073,7 +1073,7 @@ function PageNumbersPanel() {
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">{t('common.fontSize')}</label>
           <NumberField
-            aria-label={t('convertDoc.fontSize')}
+            aria-label={t('common.fontSize')}
             value={options.fontSize}
             onChange={(n) => setOptions((o) => ({ ...o, fontSize: n }))}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
@@ -1782,7 +1782,7 @@ function RedactPanel() {
             onClick={() => setRedactionDraft([])}
             className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
           >
-            {t('pdfEditor.clearAll')}
+            {t('redactPdf.clearAll')}
           </button>
         )}
         {applyError && (
@@ -2004,11 +2004,11 @@ function ProtectPanel() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-            placeholder={t('protectPdf.confirmPassword2')}
+            placeholder={t('protectPdf.confirmPassword')}
           />
         </div>
         {password && confirmPassword && !passwordsMatch && (
-          <p className="text-[10px] text-destructive">{t('pdfEditor.passwordsDoNotMatch')}</p>
+          <p className="text-[10px] text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
         )}
       </div>
 
