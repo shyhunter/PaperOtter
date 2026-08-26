@@ -177,8 +177,10 @@ describe('Suite 02 — PDF Configure Step', () => {
     await navigateToPdfConfigure(user);
     const toggle = screen.getByRole('switch', { name: /enable page resize/i });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
-    // Page size dropdown should not be visible while resize is OFF
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    // Page size dropdown should not be visible while resize is OFF. Named
+    // rather than "any combobox": the app chrome carries a language picker,
+    // which is also a <select> and is always present.
+    expect(screen.queryByRole('combobox', { name: /page size/i })).not.toBeInTheDocument();
   });
 
   // PR-02 ────────────────────────────────────────────────────────────────────
@@ -187,7 +189,7 @@ describe('Suite 02 — PDF Configure Step', () => {
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('switch', { name: /enable page resize/i }));
     expect(screen.getByRole('switch', { name: /enable page resize/i })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('combobox')).toBeInTheDocument(); // page size <select>
+    expect(screen.getByRole('combobox', { name: /page size/i })).toBeInTheDocument();
   });
 
   // PR-03 ────────────────────────────────────────────────────────────────────
@@ -195,7 +197,7 @@ describe('Suite 02 — PDF Configure Step', () => {
     const { user } = await setup();
     await navigateToPdfConfigure(user);
     await user.click(screen.getByRole('switch', { name: /enable page resize/i }));
-    const select = screen.getByRole('combobox');
+    const select = screen.getByRole('combobox', { name: /page size/i });
     await user.selectOptions(select, 'custom');
     expect(screen.getByLabelText(/width/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/height/i)).toBeInTheDocument();

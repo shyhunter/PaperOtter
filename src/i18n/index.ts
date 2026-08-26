@@ -1,4 +1,5 @@
 import { en, type Dictionary, type PluralKey, type TranslationKey } from '@/i18n/en';
+import { de } from '@/i18n/de';
 
 export { en };
 export type { Dictionary, PluralKey, TranslationKey };
@@ -17,7 +18,10 @@ export type { Dictionary, PluralKey, TranslationKey };
  * two in step and re-renders on change.
  */
 
-const dictionaries = new Map<string, Dictionary>([['en', en]]);
+const dictionaries = new Map<string, Dictionary>([
+  ['en', en],
+  ['de', de],
+]);
 
 let currentLocale = 'en';
 const listeners = new Set<() => void>();
@@ -55,6 +59,7 @@ export function subscribe(listener: () => void): () => void {
 export function resetI18n(): void {
   dictionaries.clear();
   dictionaries.set('en', en);
+  dictionaries.set('de', de);
   currentLocale = 'en';
   listeners.clear();
 }
