@@ -5,6 +5,7 @@ import { fr } from '@/i18n/fr';
 import { es } from '@/i18n/es';
 import { tr } from '@/i18n/tr';
 import { it as itDict } from '@/i18n/it';
+import { nl } from '@/i18n/nl';
 import { t, plural, setLocale, resetI18n, registerDictionary, LOCALE_REVIEW } from '@/i18n';
 
 /** Every translation, checked by the same rules. Adding one here covers it. */
@@ -14,6 +15,7 @@ const TRANSLATIONS: Array<[string, Dictionary]> = [
   ['es', es],
   ['tr', tr],
   ['it', itDict],
+  ['nl', nl],
 ];
 
 // ─── Translations (I18N-06) ──────────────────────────────────────────────────
