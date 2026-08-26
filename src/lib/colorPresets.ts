@@ -22,6 +22,9 @@ export const DEFAULT_TEXT_COLOR = '#000000';
 /**
  * The union of what the separate lists offered, deduplicated.
  *
+ * A function, not a constant: the labels are translated, and a constant would
+ * resolve them once at import -- in English, before the locale is known.
+ *
  * Charcoal and Navy earn their place the same way: the editor's redact panel
  * offered a dark grey and its sign panel a navy ink, and unifying a vocabulary
  * must not quietly take a colour away from the feature that had it.
@@ -29,19 +32,21 @@ export const DEFAULT_TEXT_COLOR = '#000000';
  * White is here deliberately: text, numbering or a watermark over dark pages or
  * full-bleed images needs it, even though it is invisible on plain white.
  */
-export const COLOR_PRESETS: readonly ColorPreset[] = [
-  { label: t('colorPresets.black'), hex: DEFAULT_TEXT_COLOR },
-  { label: t('colorPresets.white'), hex: '#FFFFFF' },
-  { label: t('colorPresets.charcoal'), hex: '#333333' },
-  { label: t('colorPresets.grey'), hex: '#808080' },
-  { label: t('colorPresets.red'), hex: '#DC2626' },
-  { label: t('colorPresets.orange'), hex: '#F59E0B' },
-  { label: t('colorPresets.green'), hex: '#16A34A' },
-  { label: t('colorPresets.blue'), hex: '#2563EB' },
-  { label: t('colorPresets.navy'), hex: '#1A365D' },
-  { label: t('colorPresets.purple'), hex: '#7C3AED' },
-  { label: t('colorPresets.pink'), hex: '#EC4899' },
-];
+export function colorPresets(): readonly ColorPreset[] {
+  return [
+    { label: t('colorPresets.black'), hex: DEFAULT_TEXT_COLOR },
+    { label: t('colorPresets.white'), hex: '#FFFFFF' },
+    { label: t('colorPresets.charcoal'), hex: '#333333' },
+    { label: t('colorPresets.grey'), hex: '#808080' },
+    { label: t('colorPresets.red'), hex: '#DC2626' },
+    { label: t('colorPresets.orange'), hex: '#F59E0B' },
+    { label: t('colorPresets.green'), hex: '#16A34A' },
+    { label: t('colorPresets.blue'), hex: '#2563EB' },
+    { label: t('colorPresets.navy'), hex: '#1A365D' },
+    { label: t('colorPresets.purple'), hex: '#7C3AED' },
+    { label: t('colorPresets.pink'), hex: '#EC4899' },
+  ];
+}
 
 const HEX_COLOR = /^#?([0-9a-fA-F]{6})$/;
 

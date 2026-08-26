@@ -8,12 +8,18 @@ interface SignatureTypedProps {
   color?: string;
 }
 
-const FONTS: { label: string; family: string }[] = [
-  { label: t('signatureTyped.flowing'), family: 'Dancing Script' },
-  { label: t('signatureTyped.casual'), family: 'Caveat' },
-  { label: t('signatureTyped.formal'), family: 'Great Vibes' },
-  { label: t('signatureTyped.mono'), family: 'monospace' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fonts(): { label: string; family: string }[] {
+  return [
+    { label: t('signatureTyped.flowing'), family: 'Dancing Script' },
+    { label: t('signatureTyped.casual'), family: 'Caveat' },
+    { label: t('signatureTyped.formal'), family: 'Great Vibes' },
+    { label: t('signatureTyped.mono'), family: 'monospace' },
+  ];
+}
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 200;
@@ -42,7 +48,7 @@ function calcFontSize(text: string, fontFamily: string, maxWidth: number): numbe
 export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: SignatureTypedProps) {
   const ink = normaliseHex(color);
   const [text, setText] = useState('');
-  const [selectedFont, setSelectedFont] = useState(FONTS[0].family);
+  const [selectedFont, setSelectedFont] = useState(fonts()[0].family);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Compute preview font size
@@ -127,7 +133,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
 
       {/* Font selector */}
       <div className="flex gap-2 flex-wrap">
-        {FONTS.map((f) => (
+        {fonts().map((f) => (
           <button
             key={f.family}
             type="button"

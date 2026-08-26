@@ -19,11 +19,17 @@ interface PdfaOption {
   description: string;
 }
 
-const PDFA_OPTIONS: PdfaOption[] = [
-  { level: '1', label: 'PDF/A-1b', description: t('pdfaConvertFlow.basicCompatibility') },
-  { level: '2', label: 'PDF/A-2b', description: t('pdfaConvertFlow.modernStandardSupportsTransparency') },
-  { level: '3', label: 'PDF/A-3b', description: t('pdfaConvertFlow.latestSupportsAttachments') },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function pdfaOptions(): PdfaOption[] {
+  return [
+    { level: '1', label: 'PDF/A-1b', description: t('pdfaConvertFlow.basicCompatibility') },
+    { level: '2', label: 'PDF/A-2b', description: t('pdfaConvertFlow.modernStandardSupportsTransparency') },
+    { level: '3', label: 'PDF/A-3b', description: t('pdfaConvertFlow.latestSupportsAttachments') },
+  ];
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -181,7 +187,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
 
                 {/* Radio group */}
                 <fieldset className="space-y-2">
-                  {PDFA_OPTIONS.map((opt) => (
+                  {pdfaOptions().map((opt) => (
                     <label
                       key={opt.level}
                       className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors"

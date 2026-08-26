@@ -27,17 +27,23 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { TextBlock, ImageBlock, EditorMode } from '@/types/editor';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 import { t } from '@/i18n';
 
 /** Standard PDF fonts available in pdf-lib.
  *  pdf-lib only supports the 14 standard fonts grouped into 3 families.
  *  We show familiar aliases so users pick recognizable names. */
-const FONT_OPTIONS = [
-  { value: 'Helvetica', label: t('editorToolbar.helveticaArialSansSerif') },
-  { value: 'TimesRoman', label: t('editorToolbar.timesNewRomanSerif') },
-  { value: 'Courier', label: t('editorToolbar.courierNewMonospace') },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fontOptions() {
+  return [
+    { value: 'Helvetica', label: t('editorToolbar.helveticaArialSansSerif') },
+    { value: 'TimesRoman', label: t('editorToolbar.timesNewRomanSerif') },
+    { value: 'Courier', label: t('editorToolbar.courierNewMonospace') },
+  ];
+}
 
 /** Preset colors for text */
 /** Local-storage key for custom colors */
@@ -316,7 +322,7 @@ export function EditorToolbar({
               onChange={(e) => handleFontChange(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              {FONT_OPTIONS.map((f) => (
+              {fontOptions().map((f) => (
                 <option key={f.value} value={f.value}>
                   {f.label}
                 </option>
@@ -387,7 +393,7 @@ export function EditorToolbar({
               />
             </div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {COLOR_PRESETS.map((c) => (
+              {colorPresets().map((c) => (
                 <button
                   key={c.hex}
                   onClick={() => handleColorChange(c.hex)}

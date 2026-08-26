@@ -19,26 +19,44 @@ interface PageNumbersConfigureStepProps {
   error: string | null;
 }
 
-const POSITIONS: { label: string; value: NumberPosition }[] = [
-  { label: t('pdfEditor.topLeft'), value: 'top-left' },
-  { label: t('pdfEditor.topCenter'), value: 'top-center' },
-  { label: t('pdfEditor.topRight'), value: 'top-right' },
-  { label: t('pdfEditor.bottomLeft'), value: 'bottom-left' },
-  { label: t('pdfEditor.bottomCenter'), value: 'bottom-center' },
-  { label: t('pdfEditor.bottomRight'), value: 'bottom-right' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function positions(): { label: string; value: NumberPosition }[] {
+  return [
+    { label: t('pdfEditor.topLeft'), value: 'top-left' },
+    { label: t('pdfEditor.topCenter'), value: 'top-center' },
+    { label: t('pdfEditor.topRight'), value: 'top-right' },
+    { label: t('pdfEditor.bottomLeft'), value: 'bottom-left' },
+    { label: t('pdfEditor.bottomCenter'), value: 'bottom-center' },
+    { label: t('pdfEditor.bottomRight'), value: 'bottom-right' },
+  ];
+}
 
-const FORMATS: { label: string; value: NumberFormat; example: string }[] = [
-  { label: '1, 2, 3', value: 'numeric', example: '1' },
-  { label: t('pageNumbersConfigureStep.iIiIii'), value: 'roman', example: 'i' },
-  { label: 'A, B, C', value: 'alphabetic', example: 'A' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function formats(): { label: string; value: NumberFormat; example: string }[] {
+  return [
+    { label: '1, 2, 3', value: 'numeric', example: '1' },
+    { label: t('pageNumbersConfigureStep.iIiIii'), value: 'roman', example: 'i' },
+    { label: 'A, B, C', value: 'alphabetic', example: 'A' },
+  ];
+}
 
-const FONT_SIZES: { label: string; value: number }[] = [
-  { label: t('watermarkFlow.small'), value: 10 },
-  { label: t('watermarkFlow.medium'), value: 12 },
-  { label: t('watermarkFlow.large'), value: 14 },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fontSizes(): { label: string; value: number }[] {
+  return [
+    { label: t('watermarkFlow.small'), value: 10 },
+    { label: t('watermarkFlow.medium'), value: 12 },
+    { label: t('watermarkFlow.large'), value: 14 },
+  ];
+}
 
 export function PageNumbersConfigureStep({
   pdfBytes,
@@ -89,7 +107,7 @@ export function PageNumbersConfigureStep({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.position')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {POSITIONS.map((p) => (
+              {positions().map((p) => (
                 <button
                   key={p.value}
                   type="button"
@@ -111,7 +129,7 @@ export function PageNumbersConfigureStep({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.format')}</label>
             <div className="flex gap-1.5">
-              {FORMATS.map((f) => (
+              {formats().map((f) => (
                 <button
                   key={f.value}
                   type="button"
@@ -133,7 +151,7 @@ export function PageNumbersConfigureStep({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">{t('common.fontSize')}</label>
             <div className="flex gap-1.5">
-              {FONT_SIZES.map((fs) => (
+              {fontSizes().map((fs) => (
                 <button
                   key={fs.value}
                   type="button"

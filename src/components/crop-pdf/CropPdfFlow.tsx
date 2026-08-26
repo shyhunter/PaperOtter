@@ -14,12 +14,18 @@ import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
-const MARGIN_PRESETS: { label: string; mm: number }[] = [
-  { label: t('cropPdfFlow.none'), mm: 0 },
-  { label: t('watermarkFlow.small'), mm: 5 },
-  { label: t('watermarkFlow.medium'), mm: 10 },
-  { label: t('watermarkFlow.large'), mm: 20 },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function marginPresets(): { label: string; mm: number }[] {
+  return [
+    { label: t('cropPdfFlow.none'), mm: 0 },
+    { label: t('watermarkFlow.small'), mm: 5 },
+    { label: t('watermarkFlow.medium'), mm: 10 },
+    { label: t('watermarkFlow.large'), mm: 20 },
+  ];
+}
 
 interface CropPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -209,7 +215,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
                   <div className="flex gap-1.5">
-                    {MARGIN_PRESETS.map((p) => (
+                    {marginPresets().map((p) => (
                       <button
                         key={p.label}
                         type="button"

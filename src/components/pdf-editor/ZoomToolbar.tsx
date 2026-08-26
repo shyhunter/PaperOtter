@@ -6,13 +6,19 @@ import { useEditorContext } from '@/context/EditorContext';
 import type { ZoomPreset } from '@/types/editor';
 import { t } from '@/i18n';
 
-const PRESETS: { label: string; value: ZoomPreset }[] = [
-  { label: '50%', value: 0.5 },
-  { label: '75%', value: 0.75 },
-  { label: '100%', value: 1.0 },
-  { label: '150%', value: 1.5 },
-  { label: t('zoomToolbar.fitWidth'), value: 'fit-width' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function presets(): { label: string; value: ZoomPreset }[] {
+  return [
+    { label: '50%', value: 0.5 },
+    { label: '75%', value: 0.75 },
+    { label: '100%', value: 1.0 },
+    { label: '150%', value: 1.5 },
+    { label: t('zoomToolbar.fitWidth'), value: 'fit-width' },
+  ];
+}
 
 export function ZoomToolbar() {
   const { state, zoomIn, zoomOut, setZoomPreset } = useEditorContext();
@@ -68,7 +74,7 @@ export function ZoomToolbar() {
       {/* Preset dropdown — opens upward */}
       {showPresets && (
         <div className="absolute bottom-full start-1/2 -translate-x-1/2 mb-1 rounded-lg border border-border bg-background shadow-lg py-1 min-w-[120px]">
-          {PRESETS.map((p) => (
+          {presets().map((p) => (
             <button
               key={p.label}
               type="button"

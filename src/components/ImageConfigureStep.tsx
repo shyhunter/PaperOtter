@@ -43,12 +43,18 @@ interface ResizePreset {
   height: number;
 }
 
-const RESIZE_PRESETS: ResizePreset[] = [
-  { label: 'HD', width: 1920, height: 1080 },
-  { label: t('imageConfigureStep.web'), width: 1280, height: 720 },
-  { label: t('imageConfigureStep.square'), width: 1080, height: 1080 },
-  { label: t('imageConfigureStep.thumb'), width: 400, height: 400 },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function resizePresets(): ResizePreset[] {
+  return [
+    { label: 'HD', width: 1920, height: 1080 },
+    { label: t('imageConfigureStep.web'), width: 1280, height: 720 },
+    { label: t('imageConfigureStep.square'), width: 1080, height: 1080 },
+    { label: t('imageConfigureStep.thumb'), width: 400, height: 400 },
+  ];
+}
 
 export function ImageConfigureStep({
   fileName,
@@ -323,7 +329,7 @@ export function ImageConfigureStep({
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t('imageConfigure.presets')}</p>
                 <div className="grid grid-cols-4 gap-1">
-                  {RESIZE_PRESETS.map((preset) => (
+                  {resizePresets().map((preset) => (
                     <button
                       key={preset.label}
                       type="button"

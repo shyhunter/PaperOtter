@@ -137,10 +137,17 @@ describe('German dictionary', () => {
   });
 
   it.each(TRANSLATIONS)('[I18N-06g] %s is not silently identical to English', (_locale, dict) => {
-    // A handful legitimately match (Format, System, Web, Orange). A large overlap
-    // would mean whole sections were skipped rather than translated.
+    // A handful legitimately match: proper nouns (PDF, A4, Letter), and true
+    // cognates -- French alone has Portrait, Image, Document, Format, Options,
+    // Version, Orange. A large overlap would mean whole sections were skipped
+    // rather than translated.
+    //
+    // A ratio, not a count. A fixed ceiling breaks every time a legitimately
+    // identical word is added, and -- worse -- it silently weakens as the
+    // dictionary grows: 30 of 200 keys is a problem, 30 of 800 is not. A copied
+    // dictionary sits near 100%; the highest real one here is French at ~4.5%.
     const identical = (Object.entries(dict) as [keyof typeof en, string][])
       .filter(([key, value]) => value === en[key]);
-    expect(identical.length).toBeLessThan(30);
+    expect(identical.length / Object.keys(dict).length).toBeLessThan(0.1);
   });
 });

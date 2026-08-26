@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { RedactStep } from '@/components/redact-pdf/RedactStep';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 
 vi.mock('pdfjs-dist', () => ({
   getDocument: vi.fn().mockReturnValue({
@@ -41,7 +41,7 @@ describe('RedactStep — box colour', () => {
   it('[RDC-01] offers the same colours as every other feature', () => {
     renderStep();
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
   });

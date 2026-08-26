@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
 import { findTextMatchesInOcr } from '@/lib/ocrTextSearch';
 import { recognisePdf, type OcrPage } from '@/lib/ocrProcessor';
-import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
@@ -311,7 +311,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
                   whole line it sits on. The search returns both boxes, so this
                   costs no second search. */}
               <div className="flex gap-1.5">
-                {REDACTION_SCOPES.map((s) => (
+                {redactionScopes().map((s) => (
                   <button
                     key={s.value}
                     type="button"

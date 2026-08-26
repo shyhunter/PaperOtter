@@ -20,7 +20,7 @@ import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type 
 import { rasteriseSignature } from '@/lib/signatureRaster';
 import { applyRedactions } from '@/lib/pdfRedact';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
-import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -243,13 +243,40 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-/** Quality zones matching the full compress tool */
+/**
+ * Quality zones matching the full compress tool.
+ *
+ * Values and DPI figures only -- the label and description are translated, and
+ * a `const` holding them resolves the English at import and keeps it.
+ */
 const QUALITY_ZONES = [
-  { value: 'screen', quality: 'web' as PdfQualityLevel, label: t('toolSidebarPanel.webScreen'), dpi: '72–150 dpi', desc: t('toolSidebarPanel.smallestFileBestForScreen') },
-  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: t('toolSidebarPanel.mediumEbook'), dpi: '150 dpi', desc: t('toolSidebarPanel.goodForReadingOnDevices') },
-  { value: 'printer', quality: 'print' as PdfQualityLevel, label: t('toolSidebarPanel.highPrint'), dpi: '300 dpi', desc: t('toolSidebarPanel.suitableForPrinting') },
-  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: t('toolSidebarPanel.maximumPrepress'), dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+  { value: 'screen', quality: 'web' as PdfQualityLevel, dpi: '72–150 dpi' },
+  { value: 'ebook', quality: 'screen' as PdfQualityLevel, dpi: '150 dpi' },
+  { value: 'printer', quality: 'print' as PdfQualityLevel, dpi: '300 dpi' },
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, dpi: 'Lossless' },
 ] as const;
+
+type ZoneValue = (typeof QUALITY_ZONES)[number]['value'];
+
+function zoneLabel(value: ZoneValue): string {
+  const labels: Record<ZoneValue, string> = {
+    screen: t('toolSidebarPanel.webScreen'),
+    ebook: t('toolSidebarPanel.mediumEbook'),
+    printer: t('toolSidebarPanel.highPrint'),
+    prepress: t('toolSidebarPanel.maximumPrepress'),
+  };
+  return labels[value];
+}
+
+function zoneDesc(value: ZoneValue): string {
+  const descriptions: Record<ZoneValue, string> = {
+    screen: t('toolSidebarPanel.smallestFileBestForScreen'),
+    ebook: t('toolSidebarPanel.goodForReadingOnDevices'),
+    printer: t('toolSidebarPanel.suitableForPrinting'),
+    prepress: t('toolSidebarPanel.prepressArchivalNoRecompression'),
+  };
+  return descriptions[value];
+}
 
 function CompressPanel() {
   const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
@@ -447,8 +474,8 @@ function CompressPanel() {
               className="mt-0.5"
             />
             <div className="min-w-0">
-              <div className="font-medium">{p.label}</div>
-              <div className="text-[10px] text-muted-foreground">{p.dpi} — {p.desc}</div>
+              <div className="font-medium">{zoneLabel(p.value)}</div>
+              <div className="text-[10px] text-muted-foreground">{p.dpi} — {zoneDesc(p.value)}</div>
               {estimates && (
                 <div data-testid="preset-estimate" className="text-[10px] font-medium text-foreground/80 mt-0.5">
                   ≈ {formatBytes(estimates[p.value])}
@@ -629,12 +656,14 @@ function CompressPanel() {
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
 /** Compass direction entries for the rotate tool */
-const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegrees | 0 }[] = [
-  { label: t('imageCompare.original'), short: '↑', degrees: 0 },
-  { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
-  { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
-  { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
-];
+function compassDirections(): { label: string; short: string; degrees: RotationDegrees | 0 }[] {
+  return [
+    { label: t('imageCompare.original'), short: '↑', degrees: 0 },
+    { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
+    { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
+    { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
+  ];
+}
 
 function RotatePanel() {
   diagLog('RotatePanel.render');
@@ -718,7 +747,7 @@ function RotatePanel() {
         <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.direction')}</label>
         {/* Compass-style 2x2 grid */}
         <div className="grid grid-cols-2 gap-1">
-          {COMPASS_DIRECTIONS.map((dir) => (
+          {compassDirections().map((dir) => (
             <button
               type="button"
               key={dir.degrees}
@@ -1283,10 +1312,21 @@ function CropPanel() {
 // signature on the page anywhere it is missing -- the same failure, moved to
 // other people's computers.
 const SIGNATURE_FONTS = [
-  { value: 'cursive', label: t('toolSidebarPanel.script'), css: "'Dancing Script', 'Brush Script MT', cursive" },
-  { value: 'serif', label: t('signatureTyped.formal'), css: "'Georgia', 'Times New Roman', serif" },
-  { value: 'sans', label: t('toolSidebarPanel.clean'), css: "'Helvetica Neue', Arial, sans-serif" },
-];
+  { value: 'cursive', css: "'Dancing Script', 'Brush Script MT', cursive" },
+  { value: 'serif', css: "'Georgia', 'Times New Roman', serif" },
+  { value: 'sans', css: "'Helvetica Neue', Arial, sans-serif" },
+] as const;
+
+type SignatureFontValue = (typeof SIGNATURE_FONTS)[number]['value'];
+
+function signatureFontLabel(value: SignatureFontValue): string {
+  const labels = {
+    cursive: t('toolSidebarPanel.script'),
+    serif: t('signatureTyped.formal'),
+    sans: t('toolSidebarPanel.clean'),
+  };
+  return labels[value];
+}
 
 const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';
 
@@ -1314,7 +1354,7 @@ function SignPanel() {
   const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
-  const [sigFont, setSigFont] = useState(SIGNATURE_FONTS[0].value);
+  const [sigFont, setSigFont] = useState<SignatureFontValue>(SIGNATURE_FONTS[0].value);
   const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
   const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
@@ -1416,7 +1456,7 @@ function SignPanel() {
                   sigFont === f.value ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
                 }`}
               >
-                {f.label}
+                {signatureFontLabel(f.value)}
               </button>
             ))}
           </div>
@@ -1656,7 +1696,7 @@ function RedactPanel() {
             {/* Same choice the standalone tool offers, and the same helper
                 decides what each one covers. */}
             <div className="flex gap-1">
-              {REDACTION_SCOPES.map((s) => (
+              {redactionScopes().map((s) => (
                 <button
                   key={s.value}
                   type="button"

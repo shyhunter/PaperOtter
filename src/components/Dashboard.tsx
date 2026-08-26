@@ -63,11 +63,22 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FileEdit,
 };
 
-const CATEGORY_LABELS: Record<ToolCategory, string> = {
-  pdf: 'PDF Tools',
-  image: t('dashboard.imageTools'),
-  document: t('dashboard.documentTools'),
-};
+/**
+ * Functions rather than lookup tables, because the values are translated.
+ *
+ * As constants these ran once while the module graph was being built -- before
+ * the stored locale had even been read -- so every section heading stayed in
+ * whatever language `en` is, no matter what the picker said. `pdf` did not even
+ * get that far: it was a hardcoded English literal.
+ */
+function categoryLabel(category: ToolCategory): string {
+  const labels: Record<ToolCategory, string> = {
+    pdf: t('dashboard.pdfTools'),
+    image: t('dashboard.imageTools'),
+    document: t('dashboard.documentTools'),
+  };
+  return labels[category];
+}
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
@@ -85,11 +96,14 @@ const FORMAT_ICONS: Record<SupportedFormat, LucideIcon> = {
   document: FileType,
 };
 
-const FORMAT_LABELS: Record<SupportedFormat, string> = {
-  pdf: 'PDF',
-  image: 'Image',
-  document: 'Document',
-};
+function formatLabel(format: SupportedFormat): string {
+  const labels: Record<SupportedFormat, string> = {
+    pdf: t('format.pdf'),
+    image: t('format.image'),
+    document: t('format.document'),
+  };
+  return labels[format];
+}
 
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
@@ -434,7 +448,7 @@ export function Dashboard() {
               <p className="text-sm font-medium text-foreground truncate">{stagedFile.name}</p>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium me-1.5">
-                  {FORMAT_LABELS[stagedFile.format]}
+                  {formatLabel(stagedFile.format)}
                 </span>
                 {t('dashboard.readyToProcessChooseA')}
               </p>
@@ -478,7 +492,7 @@ export function Dashboard() {
                   disabled={formatIncompat}
                   disabledHint={
                     formatIncompat
-                      ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                      ? t('dashboard.notCompatibleWith', { format: formatLabel(stagedFile!.format) })
                       : undefined
                   }
                 />
@@ -496,7 +510,7 @@ export function Dashboard() {
           return (
             <section key={category} className="space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                {CATEGORY_LABELS[category]}
+                {categoryLabel(category)}
               </h2>
               <div
                 className="grid gap-4"
@@ -518,7 +532,7 @@ export function Dashboard() {
                         depMissing
                           ? (tool.requiresDependency ? getHint(tool.requiresDependency) : undefined)
                           : formatIncompat
-                            ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                            ? t('dashboard.notCompatibleWith', { format: formatLabel(stagedFile!.format) })
                             : undefined
                       }
                     />

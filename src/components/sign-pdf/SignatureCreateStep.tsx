@@ -15,11 +15,17 @@ interface SignatureCreateStepProps {
 
 type TabId = 'draw' | 'type' | 'upload';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'draw', label: t('signatureCreateStep.draw') },
-  { id: 'type', label: t('signatureCreateStep.type') },
-  { id: 'upload', label: t('signatureCreateStep.upload') },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function tabs(): { id: TabId; label: string }[] {
+  return [
+    { id: 'draw', label: t('signatureCreateStep.draw') },
+    { id: 'type', label: t('signatureCreateStep.type') },
+    { id: 'upload', label: t('signatureCreateStep.upload') },
+  ];
+}
 
 export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCreateStepProps) {
   const { signatures, saveSignature, deleteSignature, isLoading } = useSavedSignatures();
@@ -134,7 +140,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
 
         {/* Tabs */}
         <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-          {TABS.map((tab) => (
+          {tabs().map((tab) => (
             <button
               key={tab.id}
               type="button"

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 import { t } from '@/i18n';
 
 interface ColorPickerProps {
@@ -21,7 +21,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {COLOR_PRESETS.map((preset) => {
+      {colorPresets().map((preset) => {
         const isSelected = preset.hex.toLowerCase() === selected;
         return (
           <button

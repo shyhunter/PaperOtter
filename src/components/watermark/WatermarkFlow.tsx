@@ -20,11 +20,17 @@ interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
 }
 
-const FONT_SIZES: { label: string; value: number }[] = [
-  { label: t('watermarkFlow.small'), value: 24 },
-  { label: t('watermarkFlow.medium'), value: 48 },
-  { label: t('watermarkFlow.large'), value: 72 },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fontSizes(): { label: string; value: number }[] {
+  return [
+    { label: t('watermarkFlow.small'), value: 24 },
+    { label: t('watermarkFlow.medium'), value: 48 },
+    { label: t('watermarkFlow.large'), value: 72 },
+  ];
+}
 
 const ROTATIONS: { label: string; value: number }[] = [
   { label: '-45\u00B0', value: -45 },
@@ -224,7 +230,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t('common.fontSize')}</label>
                   <div className="flex gap-1.5">
-                    {FONT_SIZES.map((fs) => (
+                    {fontSizes().map((fs) => (
                       <button
                         key={fs.value}
                         type="button"

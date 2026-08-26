@@ -950,4 +950,16 @@ export const de: Dictionary = {
   //   landingCard.pdfJpgPngWebp — a list of file formats.
   //   pageNumbersConfigureStep.iIiIii — Roman numerals.
   // Translating a product name is a bug, not a gap.
+  'dashboard.pdfTools': 'PDF-Werkzeuge',
+  'dashboard.notCompatibleWith': 'Nicht mit {format}-Dateien kompatibel',
+  'format.pdf': 'PDF',
+  'format.image': 'Bild',
+  'format.document': 'Dokument',
+  'configureStep.balanced': 'Ausgewogen',
+  'configureStep.letter': 'Letter',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Druckvorstufe / Archiv — keine Neukomprimierung',
+  'jpgToPdfFlow.autoFit': 'Automatisch anpassen',
+  'jpgToPdfFlow.portrait': 'Hochformat',
+  'jpgToPdfFlow.landscape': 'Querformat',
+  'jpgToPdfFlow.auto': 'Automatisch',
 };

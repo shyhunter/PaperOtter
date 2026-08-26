@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchToRect, isAlreadyMarked, REDACTION_SCOPES } from '@/lib/redactionScope';
+import { matchToRect, isAlreadyMarked, redactionScopes } from '@/lib/redactionScope';
 import type { TextMatch } from '@/lib/pdfTextSearch';
 
 const MATCH: TextMatch = {
@@ -10,7 +10,7 @@ const MATCH: TextMatch = {
 
 describe('redactionScope', () => {
   it('[RS-01] offers both scopes', () => {
-    expect(REDACTION_SCOPES.map((s) => s.value)).toEqual(['match', 'line']);
+    expect(redactionScopes().map((s) => s.value)).toEqual(['match', 'line']);
   });
 
   it('[RS-02] "match" covers only the found text', () => {

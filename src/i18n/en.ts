@@ -978,6 +978,18 @@ export const en = {
   'redactPdf.readingScan': 'Reading the scan…',
   'redactPdf.scanBoxesApproximate': 'These boxes come from text read off a scan, so they are approximate. Check the placement before applying — redaction cannot be undone.',
   'chrome.language': 'Language',
+  'dashboard.pdfTools': 'PDF Tools',
+  'dashboard.notCompatibleWith': 'Not compatible with {format} files',
+  'format.pdf': 'PDF',
+  'format.image': 'Image',
+  'format.document': 'Document',
+  'configureStep.balanced': 'Balanced',
+  'configureStep.letter': 'Letter',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Prepress / archival — no recompression',
+  'jpgToPdfFlow.autoFit': 'Auto-fit',
+  'jpgToPdfFlow.portrait': 'Portrait',
+  'jpgToPdfFlow.landscape': 'Landscape',
+  'jpgToPdfFlow.auto': 'Auto',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

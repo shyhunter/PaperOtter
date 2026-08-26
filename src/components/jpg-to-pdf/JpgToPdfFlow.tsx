@@ -24,17 +24,23 @@ const PAGE_SIZES: Record<Exclude<PageSizeId, 'auto'>, [number, number]> = {
   letter: [612, 792],
 };
 
-const PAGE_SIZE_LABELS: Record<PageSizeId, string> = {
-  a4: 'A4',
-  letter: 'Letter',
-  auto: 'Auto-fit',
-};
+function pageSizeLabel(id: PageSizeId): string {
+  const labels: Record<PageSizeId, string> = {
+    a4: 'A4',
+    letter: t('configureStep.letter'),
+    auto: t('jpgToPdfFlow.autoFit'),
+  };
+  return labels[id];
+}
 
-const ORIENTATION_LABELS: Record<OrientationId, string> = {
-  portrait: 'Portrait',
-  landscape: 'Landscape',
-  auto: 'Auto',
-};
+function orientationLabel(id: OrientationId): string {
+  const labels: Record<OrientationId, string> = {
+    portrait: t('jpgToPdfFlow.portrait'),
+    landscape: t('jpgToPdfFlow.landscape'),
+    auto: t('jpgToPdfFlow.auto'),
+  };
+  return labels[id];
+}
 
 const MARGIN_VALUES: Record<MarginId, number> = {
   none: 0,
@@ -42,11 +48,14 @@ const MARGIN_VALUES: Record<MarginId, number> = {
   medium: 56.69, // ~20mm in points
 };
 
-const MARGIN_LABELS: Record<MarginId, string> = {
-  none: 'None',
-  small: t('jpgToPdfFlow.small10mm'),
-  medium: t('jpgToPdfFlow.medium20mm'),
-};
+function marginLabel(id: MarginId): string {
+  const labels: Record<MarginId, string> = {
+    none: t('cropPdfFlow.none'),
+    small: t('jpgToPdfFlow.small10mm'),
+    medium: t('jpgToPdfFlow.medium20mm'),
+  };
+  return labels[id];
+}
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -473,7 +482,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           : 'border-border text-muted-foreground hover:border-primary/50',
                       )}
                     >
-                      {PAGE_SIZE_LABELS[id]}
+                      {pageSizeLabel(id)}
                     </button>
                   ))}
                 </div>
@@ -498,7 +507,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                             : 'border-border text-muted-foreground hover:border-primary/50',
                         )}
                       >
-                        {ORIENTATION_LABELS[id]}
+                        {orientationLabel(id)}
                       </button>
                     ))}
                   </div>
@@ -523,7 +532,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           : 'border-border text-muted-foreground hover:border-primary/50',
                       )}
                     >
-                      {MARGIN_LABELS[id]}
+                      {marginLabel(id)}
                     </button>
                   ))}
                 </div>

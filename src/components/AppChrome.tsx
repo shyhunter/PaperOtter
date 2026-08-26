@@ -14,12 +14,18 @@ import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
 
 /** Every format any tool accepts, so the picker never hides a file the app can open. */
-const OPEN_FILTERS = [
-  { name: t('filter.documentsImages'), extensions: [
-    'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif',
-    'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
-  ] },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function openFilters() {
+  return [
+    { name: t('filter.documentsImages'), extensions: [
+      'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif',
+      'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
+    ] },
+  ];
+}
 
 const ICON_BUTTON =
   'inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 ' +
@@ -36,7 +42,7 @@ export function AppChrome() {
 
   const handleOpen = useCallback(async () => {
     const { open } = await import('@tauri-apps/plugin-dialog');
-    const result = await open({ multiple: false, directory: false, filters: OPEN_FILTERS });
+    const result = await open({ multiple: false, directory: false, filters: openFilters() });
     if (typeof result !== 'string') return;
 
     if (editorFilePath !== null) {

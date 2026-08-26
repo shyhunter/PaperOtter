@@ -31,13 +31,40 @@ export interface ConfigureStepProps {
   onCancel?: () => void;    // fires immediately when Cancel clicked during processing
 }
 
-/** Slider zone boundaries and their quality mappings */
-const ZONES = [
-  { min: 0,  max: 25,  quality: 'web' as PdfQualityLevel,     label: t('imageConfigureStep.web'),     dpi: '72 dpi',  desc: t('configureStep.smallestFile') },
-  { min: 25, max: 50,  quality: 'screen' as PdfQualityLevel,  label: t('configureStep.screen'),  dpi: '150 dpi', desc: 'Balanced' },
-  { min: 50, max: 75,  quality: 'print' as PdfQualityLevel,   label: t('configureStep.print'),   dpi: '300 dpi', desc: t('configureStep.highQuality') },
-  { min: 75, max: 100, quality: 'archive' as PdfQualityLevel, label: t('configureStep.archive'), dpi: 'Lossless', desc: t('configureStep.noRecompression') },
+/**
+ * Slider zone boundaries and their quality mappings.
+ *
+ * Boundaries and DPI figures only. The label and description are translated and
+ * so must be resolved per render -- see zoneLabel/zoneDesc below.
+ */
+type ZoneQuality = Exclude<PdfQualityLevel, 'custom'>;
+
+const ZONES: { min: number; max: number; quality: ZoneQuality; dpi: string }[] = [
+  { min: 0,  max: 25,  quality: 'web',     dpi: '72 dpi'   },
+  { min: 25, max: 50,  quality: 'screen',  dpi: '150 dpi'  },
+  { min: 50, max: 75,  quality: 'print',   dpi: '300 dpi'  },
+  { min: 75, max: 100, quality: 'archive', dpi: 'Lossless' },
 ];
+
+function zoneLabel(quality: ZoneQuality): string {
+  const labels: Record<ZoneQuality, string> = {
+    web: t('imageConfigureStep.web'),
+    screen: t('configureStep.screen'),
+    print: t('configureStep.print'),
+    archive: t('configureStep.archive'),
+  };
+  return labels[quality];
+}
+
+function zoneDesc(quality: ZoneQuality): string {
+  const descriptions: Record<ZoneQuality, string> = {
+    web: t('configureStep.smallestFile'),
+    screen: t('configureStep.balanced'),
+    print: t('configureStep.highQuality'),
+    archive: t('configureStep.noRecompression'),
+  };
+  return descriptions[quality];
+}
 
 /** Map slider value (0-100) to quality level */
 function sliderToQuality(value: number): PdfQualityLevel {
@@ -61,12 +88,14 @@ function getActiveZone(value: number) {
   return ZONES[ZONES.length - 1];
 }
 
-const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
-  { value: 'A4',     label: t('configureStep.a4210297Mm') },
-  { value: 'A3',     label: t('configureStep.a3297420Mm') },
-  { value: 'Letter', label: t('configureStep.letter216279Mm') },
-  { value: 'custom', label: t('configureStep.custom') },
-];
+function pagePresets(): { value: PdfPagePreset; label: string }[] {
+  return [
+    { value: 'A4',     label: t('configureStep.a4210297Mm') },
+    { value: 'A3',     label: t('configureStep.a3297420Mm') },
+    { value: 'Letter', label: t('configureStep.letter216279Mm') },
+    { value: 'custom', label: t('configureStep.custom') },
+  ];
+}
 
 
 export function ConfigureStep({
@@ -219,7 +248,7 @@ export function ConfigureStep({
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{t('configure.compressionLevel')}</span>
               <span className="text-xs font-medium text-foreground">
-                {activeZone.label} ({activeZone.dpi})
+                {zoneLabel(activeZone.quality)} ({activeZone.dpi})
               </span>
             </div>
 
@@ -236,7 +265,7 @@ export function ConfigureStep({
                   )}
                   style={{ left: `${(zone.min + zone.max) / 2}%` }}
                 >
-                  <span className="text-[10px]">{zone.label}</span>
+                  <span className="text-[10px]">{zoneLabel(zone.quality)}</span>
                   <span
                     data-testid={`zone-estimate-${zone.quality}`}
                     className="text-[9px] text-muted-foreground/70 font-normal"
@@ -284,7 +313,7 @@ export function ConfigureStep({
 
             {/* Zone description */}
             <p className="text-xs text-muted-foreground text-center">
-              {activeZone.desc}
+              {zoneDesc(activeZone.quality)}
             </p>
           </div>
 
@@ -439,7 +468,7 @@ export function ConfigureStep({
                   disabled={isProcessing}
                   className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                 >
-                  {PAGE_PRESETS.map(({ value, label }) => (
+                  {pagePresets().map(({ value, label }) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>

@@ -7,7 +7,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SignatureCreateStep } from '@/components/sign-pdf/SignatureCreateStep';
 import { SignatureTyped } from '@/components/sign-pdf/SignatureTyped';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 
 vi.mock('@/hooks/useSavedSignatures', () => ({
   useSavedSignatures: () => ({
@@ -51,7 +51,7 @@ describe('SignatureCreateStep — ink colour', () => {
   it('[SIG-COL-03] offers the shared colours while drawing', () => {
     render(<SignatureCreateStep onSignatureSelected={vi.fn()} onBack={vi.fn()} />);
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
   });

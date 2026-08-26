@@ -11,10 +11,16 @@ import { t } from '@/i18n';
  */
 export type RedactionScope = 'match' | 'line';
 
-export const REDACTION_SCOPES: { value: RedactionScope; label: string; hint: string }[] = [
-  { value: 'match', label: t('redactionScope.justTheMatch'), hint: t('redactionScope.coversOnlyTheFoundText') },
-  { value: 'line', label: t('redactionScope.wholeLine'), hint: t('redactionScope.coversTheWholeLineIt') },
-];
+/**
+ * A function, not a constant: the labels are translated, and a constant resolves
+ * them once at import -- in English, before the locale has been read.
+ */
+export function redactionScopes(): { value: RedactionScope; label: string; hint: string }[] {
+  return [
+    { value: 'match', label: t('redactionScope.justTheMatch'), hint: t('redactionScope.coversOnlyTheFoundText') },
+    { value: 'line', label: t('redactionScope.wholeLine'), hint: t('redactionScope.coversTheWholeLineIt') },
+  ];
+}
 
 /** Two rectangles are the same mark if they start within half a percent. */
 function sameSpot(a: { pageIndex: number; x: number; y: number }, b: { pageIndex: number; x: number; y: number }) {

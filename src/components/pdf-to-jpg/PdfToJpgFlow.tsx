@@ -34,14 +34,20 @@ interface FormatOption {
   engine?: 'libreoffice' | 'calibre';
 }
 
-const FORMAT_OPTIONS: FormatOption[] = [
-  { value: 'jpeg', label: 'JPG', group: 'image' },
-  { value: 'png', label: 'PNG', group: 'image' },
-  { value: 'docx', label: t('pdfToJpgFlow.word'), group: 'document', engine: 'libreoffice' },
-  { value: 'epub', label: 'EPUB', group: 'ebook', engine: 'calibre' },
-  { value: 'mobi', label: 'MOBI', group: 'ebook', engine: 'calibre' },
-  { value: 'azw3', label: t('pdfToJpgFlow.kindle'), group: 'ebook', engine: 'calibre' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function formatOptions(): FormatOption[] {
+  return [
+    { value: 'jpeg', label: 'JPG', group: 'image' },
+    { value: 'png', label: 'PNG', group: 'image' },
+    { value: 'docx', label: t('pdfToJpgFlow.word'), group: 'document', engine: 'libreoffice' },
+    { value: 'epub', label: 'EPUB', group: 'ebook', engine: 'calibre' },
+    { value: 'mobi', label: 'MOBI', group: 'ebook', engine: 'calibre' },
+    { value: 'azw3', label: t('pdfToJpgFlow.kindle'), group: 'ebook', engine: 'calibre' },
+  ];
+}
 
 type ScaleOption = { label: string; dpiLabel: string; scale: number };
 
@@ -330,7 +336,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   const allSelected = selectedPages.size === pageCount;
 
   // Check if selected format's engine is available
-  const selectedFormatOption = FORMAT_OPTIONS.find(f => f.value === outputFormat);
+  const selectedFormatOption = formatOptions().find(f => f.value === outputFormat);
   const engineUnavailable = selectedFormatOption?.engine
     ? sidecarAvail && !sidecarAvail[selectedFormatOption.engine]
     : false;
@@ -393,7 +399,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="flex flex-wrap gap-1">
-                  {FORMAT_OPTIONS.map((fmt) => {
+                  {formatOptions().map((fmt) => {
                     const unavailable = fmt.engine && sidecarAvail && !sidecarAvail[fmt.engine];
                     return (
                       <button

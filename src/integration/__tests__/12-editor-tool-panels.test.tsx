@@ -18,7 +18,7 @@ import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
 import { findTextMatches } from '@/lib/pdfTextSearch';
 
@@ -799,7 +799,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     // The shared colour picker, not the watermark's own three-colour vocabulary.
     expect(screen.getByText('Color')).toBeInTheDocument();
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
@@ -877,7 +877,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Sign PDF'));
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
@@ -894,7 +894,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Redact PDF'));
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
