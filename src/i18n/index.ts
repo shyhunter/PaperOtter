@@ -6,6 +6,7 @@ import { tr } from '@/i18n/tr';
 import { it } from '@/i18n/it';
 import { nl } from '@/i18n/nl';
 import { pl } from '@/i18n/pl';
+import { pt } from '@/i18n/pt';
 
 export { en };
 export type { Dictionary, PluralKey, TranslationKey };
@@ -33,6 +34,7 @@ const dictionaries = new Map<string, Dictionary>([
   ['it', it],
   ['nl', nl],
   ['pl', pl],
+  ['pt', pt],
 ]);
 
 /**
@@ -58,6 +60,7 @@ export const LOCALE_REVIEW: Record<string, ReviewStatus> = {
   it: 'unreviewed',
   nl: 'unreviewed',
   pl: 'unreviewed',
+  pt: 'unreviewed',
 };
 
 let currentLocale = 'en';
@@ -103,6 +106,7 @@ export function resetI18n(): void {
   dictionaries.set('it', it);
   dictionaries.set('nl', nl);
   dictionaries.set('pl', pl);
+  dictionaries.set('pt', pt);
   currentLocale = 'en';
   listeners.clear();
 }
