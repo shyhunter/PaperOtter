@@ -21,6 +21,7 @@ import type {
 } from '@/types/converter';
 import { BUILTIN_OUTPUT_FORMATS, BUILTIN_INPUT_FORMATS } from '@/types/converter';
 import { convertWithBuiltin, type BuiltinFormat } from '@/lib/documentBuiltin';
+import { t } from '@/i18n';
 
 // ── Engine detection ────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ export function getCapabilitySummary(availability: ConverterAvailability): strin
   if (availability.libreoffice) engines.push('LibreOffice');
   if (availability.calibre) engines.push('Calibre');
   if (availability.pandoc) engines.push('Pandoc');
-  if (engines.length === 0) return 'No conversion tools detected.';
+  if (engines.length === 0) return t('documentConverter.noConversionToolsDetected');
   return `Using: ${engines.join(', ')}`;
 }
 

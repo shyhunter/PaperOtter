@@ -8,6 +8,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -55,7 +56,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
         goToStep(1);
       })
       .catch(() => {
-        setLoadError('Could not read the PDF file.');
+        setLoadError(t('signPdf.couldNotReadThePdf'));
       })
       .finally(() => {
         setIsLoadingFile(false);
@@ -68,7 +69,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -81,7 +82,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
       setPdfBytes(new Uint8Array(bytes));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -110,8 +111,8 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Sign PDF</h2>
-              <p className="text-sm text-muted-foreground">Add a signature to your PDF document.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('signPdf.signPdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('signPdf.addASignatureToYour')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -122,13 +123,13 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -169,7 +170,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

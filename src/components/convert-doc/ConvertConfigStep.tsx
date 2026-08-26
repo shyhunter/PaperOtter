@@ -17,6 +17,7 @@ import type {
   ConverterAvailability,
   EpubLayout,
 } from '@/types/converter';
+import { t } from '@/i18n';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -140,7 +141,7 @@ export function ConvertConfigStep({
       const result = await convertDocument(filePath, sourceFormat, options);
       onConvertComplete(result);
     } catch (err: unknown) {
-      const message = typeof err === 'string' ? err : err instanceof Error ? err.message : 'Conversion failed.';
+      const message = typeof err === 'string' ? err : err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -155,13 +156,13 @@ export function ConvertConfigStep({
         <div className="text-center">
           <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {FORMAT_LABELS[sourceFormat]} format
+            {t('convertConfigStep.formatNamed', { format: FORMAT_LABELS[sourceFormat] })}
           </p>
         </div>
 
         {/* Output format selector — only shows formats this system can produce */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">Output format</p>
+          <p className="text-xs font-medium text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
           {availableFormats.length > 0 ? (
             <div className="grid grid-cols-3 gap-1.5">
               {availableFormats.map((fmt) => (
@@ -185,7 +186,7 @@ export function ConvertConfigStep({
           ) : (
             !isDetecting && (
               <p className="text-xs text-muted-foreground">
-                No output formats available for this file type.
+                {t('convertDoc.noOutputFormatsAvailableFor')}
               </p>
             )
           )}
@@ -194,7 +195,7 @@ export function ConvertConfigStep({
         {/* EPUB layout toggle */}
         {showEpubLayoutToggle && (
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">EPUB Layout</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('convertDoc.epubLayout')}</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -208,8 +209,8 @@ export function ConvertConfigStep({
                     : 'border-border text-muted-foreground hover:border-primary/50',
                 )}
               >
-                <span className="font-medium block">Reflowable</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5 block">Text reflows to fit screen</span>
+                <span className="font-medium block">{t('convertDoc.reflowable')}</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">{t('convertDoc.textReflowsToFitScreen')}</span>
               </button>
               <button
                 type="button"
@@ -223,8 +224,8 @@ export function ConvertConfigStep({
                     : 'border-border text-muted-foreground hover:border-primary/50',
                 )}
               >
-                <span className="font-medium block">Fixed Layout</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5 block">Preserves exact page layout</span>
+                <span className="font-medium block">{t('convertDoc.fixedLayout')}</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">{t('convertDoc.preservesExactPageLayout')}</span>
               </button>
             </div>
           </div>
@@ -233,7 +234,7 @@ export function ConvertConfigStep({
         {/* Split option -- built-in engine only (splits at top-level headings) */}
         {showSplitToggle && (
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">Output</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('convertDoc.output')}</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -247,8 +248,8 @@ export function ConvertConfigStep({
                     : 'border-border text-muted-foreground hover:border-primary/50',
                 )}
               >
-                <span className="font-medium block">Whole document</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5 block">One file</span>
+                <span className="font-medium block">{t('convertDoc.wholeDocument')}</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">{t('convertDoc.oneFile')}</span>
               </button>
               <button
                 type="button"
@@ -262,8 +263,8 @@ export function ConvertConfigStep({
                     : 'border-border text-muted-foreground hover:border-primary/50',
                 )}
               >
-                <span className="font-medium block">By chapter</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5 block">.zip, one file per heading</span>
+                <span className="font-medium block">{t('convertDoc.byChapter')}</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">{t('convertConfigStep.zipOneFilePerHeading')}</span>
               </button>
             </div>
           </div>
@@ -272,11 +273,11 @@ export function ConvertConfigStep({
         {/* Typography controls -- shown for Calibre-routed conversions */}
         {showTypographyControls && (
           <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-            <p className="text-xs font-medium text-muted-foreground">Typography</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('convertDoc.typography')}</p>
 
             {/* Font family */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Font</label>
+              <label className="text-xs text-muted-foreground">{t('convertDoc.font')}</label>
               <select
                 value={fontFamily}
                 onChange={(e) => setFontFamily(e.target.value)}
@@ -292,7 +293,7 @@ export function ConvertConfigStep({
             {/* Font size */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs text-muted-foreground">Font size</label>
+                <label className="text-xs text-muted-foreground">{t('common.fontSize')}</label>
                 <span className="text-xs font-medium text-foreground tabular-nums">{fontSize}pt</span>
               </div>
               <input
@@ -309,7 +310,7 @@ export function ConvertConfigStep({
 
             {/* Line spacing */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Line spacing</label>
+              <label className="text-xs text-muted-foreground">{t('convertDoc.lineSpacing')}</label>
               <div className="grid grid-cols-4 gap-1">
                 {LINE_SPACING_OPTIONS.map((opt) => (
                   <button
@@ -337,7 +338,7 @@ export function ConvertConfigStep({
         {showTypographyControls && (
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Margins (mm)</p>
+              <p className="text-xs font-medium text-muted-foreground">{t('convertDoc.marginsMm')}</p>
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -346,15 +347,15 @@ export function ConvertConfigStep({
                   disabled={isProcessing}
                   className="accent-primary"
                 />
-                <span className="text-[10px] text-muted-foreground">Link all</span>
+                <span className="text-[10px] text-muted-foreground">{t('convertDoc.linkAll')}</span>
               </label>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Top', value: marginTop, setter: setMarginTop },
-                { label: 'Right', value: marginRight, setter: setMarginRight },
-                { label: 'Bottom', value: marginBottom, setter: setMarginBottom },
-                { label: 'Left', value: marginLeft, setter: setMarginLeft },
+                { label: t('convertConfigStep.top'), value: marginTop, setter: setMarginTop },
+                { label: t('rotate.right'), value: marginRight, setter: setMarginRight },
+                { label: t('convertConfigStep.bottom'), value: marginBottom, setter: setMarginBottom },
+                { label: t('rotate.left'), value: marginLeft, setter: setMarginLeft },
               ].map(({ label, value, setter }) => (
                 <div key={label} className="space-y-0.5">
                   <label className="text-[10px] text-muted-foreground">{label}</label>
@@ -388,9 +389,9 @@ export function ConvertConfigStep({
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 flex-none mt-0.5" />
             <div className="text-xs text-amber-700 dark:text-amber-400">
-              <p className="font-medium">No document converter found</p>
+              <p className="font-medium">{t('convertDoc.noDocumentConverterFound')}</p>
               <p className="mt-1">
-                Document conversion requires a compatible application such as Microsoft Word, LibreOffice, or similar.
+                {t('convertDoc.documentConversionRequiresACompatible')}
               </p>
             </div>
           </div>
@@ -415,7 +416,7 @@ export function ConvertConfigStep({
           disabled={isProcessing}
           className="flex-none"
         >
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button
@@ -425,16 +426,16 @@ export function ConvertConfigStep({
         >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Converting...
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('convertImage.converting')}
             </>
           ) : isDetecting ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Detecting tools...
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('convertDoc.detectingTools')}
             </>
           ) : (
-            `Convert to ${FORMAT_LABELS[outputFormat]}`
+            t('convertImageFlow.convertToFormat', { format: FORMAT_LABELS[outputFormat] })
           )}
         </Button>
       </div>

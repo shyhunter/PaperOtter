@@ -8,6 +8,7 @@ import { TextEditingLayer } from './TextEditingLayer';
 import { WatermarkOverlay } from './WatermarkOverlay';
 import { ImageBlockLayer } from './ImageBlockLayer';
 import { RedactionLayer } from './RedactionLayer';
+import { SearchHighlightLayer } from './SearchHighlightLayer';
 import { diagLog } from '@/lib/diagLog';
 
 const PAGE_GAP = 16; // px between pages
@@ -105,6 +106,7 @@ const PageCanvasRenderer = memo(function PageCanvasRenderer({
       <WatermarkOverlay pageWidth={pageWidth} pageHeight={pageHeight} zoom={zoom} />
       <ImageBlockLayer pageIndex={pageIndex} pageHeight={pageHeight} zoom={zoom} />
       <RedactionLayer pageIndex={pageIndex} pageWidth={pageWidth} pageHeight={pageHeight} zoom={zoom} />
+      <SearchHighlightLayer pageIndex={pageIndex} />
     </>
   );
 });

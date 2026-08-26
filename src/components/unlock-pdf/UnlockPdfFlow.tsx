@@ -6,6 +6,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -56,7 +57,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -67,7 +68,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -88,8 +89,8 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Make the error more user-friendly for wrong password
-      if (message.includes('Wrong password') || message.includes('failed') || message.includes('Failed')) {
-        setProcessError('Incorrect password or the PDF is not password-protected.');
+      if (message.includes(t('unlockPdfFlow.wrongPassword')) || message.includes('failed') || message.includes('Failed')) {
+        setProcessError(t('unlockPdfFlow.incorrectPasswordOrThePdf'));
       } else {
         setProcessError(message);
       }
@@ -110,8 +111,8 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Unlock PDF</h2>
-              <p className="text-sm text-muted-foreground">Remove password protection from a PDF file.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('unlockPdf.unlockPdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('unlockPdf.removePasswordProtectionFromA')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -122,13 +123,13 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -149,12 +150,12 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Unlock className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">Enter Password</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('unlockPdf.enterPassword')}</p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label htmlFor="unlock-password" className="text-xs text-muted-foreground">
-                    PDF Password
+                    {t('unlockPdf.pdfPassword')}
                   </label>
                   <div className="relative">
                     <input
@@ -168,14 +169,14 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
                         }
                       }}
                       disabled={isProcessing}
-                      placeholder="Enter the PDF password"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                      placeholder={t('unlockPdf.enterThePdfPassword')}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -206,7 +207,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -216,11 +217,11 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Unlocking...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('unlockPdf.unlocking')}
                     </>
                   ) : (
-                    'Unlock PDF'
+                    t('tool.unlockPdf.name')
                   )}
                 </Button>
               </div>
@@ -234,7 +235,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

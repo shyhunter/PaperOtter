@@ -6,6 +6,7 @@ import { PDFDocument } from 'pdf-lib';
 import { FileUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { friendlyPdfError } from '@/lib/pdfUtils';
+import { t } from '@/i18n';
 
 interface SplitPickStepProps {
   onFileLoaded: (pdfBytes: Uint8Array, pageCount: number, fileName: string) => void;
@@ -45,13 +46,13 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setError(message);
     }
   }, [loadFile]);
@@ -59,8 +60,8 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-4 text-center">
-        <h2 className="text-lg font-semibold text-foreground">Split PDF</h2>
-        <p className="text-sm text-muted-foreground">Select a PDF to split into multiple files.</p>
+        <h2 className="text-lg font-semibold text-foreground">{t('split.splitPdf')}</h2>
+        <p className="text-sm text-muted-foreground">{t('split.selectAPdfToSplit')}</p>
 
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -71,13 +72,13 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
         <Button onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading…
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('common.loading')}
             </>
           ) : (
             <>
-              <FileUp className="w-4 h-4 mr-2" />
-              Select PDF
+              <FileUp className="w-4 h-4 me-2" />
+              {t('pdfToJpg.selectPdf')}
             </>
           )}
         </Button>

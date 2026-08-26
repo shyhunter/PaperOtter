@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { ToolStep } from '@/types/tools';
+import { t } from '@/i18n';
 
 interface StepBarProps {
   steps: ToolStep[];
@@ -16,7 +17,7 @@ export function StepBar({ steps, current }: StepBarProps) {
           const isLocked = i > current;
 
           return (
-            <div key={step.label} className="flex items-center">
+            <div key={t(step.label)} className="flex items-center">
 
               {/* Step item */}
               <div
@@ -29,7 +30,7 @@ export function StepBar({ steps, current }: StepBarProps) {
                   isComplete && 'text-muted-foreground',
                   isLocked && 'text-muted-foreground/40 cursor-not-allowed',
                 )}
-                title={isLocked ? `${step.description} — complete previous steps first` : step.description}
+                title={isLocked ? t('stepBar.lockedHint', { step: t(step.description) }) : t(step.description)}
               >
                 {/* Step number indicator */}
                 <span
@@ -67,7 +68,7 @@ export function StepBar({ steps, current }: StepBarProps) {
                     isLocked && 'font-normal',
                   )}
                 >
-                  {step.label}
+                  {t(step.label)}
                 </span>
               </div>
 

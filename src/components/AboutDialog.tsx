@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfig';
+import { t } from '@/i18n';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
 
@@ -52,15 +53,15 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
       onKeyDown={handleKeyDown}
       role="dialog"
       aria-modal="true"
-      aria-label="About Papercut"
+      aria-label={t('chrome.about')}
     >
       <div className="relative mx-4 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
         {/* Close button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Close"
+          className="absolute top-3 end-3 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={t('common.close')}
         >
           <X className="h-4 w-4" />
         </button>
@@ -70,25 +71,25 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <h2 className="text-xl font-bold text-foreground tracking-tight">Papercut</h2>
           <p className="text-xs text-muted-foreground/60 font-mono">v{version}</p>
           <p className="text-sm text-muted-foreground">
-            Your local document toolkit — private, fast, offline.
+            {t('common.yourLocalDocumentToolkitPrivate')}
           </p>
         </div>
 
         {/* Privacy statement */}
         <div className="rounded-lg bg-muted/50 px-4 py-3 text-center">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            All processing happens locally. No data ever leaves your computer.
+            {t('aboutDialog.allProcessingHappensLocallyNo')}
           </p>
         </div>
 
         {/* Details */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">License</span>
+            <span className="text-muted-foreground">{t('aboutDialog.license')}</span>
             <span className="text-foreground font-medium">MIT</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Built with</span>
+            <span className="text-muted-foreground">{t('aboutDialog.builtWith')}</span>
             <span className="text-foreground font-medium">Tauri + React</span>
           </div>
         </div>
@@ -111,7 +112,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
-            Send Feedback
+            {t('aboutDialog.sendFeedback')}
           </button>
         </div>
       </div>

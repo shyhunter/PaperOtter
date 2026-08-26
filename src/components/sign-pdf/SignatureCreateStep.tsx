@@ -6,6 +6,7 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { useSavedSignatures } from '@/hooks/useSavedSignatures';
 import type { SavedSignature } from '@/hooks/useSavedSignatures';
+import { t } from '@/i18n';
 
 interface SignatureCreateStepProps {
   onSignatureSelected: (dataUrl: string) => void;
@@ -14,11 +15,17 @@ interface SignatureCreateStepProps {
 
 type TabId = 'draw' | 'type' | 'upload';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'draw', label: 'Draw' },
-  { id: 'type', label: 'Type' },
-  { id: 'upload', label: 'Upload' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function tabs(): { id: TabId; label: string }[] {
+  return [
+    { id: 'draw', label: t('signatureCreateStep.draw') },
+    { id: 'type', label: t('signatureCreateStep.type') },
+    { id: 'upload', label: t('signatureCreateStep.upload') },
+  ];
+}
 
 export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCreateStepProps) {
   const { signatures, saveSignature, deleteSignature, isLoading } = useSavedSignatures();
@@ -32,7 +39,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
   const handleCreated = useCallback((dataUrl: string, type: SavedSignature['type']) => {
     setPendingDataUrl(dataUrl);
     setPendingType(type);
-    setSigName(`Signature ${signatures.length + 1}`);
+    setSigName(t('signatureCreateStep.signatureN', { n: signatures.length + 1 }));
   }, [signatures.length]);
 
   const handleSaveAndProceed = useCallback(async () => {
@@ -40,7 +47,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
     setIsSaving(true);
     try {
       await saveSignature({
-        name: sigName.trim() || `Signature ${signatures.length + 1}`,
+        name: sigName.trim() || t('signatureCreateStep.signatureN', { n: signatures.length + 1 }),
         type: pendingType,
         dataUrl: pendingDataUrl,
       });
@@ -74,21 +81,21 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
           onClick={onBack}
           className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
         >
-          Back
+          {t('common.back')}
         </button>
-        <h2 className="text-lg font-semibold text-foreground">Create or Select Signature</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('signPdf.createOrSelectSignature')}</h2>
       </div>
 
       {/* Saved Signatures */}
       <section>
         <h3 className="mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          Saved Signatures
+          {t('signPdf.savedSignatures')}
         </h3>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
         ) : signatures.length === 0 ? (
           <div className="rounded-lg border border-border bg-muted/30 px-4 py-6 text-center">
-            <p className="text-sm text-muted-foreground">No saved signatures</p>
+            <p className="text-sm text-muted-foreground">{t('signPdf.noSavedSignatures')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -111,8 +118,8 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
                 <button
                   type="button"
                   onClick={(e) => handleDelete(e, sig.id)}
-                  className="absolute right-1.5 top-1.5 hidden rounded p-0.5 text-muted-foreground hover:text-destructive group-hover:block"
-                  title="Delete signature"
+                  className="absolute end-1.5 top-1.5 hidden rounded p-0.5 text-muted-foreground hover:text-destructive group-hover:block"
+                  title={t('signPdf.deleteSignature')}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -128,12 +135,12 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
       {/* Create New */}
       <section>
         <h3 className="mb-2 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          Create New
+          {t('signPdf.createNew')}
         </h3>
 
         {/* Tabs */}
         <div className="mb-4 flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-          {TABS.map((tab) => (
+          {tabs().map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -155,7 +162,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
             recolouring that does not happen. */}
         {activeTab !== 'upload' && (
           <div className="mb-3 flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Ink</span>
+            <span className="text-sm text-muted-foreground">{t('signPdf.ink')}</span>
             <ColorPicker value={ink} onChange={setInk} />
           </div>
         )}
@@ -184,11 +191,11 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
       {/* Save/Name dialog -- inline after signature created */}
       {pendingDataUrl && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-          <p className="mb-3 text-sm font-medium text-foreground">Name your signature</p>
+          <p className="mb-3 text-sm font-medium text-foreground">{t('signPdf.nameYourSignature')}</p>
           <div className="mb-3 flex items-center justify-center rounded-lg bg-white p-3">
             <img
               src={pendingDataUrl}
-              alt="New signature"
+              alt={t('signPdf.newSignature')}
               className="max-h-16 max-w-full object-contain"
             />
           </div>
@@ -196,7 +203,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
             type="text"
             value={sigName}
             onChange={(e) => setSigName(e.target.value)}
-            placeholder="Signature name..."
+            placeholder={t('signPdf.signatureName')}
             className="mb-3 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             maxLength={40}
             autoFocus
@@ -210,7 +217,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
               onClick={handleCancelSave}
               className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -218,7 +225,7 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
               disabled={isSaving}
               className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             >
-              {isSaving ? 'Saving...' : 'Save & Use'}
+              {isSaving ? t('pdfEditor.saving') : t('signatureCreateStep.saveUse')}
             </button>
           </div>
         </div>

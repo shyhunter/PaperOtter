@@ -251,7 +251,7 @@ describe('Suite 11 — PDF Editor: Page Panel', () => {
 
     // Menu should appear
     expect(screen.getByText('Blank page')).toBeInTheDocument();
-    expect(screen.getByText('From PDF file...')).toBeInTheDocument();
+    expect(screen.getByText('From PDF file…')).toBeInTheDocument();
   });
 
   it('PP-04 — Insert blank page increases page count', async () => {

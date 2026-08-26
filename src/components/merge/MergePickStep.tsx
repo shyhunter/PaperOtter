@@ -7,6 +7,7 @@ import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
+import { plural, t } from '@/i18n';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -57,7 +58,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
     try {
       const result = await open({
         multiple: true,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
 
       if (!result) return; // user cancelled
@@ -65,7 +66,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
       const paths = Array.isArray(result) ? result : [result];
       await addFiles(paths);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [addFiles]);
@@ -82,8 +83,8 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-4">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Merge PDFs</h2>
-          <p className="text-sm text-muted-foreground">Select two or more PDFs to combine into one.</p>
+          <h2 className="text-lg font-semibold text-foreground">{t('merge.mergePdfs')}</h2>
+          <p className="text-sm text-muted-foreground">{t('merge.selectTwoOrMorePdfs')}</p>
         </div>
 
         {/* File list */}
@@ -93,18 +94,18 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
               <div key={`${file.filePath}-${i}`} className="flex items-center gap-3 px-3 py-2 border-b border-border last:border-b-0">
                 <img
                   src={file.thumbnailUrl}
-                  alt={`Page 1 of ${file.fileName}`}
+                  alt={t('merge.pageOneOf', { name: file.fileName })}
                   className="w-10 h-12 object-cover rounded border border-border flex-none"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{file.fileName}</p>
-                  <p className="text-xs text-muted-foreground">{file.pageCount} page{file.pageCount !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-muted-foreground">{plural('count.page', file.pageCount)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleRemove(i)}
                   className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-none"
-                  aria-label={`Remove ${file.fileName}`}
+                  aria-label={t('common.removeNamed', { name: file.fileName })}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -117,7 +118,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Loading PDFs…</span>
+            <span className="text-sm text-muted-foreground">{t('merge.loadingPdfs')}</span>
           </div>
         )}
 
@@ -136,8 +137,8 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
             disabled={isLoading}
             className="flex-1"
           >
-            <FilePlus className="w-4 h-4 mr-2" />
-            {files.length === 0 ? 'Select PDFs' : 'Add More'}
+            <FilePlus className="w-4 h-4 me-2" />
+            {files.length === 0 ? t('mergePickStep.selectPdfs') : t('mergePickStep.addMore')}
           </Button>
 
           <Button
@@ -145,12 +146,12 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
             disabled={files.length < 2 || isLoading}
             className="flex-1"
           >
-            Continue
+            {t('jpgToPdf.continue')}
           </Button>
         </div>
 
         {files.length === 1 && (
-          <p className="text-xs text-muted-foreground text-center">Add at least one more PDF to merge.</p>
+          <p className="text-xs text-muted-foreground text-center">{t('merge.addAtLeastOneMore')}</p>
         )}
       </div>
     </div>

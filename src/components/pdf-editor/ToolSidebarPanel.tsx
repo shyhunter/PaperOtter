@@ -19,8 +19,9 @@ import {
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { rasteriseSignature } from '@/lib/signatureRaster';
 import { applyRedactions } from '@/lib/pdfRedact';
-import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
-import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import type { TextMatch } from '@/lib/pdfTextSearch';
+import { useDocumentSearch } from '@/hooks/useDocumentSearch';
+import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -35,6 +36,11 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
+import { plural, t } from '@/i18n';
+import { useLocale } from '@/i18n/context';
+import { listen } from '@tauri-apps/api/event';
+import { ocrPdf, type OcrSummary } from '@/lib/ocrProcessor';
+import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -125,15 +131,15 @@ function ApplyButton({
         {isApplying ? (
           <>
             <Loader2 className="h-3 w-3 animate-spin" />
-            Applying...
+            {t('common.applying')}
           </>
         ) : success ? (
           <>
             <Check className="h-3 w-3" />
-            Applied
+            {t('pdfEditor.applied')}
           </>
         ) : (
-          'Apply'
+          t('toolSidebarPanel.apply')
         )}
       </button>
       {error && (
@@ -163,7 +169,7 @@ function useApply(
     setSuccess(false);
     try {
       const bytes = previewBytes ?? (runIfNoPreview ? await runIfNoPreview() : null);
-      if (!bytes) throw new Error('No preview available');
+      if (!bytes) throw new Error(t('toolSidebarPanel.noPreviewAvailable'));
       updatePdfBytes(bytes);
       markDirty();
       setSuccess(true);
@@ -196,19 +202,19 @@ function ToolResultFeedback({
     <div className="rounded border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 p-2 space-y-1">
       <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
         <Check className="h-3 w-3" />
-        {toolLabel} applied successfully
+        {t('toolSidebarPanel.appliedSuccessfully', { tool: toolLabel })}
       </div>
       <div className="flex justify-between text-[10px]">
-        <span className="text-muted-foreground">Before</span>
+        <span className="text-muted-foreground">{t('compare.before')}</span>
         <span className="font-medium">{formatBytes(originalSize)}</span>
       </div>
       <div className="flex justify-between text-[10px]">
-        <span className="text-muted-foreground">After</span>
+        <span className="text-muted-foreground">{t('compare.after')}</span>
         <span className="font-medium">{formatBytes(resultSize)}</span>
       </div>
       {sizeDiff !== 0 && (
         <div className="flex justify-between text-[10px] pt-1 border-t border-green-200 dark:border-green-800">
-          <span className="text-muted-foreground">Size change</span>
+          <span className="text-muted-foreground">{t('pdfEditor.sizeChange')}</span>
           <span className={`font-semibold ${pctChange <= 0 ? 'text-green-600' : 'text-orange-500'}`}>
             {pctChange <= 0 ? `${pctChange}%` : `+${pctChange}%`}
           </span>
@@ -224,8 +230,8 @@ function PanelHeader({ toolId }: { toolId: ToolId }) {
   const tool = TOOL_REGISTRY[toolId];
   return (
     <div className="mb-3">
-      <h3 className="text-xs font-semibold">{tool.name}</h3>
-      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tool.description}</p>
+      <h3 className="text-xs font-semibold">{t(tool.name)}</h3>
+      <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{t(tool.description)}</p>
     </div>
   );
 }
@@ -238,13 +244,52 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-/** Quality zones matching the full compress tool */
+/**
+ * Quality zones matching the full compress tool.
+ *
+ * Values and DPI figures only -- the label and description are translated, and
+ * a `const` holding them resolves the English at import and keeps it.
+ */
 const QUALITY_ZONES = [
-  { value: 'screen', quality: 'web' as PdfQualityLevel, label: 'Web / Screen', dpi: '72–150 dpi', desc: 'Smallest file — best for screen viewing' },
-  { value: 'ebook', quality: 'screen' as PdfQualityLevel, label: 'Medium (eBook)', dpi: '150 dpi', desc: 'Good for reading on devices' },
-  { value: 'printer', quality: 'print' as PdfQualityLevel, label: 'High (Print)', dpi: '300 dpi', desc: 'Suitable for printing' },
-  { value: 'prepress', quality: 'archive' as PdfQualityLevel, label: 'Maximum (Prepress)', dpi: 'Lossless', desc: 'Prepress / archival — no recompression' },
+  { value: 'screen', quality: 'web' as PdfQualityLevel, dpi: '72–150 dpi' },
+  { value: 'ebook', quality: 'screen' as PdfQualityLevel, dpi: '150 dpi' },
+  { value: 'printer', quality: 'print' as PdfQualityLevel, dpi: '300 dpi' },
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, dpi: 'Lossless' },
 ] as const;
+
+type ZoneValue = (typeof QUALITY_ZONES)[number]['value'];
+
+type MarginSide = 'top' | 'bottom' | 'left' | 'right';
+
+function sideLabel(side: MarginSide): string {
+  const labels: Record<MarginSide, string> = {
+    top: t('common.top'),
+    bottom: t('common.bottom'),
+    left: t('common.left'),
+    right: t('common.right'),
+  };
+  return labels[side];
+}
+
+function zoneLabel(value: ZoneValue): string {
+  const labels: Record<ZoneValue, string> = {
+    screen: t('toolSidebarPanel.webScreen'),
+    ebook: t('toolSidebarPanel.mediumEbook'),
+    printer: t('toolSidebarPanel.highPrint'),
+    prepress: t('toolSidebarPanel.maximumPrepress'),
+  };
+  return labels[value];
+}
+
+function zoneDesc(value: ZoneValue): string {
+  const descriptions: Record<ZoneValue, string> = {
+    screen: t('toolSidebarPanel.smallestFileBestForScreen'),
+    ebook: t('toolSidebarPanel.goodForReadingOnDevices'),
+    printer: t('toolSidebarPanel.suitableForPrinting'),
+    prepress: t('toolSidebarPanel.prepressArchivalNoRecompression'),
+  };
+  return descriptions[value];
+}
 
 function CompressPanel() {
   const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
@@ -412,7 +457,7 @@ function CompressPanel() {
 
       {/* Current file size */}
       <div className="rounded bg-muted/30 p-2 flex justify-between text-[10px]">
-        <span className="text-muted-foreground">Current size</span>
+        <span className="text-muted-foreground">{t('pdfEditor.currentSize')}</span>
         <span className="font-medium">{formatBytes(state.pdfBytes.byteLength)}</span>
       </div>
 
@@ -425,7 +470,7 @@ function CompressPanel() {
 
       {/* Quality presets */}
       <div className="space-y-1.5">
-        <label className="text-[10px] font-medium text-muted-foreground">Quality Preset</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.qualityPreset')}</label>
         {QUALITY_ZONES.map((p) => (
           <label
             key={p.value}
@@ -442,8 +487,8 @@ function CompressPanel() {
               className="mt-0.5"
             />
             <div className="min-w-0">
-              <div className="font-medium">{p.label}</div>
-              <div className="text-[10px] text-muted-foreground">{p.dpi} — {p.desc}</div>
+              <div className="font-medium">{zoneLabel(p.value)}</div>
+              <div className="text-[10px] text-muted-foreground">{p.dpi} — {zoneDesc(p.value)}</div>
               {estimates && (
                 <div data-testid="preset-estimate" className="text-[10px] font-medium text-foreground/80 mt-0.5">
                   ≈ {formatBytes(estimates[p.value])}
@@ -472,7 +517,7 @@ function CompressPanel() {
             checked={useTargetSize}
             onChange={(e) => setUseTargetSize(e.target.checked)}
           />
-          <span className="font-medium">Target file size</span>
+          <span className="font-medium">{t('pdfEditor.targetFileSize')}</span>
         </label>
         {useTargetSize && (
           <div className="flex gap-1.5 items-center">
@@ -481,7 +526,7 @@ function CompressPanel() {
               value={targetSizeValue}
               onChange={(e) => setTargetSizeValue(e.target.value)}
               placeholder={floorBytes !== null ? `e.g. ${smallestReachableTarget(floorBytes, unit)}` : 'e.g. 5'}
-              title="Target file size"
+              title={t('toolSidebar.targetFileSize')}
               min={floorBytes !== null ? smallestReachableTarget(floorBytes, unit) : 1}
               // min-w-0 is load-bearing: a flex item defaults to min-width:auto,
               // and a number input's intrinsic width is wider than the 232px
@@ -493,7 +538,7 @@ function CompressPanel() {
                 data-testid="target-unit"
                 value={targetUnit}
                 onChange={(e) => setTargetUnit(e.target.value as 'MB' | 'KB')}
-                title="Size unit"
+                title={t('pdfEditor.sizeUnit')}
                 className="flex-none px-1.5 py-1 text-xs border rounded bg-background"
               >
                 <option value="MB">MB</option>
@@ -516,15 +561,14 @@ function CompressPanel() {
         {useTargetSize && floorBytes !== null && (
           targetUnreachable ? (
             <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-              Smallest achievable is about {formatBytes(floorBytes)} — compression
-              cannot go below this for this file.
+              {t('toolSidebarPanel.smallestAchievable', { size: formatBytes(floorBytes) })}
             </p>
           ) : (
             // Stated up front rather than only after a rejected value: the floor
             // is known the moment the estimates are, so making the user discover
             // it by failing is a choice, not a limitation.
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              Can compress to about {formatBytes(floorBytes)} at best.
+              {t('toolSidebarPanel.canCompressToAbout', { size: formatBytes(floorBytes) })}
             </p>
           )
         )}
@@ -533,7 +577,7 @@ function CompressPanel() {
 
       {/* Advanced options */}
       <div className="space-y-1.5 border-t pt-2">
-        <span className="text-[10px] font-medium text-muted-foreground">Options</span>
+        <span className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.options')}</span>
         {/* Only meaningful when there are images to keep the resolution of.
             Phrased as the thing the user wants, not the mechanism they must
             switch off to get it: the presets bundle resolution reduction with
@@ -548,12 +592,11 @@ function CompressPanel() {
                 checked={!downsampleImages}
                 onChange={(e) => setDownsampleImages(!e.target.checked)}
               />
-              Keep image resolution
+              {t('pdfEditor.keepImageResolution')}
             </label>
             {!downsampleImages && (
-              <p className="text-[10px] text-muted-foreground pl-5 leading-relaxed">
-                Images are still re-encoded, just not shrunk. Estimates assume
-                downsampling — actual sizes will be larger.
+              <p className="text-[10px] text-muted-foreground ps-5 leading-relaxed">
+                {t('toolSidebarPanel.imagesStillReEncoded')}
               </p>
             )}
           </>
@@ -564,16 +607,16 @@ function CompressPanel() {
       {compressionResult && (
         <div className="rounded border bg-muted/30 p-2 space-y-1">
           <div className="flex justify-between text-[10px]">
-            <span className="text-muted-foreground">Original</span>
+            <span className="text-muted-foreground">{t('imageCompare.original')}</span>
             <span className="font-medium">{formatBytes(compressionResult.originalSize)}</span>
           </div>
           <div className="flex justify-between text-[10px]">
-            <span className="text-muted-foreground">Compressed</span>
+            <span className="text-muted-foreground">{t('pdfEditor.compressed')}</span>
             <span className="font-medium">{formatBytes(compressionResult.compressedSize)}</span>
           </div>
           {compressionResult.targetBytes !== null && (
             <div className="flex justify-between text-[10px] pt-1 border-t">
-              <span className="text-muted-foreground">Target</span>
+              <span className="text-muted-foreground">{t('pdfEditor.target')}</span>
               <span
                 className={`font-semibold ${
                   compressionResult.compressedSize <= compressionResult.targetBytes
@@ -582,13 +625,13 @@ function CompressPanel() {
                 }`}
               >
                 {compressionResult.compressedSize <= compressionResult.targetBytes
-                  ? 'met'
-                  : `not met (${formatBytes(compressionResult.targetBytes)})`}
+                  ? t('toolSidebarPanel.targetMet')
+                  : t('toolSidebarPanel.targetNotMet', { size: formatBytes(compressionResult.targetBytes) })}
               </span>
             </div>
           )}
           <div className="flex justify-between text-[10px] pt-1 border-t">
-            <span className="text-muted-foreground">Reduction</span>
+            <span className="text-muted-foreground">{t('pdfEditor.reduction')}</span>
             <span className={`font-semibold ${reductionPct! > 0 ? 'text-green-500' : 'text-orange-500'}`}>
               {reductionPct! > 0 ? `−${reductionPct}%` : `+${Math.abs(reductionPct!)}%`}
             </span>
@@ -607,7 +650,7 @@ function CompressPanel() {
         className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed transition-colors"
       >
         <Expand className="h-3 w-3" />
-        Compare full size
+        {t('pdfEditor.compareFullSize')}
       </button>
 
       <ApplyButton
@@ -624,12 +667,14 @@ function CompressPanel() {
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
 /** Compass direction entries for the rotate tool */
-const COMPASS_DIRECTIONS: { label: string; short: string; degrees: RotationDegrees | 0 }[] = [
-  { label: 'Original', short: '↑', degrees: 0 },
-  { label: 'Turn Right', short: '→', degrees: 90 },
-  { label: 'Upside Down', short: '↓', degrees: 180 },
-  { label: 'Turn Left', short: '←', degrees: 270 },
-];
+function compassDirections(): { label: string; short: string; degrees: RotationDegrees | 0 }[] {
+  return [
+    { label: t('imageCompare.original'), short: '↑', degrees: 0 },
+    { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
+    { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
+    { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
+  ];
+}
 
 function RotatePanel() {
   diagLog('RotatePanel.render');
@@ -710,10 +755,10 @@ function RotatePanel() {
       <PanelHeader toolId="rotate-pdf" />
 
       <div className="space-y-1.5">
-        <label className="text-[10px] font-medium text-muted-foreground">Direction</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.direction')}</label>
         {/* Compass-style 2x2 grid */}
         <div className="grid grid-cols-2 gap-1">
-          {COMPASS_DIRECTIONS.map((dir) => (
+          {compassDirections().map((dir) => (
             <button
               type="button"
               key={dir.degrees}
@@ -737,15 +782,15 @@ function RotatePanel() {
           checked={applyToAll}
           onChange={(e) => handleApplyToAllChange(e.target.checked)}
         />
-        Apply to all pages
+        {t('pdfEditor.applyToAllPages')}
       </label>
 
       <p className="text-[10px] text-muted-foreground">
         {applyToAll
-          ? `Rotating all ${state.pageCount} pages`
+          ? t('toolSidebarPanel.rotatingAllPages', { count: state.pageCount })
           : targetPages.length > 1
-            ? `Rotating ${targetPages.length} selected pages`
-            : `Rotating page ${targetPages[0] + 1}`}
+            ? t('toolSidebarPanel.rotatingSelectedPages', { count: targetPages.length })
+            : t('toolSidebarPanel.rotatingPage', { page: targetPages[0] + 1 })}
       </p>
 
       <ToolSidebarPreview
@@ -846,7 +891,7 @@ function WatermarkPanel() {
 
       <div className="space-y-2">
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Text</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('watermark.text')}</label>
           <input
             type="text"
             value={options.text}
@@ -858,7 +903,7 @@ function WatermarkPanel() {
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Font Size</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('common.fontSize')}</label>
             <input
               type="number"
               value={options.fontSize}
@@ -869,7 +914,7 @@ function WatermarkPanel() {
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Rotation</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('rotateImage.rotation')}</label>
             <input
               type="number"
               value={options.rotation}
@@ -883,7 +928,7 @@ function WatermarkPanel() {
 
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">
-            Opacity: {Math.round(options.opacity * 100)}%
+            {t('toolSidebarPanel.opacity', { percent: Math.round(options.opacity * 100) })}
           </label>
           <input
             type="range"
@@ -896,7 +941,7 @@ function WatermarkPanel() {
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Color</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('watermark.color')}</label>
           <div className="mt-1">
             <ColorPicker
               value={options.color}
@@ -986,24 +1031,24 @@ function PageNumbersPanel() {
 
       <div className="space-y-2">
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Position</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('pageNumbers.position')}</label>
           <select
             value={options.position}
             onChange={(e) => setOptions((o) => ({ ...o, position: e.target.value as NumberPosition }))}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
           >
-            <option value="bottom-center">Bottom Center</option>
-            <option value="bottom-left">Bottom Left</option>
-            <option value="bottom-right">Bottom Right</option>
-            <option value="top-center">Top Center</option>
-            <option value="top-left">Top Left</option>
-            <option value="top-right">Top Right</option>
+            <option value="bottom-center">{t('pdfEditor.bottomCenter')}</option>
+            <option value="bottom-left">{t('pdfEditor.bottomLeft')}</option>
+            <option value="bottom-right">{t('pdfEditor.bottomRight')}</option>
+            <option value="top-center">{t('pdfEditor.topCenter')}</option>
+            <option value="top-left">{t('pdfEditor.topLeft')}</option>
+            <option value="top-right">{t('pdfEditor.topRight')}</option>
           </select>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Format</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('pageNumbers.format')}</label>
             <select
               value={options.format}
               onChange={(e) => setOptions((o) => ({ ...o, format: e.target.value as NumberFormat }))}
@@ -1015,9 +1060,9 @@ function PageNumbersPanel() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Start At</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.startAt')}</label>
             <NumberField
-              aria-label="Start at"
+              aria-label={t('pdfEditor.startAt')}
               value={options.startNumber}
               onChange={(n) => setOptions((o) => ({ ...o, startNumber: n }))}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
@@ -1027,9 +1072,9 @@ function PageNumbersPanel() {
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Font Size</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('common.fontSize')}</label>
           <NumberField
-            aria-label="Font size"
+            aria-label={t('common.fontSize')}
             value={options.fontSize}
             onChange={(n) => setOptions((o) => ({ ...o, fontSize: n }))}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
@@ -1039,7 +1084,7 @@ function PageNumbersPanel() {
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Colour</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('pageNumbers.colour')}</label>
           <div className="mt-0.5">
             <ColorPicker
               value={options.color ?? DEFAULT_TEXT_COLOR}
@@ -1070,7 +1115,7 @@ function PageNumbersPanel() {
           onClick={removePageNumbers}
           className="w-full px-2 py-1 text-xs rounded border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
-          Remove page numbers
+          {t('pdfEditor.removePageNumbers')}
         </button>
       )}
     </div>
@@ -1206,7 +1251,7 @@ function CropPanel() {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-[10px] font-medium text-muted-foreground">Margins (mm)</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('convertDoc.marginsMm')}</label>
           <label className="flex items-center gap-1 text-[10px] cursor-pointer">
             <input
               type="checkbox"
@@ -1214,13 +1259,13 @@ function CropPanel() {
               onChange={(e) => setLinked(e.target.checked)}
               className="rounded"
             />
-            <span className="text-muted-foreground">All equal</span>
+            <span className="text-muted-foreground">{t('pdfEditor.allEqual')}</span>
           </label>
         </div>
 
         {linked ? (
           <div>
-            <label className="text-[10px] text-muted-foreground">All sides</label>
+            <label className="text-[10px] text-muted-foreground">{t('pdfEditor.allSides')}</label>
             <input
               type="number"
               value={margins.top}
@@ -1228,14 +1273,14 @@ function CropPanel() {
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
               min={0}
               max={100}
-              title="All margins (mm)"
+              title={t('pdfEditor.allMarginsMm')}
             />
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {(['top', 'bottom', 'left', 'right'] as const).map((side) => (
               <div key={side}>
-                <label className="text-[10px] text-muted-foreground capitalize">{side}</label>
+                <label className="text-[10px] text-muted-foreground">{sideLabel(side)}</label>
                 <input
                   type="number"
                   value={margins[side]}
@@ -1243,7 +1288,7 @@ function CropPanel() {
                   className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
                   min={0}
                   max={100}
-                  title={`${side} margin (mm)`}
+                  title={t('toolSidebarPanel.marginMm', { side: sideLabel(side) })}
                 />
               </div>
             ))}
@@ -1278,10 +1323,21 @@ function CropPanel() {
 // signature on the page anywhere it is missing -- the same failure, moved to
 // other people's computers.
 const SIGNATURE_FONTS = [
-  { value: 'cursive', label: 'Script', css: "'Dancing Script', 'Brush Script MT', cursive" },
-  { value: 'serif', label: 'Formal', css: "'Georgia', 'Times New Roman', serif" },
-  { value: 'sans', label: 'Clean', css: "'Helvetica Neue', Arial, sans-serif" },
-];
+  { value: 'cursive', css: "'Dancing Script', 'Brush Script MT', cursive" },
+  { value: 'serif', css: "'Georgia', 'Times New Roman', serif" },
+  { value: 'sans', css: "'Helvetica Neue', Arial, sans-serif" },
+] as const;
+
+type SignatureFontValue = (typeof SIGNATURE_FONTS)[number]['value'];
+
+function signatureFontLabel(value: SignatureFontValue): string {
+  const labels = {
+    cursive: t('toolSidebarPanel.script'),
+    serif: t('signatureTyped.formal'),
+    sans: t('toolSidebarPanel.clean'),
+  };
+  return labels[value];
+}
 
 const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';
 
@@ -1309,7 +1365,7 @@ function SignPanel() {
   const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
-  const [sigFont, setSigFont] = useState(SIGNATURE_FONTS[0].value);
+  const [sigFont, setSigFont] = useState<SignatureFontValue>(SIGNATURE_FONTS[0].value);
   const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
   const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
@@ -1330,7 +1386,7 @@ function SignPanel() {
 
     const raster = await rasteriseSignature(text, fontCss, sigSize, color);
     if (!raster) {
-      setPlaceError('Could not draw the signature. Try a different style or a shorter name.');
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
       return;
     }
     setPlaceError(null);
@@ -1371,13 +1427,13 @@ function SignPanel() {
 
       {/* Type signature */}
       <div className="space-y-2">
-        <label className="text-[10px] font-medium text-muted-foreground">Type your signature</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.typeYourSignature')}</label>
         <input
           type="text"
           value={sigText}
           onChange={(e) => setSigText(e.target.value)}
-          placeholder="Your Name"
-          title="Signature text"
+          placeholder={t('pdfEditor.yourName')}
+          title={t('pdfEditor.signatureText')}
           className="w-full px-2 py-1.5 text-sm border rounded bg-background"
           style={{ fontFamily: selectedFontCss, fontStyle: sigFont === 'cursive' ? 'italic' : 'normal' }}
         />
@@ -1400,7 +1456,7 @@ function SignPanel() {
 
         {/* Font style */}
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Style</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('common.style')}</label>
           <div className="flex gap-1 mt-0.5">
             {SIGNATURE_FONTS.map((f) => (
               <button
@@ -1411,7 +1467,7 @@ function SignPanel() {
                   sigFont === f.value ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-muted/50'
                 }`}
               >
-                {f.label}
+                {signatureFontLabel(f.value)}
               </button>
             ))}
           </div>
@@ -1420,18 +1476,18 @@ function SignPanel() {
         {/* Color + Size */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Color</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('watermark.color')}</label>
             <div className="mt-1">
               <ColorPicker value={sigColor} onChange={setSigColor} />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground">Size</label>
+            <label className="text-[10px] font-medium text-muted-foreground">{t('common.size')}</label>
             <input
               type="number"
               value={sigSize}
               onChange={(e) => setSigSize(Math.max(12, Math.min(48, Number(e.target.value) || 24)))}
-              title="Signature font size"
+              title={t('pdfEditor.signatureFontSize')}
               className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
               min={12}
               max={48}
@@ -1448,16 +1504,16 @@ function SignPanel() {
           disabled={!sigText.trim()}
           className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Place on Page
+          {t('pdfEditor.placeOnPage')}
         </button>
         <button
           type="button"
           onClick={handleSaveSignature}
           disabled={!sigText.trim()}
           className="py-1.5 px-2 text-xs rounded border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Save signature for reuse"
+          title={t('pdfEditor.saveSignatureForReuse')}
         >
-          Save
+          {t('common.save')}
         </button>
       </div>
 
@@ -1473,14 +1529,14 @@ function SignPanel() {
             onClick={() => setShowSaved(!showSaved)}
             className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
-            Saved signatures ({savedSignatures.length}) {showSaved ? '▾' : '▸'}
+            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '▾' : '▸'}
           </button>
           {showSaved && savedSignatures.map((sig, idx) => (
             <div key={sig.createdAt} className="flex items-center gap-1.5 p-1.5 rounded border hover:bg-muted/50 group">
               <button
                 type="button"
                 onClick={() => handlePlaceSignature(sig.text, sig.font, sig.color)}
-                className="flex-1 text-left text-xs truncate"
+                className="flex-1 text-start text-xs truncate"
                 style={{
                   fontFamily: SIGNATURE_FONTS.find(f => f.value === sig.font)?.css ?? 'cursive',
                   color: sig.color,
@@ -1493,7 +1549,7 @@ function SignPanel() {
                 type="button"
                 onClick={() => handleDeleteSavedSig(idx)}
                 className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 text-[10px]"
-                title="Delete saved signature"
+                title={t('pdfEditor.deleteSavedSignature')}
               >
                 ×
               </button>
@@ -1516,15 +1572,15 @@ function SignPanel() {
           {isTextMode ? (
             <>
               <Check className="h-3 w-3" />
-              Placement Mode Active
+              {t('pdfEditor.placementModeActive')}
             </>
           ) : (
-            'Click-to-Place Mode'
+            t('toolSidebarPanel.clickToPlaceMode')
           )}
         </button>
         {isTextMode && (
           <p className="text-[9px] text-muted-foreground mt-1">
-            Click anywhere on the PDF to place a text block.
+            {t('pdfEditor.clickAnywhereOnThePdf')}
           </p>
         )}
       </div>
@@ -1540,10 +1596,27 @@ function RedactPanel() {
   // and re-create every callback that depends on it.
   const draft = useMemo(() => state.redactionDraft ?? [], [state.redactionDraft]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchRan, setSearchRan] = useState(false);
+  // The same search the toolbar uses, so the two cannot drift. This panel used
+  // to own a private copy that told the user a scan "cannot be searched" and
+  // stopped, while the standalone Redact tool offered to read it -- a dead end
+  // and a way forward, for the same document.
+  const search = useDocumentSearch(state.pdfBytes);
+  // Read a scan in the interface language: someone told their page has no text
+  // wants it read, not a second form. The full picker is in Make Searchable.
+  const locale = useLocale();
+  const [ocrLanguage, setOcrLanguage] = useState('en-US');
+  useEffect(() => {
+    let cancelled = false;
+    listOcrLanguages(locale).then((available) => {
+      if (cancelled) return;
+      const match = available.find((l) => l.tag.split('-')[0] === locale.split('-')[0]);
+      setOcrLanguage(match?.tag ?? 'en-US');
+    });
+    return () => { cancelled = true; };
+  }, [locale]);
+  const { query: searchQuery, matches: searchResults, searched: searchRan, isSearching } = search;
+  const setSearchQuery = search.setQuery;
+  const handleSearch = search.search;
   const [scope, setScope] = useState<RedactionScope>('match');
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -1553,26 +1626,6 @@ function RedactPanel() {
     setRedactionDraft([]);
     return () => setRedactionDraft(null);
   }, [setRedactionDraft]);
-
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setSearchResults([]);
-    setSearchRan(false);
-
-    const pdfjsLib = await import('pdfjs-dist');
-    let doc: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']> | null = null;
-    try {
-      doc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
-      setSearchResults(await findTextMatches(doc, searchQuery));
-    } catch {
-      setSearchResults([]);
-    } finally {
-      doc?.destroy();
-      setSearchRan(true);
-      setIsSearching(false);
-    }
-  }, [searchQuery, state.pdfBytes]);
 
   const addMatch = useCallback(
     (match: TextMatch) => {
@@ -1612,37 +1665,66 @@ function RedactPanel() {
       <PanelHeader toolId="redact-pdf" />
 
       <p className="text-[10px] leading-relaxed text-muted-foreground">
-        Drag on the page to cover something. Applying flattens those pages to an
-        image, so the content underneath is removed from the file, not just hidden.
+        {t('toolSidebarPanel.dragOnThePageToCover')}
       </p>
 
       {/* Find text */}
       <div className="space-y-1.5">
-        <label className="text-[10px] font-medium text-muted-foreground">Find text</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.findText')}</label>
         <div className="flex gap-1.5">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-            placeholder="Name, number…"
-            title="Find text to redact"
+            onKeyDown={(e) => { if (e.key === 'Enter') void handleSearch(); }}
+            placeholder={t('pdfEditor.nameNumber')}
+            title={t('pdfEditor.findTextToRedact')}
             className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
           />
           <button
             type="button"
-            onClick={handleSearch}
+            onClick={() => void handleSearch()}
             disabled={isSearching || !searchQuery.trim()}
             className="flex-none px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-50"
           >
-            {isSearching ? '…' : 'Find'}
+            {isSearching ? '…' : t('common.find')}
           </button>
         </div>
 
         {searchRan && !isSearching && searchResults.length === 0 && (
-          <p className="text-[10px] leading-relaxed text-muted-foreground">
-            No matches. Pages with no selectable text — a scan, for instance —
-            cannot be searched.
+          <div className="space-y-1.5">
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {search.isScanRead
+                ? t('search.noMatchesInScan', { query: searchQuery })
+                : t('toolSidebarPanel.noMatchesNoSelectableText')}
+            </p>
+            {/* Searching a scan again cannot help -- there is no text layer to
+                look in. Reading the page is what makes the search possible. */}
+            {!search.isScanRead && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void search.readScanAndSearch(ocrLanguage)}
+                  disabled={search.isReadingScan}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-border px-2 py-1 text-[10px] hover:bg-muted disabled:opacity-50"
+                >
+                  {search.isReadingScan
+                    ? t('redactPdf.readingScan')
+                    : t('redactPdf.readScanAndSearch')}
+                </button>
+                {search.scanError && (
+                  <p className="text-[10px] text-destructive">{search.scanError}</p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        {search.isScanRead && searchResults.length > 0 && (
+          // Boxes derived from recognised text are approximate, and a redaction
+          // that lands slightly short is a privacy failure rather than a
+          // cosmetic one. Say so before the user applies it.
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            {t('redactPdf.scanBoxesApproximate')}
           </p>
         )}
 
@@ -1651,7 +1733,7 @@ function RedactPanel() {
             {/* Same choice the standalone tool offers, and the same helper
                 decides what each one covers. */}
             <div className="flex gap-1">
-              {REDACTION_SCOPES.map((s) => (
+              {redactionScopes().map((s) => (
                 <button
                   key={s.value}
                   type="button"
@@ -1680,8 +1762,8 @@ function RedactPanel() {
                     type="button"
                     onClick={() => addMatch(match)}
                     disabled={added}
-                    title={added ? 'Already marked' : 'Mark this one'}
-                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-left transition-colors ${
+                    title={added ? t('toolSidebarPanel.alreadyMarked') : t('toolSidebarPanel.markThisOne')}
+                    className={`w-full flex items-center gap-1.5 px-1.5 py-1 text-[10px] rounded border text-start transition-colors ${
                       added
                         ? 'border-primary/40 bg-primary/5 text-muted-foreground'
                         : 'border-border hover:bg-muted/50'
@@ -1689,7 +1771,7 @@ function RedactPanel() {
                   >
                     <span className="flex-none text-muted-foreground">p{match.pageIndex + 1}</span>
                     <span className="truncate">{match.text}</span>
-                    <span className="ml-auto flex-none">{added ? '✓' : '+'}</span>
+                    <span className="ms-auto flex-none">{added ? '✓' : '+'}</span>
                   </button>
                 );
               })}
@@ -1700,7 +1782,7 @@ function RedactPanel() {
               onClick={addAllMatches}
               className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
             >
-              Mark all {searchResults.length}
+              {t('toolSidebarPanel.markAll', { count: searchResults.length })}
             </button>
           </div>
         )}
@@ -1708,21 +1790,20 @@ function RedactPanel() {
 
       {/* Colour */}
       <div className="border-t pt-2">
-        <label className="text-[10px] font-medium text-muted-foreground">Box colour</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('redactPdf.boxColour')}</label>
         <div className="mt-1">
           <ColorPicker value={state.redactionColor} onChange={setRedactionColor} />
         </div>
         {isLightColor(state.redactionColor) && (
           <p className="mt-1 text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
-            A box this pale is hard to see on a white page. The content underneath
-            is still permanently removed.
+            {t('toolSidebarPanel.paleBoxWarning')}
           </p>
         )}
       </div>
 
       <div className="border-t pt-2 space-y-1.5">
         <p className="text-[10px] text-muted-foreground">
-          {draft.length} area{draft.length === 1 ? '' : 's'} marked
+          {plural('count.areaMarked', draft.length)}
         </p>
         {draft.length > 0 && (
           <button
@@ -1730,7 +1811,7 @@ function RedactPanel() {
             onClick={() => setRedactionDraft([])}
             className="w-full py-1 px-2 text-[10px] rounded border border-border hover:bg-muted"
           >
-            Clear all
+            {t('redactPdf.clearAll')}
           </button>
         )}
         {applyError && (
@@ -1742,7 +1823,7 @@ function RedactPanel() {
           disabled={draft.length === 0 || isApplying}
           className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isApplying ? 'Redacting…' : 'Apply'}
+          {isApplying ? t('toolSidebarPanel.redacting') : t('toolSidebarPanel.apply')}
         </button>
       </div>
     </div>
@@ -1791,16 +1872,16 @@ function PdfaPanel() {
       <PanelHeader toolId="pdfa-convert" />
 
       <div>
-        <label className="text-[10px] font-medium text-muted-foreground">PDF/A Level</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.pdfALevel')}</label>
         <select
           value={pdfaLevel}
           onChange={(e) => setPdfaLevel(e.target.value)}
           className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-          title="PDF/A conformance level"
+          title={t('pdfEditor.pdfAConformanceLevel')}
         >
-          <option value="1">PDF/A-1 (most compatible)</option>
-          <option value="2">PDF/A-2 (recommended)</option>
-          <option value="3">PDF/A-3 (full features)</option>
+          <option value="1">{t('pdfEditor.pdfA1MostCompatible')}</option>
+          <option value="2">{t('pdfEditor.pdfA2Recommended')}</option>
+          <option value="3">{t('pdfEditor.pdfA3FullFeatures')}</option>
         </select>
       </div>
 
@@ -1808,7 +1889,7 @@ function PdfaPanel() {
         <ToolResultFeedback
           originalSize={resultInfo.originalSize}
           resultSize={resultInfo.resultSize}
-          toolLabel={`PDF/A-${pdfaLevel} conversion`}
+          toolLabel={t('toolSidebarPanel.pdfaConversion', { level: pdfaLevel })}
         />
       )}
 
@@ -1866,7 +1947,7 @@ function RepairPanel() {
     <div className="space-y-3">
       <PanelHeader toolId="repair-pdf" />
       <p className="text-[10px] text-muted-foreground">
-        Attempt to fix corrupted or malformed PDF structure using Ghostscript.
+        {t('pdfEditor.attemptToFixCorruptedOr')}
       </p>
 
       {resultInfo && (
@@ -1936,27 +2017,27 @@ function ProtectPanel() {
 
       <div className="space-y-2">
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Password</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-            placeholder="Enter password"
+            placeholder={t('protectPdf.enterPassword')}
           />
         </div>
         <div>
-          <label className="text-[10px] font-medium text-muted-foreground">Confirm Password</label>
+          <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.confirmPassword')}</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-            placeholder="Confirm password"
+            placeholder={t('protectPdf.confirmPassword')}
           />
         </div>
         {password && confirmPassword && !passwordsMatch && (
-          <p className="text-[10px] text-destructive">Passwords do not match</p>
+          <p className="text-[10px] text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
         )}
       </div>
 
@@ -1964,7 +2045,7 @@ function ProtectPanel() {
         <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
           <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
             <Check className="h-3 w-3" />
-            PDF is now password-protected
+            {t('pdfEditor.pdfIsNowPasswordProtected')}
           </div>
         </div>
       ) : (
@@ -2025,13 +2106,13 @@ function UnlockPanel() {
       <PanelHeader toolId="unlock-pdf" />
 
       <div>
-        <label className="text-[10px] font-medium text-muted-foreground">Password</label>
+        <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-          placeholder="Enter PDF password"
+          placeholder={t('pdfEditor.enterPdfPassword')}
         />
       </div>
 
@@ -2039,7 +2120,7 @@ function UnlockPanel() {
         <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
           <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
             <Check className="h-3 w-3" />
-            PDF password protection removed
+            {t('pdfEditor.pdfPasswordProtectionRemoved')}
           </div>
         </div>
       ) : (
@@ -2051,6 +2132,137 @@ function UnlockPanel() {
       <ApplyButton
         onClick={handleApply}
         disabled={!password}
+        isApplying={isApplying || isProcessing}
+        success={success}
+        error={error}
+      />
+    </div>
+  );
+}
+
+
+// ── Make Searchable (OCR) Panel ──────────────────────────────────────
+
+function OcrPanel() {
+  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const locale = useLocale();
+  const [languages, setLanguages] = useState<OcrLanguage[]>([]);
+  const [language, setLanguage] = useState('en-US');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [summary, setSummary] = useState<OcrSummary | null>(null);
+  const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
+
+  useEffect(() => {
+    let cancelled = false;
+    listOcrLanguages(locale).then((list) => {
+      if (cancelled) return;
+      setLanguages(list);
+      const match = list.find((l) => l.tag.split('-')[0] === locale.split('-')[0]);
+      if (match) setLanguage(match.tag);
+    });
+    return () => { cancelled = true; };
+  }, [locale]);
+
+  // Recognition is seconds per page, so a long document must not look stuck.
+  useEffect(() => {
+    const unlisten = listen<[number, number]>('ocr-progress', (event) => {
+      const [index, total] = event.payload;
+      setProgress({ current: index + 1, total });
+    });
+    return () => { void unlisten.then((fn) => fn()); };
+  }, []);
+
+  const handleApply = useCallback(async () => {
+    setIsProcessing(true);
+    setSummary(null);
+    setProgress(null);
+    try {
+      // OCR reads from a file; the editor holds bytes. Same temp-file round trip
+      // the other Ghostscript-backed panels use.
+      const { tempDir, join } = await import('@tauri-apps/api/path');
+      const tempInputPath = await join(await tempDir(), `papercut_ocr_${Date.now()}.pdf`);
+
+      const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
+      await writeFile(tempInputPath, state.pdfBytes);
+
+      const result = await ocrPdf(tempInputPath, { languages: [language] });
+      await remove(tempInputPath).catch(() => {});
+
+      setIsProcessing(false);
+      setSummary(result.summary);
+
+      // Nothing readable means there is nothing to apply. Replacing the document
+      // with a copy carrying an empty text layer would look like success.
+      if (!result.summary.foundText) return;
+
+      await apply(() => Promise.resolve(result.bytes));
+    } catch (err) {
+      setIsProcessing(false);
+      await apply(() => Promise.reject(err));
+    } finally {
+      setProgress(null);
+    }
+  }, [state.pdfBytes, language, apply]);
+
+  return (
+    <div className="space-y-3">
+      <PanelHeader toolId="ocr-pdf" />
+      <p className="text-[10px] text-muted-foreground">{t('ocr.intro')}</p>
+
+      <div className="space-y-1">
+        <label htmlFor="editor-ocr-language" className="text-[10px] text-muted-foreground">
+          {t('ocr.language')}
+        </label>
+        <select
+          id="editor-ocr-language"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          disabled={isProcessing}
+          className="w-full rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+        >
+          {languages.map((l) => (
+            <option key={l.tag} value={l.tag}>{l.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {isProcessing && progress && (
+        <p className="text-[10px] text-muted-foreground">
+          {t('ocr.readingPage', { current: progress.current, total: progress.total })}
+        </p>
+      )}
+
+      {summary && !summary.foundText && (
+        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1.5">
+          <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
+            {t('ocr.nothingFound')}
+          </p>
+          <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">
+            {t('ocr.nothingFoundHint')}
+          </p>
+        </div>
+      )}
+
+      {summary?.foundText && (
+        <div className="space-y-1">
+          <p className="text-[10px] text-muted-foreground">
+            {t('ocr.foundWords', {
+              words: plural('count.word', summary.wordCount),
+              pages: plural('count.page', summary.pageCount),
+            })}
+          </p>
+          {summary.lowConfidence && (
+            <p className="text-[10px] text-amber-700 dark:text-amber-400">
+              {t('ocr.lowConfidence')} {t('ocr.lowConfidenceHint')}
+            </p>
+          )}
+        </div>
+      )}
+
+      <ApplyButton
+        onClick={handleApply}
+        disabled={false}
         isApplying={isApplying || isProcessing}
         success={success}
         error={error}
@@ -2085,10 +2297,12 @@ export function ToolSidebarPanel({ toolId }: ToolSidebarPanelProps) {
       return <ProtectPanel />;
     case 'unlock-pdf':
       return <UnlockPanel />;
+    case 'ocr-pdf':
+      return <OcrPanel />;
     default:
       return (
         <div className="text-[10px] text-muted-foreground p-2">
-          Tool panel not yet implemented.
+          {t('pdfEditor.toolPanelNotYetImplemented')}
         </div>
       );
   }

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { stripImageExtension } from '@/lib/fileValidation';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { FileUp, Loader2 } from 'lucide-react';
@@ -9,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -35,20 +37,21 @@ function detectSourceFormatLabel(filePath: string): string {
   if (ext === 'bmp') return 'BMP';
   if (ext === 'tiff' || ext === 'tif') return 'TIFF';
   if (ext === 'gif') return 'GIF';
+  if (ext === 'heic' || ext === 'heif') return 'HEIC';
   return ext.toUpperCase();
 }
 
 function buildSaveName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp|bmp|tiff?|gif)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-converted.${ext}`;
 }
 
 function buildSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
   switch (outputFormat) {
-    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
-    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
-    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+    case 'jpeg': return [{ name: t('filter.jpegImage'), extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: t('filter.pngImage'),  extensions: ['png'] }];
+    case 'webp': return [{ name: t('filter.webpImage'), extensions: ['webp'] }];
   }
 }
 
@@ -97,7 +100,8 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const bytes = await readFile(path);
+      // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+      const { bytes, sizeBytes } = await readImageBytes(path);
       // Create preview URL from bytes
       const blob = new Blob([bytes]);
       const bitmap = await createImageBitmap(blob);
@@ -112,7 +116,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
       setFilePath(path);
       setFileName(name);
-      setFileSize(bytes.byteLength);
+      setFileSize(sizeBytes);
       setPreviewUrl(url);
 
       // Default output format: pick a different format from the source
@@ -132,7 +136,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
 
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -151,12 +155,12 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'Image Files', extensions: IMAGE_EXTENSIONS }],
+        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
       });
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -177,7 +181,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       setResultBytes(new Uint8Array(processedBytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed.';
+      const message = err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -194,8 +198,8 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Convert Image</h2>
-              <p className="text-sm text-muted-foreground">Select an image to convert between formats.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('convertImage.convertImage')}</h2>
+              <p className="text-sm text-muted-foreground">{t('convertImage.selectAnImageToConvert')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -206,13 +210,13 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select Image
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('common.selectImage')}
                   </>
                 )}
               </Button>
@@ -228,7 +232,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {sourceFormatLabel} &middot; {formatFileSize(fileSize)}
+                  {sourceFormatLabel} · {formatFileSize(fileSize)}
                 </p>
               </div>
 
@@ -236,14 +240,14 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <div className="flex items-center justify-center rounded-lg border border-border bg-card p-4 overflow-hidden">
                 <img
                   src={previewUrl}
-                  alt="Preview"
+                  alt={t('common.preview')}
                   className="max-h-48 max-w-full object-contain"
                 />
               </div>
 
               {/* Output format */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Output format</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {FORMATS.map((fmt) => (
                     <button
@@ -268,7 +272,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 {showQualitySlider && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">Quality</label>
+                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
                       <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
                     </div>
                     <input
@@ -307,7 +311,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -317,11 +321,11 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Converting...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('convertImage.converting')}
                     </>
                   ) : (
-                    `Convert to ${FORMAT_LABELS[outputFormat]}`
+                    t('convertImageFlow.convertToFormat', { format: FORMAT_LABELS[outputFormat] })
                   )}
                 </Button>
               </div>

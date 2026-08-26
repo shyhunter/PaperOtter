@@ -8,6 +8,7 @@ import { useSaveActions } from './SaveController';
 import { FormattingToolbar } from './FormattingToolbar';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 export function EditorTopToolbar() {
   const { state, setCompareMode, revertToOriginal } = useEditorContext();
@@ -89,53 +90,53 @@ export function EditorTopToolbar() {
             onClick={handleBackToDashboard}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            Dashboard
+            {t('pdfEditor.dashboard')}
           </button>
           <ChevronRight className="w-3 h-3 text-muted-foreground" />
           <span className="text-foreground font-medium truncate max-w-[200px]">
-            {state.fileName || 'Untitled.pdf'}
+            {state.fileName || t('pdfEditor.untitledPdf')}
           </span>
           {state.isDirty && (
-            <span className="text-muted-foreground ml-1" title="Unsaved changes">
+            <span className="text-muted-foreground ms-1" title={t('common.unsavedChanges')}>
               *
             </span>
           )}
         </nav>
 
         {/* Save button */}
-        <div className="ml-3 flex items-center gap-1.5">
+        <div className="ms-3 flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleSaveClick}
             disabled={!state.isDirty || isSaving}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors disabled:opacity-40 disabled:cursor-default hover:bg-muted"
-            title="Save (Cmd+S)"
+            title={t('pdfEditor.saveCmdS')}
           >
             <Save className="w-3.5 h-3.5" />
             {showSavedFeedback ? (
-              <span className="text-green-600">Saved</span>
+              <span className="text-green-600">{t('pdfEditor.saved')}</span>
             ) : (
-              <span>Save</span>
+              <span>{t('common.save')}</span>
             )}
           </button>
         </div>
 
 
         {/* Revert */}
-        <div className="ml-2">
+        <div className="ms-2">
           <button
             type="button"
             onClick={handleRevert}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
-            title="Discard all changes and restore the document as it was opened"
+            title={t('pdfEditor.discardAllChangesAndRestore')}
           >
             <Undo2 className="w-3.5 h-3.5" />
-            <span>Revert</span>
+            <span>{t('pdfEditor.revert')}</span>
           </button>
         </div>
 
         {/* Compare toggle */}
-        <div className="ml-2">
+        <div className="ms-2">
           <button
             type="button"
             onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}
@@ -144,16 +145,16 @@ export function EditorTopToolbar() {
                 ? 'bg-primary/10 text-primary font-medium'
                 : 'hover:bg-muted text-muted-foreground'
             }`}
-            title="Toggle compare view (original vs edited)"
+            title={t('pdfEditor.toggleCompareViewOriginalVs')}
           >
             <Columns2 className="w-3.5 h-3.5" />
-            <span>Compare</span>
+            <span>{t('pdfEditor.compare')}</span>
           </button>
         </div>
 
         <div className="flex-1" />
         <div className="text-xs text-muted-foreground">
-          Page {state.currentPage + 1} of {state.pageCount}
+          {t('common.pageOf', { page: state.currentPage + 1, total: state.pageCount })}
         </div>
       </div>
 

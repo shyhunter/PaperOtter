@@ -9,6 +9,9 @@ use std::io::Cursor;
 use std::sync::Mutex;
 use uuid::Uuid;
 
+mod heic;
+mod ocr;
+
 /// Validates a source file path from the frontend.
 /// Blocks null bytes, path traversal, and overly long paths.
 fn validate_source_path(path: &str) -> Result<(), String> {
@@ -152,6 +155,7 @@ fn spawn_gs(
 ) -> Result<(tauri::async_runtime::Receiver<CommandEvent>, CommandChild), String> {
     // 1. Try bundled sidecar first
     if let Ok(sidecar_cmd) = app.shell().sidecar("gs") {
+        let sidecar_cmd = with_windows_dll_path(app, sidecar_cmd);
         if let Ok(result) = sidecar_cmd.args(&args).spawn() {
             return Ok(result);
         }
@@ -169,14 +173,77 @@ fn spawn_gs(
         ))
 }
 
+/// Whether a `gs --version` probe looks like a real Ghostscript.
+///
+/// Ghostscript prints a bare version ("10.02.1"). The placeholder sidecars this
+/// project ships for three of its four targets print "gs not bundled on this
+/// platform" and exit 1, so both the exit status and the shape of the output are
+/// checked — a stub that forgot to exit non-zero would otherwise read as a
+/// working install.
+fn sidecar_reports_version(exit_ok: bool, stdout: &str) -> bool {
+    exit_ok
+        && stdout
+            .trim()
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_digit())
+}
+
+/// Lets the bundled Ghostscript find gsdll64.dll on Windows.
+///
+/// Windows Ghostscript is not one file: gswin64c.exe is a thin wrapper around
+/// gsdll64.dll and will not start without it. A Tauri sidecar is a single file
+/// and resources are bundled into a different directory than the executable, so
+/// the DLL is shipped as a resource and its directory is prepended to the child
+/// process's PATH here.
+///
+/// This is the one part of the Ghostscript work that has not been run on the
+/// platform it targets — see src-tauri/binaries/README.md. On macOS and Linux it
+/// is a no-op, because Ghostscript there is genuinely a single binary.
+#[cfg(target_os = "windows")]
+fn with_windows_dll_path(
+    app: &tauri::AppHandle,
+    cmd: tauri_plugin_shell::process::Command,
+) -> tauri_plugin_shell::process::Command {
+    use tauri::Manager;
+
+    let Ok(resource_dir) = app.path().resource_dir() else {
+        return cmd;
+    };
+    let existing = std::env::var("PATH").unwrap_or_default();
+    cmd.env(
+        "PATH",
+        format!("{};{}", resource_dir.display(), existing),
+    )
+}
+
+#[cfg(not(target_os = "windows"))]
+fn with_windows_dll_path(
+    _app: &tauri::AppHandle,
+    cmd: tauri_plugin_shell::process::Command,
+) -> tauri_plugin_shell::process::Command {
+    cmd
+}
+
 /// Check if Ghostscript is available (sidecar or system).
 /// Used by detect_converters to report GS availability.
-fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
-    // Check sidecar availability — if sidecar command can be created, the binary exists
-    if app.shell().sidecar("gs").is_ok() {
-        return true;
+///
+/// Actually runs the sidecar rather than trusting that a command object could be
+/// built — `sidecar()` succeeds whether or not the binary exists or works, so the
+/// previous check reported Ghostscript available on every platform and the
+/// disabled-tool state with its install hint could never appear.
+async fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
+    if let Ok(cmd) = app.shell().sidecar("gs") {
+        if let Ok(output) = cmd.arg("--version").output().await {
+            if sidecar_reports_version(
+                output.status.success(),
+                &String::from_utf8_lossy(&output.stdout),
+            ) {
+                return true;
+            }
+        }
     }
-    // Fallback to system PATH
+    // Fallback to system PATH — reached whenever the bundled sidecar is a stub.
     find_system_ghostscript().is_ok()
 }
 
@@ -233,6 +300,19 @@ struct ProcessState {
     gs_child: Mutex<Option<CommandChild>>,
 }
 
+/// Decodes any image the app accepts as input.
+///
+/// This is the single door every user-supplied image comes through on the Rust
+/// side. HEIC is routed to the OS decoder (see heic.rs) because the `image` crate
+/// has no HEIF support; everything else decodes as before. Adding a format here
+/// makes it work in every image tool at once.
+fn decode_input_image(bytes: &[u8]) -> Result<image::DynamicImage, String> {
+    if heic::is_heic(bytes) {
+        return heic::decode(bytes).map(|(img, _frames)| img);
+    }
+    image::load_from_memory(bytes).map_err(|e| format!("Failed to decode image: {}", e))
+}
+
 /// Core image processing logic — no Tauri dependency.
 /// Called by the `process_image` command and directly by unit tests.
 fn encode_image(
@@ -244,8 +324,7 @@ fn encode_image(
     resize_exact: bool,
 ) -> Result<Vec<u8>, String> {
     // Decode image from source bytes
-    let mut img = image::load_from_memory(source_bytes)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let mut img = decode_input_image(source_bytes)?;
 
     // Resize if dimensions provided
     if let (Some(w), Some(h)) = (resize_width, resize_height) {
@@ -321,8 +400,7 @@ fn rotate_image(
     let source_bytes = std::fs::read(&source_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let img = image::load_from_memory(&source_bytes)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let img = decode_input_image(&source_bytes)?;
 
     let rotated = match rotation {
         90 => img.rotate90(),
@@ -405,6 +483,102 @@ fn process_image(
         resize_exact,
     )?;
     Ok(Response::new(output_buf))
+}
+
+/// Decodes a HEIC to PNG for the webview.
+///
+/// The webview cannot decode HEIC — `createImageBitmap` and `<img>` both fail on
+/// it — so previews, thumbnails and dimension reads go through here and get PNG
+/// bytes back. Only ever called for files the frontend has already identified as
+/// HEIC; every other format is read straight off disk.
+#[tauri::command]
+fn decode_heic_preview(source_path: String) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
+    let source_bytes = std::fs::read(&source_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let (img, _frames) = heic::decode(&source_bytes)?;
+
+    let mut output_buf: Vec<u8> = Vec::new();
+    let encoder = PngEncoder::new_with_quality(
+        Cursor::new(&mut output_buf),
+        CompressionType::Fast,
+        image::codecs::png::FilterType::Adaptive,
+    );
+    img.write_with_encoder(encoder)
+        .map_err(|e| format!("PNG encoding failed: {}", e))?;
+
+    Ok(Response::new(output_buf))
+}
+
+/// How many images a HEIC container holds, so the UI can say when it used the
+/// primary one out of several rather than silently picking a frame.
+#[tauri::command]
+fn heic_frame_count(source_path: String) -> Result<usize, String> {
+    validate_source_path(&source_path)?;
+    let source_bytes = std::fs::read(&source_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    heic::frame_count(&source_bytes)
+}
+
+/// Reads the text on a scanned PDF and where it sits.
+///
+/// Returns JSON: one entry per page with its size in points and the recognised
+/// blocks positioned in PDF user space, ready for the caller to lay an invisible
+/// text layer over. Building that layer is done with pdf-lib on the TypeScript
+/// side, where this app's PDF writing already lives.
+///
+/// Recognition is CPU-bound and can take seconds per page, so it runs on a
+/// blocking thread and emits `ocr-progress` as `[page, total]` before each page —
+/// a long document must not look like a hang.
+#[tauri::command]
+async fn ocr_pdf(
+    app: tauri::AppHandle,
+    source_path: String,
+    languages: Vec<String>,
+) -> Result<String, String> {
+    validate_source_path(&source_path)?;
+
+    let handle = app.clone();
+    let pages = tauri::async_runtime::spawn_blocking(move || {
+        ocr::recognize_pdf(&source_path, &languages, |index, total| {
+            let _ = handle.emit("ocr-progress", (index, total));
+        })
+    })
+    .await
+    .map_err(|e| format!("Text recognition could not be started: {e}"))??;
+
+    serde_json::to_string(&pages).map_err(|e| format!("Could not encode the result: {e}"))
+}
+
+/// Which languages this machine can recognise text in.
+///
+/// Queried rather than hardcoded so the picker can never offer a language the
+/// installed macOS cannot actually do, and never hides one it can.
+#[tauri::command]
+fn ocr_languages() -> Result<Vec<String>, String> {
+    ocr::supported_languages()
+}
+
+/// Writes a searchable copy of a scanned PDF from text already recognised.
+///
+/// Split from `ocr_pdf` on purpose. Recognition is the slow part and its result
+/// is useful on its own — the UI shows what was found and how confident it is
+/// before anything is written, and redaction search uses the same data. Passing
+/// it back here avoids recognising the document twice.
+#[tauri::command]
+async fn write_searchable_pdf(source_path: String, pages_json: String) -> Result<Response, String> {
+    validate_source_path(&source_path)?;
+    let pages: Vec<ocr::OcrPage> = serde_json::from_str(&pages_json)
+        .map_err(|e| format!("Could not read the recognised text: {e}"))?;
+
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        ocr::build_searchable_pdf(&source_path, &pages)
+    })
+    .await
+    .map_err(|e| format!("Writing the searchable PDF could not be started: {e}"))??;
+
+    Ok(Response::new(bytes))
 }
 
 /// Cancel an in-progress compression by killing the GS child process.
@@ -1237,7 +1411,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     results.insert("pandoc", pandoc_ok);
 
     // Ghostscript (bundled sidecar or system-installed)
-    let gs_ok = is_ghostscript_available(&app);
+    let gs_ok = is_ghostscript_available(&app).await;
     results.insert("ghostscript", gs_ok);
 
     // Native webview HTML → PDF export (WKWebView createPDF) — macOS only for now.
@@ -1918,7 +2092,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -2538,6 +2712,59 @@ mod tests {
         assert!(msg.contains("no error output"));
     }
 
+
+    // ─── GS-SIDECAR-02 — the bundled binary must run on someone else's machine ─
+    //
+    // Regression test (P009). The Ghostscript this repo shipped until 2026-08-26
+    // was copied from Homebrew and referenced eleven libraries by absolute path
+    // under /opt/homebrew. Those exist only on a machine with Homebrew and the
+    // matching packages, so the "bundled" binary ran on a developer's machine and
+    // essentially nowhere else — PDF compression was broken for every real user.
+    //
+    // The existing GS-SIDECAR-01 could not catch it: the file was present and the
+    // right size. What matters is not that a binary exists but that it can load.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn the_bundled_ghostscript_has_no_package_manager_dependencies() {
+        let binary = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("binaries")
+            .join("gs-aarch64-apple-darwin");
+        if !binary.exists() {
+            return; // other targets legitimately ship a stub
+        }
+        // A stub script is not a Mach-O binary; otool would fail on it, and a
+        // stub is a deliberate state rather than a regression.
+        let head = std::fs::read(&binary).expect("must read the sidecar");
+        if head.starts_with(b"#") {
+            return;
+        }
+
+        let output = std::process::Command::new("otool")
+            .arg("-L")
+            .arg(&binary)
+            .output()
+            .expect("otool must run");
+        let linked = String::from_utf8_lossy(&output.stdout);
+
+        let foreign: Vec<&str> = linked
+            .lines()
+            .map(str::trim)
+            .filter(|l| l.starts_with('/'))
+            // otool's first line is the binary's own path, terminated by ':'
+            .filter(|l| !l.ends_with(':'))
+            .filter(|l| !l.starts_with("/usr/lib") && !l.starts_with("/System"))
+            .collect();
+
+        assert!(
+            foreign.is_empty(),
+            "the bundled Ghostscript depends on libraries that will not exist on a \
+             user's machine, so PDF compression will fail with a dyld error. Build it \
+             with scripts/build_ghostscript_sidecar.sh, which links Ghostscript's own \
+             copies instead. Offending references:\n{}",
+            foreign.join("\n")
+        );
+    }
+
     // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────
     //
     // Papercut ships Ghostscript as a sidecar binary in src-tauri/binaries/.
@@ -2584,7 +2811,7 @@ mod tests {
                 .join(name)
         }
 
-        fn read_fixture(name: &str) -> Vec<u8> {
+        pub(super) fn read_fixture(name: &str) -> Vec<u8> {
             let mut file = std::fs::File::open(fixture_path(name))
                 .expect(&format!("fixture {} must exist", name));
             let mut bytes = Vec::new();
@@ -2675,6 +2902,383 @@ mod tests {
             let out = result.unwrap();
             assert!(has_jpeg_magic(&out), "output must be valid JPEG");
             assert!(out.len() > 0, "output must not be empty");
+        }
+    }
+
+
+    // ─── IMG-HEIC-01 — HEIC input, the iPhone photo path ────────────────────────
+    //
+    // Decoding runs on macOS Image I/O (see heic.rs), so the tests that actually
+    // decode a HEIC are gated to macOS and DO NOT run on the ubuntu CI runner.
+    // What runs everywhere: brand sniffing, the non-HEIC path, and the honest
+    // error produced on platforms that have no decoder.
+
+    mod heic_input {
+        use super::super::{decode_input_image, encode_image, heic};
+        use heic::{frame_count, is_heic};
+        use super::fixture_integration::read_fixture;
+
+        #[test]
+        fn heic_fixtures_are_recognised_by_their_ftyp_brand() {
+            assert!(is_heic(&read_fixture("sample.heic")));
+            assert!(is_heic(&read_fixture("sample-multi.heic")));
+        }
+
+        #[test]
+        fn ordinary_images_are_not_mistaken_for_heic() {
+            assert!(!is_heic(&read_fixture("sample.jpg")));
+            assert!(!is_heic(&read_fixture("sample.png")));
+        }
+
+        #[test]
+        fn a_truncated_header_does_not_panic_the_sniffer() {
+            assert!(!is_heic(&[]));
+            assert!(!is_heic(b"\0\0\0"));
+            assert!(!is_heic(b"\0\0\0\x18ftyp"));
+        }
+
+        #[test]
+        fn non_heic_input_still_decodes_on_every_platform() {
+            let img = decode_input_image(&read_fixture("sample.jpg"))
+                .expect("JPEG must still decode through the new entry point");
+            assert_eq!((img.width(), img.height()), (300, 200));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn heic_decodes_to_its_real_dimensions() {
+            let img = decode_input_image(&read_fixture("sample.heic"))
+                .expect("sample.heic must decode");
+            assert_eq!((img.width(), img.height()), (300, 200));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_multi_image_heic_uses_the_primary_image() {
+            // sample-multi.heic holds two frames: primary 120x80, secondary 60x40.
+            // Taking the primary is the defensible behaviour; silently taking
+            // whichever frame happens to be last is what this pins against.
+            let img = decode_input_image(&read_fixture("sample-multi.heic"))
+                .expect("multi-image heic must decode");
+            assert_eq!((img.width(), img.height()), (120, 80));
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn decoded_pixels_keep_their_real_colours() {
+            // sample-multi.heic's primary frame is solid red (220, 40, 40).
+            // Pins the channel order coming out of Core Graphics: an alpha-First
+            // bitmap format yields ARGB instead of RGBA, which shifts every
+            // channel by one. Dimensions still pass, and every photo comes out
+            // looking wrong. Verified to fail under that mutation.
+            let img = decode_input_image(&read_fixture("sample-multi.heic"))
+                .expect("multi-image heic must decode");
+            let px = img.to_rgba8().get_pixel(60, 40).0;
+            assert!(px[0] > 200, "red channel must be red, got {:?}", px);
+            assert!(px[2] < 80, "blue channel must be blue, got {:?}", px);
+            assert_eq!(px[3], 255, "an opaque photo must stay opaque");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn frame_count_reports_every_frame_so_the_user_can_be_told() {
+            assert_eq!(frame_count(&read_fixture("sample.heic")).unwrap(), 1);
+            assert_eq!(frame_count(&read_fixture("sample-multi.heic")).unwrap(), 2);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_converts_to_jpeg() {
+            let out = encode_image(&read_fixture("sample.heic"), 85, "jpeg", None, None, false)
+                .expect("HEIC -> JPEG must succeed");
+            assert!(out.len() > 2 && out[0] == 0xFF && out[1] == 0xD8, "output must be JPEG");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_converts_to_png_and_webp() {
+            let heic = read_fixture("sample.heic");
+            let png = encode_image(&heic, 85, "png", None, None, false).expect("HEIC -> PNG");
+            assert_eq!(&png[..4], b"\x89PNG", "output must be PNG");
+            let webp = encode_image(&heic, 85, "webp", None, None, false).expect("HEIC -> WebP");
+            assert_eq!(&webp[..4], b"RIFF", "output must be WebP");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_iphone_photo_resizes_like_any_other_image() {
+            let out = encode_image(&read_fixture("sample.heic"), 85, "jpeg", Some(150), Some(100), false)
+                .expect("HEIC resize must succeed");
+            let decoded = image::load_from_memory(&out).expect("resized output must decode");
+            assert_eq!((decoded.width(), decoded.height()), (150, 100));
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        #[test]
+        fn platforms_without_a_decoder_say_so_plainly() {
+            let err = decode_input_image(&read_fixture("sample.heic"))
+                .expect_err("HEIC must not decode off macOS");
+            assert!(err.contains("macOS"), "error must name the platform limit, got: {err}");
+        }
+    }
+
+
+
+    // ─── OCR-01 — Text recognition on a scanned PDF ────────────────────────────
+    //
+    // Runs on Apple Vision (see ocr.rs), so the tests that actually recognise
+    // text are macOS-gated and DO NOT run on the ubuntu CI runner — the same
+    // arrangement as the HEIC decode tests. What runs everywhere is the honest
+    // error on a platform with no engine.
+    //
+    // test-fixtures/scanned.pdf is a genuinely image-only PDF: two A4 pages,
+    // each a rasterised image of known text with no text layer at all. The known
+    // wording is what lets these assert on the result rather than merely on the
+    // fact that something came back.
+
+    mod ocr_recognition {
+        use super::super::ocr;
+        use super::fixture_integration::read_fixture;
+
+        fn fixture_path(name: &str) -> String {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .parent().expect("workspace root")
+                .join("test-fixtures").join(name)
+                .to_string_lossy().to_string()
+        }
+
+        #[test]
+        fn the_fixture_really_is_image_only() {
+            // If this ever gains a text layer the OCR tests below become
+            // meaningless without failing — they would be reading the layer.
+            let bytes = read_fixture("scanned.pdf");
+            let raw = String::from_utf8_lossy(&bytes);
+            assert!(!raw.contains("MUSTERMANN"), "fixture must not carry a text layer");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_scanned_page_yields_the_text_that_is_on_it() {
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("scanned.pdf must be recognised");
+            assert_eq!(pages.len(), 2, "both pages must be read");
+
+            let page_one: String = pages[0].blocks.iter().map(|b| b.text.as_str())
+                .collect::<Vec<_>>().join(" ");
+            assert!(page_one.contains("MUSTERMANN"), "got: {page_one}");
+            assert!(page_one.contains("RESIDENCE PERMIT"), "got: {page_one}");
+
+            let page_two: String = pages[1].blocks.iter().map(|b| b.text.as_str())
+                .collect::<Vec<_>>().join(" ");
+            assert!(page_two.contains("BERLIN"), "got: {page_two}");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn text_is_positioned_inside_the_page_it_came_from() {
+            // The acceptance criterion is that the text layer aligns with the
+            // page. Boxes outside the page mean the layer lands nowhere useful,
+            // and a coordinate flip would put every line on the wrong half.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let page = &pages[0];
+            assert!((page.width - 595.0).abs() < 2.0, "A4 width in points, got {}", page.width);
+            assert!((page.height - 842.0).abs() < 2.0, "A4 height in points, got {}", page.height);
+
+            for block in &page.blocks {
+                assert!(block.x >= 0.0 && block.x + block.width <= page.width + 1.0,
+                        "{:?} runs off the page horizontally", block);
+                assert!(block.y >= 0.0 && block.y + block.height <= page.height + 1.0,
+                        "{:?} runs off the page vertically", block);
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_heading_sits_above_the_body_text() {
+            // Pins the vertical origin. Vision and PDF both put y=0 at the
+            // bottom; if that were flipped the page would still "look fine" in
+            // every box-bounds check above while reading upside down.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let find = |needle: &str| pages[0].blocks.iter()
+                .find(|b| b.text.contains(needle))
+                .unwrap_or_else(|| panic!("missing {needle}"))
+                .y;
+            assert!(find("RESIDENCE") > find("Nationality"),
+                    "the title must sit higher up the page than the last line");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn every_page_is_reported_before_it_is_worked_on() {
+            let mut seen = Vec::new();
+            ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()],
+                               |i, total| seen.push((i, total)))
+                .expect("must recognise");
+            assert_eq!(seen, vec![(0, 2), (1, 2)]);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn clean_print_comes_back_confident() {
+            // The flip side of reporting confidence: on a clean render it must
+            // actually be high, or a low-confidence warning would fire always.
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let worst = pages[0].blocks.iter().map(|b| b.confidence).fold(1.0f32, f32::min);
+            assert!(worst > 0.5, "clean text should not read as uncertain, got {worst}");
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_file_that_is_not_a_pdf_fails_clearly() {
+            let err = ocr::recognize_pdf(&fixture_path("sample.jpg"), &[], |_, _| {})
+                .expect_err("a JPEG is not a PDF");
+            assert!(err.contains("could not be opened"), "got: {err}");
+        }
+
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_output_pdf_is_actually_searchable() {
+            // The whole point of OCR, and the one claim worth proving end to end:
+            // recognise a page that has no text, write the layer, then read the
+            // text back out of the result with a different API than wrote it.
+            use std::io::Write;
+
+            let src = fixture_path("scanned.pdf");
+            let pages = ocr::recognize_pdf(&src, &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            let bytes = ocr::build_searchable_pdf(&src, &pages)
+                .expect("must build a searchable PDF");
+            assert!(bytes.starts_with(b"%PDF-"), "output must be a PDF");
+
+            let out = std::env::temp_dir().join("papercut-ocr-searchable.pdf");
+            std::fs::File::create(&out).unwrap().write_all(&bytes).unwrap();
+
+            let extracted = ocr::extract_text(out.to_str().unwrap())
+                .expect("must read the result back");
+            assert!(extracted.contains("MUSTERMANN"), "extracted: {extracted}");
+            assert!(extracted.contains("BERLIN"), "extracted: {extracted}");
+
+            let _ = std::fs::remove_file(&out);
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_source_pdf_still_has_no_text_of_its_own() {
+            // Pins that the assertion above is really testing the layer we wrote.
+            // If the fixture ever gained a text layer, that test would pass while
+            // build_searchable_pdf did nothing at all.
+            let extracted = ocr::extract_text(&fixture_path("scanned.pdf"))
+                .expect("must open the fixture");
+            assert!(
+                !extracted.contains("MUSTERMANN"),
+                "the source must have no text layer, got: {extracted}"
+            );
+        }
+
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_text_layer_survives_beyond_latin_1() {
+            // pdf-lib's standard fonts are WinAnsi and throw on "Ş", which is why
+            // the layer is written with Core Text instead: system fonts cover
+            // every language Vision can read, substituting per glyph. Turkish and
+            // German are what F13b targets; Greek and Japanese are here to pin
+            // that the fallback is real rather than a wider single font.
+            use std::io::Write;
+
+            let phrases = [
+                "Şişli Güngören İstanbul",   // Turkish
+                "Müller Straße Köln",         // German
+                "Ελληνικά κείμενο",           // Greek
+                "日本語のテキスト",              // Japanese
+            ];
+            let blocks: Vec<_> = phrases.iter().enumerate().map(|(i, text)| ocr::OcrBlock {
+                text: (*text).to_string(),
+                x: 50.0,
+                y: 700.0 - (i as f64 * 60.0),
+                width: 300.0,
+                height: 20.0,
+                confidence: 1.0,
+            }).collect();
+            let page = ocr::OcrPage { index: 0, width: 595.0, height: 842.0, blocks };
+
+            let bytes = ocr::build_searchable_pdf(&fixture_path("scanned.pdf"), &[page])
+                .expect("must build");
+            let out = std::env::temp_dir().join("papercut-ocr-unicode.pdf");
+            std::fs::File::create(&out).unwrap().write_all(&bytes).unwrap();
+
+            let extracted = ocr::extract_text(out.to_str().unwrap()).expect("must read back");
+            for phrase in phrases {
+                assert!(extracted.contains(phrase), "{phrase:?} did not survive: {extracted}");
+            }
+            let _ = std::fs::remove_file(&out);
+        }
+
+
+        /// Prints real OCR output as JSON, for use as a TypeScript test fixture.
+        /// Ignored by default; run with:
+        ///   cargo test --lib dump_real_ocr_output -- --ignored --nocapture
+        ///
+        /// The TS search tests must be driven by what the engine actually emits,
+        /// not by what it is assumed to emit. A previous search fix in this repo
+        /// shipped broken for exactly that reason.
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn dump_real_ocr_output() {
+            let pages = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &["en-US".to_string()], |_, _| {})
+                .expect("must recognise");
+            println!("{}", serde_json::to_string_pretty(&pages).unwrap());
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        #[test]
+        fn platforms_without_an_engine_say_so_plainly() {
+            let err = ocr::recognize_pdf(&fixture_path("scanned.pdf"), &[], |_, _| {})
+                .expect_err("must not recognise off macOS");
+            assert!(err.contains("macOS"), "got: {err}");
+        }
+    }
+
+    // ─── DEP-02 — Ghostscript availability must mean "it works" ────────────────
+    //
+    // is_ghostscript_available returned true whenever a sidecar *command object*
+    // could be constructed, which it always can — the file's existence is never
+    // checked, let alone whether it runs. Three of the four bundled sidecars are
+    // stub scripts that print "gs not bundled on this platform" and exit 1, so
+    // the app reported Ghostscript available on every platform and the disabled
+    // state with its install hint never appeared.
+
+    mod ghostscript_probe {
+        use super::super::sidecar_reports_version;
+
+        #[test]
+        fn a_real_ghostscript_version_counts_as_available() {
+            assert!(sidecar_reports_version(true, "10.02.1\n"));
+            assert!(sidecar_reports_version(true, "9.56.1"));
+        }
+
+        #[test]
+        fn the_bundled_stub_does_not_count_as_available() {
+            // Exactly what the three placeholder sidecars emit today.
+            assert!(!sidecar_reports_version(false, "gs not bundled on this platform\n"));
+        }
+
+        #[test]
+        fn a_zero_exit_with_prose_is_still_not_a_version() {
+            // Guards the weaker check of trusting the exit code alone: a stub that
+            // forgot to exit non-zero would otherwise read as a working install.
+            assert!(!sidecar_reports_version(true, "gs not bundled on this platform"));
+            assert!(!sidecar_reports_version(true, ""));
+        }
+
+        #[test]
+        fn leading_whitespace_does_not_hide_the_version() {
+            assert!(sidecar_reports_version(true, "  10.02.1  "));
         }
     }
 

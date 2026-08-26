@@ -1,19 +1,24 @@
 // RedactStep: Page navigation + rectangle drawing + text search UI for PDF redaction.
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Search, ChevronLeft, ChevronRight, Trash2, Loader2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trash2, Loader2, ScanText } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
 import { cn } from '@/lib/utils';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
-import { isAlreadyMarked, matchToRect, REDACTION_SCOPES, type RedactionScope } from '@/lib/redactionScope';
+import { findTextMatchesInOcr } from '@/lib/ocrTextSearch';
+import { recognisePdf, type OcrPage } from '@/lib/ocrProcessor';
+import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
+import { plural, t } from '@/i18n';
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
+  /** Path on disk. OCR reads from the file; null disables the scan fallback. */
+  sourcePath?: string | null;
   onComplete: (redactions: RedactionRect[], color: string) => void;
   onBack: () => void;
 }
@@ -23,7 +28,12 @@ function genId(prefix: string): string {
   return `${prefix}-${nextId++}`;
 }
 
-export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
+export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactStepProps) {
+  // Text recognised from a scan, kept so a second search does not re-read the
+  // document — recognition is seconds per page.
+  const [ocrPages, setOcrPages] = useState<OcrPage[] | null>(null);
+  const [isReadingScan, setIsReadingScan] = useState(false);
+  const [scanReadError, setScanReadError] = useState<string | null>(null);
   const [allRedactions, setAllRedactions] = useState<RedactionRect[]>([]);
   const [boxColor, setBoxColor] = useState(DEFAULT_REDACTION_COLOR);
   const [currentPage, setCurrentPage] = useState(0);
@@ -102,6 +112,15 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
     // Opens the document here rather than reaching for one loaded elsewhere: a
     // ref that has not been populated yet -- or was nulled by a cleanup -- made
     // this return silently, which looks exactly like "no matches".
+    // Once a scan has been read, search that instead: a page with no text layer
+    // returns nothing from pdf.js no matter how many times it is asked.
+    if (ocrPages) {
+      setSearchResults(findTextMatchesInOcr(ocrPages, searchQuery));
+      setSearchRan(true);
+      setIsSearching(false);
+      return;
+    }
+
     let doc: pdfjsLib.PDFDocumentProxy | null = null;
     try {
       doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
@@ -113,7 +132,24 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
       setSearchRan(true);
       setIsSearching(false);
     }
-  }, [searchQuery, pdfBytes]);
+  }, [searchQuery, pdfBytes, ocrPages]);
+
+  /** Reads a scanned document, then repeats the search against what was read. */
+  const handleReadScan = useCallback(async () => {
+    if (!sourcePath) return;
+    setIsReadingScan(true);
+    setScanReadError(null);
+    try {
+      const pages = await recognisePdf(sourcePath, { languages: ['en-US'] });
+      setOcrPages(pages);
+      setSearchResults(findTextMatchesInOcr(pages, searchQuery));
+      setSearchRan(true);
+    } catch (err) {
+      setScanReadError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsReadingScan(false);
+    }
+  }, [sourcePath, searchQuery]);
 
   const handleAddSearchResult = useCallback(
     (match: TextMatch) => {
@@ -152,7 +188,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-sm text-muted-foreground">
-              Page {currentPage + 1} of {totalPages}
+              {t('common.pageOf', { page: currentPage + 1, total: totalPages })}
             </span>
             <Button
               variant="outline"
@@ -185,23 +221,23 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
         </div>
 
         {/* Side panel: search + summary */}
-        <div className="w-72 flex-none overflow-y-auto border-l border-border p-4 space-y-5">
-          <h3 className="text-sm font-semibold text-foreground">Redaction Tools</h3>
+        <div className="w-72 flex-none overflow-y-auto border-s border-border p-4 space-y-5">
+          <h3 className="text-sm font-semibold text-foreground">{t('redactPdf.redactionTools')}</h3>
 
           {/* Drawing instructions */}
           <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
             <p className="text-xs text-muted-foreground">
-              Draw rectangles on the page to mark areas for redaction. Use text search below to find and redact specific text.
+              {t('redactPdf.drawRectanglesOnThePage')}
             </p>
           </div>
 
           {/* Text search */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">Text Search</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('redactPdf.textSearch')}</label>
             <div className="flex gap-1.5">
               <input
                 type="text"
-                placeholder="Search text..."
+                placeholder={t('redactPdf.searchText')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -224,11 +260,49 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
           {/* Search results */}
           {searchRan && !isSearching && searchResults.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              No matches for &ldquo;{searchQuery}&rdquo;. Scanned pages with no
-              selectable text — an image-only scan, for instance — cannot be
-              searched.
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {ocrPages
+                  ? t('redactPdf.noMatchesInScan', { query: searchQuery })
+                  : t('redactPdf.noMatches', { query: searchQuery })}
+              </p>
+
+              {/* A scan has no text layer, so searching it again changes nothing.
+                  Reading it first is what makes the search possible at all. */}
+              {!ocrPages && sourcePath && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReadScan}
+                    disabled={isReadingScan}
+                    className="w-full"
+                  >
+                    {isReadingScan ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />
+                        {t('redactPdf.readingScan')}
+                      </>
+                    ) : (
+                      <>
+                        <ScanText className="w-3.5 h-3.5 me-2" />
+                        {t('redactPdf.readScanAndSearch')}
+                      </>
+                    )}
+                  </Button>
+                  {scanReadError && (
+                    <p className="text-xs text-destructive">{scanReadError}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {ocrPages && searchResults.length > 0 && (
+            // Boxes on a scan are interpolated across a whole line of recognised
+            // text, so they are close but not exact. Saying so matters here: this
+            // covers content permanently.
+            <p className="text-xs text-muted-foreground">{t('redactPdf.scanBoxesApproximate')}</p>
           )}
 
           {searchResults.length > 0 && (
@@ -237,7 +311,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                   whole line it sits on. The search returns both boxes, so this
                   costs no second search. */}
               <div className="flex gap-1.5">
-                {REDACTION_SCOPES.map((s) => (
+                {redactionScopes().map((s) => (
                   <button
                     key={s.value}
                     type="button"
@@ -257,14 +331,14 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground">
-                  {searchResults.length} match{searchResults.length !== 1 ? 'es' : ''} found
+                  {t('redactPdf.matchesFound', { matches: plural('count.match', searchResults.length) })}
                 </p>
                 <button
                   type="button"
                   onClick={handleAddAllSearchResults}
                   className="text-xs text-primary hover:text-primary/80 underline"
                 >
-                  Add all
+                  {t('redactPdf.addAll')}
                 </button>
               </div>
               <div className="max-h-48 overflow-y-auto space-y-1">
@@ -290,7 +364,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
                         }
                         disabled={alreadyAdded}
                       >
-                        {alreadyAdded ? 'Added' : 'Add'}
+                        {alreadyAdded ? t('common.added') : t('common.add')}
                       </button>
                     </div>
                   );
@@ -301,33 +375,32 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
 
           {/* Box colour */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground">Box colour</h4>
+            <h4 className="text-xs font-medium text-muted-foreground">{t('redactPdf.boxColour')}</h4>
             <ColorPicker value={boxColor} onChange={setBoxColor} />
             {isLightColor(boxColor) && (
               // The content underneath is destroyed whatever colour this is --
               // the page is replaced by a flat image. What a pale box costs is
               // the reader's ability to tell that anything was removed at all.
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                A box this pale is hard to see on a white page. The content
-                underneath is still permanently removed.
+                {t('toolSidebarPanel.paleBoxWarning')}
               </p>
             )}
           </div>
 
           {/* Redaction summary */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground">Summary</h4>
+            <h4 className="text-xs font-medium text-muted-foreground">{t('redactPdf.summary')}</h4>
             <div className="rounded-md border border-border px-3 py-2 space-y-1">
               <p className="text-sm font-semibold text-foreground">
-                {allRedactions.length} redaction{allRedactions.length !== 1 ? 's' : ''}
+                {plural('count.redaction', allRedactions.length)}
               </p>
               {redactionsByPage.size > 0 && (
                 <div className="text-xs text-muted-foreground">
                   {Array.from(redactionsByPage.entries())
                     .sort((a, b) => a[0] - b[0])
                     .map(([page, count]) => (
-                      <span key={page} className="mr-2">
-                        Page {page + 1}: {count}
+                      <span key={page} className="me-2">
+                        {t('redactPdf.pageCount', { page: page + 1, count })}
                       </span>
                     ))}
                 </div>
@@ -338,8 +411,8 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           {/* Clear all */}
           {allRedactions.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleClearAll} className="w-full">
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Clear All
+              <Trash2 className="w-3.5 h-3.5 me-1.5" />
+              {t('redactPdf.clearAll')}
             </Button>
           )}
         </div>
@@ -348,7 +421,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
       {/* Bottom bar */}
       <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button
@@ -356,7 +429,7 @@ export function RedactStep({ pdfBytes, onComplete, onBack }: RedactStepProps) {
           onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
         >
-          Apply Redactions ({allRedactions.length})
+          {t('redactPdf.applyRedactions', { count: allRedactions.length })}
         </Button>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
+import { plural, t } from '@/i18n';
 
 type TabMode = 'range' | 'every-n' | 'individual';
 
@@ -127,7 +128,9 @@ export function SplitSelectStep({
           return pages;
         });
         return groups.map((pages) => ({
-          label: pages.length === 1 ? `Page ${pages[0]}` : `Pages ${pages[0]}–${pages[pages.length - 1]}`,
+          label: pages.length === 1
+            ? t('split.pageN', { page: pages[0] })
+            : t('split.pagesRange', { from: pages[0], to: pages[pages.length - 1] }),
           count: pages.length,
         }));
       }
@@ -136,7 +139,7 @@ export function SplitSelectStep({
         for (let i = 1; i <= pageCount; i += everyN) {
           const end = Math.min(i + everyN - 1, pageCount);
           groups.push({
-            label: i === end ? `Page ${i}` : `Pages ${i}–${end}`,
+            label: i === end ? t('split.pageN', { page: i }) : t('split.pagesRange', { from: i, to: end }),
             count: end - i + 1,
           });
         }
@@ -144,7 +147,7 @@ export function SplitSelectStep({
       }
       case 'individual':
         return Array.from({ length: pageCount }, (_, i) => ({
-          label: `Page ${i + 1}`,
+          label: t('split.pageN', { page: i + 1 }),
           count: 1,
         }));
     }
@@ -160,13 +163,13 @@ export function SplitSelectStep({
     <div className="flex flex-1 flex-col p-6">
       <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Select Pages</h2>
-          <p className="text-sm text-muted-foreground">{fileName} — {pageCount} page{pageCount !== 1 ? 's' : ''}</p>
+          <h2 className="text-lg font-semibold text-foreground">{t('pdfToJpg.selectPages')}</h2>
+          <p className="text-sm text-muted-foreground">{fileName} — {plural('count.page', pageCount)}</p>
         </div>
 
         {/* Mode tabs */}
         <div className="flex gap-1 p-1 rounded-lg bg-muted">
-          {([['range', 'By Range'], ['every-n', 'Every N Pages'], ['individual', 'Extract All']] as const).map(([key, label]) => (
+          {([['range', t('splitSelectStep.byRange')], ['every-n', t('splitSelectStep.everyNPages')], ['individual', t('splitSelectStep.extractAll')]] as const).map(([key, label]) => (
             <button
               key={key}
               type="button"
@@ -186,7 +189,7 @@ export function SplitSelectStep({
             {/* Text input */}
             <div>
               <label htmlFor="range-input" className="text-xs font-medium text-muted-foreground mb-1 block">
-                Page ranges (e.g., 1-3, 5, 7-10)
+                {t('split.pageRangesEG1')}
               </label>
               <input
                 id="range-input"
@@ -221,11 +224,11 @@ export function SplitSelectStep({
                       className="w-full h-full"
                       canvasClassName="w-full h-full object-cover"
                     />
-                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">
+                    <span className="absolute bottom-0 start-0 end-0 bg-black/60 text-white text-[10px] text-center py-0.5">
                       {pageNum}
                     </span>
                     {isSelected && (
-                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                      <div className="absolute top-1 end-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                         <svg viewBox="0 0 12 12" className="w-3 h-3 text-primary-foreground"><path d="M2 6l3 3 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       </div>
                     )}
@@ -241,7 +244,7 @@ export function SplitSelectStep({
           <div className="space-y-3">
             <div>
               <label htmlFor="every-n-input" className="text-xs font-medium text-muted-foreground mb-1 block">
-                Split every N pages
+                {t('split.splitEveryNPages')}
               </label>
               <input
                 id="every-n-input"
@@ -254,7 +257,7 @@ export function SplitSelectStep({
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              This will create {Math.ceil(pageCount / everyN)} file{Math.ceil(pageCount / everyN) !== 1 ? 's' : ''}.
+              {t('split.thisWillCreate', { files: plural('count.file', Math.ceil(pageCount / everyN)) })}
             </p>
           </div>
         )}
@@ -263,10 +266,10 @@ export function SplitSelectStep({
         {mode === 'individual' && (
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground">
-              Extract each page as a separate PDF.
+              {t('split.extractEachPageAsA')}
             </p>
             <p className="text-sm font-medium text-foreground mt-1">
-              This will create {pageCount} file{pageCount !== 1 ? 's' : ''}.
+              {t('split.thisWillCreate', { files: plural('count.file', pageCount) })}
             </p>
           </div>
         )}
@@ -274,12 +277,12 @@ export function SplitSelectStep({
         {/* Preview panel */}
         {previewInfo && previewInfo.length > 0 && previewInfo.length <= 20 && (
           <div className="rounded-lg border border-border bg-card p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Output files ({previewInfo.length})</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">{t('split.outputFiles', { count: previewInfo.length })}</p>
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {previewInfo.map((item, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-foreground">{item.label}</span>
-                  <span className="text-muted-foreground">{item.count} page{item.count !== 1 ? 's' : ''}</span>
+                  <span className="text-muted-foreground">{plural('count.page', item.count)}</span>
                 </div>
               ))}
             </div>
@@ -290,17 +293,17 @@ export function SplitSelectStep({
       {/* Bottom bar */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 mt-4">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Splitting…
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('split.splitting')}
             </>
           ) : (
-            'Split'
+            t('split.split')
           )}
         </Button>
       </div>

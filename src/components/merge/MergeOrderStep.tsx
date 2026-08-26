@@ -5,6 +5,7 @@ import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import type { MergeInput } from '@/lib/pdfMerge';
+import { plural, t } from '@/i18n';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -87,7 +88,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
       const result = await mergePdfs(files);
       onMerged(result.bytes);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Merge failed.';
+      const message = err instanceof Error ? err.message : t('mergeOrderStep.mergeFailed');
       setError(message);
       setIsMerging(false);
     }
@@ -97,9 +98,12 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
     <div className="flex flex-1 flex-col p-6">
       <div className="w-full max-w-lg mx-auto space-y-4 flex-1">
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-semibold text-foreground">Order & Merge</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('merge.orderMerge')}</h2>
           <p className="text-sm text-muted-foreground">
-            Drag to reorder. Total: {totalPages} page{totalPages !== 1 ? 's' : ''} from {files.length} files.
+            {t('mergeOrderStep.dragToReorderTotal', {
+              pages: plural('count.page', totalPages),
+              files: plural('count.file', files.length),
+            })}
           </p>
         </div>
 
@@ -124,7 +128,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
               {file.thumbnailUrl ? (
                 <img
                   src={file.thumbnailUrl}
-                  alt={`Page 1 of ${file.fileName}`}
+                  alt={t('merge.pageOneOf', { name: file.fileName })}
                   className="w-10 h-12 object-cover rounded border border-border flex-none"
                 />
               ) : (
@@ -133,7 +137,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
 
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">{file.fileName}</p>
-                <p className="text-xs text-muted-foreground">{file.pageCount} page{file.pageCount !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-muted-foreground">{plural('count.page', file.pageCount)}</p>
               </div>
 
               {/* Arrow buttons (accessible fallback) */}
@@ -143,7 +147,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
                   disabled={i === 0}
                   onClick={() => moveItem(i, i - 1)}
                   className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                  aria-label="Move up"
+                  aria-label={t('common.moveUp')}
                 >
                   <ArrowUp className="w-3.5 h-3.5" />
                 </button>
@@ -152,7 +156,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
                   disabled={i === files.length - 1}
                   onClick={() => moveItem(i, i + 1)}
                   className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                  aria-label="Move down"
+                  aria-label={t('common.moveDown')}
                 >
                   <ArrowDown className="w-3.5 h-3.5" />
                 </button>
@@ -172,17 +176,17 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
       {/* Bottom bar */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 mt-4">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={handleMerge} disabled={isMerging}>
           {isMerging ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Merging…
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('merge.merging')}
             </>
           ) : (
-            'Merge & Save'
+            t('merge.mergeAndSave')
           )}
         </Button>
       </div>

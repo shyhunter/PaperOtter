@@ -12,6 +12,7 @@ import {
   WATERMARK_FONT_SIZE_MIN,
   type WatermarkOptions,
 } from '@/lib/pdfWatermark';
+import { t } from '@/i18n';
 
 interface WatermarkOverlayProps {
   pageWidth: number;   // PDF points
@@ -169,7 +170,7 @@ export function WatermarkOverlay({ pageWidth, pageHeight, zoom }: WatermarkOverl
     <div ref={layerRef} className="absolute inset-0" style={{ pointerEvents: 'none' }}>
       <div
         data-testid="watermark-overlay"
-        title="Drag to move"
+        title={t('pdfEditor.dragToMove')}
         onMouseDown={handleMoveMouseDown}
         style={{
           position: 'absolute',
@@ -198,7 +199,7 @@ export function WatermarkOverlay({ pageWidth, pageHeight, zoom }: WatermarkOverl
           told apart by shape as well as position. */}
       <div
         data-testid="watermark-rotate-handle"
-        title="Drag to rotate — hold Shift to snap"
+        title={t('pdfEditor.dragToRotateHoldShift')}
         onMouseDown={handleRotateMouseDown}
         style={{
           position: 'absolute',
@@ -221,7 +222,7 @@ export function WatermarkOverlay({ pageWidth, pageHeight, zoom }: WatermarkOverl
           and this one is always down-and-right of the thing it resizes. */}
       <div
         data-testid="watermark-resize-handle"
-        title="Drag to resize"
+        title={t('pdfEditor.dragToResize')}
         onMouseDown={handleResizeMouseDown}
         style={{
           position: 'absolute',

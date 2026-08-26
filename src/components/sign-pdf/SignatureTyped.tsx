@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { DEFAULT_TEXT_COLOR, normaliseHex } from '@/lib/colorPresets';
+import { t } from '@/i18n';
 
 interface SignatureTypedProps {
   onComplete: (dataUrl: string) => void;
@@ -7,12 +8,18 @@ interface SignatureTypedProps {
   color?: string;
 }
 
-const FONTS: { label: string; family: string }[] = [
-  { label: 'Flowing', family: 'Dancing Script' },
-  { label: 'Casual', family: 'Caveat' },
-  { label: 'Formal', family: 'Great Vibes' },
-  { label: 'Mono', family: 'monospace' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fonts(): { label: string; family: string }[] {
+  return [
+    { label: t('signatureTyped.flowing'), family: 'Dancing Script' },
+    { label: t('signatureTyped.casual'), family: 'Caveat' },
+    { label: t('signatureTyped.formal'), family: 'Great Vibes' },
+    { label: t('signatureTyped.mono'), family: 'monospace' },
+  ];
+}
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 200;
@@ -41,7 +48,7 @@ function calcFontSize(text: string, fontFamily: string, maxWidth: number): numbe
 export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: SignatureTypedProps) {
   const ink = normaliseHex(color);
   const [text, setText] = useState('');
-  const [selectedFont, setSelectedFont] = useState(FONTS[0].family);
+  const [selectedFont, setSelectedFont] = useState(fonts()[0].family);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Compute preview font size
@@ -119,14 +126,14 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Type your name or signature..."
+        placeholder={t('signPdf.typeYourNameOrSignature')}
         className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         maxLength={60}
       />
 
       {/* Font selector */}
       <div className="flex gap-2 flex-wrap">
-        {FONTS.map((f) => (
+        {fonts().map((f) => (
           <button
             key={f.family}
             type="button"
@@ -166,7 +173,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
             {text}
           </span>
         ) : (
-          <span className="text-muted-foreground text-sm">Preview will appear here</span>
+          <span className="text-muted-foreground text-sm">{t('common.previewWillAppearHere')}</span>
         )}
       </div>
 
@@ -176,7 +183,7 @@ export function SignatureTyped({ onComplete, color = DEFAULT_TEXT_COLOR }: Signa
         disabled={!text.trim()}
         className="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
       >
-        Use This Signature
+        {t('common.useThisSignature')}
       </button>
     </div>
   );

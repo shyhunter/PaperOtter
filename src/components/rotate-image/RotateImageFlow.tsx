@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { stripImageExtension } from '@/lib/fileValidation';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -10,8 +11,9 @@ import { rotateImage } from '@/lib/imageRotate';
 import { cn } from '@/lib/utils';
 import type { ImageRotation } from '@/lib/imageRotate';
 import type { ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -29,16 +31,16 @@ function detectFormatFromPath(filePath: string): ImageOutputFormat {
 }
 
 function buildSaveName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-rotated.${ext}`;
 }
 
 function buildSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
   switch (outputFormat) {
-    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
-    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
-    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+    case 'jpeg': return [{ name: t('filter.jpegImage'), extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: t('filter.pngImage'),  extensions: ['png'] }];
+    case 'webp': return [{ name: t('filter.webpImage'), extensions: ['webp'] }];
   }
 }
 
@@ -81,7 +83,8 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const bytes = await readFile(path);
+      // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+      const { bytes } = await readImageBytes(path);
       // Create preview URL from bytes
       const blob = new Blob([bytes]);
       const bitmap = await createImageBitmap(blob);
@@ -100,7 +103,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       setOutputFormat(detectFormatFromPath(path));
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -119,12 +122,12 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'Image Files', extensions: IMAGE_EXTENSIONS }],
+        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
       });
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -154,7 +157,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       setResultBytes(new Uint8Array(bytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Rotation failed.';
+      const message = err instanceof Error ? err.message : t('rotateImageFlow.rotationFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -170,8 +173,8 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Rotate Image</h2>
-              <p className="text-sm text-muted-foreground">Select an image to rotate 90, 180, or 270 degrees.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('rotateImage.rotateImage')}</h2>
+              <p className="text-sm text-muted-foreground">{t('rotateImage.selectAnImageToRotate')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -182,13 +185,13 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select Image
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('common.selectImage')}
                   </>
                 )}
               </Button>
@@ -209,7 +212,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
               <div className="flex items-center justify-center rounded-lg border border-border bg-card p-4 overflow-hidden">
                 <img
                   src={previewUrl}
-                  alt="Preview"
+                  alt={t('common.preview')}
                   className="max-h-48 max-w-full object-contain transition-transform duration-300"
                   style={{ transform: `rotate(${rotation}deg)` }}
                 />
@@ -217,11 +220,11 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
 
               {/* Rotation buttons */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Rotation</p>
+                <p className="text-xs text-muted-foreground">{t('rotateImage.rotation')}</p>
                 <div className="flex items-center justify-center gap-3">
                   <Button variant="outline" size="sm" onClick={handleRotateLeft} disabled={isProcessing}>
-                    <RotateCcw className="w-4 h-4 mr-1.5" />
-                    Left 90
+                    <RotateCcw className="w-4 h-4 me-1.5" />
+                    {t('rotateImage.left90')}
                   </Button>
                   <Button
                     variant="outline"
@@ -232,18 +235,18 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                     180
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleRotateRight} disabled={isProcessing}>
-                    Right 90
-                    <RotateCw className="w-4 h-4 ml-1.5" />
+                    {t('rotateImage.right90')}
+                    <RotateCw className="w-4 h-4 ms-1.5" />
                   </Button>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
-                  Current: {rotation} degrees clockwise
+                  {t('rotateImageFlow.currentDegreesClockwise', { degrees: rotation })}
                 </p>
               </div>
 
               {/* Output format */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Output format</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {FORMATS.map((fmt) => (
                     <button
@@ -268,7 +271,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 {showQualitySlider && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">Quality</label>
+                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
                       <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
                     </div>
                     <input
@@ -306,7 +309,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -316,11 +319,11 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Rotating...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('rotateImage.rotating')}
                     </>
                   ) : (
-                    'Apply & Save'
+                    t('common.applyAndSave')
                   )}
                 </Button>
               </div>

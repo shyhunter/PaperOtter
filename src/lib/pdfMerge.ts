@@ -2,6 +2,7 @@
 // CRITICAL: Never use useCompression: true (pdf-lib issue #1445 — corrupts output).
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
+import { t } from '@/i18n';
 
 export interface MergeInput {
   filePath: string;
@@ -35,7 +36,7 @@ export async function loadPdfForMerge(filePath: string): Promise<MergeInput> {
  */
 export async function mergePdfs(inputs: MergeInput[]): Promise<MergeResult> {
   if (inputs.length < 2) {
-    throw new Error('At least 2 PDFs are required to merge.');
+    throw new Error(t('pdfMerge.atLeast2PdfsAre'));
   }
 
   const merged = await PDFDocument.create();

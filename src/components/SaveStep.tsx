@@ -11,6 +11,9 @@ import { open } from '@tauri-apps/plugin-shell';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { plural, t } from '@/i18n';
+import { uniqueOutputPath } from '@/lib/outputPath';
+import { getFileName } from '@/lib/fileValidation';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -144,21 +147,21 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
       <button
         type="button"
         onClick={onDismiss}
-        className="absolute top-2 right-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        aria-label="Dismiss"
+        className="absolute top-2 end-2 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        aria-label={t('common.dismiss')}
       >
         <X className="h-4 w-4" />
       </button>
 
-      <div className="flex items-center gap-3 pr-6">
+      <div className="flex items-center gap-3 pe-6">
         <AnimatedCheckmark />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">File saved successfully</p>
+          <p className="text-sm font-semibold text-foreground">{t('save.success')}</p>
           <button
             type="button"
             onClick={handleOpenFile}
-            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-left"
-            title={`Open: ${savedPath}`}
+            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-start"
+            title={t('saveStep.openPath', { path: savedPath })}
           >
             {savedPath}
           </button>
@@ -167,7 +170,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
             onClick={handleRevealInFinder}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer mt-0.5"
           >
-            Show in Finder
+            {t('save.showInFinder')}
           </button>
         </div>
       </div>
@@ -222,7 +225,7 @@ function MultiFileSave({
       try {
         folderPath = await openDialog({ directory: true, multiple: false }) as string | null;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not open folder picker.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenFolderPicker');
         setError(message);
         setSaveState('error');
         return;
@@ -230,24 +233,36 @@ function MultiFileSave({
 
       if (!folderPath) {
         setSaveState('idle');
-        toast('Save cancelled', { description: 'You can try again any time.' });
+        toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
         onCancel();
         return;
       }
 
       setSaveState('writing');
       try {
+        // Reserve names across the whole batch: nothing is on disk yet, so
+        // exists() alone cannot see two outputs claiming the same name.
+        const reserved = new Set<string>();
+        const renamed: string[] = [];
         for (let i = 0; i < multiFileOutputs.length; i++) {
           const output = multiFileOutputs[i];
-          setMultiProgress(`Saving ${i + 1}/${multiFileOutputs.length}…`);
-          const filePath = `${folderPath}/${output.fileName}`;
+          setMultiProgress(t('saveStep.savingProgress', { current: i + 1, total: multiFileOutputs.length }));
+          const filePath = await uniqueOutputPath(folderPath, output.fileName, reserved);
+          if (!filePath.endsWith(`/${output.fileName}`)) {
+            renamed.push(getFileName(filePath));
+          }
           await writeFile(filePath, output.bytes);
+        }
+        if (renamed.length > 0) {
+          // Say so rather than leaving the user to notice: they asked for one set
+          // of names and got another, even though nothing was destroyed.
+          toast(t('save.renamedToAvoidOverwrite', { names: renamed.join(', ') }));
         }
         setMultiProgress(null);
         setSaveState('idle');
         onSaveComplete(folderPath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not write files.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFiles');
         setError(message);
         setMultiProgress(null);
         setSaveState('error');
@@ -255,7 +270,7 @@ function MultiFileSave({
     } else {
       // ZIP save — create ZIP in memory, then save as file
       setSaveState('writing');
-      setMultiProgress('Creating ZIP…');
+      setMultiProgress(t('saveStep.creatingZip'));
 
       try {
         const { zipSync } = await import('fflate');
@@ -271,11 +286,11 @@ function MultiFileSave({
         let savePath: string | null = null;
         try {
           savePath = await save({
-            filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+            filters: [{ name: t('filter.zipArchive'), extensions: ['zip'] }],
             defaultPath: zipName,
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Could not open save dialog.';
+          const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenSaveDialog');
           setError(message);
           setSaveState('error');
           return;
@@ -283,7 +298,7 @@ function MultiFileSave({
 
         if (!savePath) {
           setSaveState('idle');
-          toast('Save cancelled', { description: 'You can try again any time.' });
+          toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
           onCancel();
           return;
         }
@@ -292,7 +307,7 @@ function MultiFileSave({
         setSaveState('idle');
         onSaveComplete(savePath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not create ZIP.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotCreateZip');
         setError(message);
         setMultiProgress(null);
         setSaveState('error');
@@ -308,11 +323,11 @@ function MultiFileSave({
         <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleMultiFileSave}>
-            Save Again
+            {t('save.again')}
           </Button>
         </div>
       </div>
@@ -324,7 +339,7 @@ function MultiFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-2">
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? 'Choose a save location…' : multiProgress ?? 'Saving…'}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : multiProgress ?? t('pdfEditor.saving')}
           </p>
         </div>
       </div>
@@ -336,15 +351,15 @@ function MultiFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-            <p className="text-xs font-medium text-destructive">Save failed</p>
+            <p className="text-xs font-medium text-destructive">{t('save.failed')}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-              Back
+              {t('common.back')}
             </Button>
             <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-              Try Again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>
@@ -358,9 +373,9 @@ function MultiFileSave({
       <div className="w-full max-w-sm space-y-4">
         <div className="text-center space-y-1">
           <p className="text-sm font-semibold text-foreground">
-            Save {multiFileOutputs.length} file{multiFileOutputs.length !== 1 ? 's' : ''}
+            {t('save.saveNFiles', { files: plural('count.file', multiFileOutputs.length) })}
           </p>
-          <p className="text-xs text-muted-foreground">Choose how to save the split files.</p>
+          <p className="text-xs text-muted-foreground">{t('save.chooseSplitMode')}</p>
         </div>
 
         <div className="space-y-2">
@@ -373,8 +388,8 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">Save to Folder</p>
-              <p className="text-xs text-muted-foreground">Each file saved individually with auto-naming</p>
+              <p className="text-sm font-medium text-foreground">{t('save.toFolder')}</p>
+              <p className="text-xs text-muted-foreground">{t('save.individualHint')}</p>
             </div>
           </label>
           <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
@@ -386,18 +401,18 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">Save as ZIP</p>
-              <p className="text-xs text-muted-foreground">All files bundled into a single ZIP archive</p>
+              <p className="text-sm font-medium text-foreground">{t('save.asZip')}</p>
+              <p className="text-xs text-muted-foreground">{t('save.zipHint')}</p>
             </div>
           </label>
         </div>
 
         <div className="flex gap-3">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <Button size="sm" onClick={handleMultiFileSave} className="flex-1">
-            Save
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -432,7 +447,7 @@ function SingleFileSave({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__E2E_SAVE_OPTS__ = {
         options: {
-          filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
           defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
         },
       };
@@ -453,7 +468,7 @@ function SingleFileSave({
         setSaveState('idle');
         onSaveComplete(e2eSavePath);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Could not write file.';
+        const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFile');
         setError(message);
         setSaveState('error');
       }
@@ -463,11 +478,11 @@ function SingleFileSave({
     let savePath: string | null = null;
     try {
       savePath = await save({
-        filters: saveFilters ?? [{ name: 'PDF Document', extensions: ['pdf'] }],
+        filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open save dialog.';
+      const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenSaveDialog');
       setError(message);
       setSaveState('error');
       return;
@@ -475,7 +490,7 @@ function SingleFileSave({
 
     if (!savePath) {
       setSaveState('idle');
-      toast('Save cancelled', { description: 'You can try again any time.' });
+      toast(t('saveStep.saveCancelled'), { description: t('saveStep.youCanTryAgainAny') });
       onCancel();
       return;
     }
@@ -489,7 +504,7 @@ function SingleFileSave({
       const message =
         err instanceof Error
           ? err.message
-          : 'Could not write file. Check that you have permission to write to the selected location.';
+          : t('saveStep.couldNotWriteFileCheck');
       setError(message);
       setSaveState('error');
     }
@@ -514,11 +529,11 @@ function SingleFileSave({
         <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-            Back
+            {t('common.back')}
           </Button>
           <div className="flex-1" />
           <Button size="sm" onClick={handleSave}>
-            Save Again
+            {t('save.again')}
           </Button>
         </div>
       </div>
@@ -531,10 +546,10 @@ function SingleFileSave({
         <div className="text-center space-y-3">
           <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
           <p className="text-sm font-medium text-foreground">
-            {saveState === 'dialog-open' ? 'Choose a save location…' : 'Saving…'}
+            {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('pdfEditor.saving')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {saveState === 'writing' ? `Writing ${defaultSaveName ?? buildDefaultSaveName(sourceFileName)}` : ''}
+            {saveState === 'writing' ? t('saveStep.writingFile', { name: defaultSaveName ?? buildDefaultSaveName(sourceFileName) }) : ''}
           </p>
         </div>
       </div>
@@ -546,15 +561,15 @@ function SingleFileSave({
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-            <p className="text-xs font-medium text-destructive">Save failed</p>
+            <p className="text-xs font-medium text-destructive">{t('save.failed')}</p>
             <p className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-              Back to Compare
+              {t('save.backToCompare')}
             </Button>
             <Button size="sm" onClick={handleSave} className="flex-1">
-              Try Again
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>

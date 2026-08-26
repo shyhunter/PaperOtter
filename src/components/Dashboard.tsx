@@ -15,6 +15,7 @@ import {
   Crop,
   LayoutGrid,
   PenTool,
+  Eye,
   EyeOff,
   Archive,
   Wrench,
@@ -32,12 +33,14 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import type { ToolDefinition, ToolCategory } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { detectFormat, isSupportedFile } from '@/lib/fileValidation';
+import { toast } from 'sonner';
+import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
 import type { SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useDependencies } from '@/hooks/useDependencies';
+import { t } from '@/i18n';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -55,17 +58,29 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Crop,
   LayoutGrid,
   PenTool,
+  Eye,
   EyeOff,
   Archive,
   Wrench,
   FileEdit,
 };
 
-const CATEGORY_LABELS: Record<ToolCategory, string> = {
-  pdf: 'PDF Tools',
-  image: 'Image Tools',
-  document: 'Document Tools',
-};
+/**
+ * Functions rather than lookup tables, because the values are translated.
+ *
+ * As constants these ran once while the module graph was being built -- before
+ * the stored locale had even been read -- so every section heading stayed in
+ * whatever language `en` is, no matter what the picker said. `pdf` did not even
+ * get that far: it was a hardcoded English literal.
+ */
+function categoryLabel(category: ToolCategory): string {
+  const labels: Record<ToolCategory, string> = {
+    pdf: t('dashboard.pdfTools'),
+    image: t('dashboard.imageTools'),
+    document: t('dashboard.documentTools'),
+  };
+  return labels[category];
+}
 
 const CATEGORY_ORDER: ToolCategory[] = ['pdf', 'image', 'document'];
 
@@ -73,6 +88,8 @@ interface StagedFile {
   path: string;
   name: string;
   format: SupportedFormat;
+  /** Other files of the same type dropped alongside this one — drives a batch. */
+  alsoDropped?: string[];
 }
 
 const FORMAT_ICONS: Record<SupportedFormat, LucideIcon> = {
@@ -81,11 +98,14 @@ const FORMAT_ICONS: Record<SupportedFormat, LucideIcon> = {
   document: FileType,
 };
 
-const FORMAT_LABELS: Record<SupportedFormat, string> = {
-  pdf: 'PDF',
-  image: 'Image',
-  document: 'Document',
-};
+function formatLabel(format: SupportedFormat): string {
+  const labels: Record<SupportedFormat, string> = {
+    pdf: t('format.pdf'),
+    image: t('format.image'),
+    document: t('format.document'),
+  };
+  return labels[format];
+}
 
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
@@ -114,13 +134,18 @@ export function ToolCard({
 }) {
   const Icon = ICON_MAP[tool.icon];
   return (
-    <div className="relative group/card">
+    // h-full on both: the grid stretches this wrapper to the tallest card in the
+    // row, and the wrapper has to pass that height on to the button or the card
+    // floats short inside its own cell. Descriptions run from 29 to 56
+    // characters, so some wrap to two lines and some to one — without this, the
+    // cards are visibly different heights.
+    <div className="relative group/card h-full">
       <button
         type="button"
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
-        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+        className={`h-full w-full flex flex-col items-center justify-start gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : 'cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5'
@@ -128,9 +153,9 @@ export function ToolCard({
       >
         {Icon && <Icon className={`h-7 w-7 transition-transform duration-200 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
-          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <h3 className="text-sm font-medium text-foreground">{t(tool.name)}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {disabled ? disabledHint : tool.description}
+            {disabled ? disabledHint : t(tool.description)}
           </p>
         </div>
       </button>
@@ -138,8 +163,8 @@ export function ToolCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className="absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          className="absolute top-2 end-2 p-1.5 rounded-lg transition-all duration-200 text-muted-foreground/40 opacity-0 group-hover/card:opacity-100 hover:text-yellow-500"
+          title={isFavorite ? t('dashboard.removeFromFavorites') : t('dashboard.addToFavorites')}
         >
           <Star className="h-4 w-4" />
         </button>
@@ -192,9 +217,9 @@ function FavoriteCard({
       >
         {Icon && <Icon className={`h-7 w-7 ${disabled ? 'text-muted-foreground' : 'text-primary'}`} />}
         <div className="text-center">
-          <h3 className="text-sm font-medium text-foreground">{tool.name}</h3>
+          <h3 className="text-sm font-medium text-foreground">{t(tool.name)}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {disabled ? disabledHint : tool.description}
+            {disabled ? disabledHint : t(tool.description)}
           </p>
         </div>
       </button>
@@ -202,12 +227,12 @@ function FavoriteCard({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onGripClick(index); }}
-        className={`absolute top-2 left-2 p-1 rounded transition-all duration-200 cursor-grab z-10 ${
+        className={`absolute top-2 start-2 p-1 rounded transition-all duration-200 cursor-grab z-10 ${
           isSwapSource
             ? 'text-primary opacity-100 bg-primary/10'
             : 'text-muted-foreground/30 opacity-0 group-hover/fav:opacity-100 hover:text-muted-foreground'
         }`}
-        title={isSwapSource ? 'Click another card to swap' : 'Click to reorder'}
+        title={isSwapSource ? t('dashboard.clickAnotherCardToSwap') : t('dashboard.clickToReorder')}
       >
         <GripVertical className="h-4 w-4" />
       </button>
@@ -218,7 +243,7 @@ function FavoriteCard({
           onClick={() => onSwapTarget(index)}
           className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl z-10 cursor-pointer"
         >
-          <span className="text-xs font-medium text-primary bg-background/80 px-3 py-1 rounded-md">Swap here</span>
+          <span className="text-xs font-medium text-primary bg-background/80 px-3 py-1 rounded-md">{t('dashboard.swapHere')}</span>
         </button>
       )}
       {/* Remove star */}
@@ -226,8 +251,8 @@ function FavoriteCard({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="absolute top-2 right-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
-          title="Remove from favorites"
+          className="absolute top-2 end-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
+          title={t('dashboard.removeFromFavorites')}
         >
           <Star className="h-4 w-4 fill-yellow-500" />
         </button>
@@ -267,8 +292,10 @@ export function Dashboard() {
     for (const category of CATEGORY_ORDER) {
       result[category] = groups[category].filter(
         (tool) =>
-          tool.name.toLowerCase().includes(q) ||
-          tool.description.toLowerCase().includes(q),
+          // Search the displayed language, not the key — searching "Zusammenführen"
+          // must find Merge PDF once the UI is in German.
+          t(tool.name).toLowerCase().includes(q) ||
+          t(tool.description).toLowerCase().includes(q),
       );
     }
     return result;
@@ -312,6 +339,14 @@ export function Dashboard() {
           if (validPaths.length === 0) return;
 
           const filePath = validPaths[0];
+
+          // HEIC decoding needs macOS Image I/O. Say so at the drop rather than
+          // staging a file that cannot be opened by any tool on this build.
+          if (isHeicPath(filePath) && !isHeicDecodable()) {
+            toast.error(heicUnsupportedMessage());
+            return;
+          }
+
           const format = detectFormat(filePath);
           if (!format) return;
 
@@ -319,6 +354,9 @@ export function Dashboard() {
             path: filePath,
             name: filePath.split('/').pop() ?? filePath,
             format,
+            // Everything else dropped of the same type, so choosing a tool starts
+            // a batch rather than silently discarding eleven of twelve scans.
+            alsoDropped: validPaths.slice(1).filter((p) => detectFormat(p) === format),
           });
         } else {
           setIsDragOver(false);
@@ -345,7 +383,7 @@ export function Dashboard() {
 
   const handleToolClick = useCallback((tool: ToolDefinition) => {
     if (stagedFile && tool.acceptsFormats.includes(stagedFile.format)) {
-      setPendingFiles([stagedFile.path]);
+      setPendingFiles([stagedFile.path, ...(stagedFile.alsoDropped ?? [])]);
       setStagedFile(null);
     }
     selectTool(tool.id);
@@ -367,7 +405,7 @@ export function Dashboard() {
                 </span>
               </div>
               <p className="text-[clamp(0.8rem,1vw,0.95rem)] text-muted-foreground">
-                Your local document toolkit — private, fast, offline.
+                {t('common.yourLocalDocumentToolkitPrivate')}
               </p>
             </div>
             {/* Theme, About and Buy me a coffee moved to AppChrome, which is on
@@ -393,13 +431,13 @@ export function Dashboard() {
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tools..."
-              className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+              placeholder={t('dashboard.searchTools')}
+              className="w-full rounded-lg border border-border bg-card ps-10 pe-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             />
           </div>
         </div>
@@ -411,17 +449,17 @@ export function Dashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{stagedFile.name}</p>
               <p className="text-xs text-muted-foreground">
-                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium mr-1.5">
-                  {FORMAT_LABELS[stagedFile.format]}
+                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium me-1.5">
+                  {formatLabel(stagedFile.format)}
                 </span>
-                Ready to process — choose a tool below
+                {t('dashboard.readyToProcessChooseA')}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setStagedFile(null)}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-              title="Dismiss"
+              title={t('common.dismiss')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -433,10 +471,10 @@ export function Dashboard() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                My Favorites
+                {t('dashboard.myFavorites')}
               </h2>
               <p className="text-[10px] text-muted-foreground/50">
-                Click ⠿ to reorder &middot; Click &#9733; on any tool to add
+                {t('dashboard.clickToReorderMiddotClick')}
               </p>
             </div>
             <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
@@ -456,7 +494,7 @@ export function Dashboard() {
                   disabled={formatIncompat}
                   disabledHint={
                     formatIncompat
-                      ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                      ? t('dashboard.notCompatibleWith', { format: formatLabel(stagedFile!.format) })
                       : undefined
                   }
                 />
@@ -474,7 +512,7 @@ export function Dashboard() {
           return (
             <section key={category} className="space-y-3">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                {CATEGORY_LABELS[category]}
+                {categoryLabel(category)}
               </h2>
               <div
                 className="grid gap-4"
@@ -496,7 +534,7 @@ export function Dashboard() {
                         depMissing
                           ? (tool.requiresDependency ? getHint(tool.requiresDependency) : undefined)
                           : formatIncompat
-                            ? `Not compatible with ${FORMAT_LABELS[stagedFile!.format]} files`
+                            ? t('dashboard.notCompatibleWith', { format: formatLabel(stagedFile!.format) })
                             : undefined
                       }
                     />
@@ -511,7 +549,7 @@ export function Dashboard() {
         {searchQuery.trim() && !hasSearchResults && (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">
-              No tools match &ldquo;{searchQuery}&rdquo;
+              {t('dashboard.noToolsMatch', { query: searchQuery })}
             </p>
           </div>
         )}
@@ -521,7 +559,7 @@ export function Dashboard() {
       {isDragOver && (
         <div className="absolute inset-0 bg-primary/5 border-2 border-dashed border-primary/40 rounded-xl flex items-center justify-center z-40 pointer-events-none">
           <div className="bg-background/90 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg">
-            <p className="text-lg font-medium text-foreground">Drop file to get started</p>
+            <p className="text-lg font-medium text-foreground">{t('dashboard.dropFileToGetStarted')}</p>
           </div>
         </div>
       )}

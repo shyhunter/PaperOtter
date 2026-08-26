@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import type { NumberPosition, NumberFormat, PageNumberOptions } from '@/lib/pdfPageNumbers';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { ColorPicker } from '@/components/ColorPicker';
+import { plural, t } from '@/i18n';
 
 interface PageNumbersConfigureStepProps {
   pdfBytes: Uint8Array;
@@ -18,26 +19,44 @@ interface PageNumbersConfigureStepProps {
   error: string | null;
 }
 
-const POSITIONS: { label: string; value: NumberPosition }[] = [
-  { label: 'Top Left', value: 'top-left' },
-  { label: 'Top Center', value: 'top-center' },
-  { label: 'Top Right', value: 'top-right' },
-  { label: 'Bottom Left', value: 'bottom-left' },
-  { label: 'Bottom Center', value: 'bottom-center' },
-  { label: 'Bottom Right', value: 'bottom-right' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function positions(): { label: string; value: NumberPosition }[] {
+  return [
+    { label: t('pdfEditor.topLeft'), value: 'top-left' },
+    { label: t('pdfEditor.topCenter'), value: 'top-center' },
+    { label: t('pdfEditor.topRight'), value: 'top-right' },
+    { label: t('pdfEditor.bottomLeft'), value: 'bottom-left' },
+    { label: t('pdfEditor.bottomCenter'), value: 'bottom-center' },
+    { label: t('pdfEditor.bottomRight'), value: 'bottom-right' },
+  ];
+}
 
-const FORMATS: { label: string; value: NumberFormat; example: string }[] = [
-  { label: '1, 2, 3', value: 'numeric', example: '1' },
-  { label: 'i, ii, iii', value: 'roman', example: 'i' },
-  { label: 'A, B, C', value: 'alphabetic', example: 'A' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function formats(): { label: string; value: NumberFormat; example: string }[] {
+  return [
+    { label: '1, 2, 3', value: 'numeric', example: '1' },
+    { label: t('pageNumbersConfigureStep.iIiIii'), value: 'roman', example: 'i' },
+    { label: 'A, B, C', value: 'alphabetic', example: 'A' },
+  ];
+}
 
-const FONT_SIZES: { label: string; value: number }[] = [
-  { label: 'Small', value: 10 },
-  { label: 'Medium', value: 12 },
-  { label: 'Large', value: 14 },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function fontSizes(): { label: string; value: number }[] {
+  return [
+    { label: t('watermarkFlow.small'), value: 10 },
+    { label: t('watermarkFlow.medium'), value: 12 },
+    { label: t('watermarkFlow.large'), value: 14 },
+  ];
+}
 
 export function PageNumbersConfigureStep({
   pdfBytes,
@@ -81,14 +100,14 @@ export function PageNumbersConfigureStep({
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel: options */}
-        <div className="w-72 flex-none overflow-y-auto border-r border-border p-4 space-y-5">
-          <h2 className="text-sm font-semibold text-foreground">Page Number Options</h2>
+        <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground">{t('pageNumbers.pageNumberOptions')}</h2>
 
           {/* Position grid: 3x2 */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Position</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.position')}</label>
             <div className="grid grid-cols-3 gap-1.5">
-              {POSITIONS.map((p) => (
+              {positions().map((p) => (
                 <button
                   key={p.value}
                   type="button"
@@ -108,9 +127,9 @@ export function PageNumbersConfigureStep({
 
           {/* Format */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Format</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.format')}</label>
             <div className="flex gap-1.5">
-              {FORMATS.map((f) => (
+              {formats().map((f) => (
                 <button
                   key={f.value}
                   type="button"
@@ -130,9 +149,9 @@ export function PageNumbersConfigureStep({
 
           {/* Font size */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Font Size</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('common.fontSize')}</label>
             <div className="flex gap-1.5">
-              {FONT_SIZES.map((fs) => (
+              {fontSizes().map((fs) => (
                 <button
                   key={fs.value}
                   type="button"
@@ -152,13 +171,13 @@ export function PageNumbersConfigureStep({
 
           {/* Colour */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Colour</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.colour')}</label>
             <ColorPicker value={color} onChange={setColor} />
           </div>
 
           {/* Start number */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Start Number</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('pageNumbers.startNumber')}</label>
             <input
               type="number"
               min="1"
@@ -170,7 +189,11 @@ export function PageNumbersConfigureStep({
 
           {/* Info */}
           <p className="text-xs text-muted-foreground">
-            {pageCount} page{pageCount !== 1 ? 's' : ''} &middot; numbering: {formatNumber(startNumber, format)}–{formatNumber(startNumber + pageCount - 1, format)}
+            {t('pageNumbersConfigureStep.pagesNumbering', {
+              pages: plural('count.page', pageCount),
+              from: formatNumber(startNumber, format),
+              to: formatNumber(startNumber + pageCount - 1, format),
+            })}
           </p>
 
           {error && (
@@ -185,7 +208,7 @@ export function PageNumbersConfigureStep({
           {isLoadingPreview && !previewUrl && (
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin" />
-              <p className="text-xs">Generating preview...</p>
+              <p className="text-xs">{t('common.generatingPreview')}</p>
             </div>
           )}
           {previewUrl && (
@@ -197,13 +220,13 @@ export function PageNumbersConfigureStep({
               )}
               <img
                 src={previewUrl}
-                alt="Page numbers preview"
+                alt={t('pageNumbers.pageNumbersPreview')}
                 className="max-h-[60vh] rounded-md border border-border shadow-sm"
               />
             </div>
           )}
           {!previewUrl && !isLoadingPreview && (
-            <p className="text-xs text-muted-foreground">Preview will appear here</p>
+            <p className="text-xs text-muted-foreground">{t('common.previewWillAppearHere')}</p>
           )}
         </div>
       </div>
@@ -211,17 +234,17 @@ export function PageNumbersConfigureStep({
       {/* Bottom bar */}
       <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={handleApply} disabled={isProcessing}>
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Applying...
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('common.applying')}
             </>
           ) : (
-            'Apply Page Numbers'
+            t('pageNumbersConfigureStep.applyPageNumbers')
           )}
         </Button>
       </div>

@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface RecentDirButtonProps {
   dirs: string[];
@@ -15,7 +16,7 @@ async function openFromDir(dir: string): Promise<string | null> {
     multiple: false,
     directory: false,
     defaultPath: dir,
-    filters: [{ name: 'Supported Files', extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'] }],
+    filters: [{ name: t('filter.supportedFiles'), extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'] }],
   });
   return typeof result === 'string' ? result : null;
 }
@@ -31,14 +32,14 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
           size="sm"
           disabled={disabled}
           className="gap-1.5 text-muted-foreground hover:text-foreground"
-          aria-label="Recent folders"
+          aria-label={t('recentDirs.recentFolders')}
         >
           <Clock className="h-3.5 w-3.5" />
-          <span className="text-xs">Recent</span>
+          <span className="text-xs">{t('recentDirsButton.recent')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-1" align="start">
-        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Recent folders</p>
+        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{t('recentDirsButton.recentFolders')}</p>
         <div className="space-y-0.5">
           {dirs.map((dir) => {
             // Show only the last path segment as the label, full path as tooltip
@@ -52,7 +53,7 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
                   if (filePath) onFileSelected(filePath);
                 }}
                 className={cn(
-                  'w-full text-left px-2 py-1.5 rounded-sm text-sm',
+                  'w-full text-start px-2 py-1.5 rounded-sm text-sm',
                   'hover:bg-accent hover:text-accent-foreground',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                   'truncate',

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 
 interface UnsavedChangesDialogProps {
   open: boolean;
@@ -54,24 +55,24 @@ export function UnsavedChangesDialog({
           <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-amber-500" />
           <div className="min-w-0">
             <h2 id="unsaved-changes-title" className="text-sm font-semibold text-foreground">
-              Unsaved changes
+              {t('common.unsavedChanges')}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{fileName || 'This document'}</span>{' '}
-              has changes that have not been saved. Saving replaces the original file.
+              <span className="font-medium text-foreground">{fileName || t('unsavedChangesDialog.thisDocument')}</span>{' '}
+              {t('unsavedChangesDialog.hasUnsavedChanges')}
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={isSaving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant="outline" size="sm" onClick={onDiscard} disabled={isSaving}>
-            {"Don't Save"}
+            {t('unsavedChangesDialog.dontSave')}
           </Button>
           <Button size="sm" onClick={onSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? t('pdfEditor.saving') : t('common.save')}
           </Button>
         </div>
       </div>

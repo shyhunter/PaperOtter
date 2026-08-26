@@ -5,6 +5,7 @@ import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
+import { plural, t } from '@/i18n';
 
 // Pages within this margin (relative to the scroll container's own height, each
 // side) are rendered ahead of being scrolled into view and kept slightly after
@@ -161,12 +162,12 @@ function PreviewPanel({
       >
         {hasError ? (
           <div className="flex h-full min-h-[300px] items-center justify-center">
-            <span className="text-sm text-muted-foreground">Preview unavailable</span>
+            <span className="text-sm text-muted-foreground">{t('compare.unavailable')}</span>
           </div>
         ) : isRendering || !handle ? (
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">Rendering preview…</span>
+            <span className="text-sm text-muted-foreground">{t('compare.rendering')}</span>
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>
@@ -187,7 +188,7 @@ function PreviewPanel({
                   {url && (
                     <img
                       src={url}
-                      alt={`${label} page ${pageIndex + 1}`}
+                      alt={t('compareOverlay.labelledPage', { label, page: pageIndex + 1 })}
                       className="w-full h-full block"
                     />
                   )}
@@ -285,17 +286,17 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <Ban className="h-10 w-10 text-muted-foreground" />
           <div className="text-center space-y-1">
-            <p className="text-base font-medium text-foreground">Processing cancelled</p>
-            <p className="text-sm text-muted-foreground">The operation was stopped before completion.</p>
+            <p className="text-base font-medium text-foreground">{t('compare.cancelled')}</p>
+            <p className="text-sm text-muted-foreground">{t('compare.cancelledDetail')}</p>
           </div>
           <div className="flex gap-3 mt-2">
             {onRetry && (
               <Button size="sm" onClick={onRetry}>
-                Retry
+                {t('common.retry')}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={onBack}>
-              Back to Configure
+              {t('compare.backToConfigure')}
             </Button>
           </div>
         </div>
@@ -326,21 +327,21 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {!result.targetMet && result.bestAchievableSizeBytes != null && (
         <div data-testid="target-not-met-banner" className="mx-4 mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 flex-none">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-            Target size not achievable —{' '}
+            {t('compareStep.targetSizeNotAchievable')}{' '}
             <span className="font-normal">
-              best result: {formatBytes(result.bestAchievableSizeBytes)}.{' '}
+              {t('compareStep.bestResult', { size: formatBytes(result.bestAchievableSizeBytes) })}{' '}
               {result.wasAlreadyOptimal
                 ? nonCompressibleReason === 'jpx'
                   ? nonCompressibleMessage(nonCompressibleReason, result.imageCount)
-                  : 'This file is already at maximum compression for all quality settings.'
-                : 'Try a lower quality level to reduce further.'}
+                  : t('compareStep.thisFileIsAlreadyAt')
+                : t('compareStep.tryALowerQualityLevel')}
             </span>{' '}
             <button
               type="button"
               onClick={onBack}
               className="underline hover:no-underline cursor-pointer"
             >
-              Back and try again
+              {t('compare.backAndRetry')}
             </button>
           </p>
         </div>
@@ -368,18 +369,20 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
           )}>
-            {Math.abs(savingsPct)}% {grew ? 'larger' : 'smaller'}
+            {grew
+              ? t('common.percentLarger', { percent: Math.abs(savingsPct) })
+              : t('common.percentSmaller', { percent: Math.abs(savingsPct) })}
           </span>
         )}
         <span className="text-muted-foreground whitespace-nowrap">
-          {result.pageCount} page{result.pageCount !== 1 ? 's' : ''}
+          {plural('count.page', result.pageCount)}
         </span>
         {dimensionsLabel && (
           <span className="text-muted-foreground whitespace-nowrap">{dimensionsLabel}</span>
         )}
         {result.wasAlreadyOptimal && (
           <span className="text-muted-foreground hidden sm:inline">
-            {nonCompressibleReason === 'jpx' ? "Images already JPEG2000-encoded — can't compress further" : 'File already optimal'}
+            {nonCompressibleReason === 'jpx' ? t('compareStep.jpxAlreadyEncoded') : t('compareStep.fileAlreadyOptimal')}
           </span>
         )}
         <div className="flex-1" />
@@ -393,17 +396,17 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             });
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          title="Copy processing stats to clipboard"
+          title={t('compare.copyStats')}
         >
           {copiedStats ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-          <span>{copiedStats ? 'Copied' : 'Copy stats'}</span>
+          <span>{copiedStats ? t('imageCompareStep.copied') : t('imageCompareStep.copyStats')}</span>
         </button>
       </div>
 
       {/* Side-by-side preview panels with floating zoom toolbar */}
       <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
         <PreviewPanel
-          label="Before"
+          label={t('compare.before')}
           sizeLabel={formatBytes(result.inputSizeBytes)}
           handle={originalHandle}
           scale={RENDER_SCALE}
@@ -414,7 +417,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           onScroll={() => handleScroll('before')}
         />
         <PreviewPanel
-          label="After"
+          label={t('compare.after')}
           sizeLabel={formatBytes(result.outputSizeBytes)}
           handle={processedHandle}
           scale={getAfterRenderScale(qualityLevel)}
@@ -426,13 +429,13 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
         />
 
         {/* Floating zoom toolbar */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
+        <div className="absolute bottom-3 start-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border shadow-lg px-3 py-1.5 z-10">
           <button
             type="button"
             onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
             disabled={zoomIndex === 0}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom out"
+            aria-label={t('common.zoomOut')}
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
@@ -444,7 +447,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
             onClick={() => setZoomIndex((i) => Math.min(ZOOM_STEPS.length - 1, i + 1))}
             disabled={zoomIndex === ZOOM_STEPS.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Zoom in"
+            aria-label={t('common.zoomIn')}
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
@@ -454,7 +457,7 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
       {/* Bottom strip — simplified: Back | spacer | Start Over | Save */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
 
         <div className="flex-1" />
@@ -465,11 +468,11 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Start Over
+          {t('common.startOver')}
         </button>
 
         <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
-          Save…
+          {t('common.saveEllipsis')}
         </Button>
       </div>
     </div>

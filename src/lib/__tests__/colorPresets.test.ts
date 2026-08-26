@@ -1,24 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { COLOR_PRESETS, DEFAULT_TEXT_COLOR, hexToRgb, isLightColor, normaliseHex } from '@/lib/colorPresets';
+import { colorPresets, DEFAULT_TEXT_COLOR, hexToRgb, isLightColor, normaliseHex } from '@/lib/colorPresets';
 
 describe('colorPresets — one colour vocabulary for the whole app', () => {
   it('[COL-01] every preset is a labelled #RRGGBB value', () => {
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(preset.hex).toMatch(/^#[0-9A-F]{6}$/);
       expect(preset.label.length).toBeGreaterThan(0);
     }
   });
 
   it('[COL-02] no colour appears twice under two labels', () => {
-    const hexes = COLOR_PRESETS.map((p) => p.hex.toLowerCase());
+    const hexes = colorPresets().map((p) => p.hex.toLowerCase());
     expect(new Set(hexes).size).toBe(hexes.length);
 
-    const labels = COLOR_PRESETS.map((p) => p.label.toLowerCase());
+    const labels = colorPresets().map((p) => p.label.toLowerCase());
     expect(new Set(labels).size).toBe(labels.length);
   });
 
   it('[COL-03] covers every colour the separate lists used to offer', () => {
-    const hexes = COLOR_PRESETS.map((p) => p.hex.toUpperCase());
+    const hexes = colorPresets().map((p) => p.hex.toUpperCase());
     // Union of the six vocabularies this module replaces: page numbers, both
     // text toolbars, the watermark's gray/red/blue, and the editor's own sign
     // and redact panels — whose navy ink and dark grey are here for that reason
@@ -32,7 +32,7 @@ describe('colorPresets — one colour vocabulary for the whole app', () => {
   });
 
   it('[COL-04] White is present — numbering or watermarking dark pages needs it', () => {
-    expect(COLOR_PRESETS.map((p) => p.hex.toUpperCase())).toContain('#FFFFFF');
+    expect(colorPresets().map((p) => p.hex.toUpperCase())).toContain('#FFFFFF');
   });
 
   it('[COL-05] the default is black, as every feature defaulted before', () => {

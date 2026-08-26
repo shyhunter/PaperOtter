@@ -7,6 +7,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -62,7 +63,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -73,7 +74,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -120,9 +121,9 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Repair PDF</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('repairPdf.repairPdf')}</h2>
               <p className="text-sm text-muted-foreground">
-                Fix structural issues in corrupted or malformed PDFs.
+                {t('repairPdf.fixStructuralIssuesInCorrupted')}
               </p>
 
               {loadError && (
@@ -134,13 +135,13 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -161,13 +162,11 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Wrench className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">PDF Repair</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('repairPdf.pdfRepair')}</p>
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Repair attempts to fix structural issues in corrupted or malformed PDFs by
-                  re-processing through Ghostscript. This can resolve issues with broken
-                  cross-references, missing objects, and other structural problems.
+                  {t('repairPdf.repairExplanation')}
                 </p>
               </div>
 
@@ -192,7 +191,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -202,11 +201,11 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Repairing...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('repairPdf.repairing')}
                     </>
                   ) : (
-                    'Repair PDF'
+                    t('tool.repairPdf.name')
                   )}
                 </Button>
               </div>
@@ -220,18 +219,18 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
             {/* File size comparison + status */}
             <div className="border-b border-border bg-card px-4 py-3 space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                Original: {formatFileSize(sourceFileSize)} &rarr; Repaired: {formatFileSize(resultBytes.byteLength)}
+                {t('repairPdf.originalToRepaired', { original: formatFileSize(sourceFileSize), repaired: formatFileSize(resultBytes.byteLength) })}
               </p>
 
               {isFileSizeSimilar && (
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                   <Info className="w-3 h-3" />
-                  <span>No issues detected -- file appears healthy</span>
+                  <span>{t('repairPdf.noIssuesDetectedFileAppears')}</span>
                 </div>
               )}
 
               <p className="text-xs text-muted-foreground/70 text-center italic">
-                Repair complete. If the document had structural issues, they have been addressed.
+                {t('repairPdf.repairCompleteIfTheDocument')}
               </p>
             </div>
 
@@ -239,7 +238,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}
-              saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+              saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
               savedFilePath={savedFilePath}
               onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(path) => setSavedFilePath(path)}

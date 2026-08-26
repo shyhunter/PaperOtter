@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
+import { t } from '@/i18n';
 
 interface ColorPickerProps {
   /** Current colour as #RRGGBB. */
@@ -20,7 +21,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {COLOR_PRESETS.map((preset) => {
+      {colorPresets().map((preset) => {
         const isSelected = preset.hex.toLowerCase() === selected;
         return (
           <button
@@ -43,8 +44,8 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
       <input
         type="color"
-        aria-label="Custom colour"
-        title="Custom colour"
+        aria-label={t('colorPicker.customColour')}
+        title={t('colorPicker.customColour')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-5 w-7 cursor-pointer rounded border border-border bg-background p-0"

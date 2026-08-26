@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ImageBlock } from '@/types/editor';
+import { t } from '@/i18n';
 
 interface ImageOverlayProps {
   /** Image blocks to render */
@@ -308,7 +309,7 @@ function ImageOverlayItem({
             color: '#666',
           }}
         >
-          Image
+          {t('editPdf.image')}
         </div>
       )}
 

@@ -1,6 +1,6 @@
 // JpgToPdfFlow: Pick images -> Configure page layout -> Create & Save PDF.
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@tauri-apps/plugin-dialog';
 import { PDFDocument } from 'pdf-lib';
 import { FilePlus, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
@@ -9,10 +9,11 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
+import { plural, t } from '@/i18n';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 type PageSizeId = 'a4' | 'letter' | 'auto';
 type OrientationId = 'portrait' | 'landscape' | 'auto';
@@ -23,17 +24,23 @@ const PAGE_SIZES: Record<Exclude<PageSizeId, 'auto'>, [number, number]> = {
   letter: [612, 792],
 };
 
-const PAGE_SIZE_LABELS: Record<PageSizeId, string> = {
-  a4: 'A4',
-  letter: 'Letter',
-  auto: 'Auto-fit',
-};
+function pageSizeLabel(id: PageSizeId): string {
+  const labels: Record<PageSizeId, string> = {
+    a4: 'A4',
+    letter: t('configureStep.letter'),
+    auto: t('jpgToPdfFlow.autoFit'),
+  };
+  return labels[id];
+}
 
-const ORIENTATION_LABELS: Record<OrientationId, string> = {
-  portrait: 'Portrait',
-  landscape: 'Landscape',
-  auto: 'Auto',
-};
+function orientationLabel(id: OrientationId): string {
+  const labels: Record<OrientationId, string> = {
+    portrait: t('jpgToPdfFlow.portrait'),
+    landscape: t('jpgToPdfFlow.landscape'),
+    auto: t('jpgToPdfFlow.auto'),
+  };
+  return labels[id];
+}
 
 const MARGIN_VALUES: Record<MarginId, number> = {
   none: 0,
@@ -41,11 +48,14 @@ const MARGIN_VALUES: Record<MarginId, number> = {
   medium: 56.69, // ~20mm in points
 };
 
-const MARGIN_LABELS: Record<MarginId, string> = {
-  none: 'None',
-  small: 'Small (10mm)',
-  medium: 'Medium (20mm)',
-};
+function marginLabel(id: MarginId): string {
+  const labels: Record<MarginId, string> = {
+    none: t('cropPdfFlow.none'),
+    small: t('jpgToPdfFlow.small10mm'),
+    medium: t('jpgToPdfFlow.medium20mm'),
+  };
+  return labels[id];
+}
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -167,7 +177,8 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     try {
       const newEntries: ImageEntry[] = [];
       for (const path of filePaths) {
-        const bytes = await readFile(path);
+        // A HEIC comes back as PNG — the webview cannot decode HEIC itself.
+        const { bytes } = await readImageBytes(path);
         const { url, width, height } = await createThumbnail(bytes);
         newEntries.push({
           filePath: path,
@@ -179,7 +190,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       }
       setImages((prev) => [...prev, ...newEntries]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load image.';
+      const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
     } finally {
       setIsLoading(false);
@@ -200,13 +211,13 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     try {
       const result = await open({
         multiple: true,
-        filters: [{ name: 'Image Files', extensions: IMAGE_EXTENSIONS }],
+        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
       });
       if (!result) return;
       const paths = Array.isArray(result) ? result : [result];
       await addImages(paths);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [addImages]);
@@ -249,8 +260,10 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
       for (const img of images) {
         // Read and convert image
-        const rawBytes = await readFile(img.filePath);
-        const ext = img.filePath.split('.').pop()?.toLowerCase() ?? '';
+        const { bytes: rawBytes, mime } = await readImageBytes(img.filePath);
+        // Derive the format from the bytes we actually hold, not from the path:
+        // a .heic has already been decoded to PNG by this point.
+        const ext = mime.replace('image/', '');
         const { bytes: imgBytes, format } = await convertToSupportedFormat(rawBytes, ext);
 
         let embeddedImage;
@@ -324,7 +337,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
       setResultBytes(new Uint8Array(pdfBytes));
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create PDF.';
+      const message = err instanceof Error ? err.message : t('jpgToPdfFlow.failedToCreatePdf');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -341,9 +354,9 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-lg space-y-4">
               <div className="text-center space-y-1">
-                <h2 className="text-lg font-semibold text-foreground">JPG to PDF</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.jpgToPdf')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Select one or more images to convert into a single PDF.
+                  {t('jpgToPdf.selectOneOrMoreImages')}
                 </p>
               </div>
 
@@ -374,7 +387,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           onClick={() => handleMoveUp(i)}
                           disabled={i === 0}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label={`Move ${img.fileName} up`}
+                          aria-label={t('jpgToPdfFlow.moveUpNamed', { name: img.fileName })}
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
@@ -383,7 +396,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           onClick={() => handleMoveDown(i)}
                           disabled={i === images.length - 1}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label={`Move ${img.fileName} down`}
+                          aria-label={t('jpgToPdfFlow.moveDownNamed', { name: img.fileName })}
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
@@ -391,7 +404,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           type="button"
                           onClick={() => handleRemove(i)}
                           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                          aria-label={`Remove ${img.fileName}`}
+                          aria-label={t('common.removeNamed', { name: img.fileName })}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -405,7 +418,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {isLoading && (
                 <div className="flex items-center justify-center gap-2 py-4">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Loading images...</span>
+                  <span className="text-sm text-muted-foreground">{t('jpgToPdf.loadingImages')}</span>
                 </div>
               )}
 
@@ -424,8 +437,8 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={isLoading}
                   className="flex-1"
                 >
-                  <FilePlus className="w-4 h-4 mr-2" />
-                  {images.length === 0 ? 'Select Images' : 'Add More'}
+                  <FilePlus className="w-4 h-4 me-2" />
+                  {images.length === 0 ? t('jpgToPdfFlow.selectImages') : t('mergePickStep.addMore')}
                 </Button>
 
                 <Button
@@ -433,7 +446,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={images.length < 1 || isLoading}
                   className="flex-1"
                 >
-                  Continue
+                  {t('jpgToPdf.continue')}
                 </Button>
               </div>
             </div>
@@ -445,15 +458,15 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
           <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
             <div className="w-full max-w-md space-y-4 my-auto">
               <div className="text-center space-y-1">
-                <h2 className="text-lg font-semibold text-foreground">Configure PDF</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t('jpgToPdf.configurePdf')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {images.length} image{images.length !== 1 ? 's' : ''} selected
+                  {t('jpgToPdfFlow.imagesSelected', { images: plural('count.image', images.length) })}
                 </p>
               </div>
 
               {/* Page size */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Page size</p>
+                <p className="text-xs text-muted-foreground">{t('configure.pageSize')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {(['a4', 'letter', 'auto'] as PageSizeId[]).map((id) => (
                     <button
@@ -469,7 +482,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           : 'border-border text-muted-foreground hover:border-primary/50',
                       )}
                     >
-                      {PAGE_SIZE_LABELS[id]}
+                      {pageSizeLabel(id)}
                     </button>
                   ))}
                 </div>
@@ -478,7 +491,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {/* Orientation (hidden when auto-fit page size) */}
               {pageSize !== 'auto' && (
                 <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                  <p className="text-xs text-muted-foreground">Orientation</p>
+                  <p className="text-xs text-muted-foreground">{t('jpgToPdf.orientation')}</p>
                   <div className="grid grid-cols-3 gap-1">
                     {(['portrait', 'landscape', 'auto'] as OrientationId[]).map((id) => (
                       <button
@@ -494,7 +507,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                             : 'border-border text-muted-foreground hover:border-primary/50',
                         )}
                       >
-                        {ORIENTATION_LABELS[id]}
+                        {orientationLabel(id)}
                       </button>
                     ))}
                   </div>
@@ -503,7 +516,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
               {/* Margin */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Margin</p>
+                <p className="text-xs text-muted-foreground">{t('jpgToPdf.margin')}</p>
                 <div className="grid grid-cols-3 gap-1">
                   {(['none', 'small', 'medium'] as MarginId[]).map((id) => (
                     <button
@@ -519,7 +532,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                           : 'border-border text-muted-foreground hover:border-primary/50',
                       )}
                     >
-                      {MARGIN_LABELS[id]}
+                      {marginLabel(id)}
                     </button>
                   ))}
                 </div>
@@ -541,7 +554,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -551,11 +564,11 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating PDF...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (
-                    'Create PDF'
+                    t('jpgToPdfFlow.createPdf')
                   )}
                 </Button>
               </div>
@@ -569,7 +582,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName="images.pdf"
             defaultSaveName="images.pdf"
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

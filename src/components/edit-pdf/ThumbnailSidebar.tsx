@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { t } from '@/i18n';
 
 interface ThumbnailSidebarProps {
   /** PDF file bytes */
@@ -102,7 +103,7 @@ function LazyThumbnail({
           : 'border-transparent hover:border-muted-foreground/30'
         }
       `}
-      aria-label={`Page ${pageIndex + 1}`}
+      aria-label={t('split.pageN', { page: pageIndex + 1 })}
       aria-current={isActive ? 'page' : undefined}
     >
       <div className="relative bg-white rounded overflow-hidden" style={{ width: 120, minHeight: 80 }}>
@@ -151,12 +152,12 @@ export function ThumbnailSidebar({
 
   if (isCollapsed) {
     return (
-      <div className="flex flex-col items-center border-r border-border bg-muted/30" style={{ width: 40 }}>
+      <div className="flex flex-col items-center border-e border-border bg-muted/30" style={{ width: 40 }}>
         <button
           type="button"
           onClick={() => setIsCollapsed(false)}
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Expand sidebar"
+          aria-label={t('editPdf.expandSidebar')}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -165,15 +166,15 @@ export function ThumbnailSidebar({
   }
 
   return (
-    <div className="flex flex-col border-r border-border bg-muted/30" style={{ width: 160 }}>
+    <div className="flex flex-col border-e border-border bg-muted/30" style={{ width: 160 }}>
       {/* Collapse button */}
       <div className="flex items-center justify-between px-2 py-1 border-b border-border">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Pages</span>
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t('common.pages')}</span>
         <button
           type="button"
           onClick={() => setIsCollapsed(true)}
           className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Collapse sidebar"
+          aria-label={t('editPdf.collapseSidebar')}
         >
           <ChevronLeft className="h-3 w-3" />
         </button>
@@ -202,7 +203,7 @@ export function ThumbnailSidebar({
             onClick={handlePrevPage}
             disabled={currentPage === 0}
             className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
+            aria-label={t('common.previousPage')}
           >
             <ChevronUp className="h-4 w-4" />
           </button>
@@ -214,7 +215,7 @@ export function ThumbnailSidebar({
             onClick={handleNextPage}
             disabled={currentPage === pageCount - 1}
             className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
+            aria-label={t('common.nextPage')}
           >
             <ChevronDown className="h-4 w-4" />
           </button>
@@ -222,7 +223,7 @@ export function ThumbnailSidebar({
 
         {/* Page number input */}
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">Go to:</span>
+          <span className="text-[10px] text-muted-foreground">{t('editPdf.goTo')}</span>
           <input
             type="text"
             value={pageInput}
@@ -230,7 +231,7 @@ export function ThumbnailSidebar({
             onKeyDown={(e) => { if (e.key === 'Enter') handlePageInputSubmit(); }}
             placeholder={String(currentPage + 1)}
             className="w-10 px-1 py-0.5 text-[10px] text-center border border-border rounded bg-background text-foreground"
-            aria-label="Go to page number"
+            aria-label={t('editPdf.goToPageNumber')}
           />
         </div>
       </div>

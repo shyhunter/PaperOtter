@@ -126,7 +126,7 @@ describe('Suite 06a — Protect PDF', () => {
     await screen.findByText('Set Password', {}, { timeout: 2000 });
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
-    await user.type(screen.getByLabelText('Confirm Password'), 'secret123');
+    await user.type(screen.getByLabelText('Confirm password'), 'secret123');
 
     const protectBtn = screen.getByRole('button', { name: /protect pdf/i });
     expect(protectBtn).not.toBeDisabled();
@@ -140,7 +140,7 @@ describe('Suite 06a — Protect PDF', () => {
 
     vi.mocked(invoke).mockResolvedValueOnce(FAKE_PDF_BYTES);
     await user.type(screen.getByLabelText('Password'), 'secret123');
-    await user.type(screen.getByLabelText('Confirm Password'), 'secret123');
+    await user.type(screen.getByLabelText('Confirm password'), 'secret123');
     await user.click(screen.getByRole('button', { name: /protect pdf/i }));
 
     // SaveStep auto-triggers save dialog which never resolves → "Choose a save location…"
@@ -165,7 +165,7 @@ describe('Suite 06a — Protect PDF', () => {
     await screen.findByText('Set Password', {}, { timeout: 2000 });
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
-    await user.type(screen.getByLabelText('Confirm Password'), 'different');
+    await user.type(screen.getByLabelText('Confirm password'), 'different');
 
     expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
   });
@@ -186,15 +186,15 @@ describe('Suite 06b — Unlock PDF', () => {
   it('UP-02 — selecting a PDF advances to the Enter Password step', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
-    expect(screen.getByText('Enter Password')).toBeInTheDocument();
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
+    expect(screen.getByText('Enter password')).toBeInTheDocument();
   });
 
   // UP-03 ─────────────────────────────────────────────────────────────────────
   it('UP-03 — Unlock PDF button is disabled when password field is empty', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
 
     const unlockBtn = screen.getByRole('button', { name: /unlock pdf/i });
     expect(unlockBtn).toBeDisabled();
@@ -204,7 +204,7 @@ describe('Suite 06b — Unlock PDF', () => {
   it('UP-04 — entering a password enables the Unlock PDF button', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
 
     await user.type(screen.getByLabelText('PDF Password'), 'mypassword');
     expect(screen.getByRole('button', { name: /unlock pdf/i })).not.toBeDisabled();
@@ -214,7 +214,7 @@ describe('Suite 06b — Unlock PDF', () => {
   it('UP-05 — successful unlock navigates to the save step', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
 
     vi.mocked(invoke).mockResolvedValueOnce(FAKE_PDF_BYTES);
     await user.type(screen.getByLabelText('PDF Password'), 'mypassword');
@@ -227,7 +227,7 @@ describe('Suite 06b — Unlock PDF', () => {
   it('UP-06 — wrong password shows a user-friendly error message', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
 
     vi.mocked(invoke).mockRejectedValueOnce(new Error('Wrong password'));
     await user.type(screen.getByLabelText('PDF Password'), 'wrongpass');
@@ -240,7 +240,7 @@ describe('Suite 06b — Unlock PDF', () => {
   it('UP-07 — Back button from password step returns to the file picker', async () => {
     const { user } = await navigateToTool(/unlock pdf/i);
     await selectPdfFile(user, '/test/protected.pdf');
-    await screen.findByText('Enter Password', {}, { timeout: 2000 });
+    await screen.findByText('Enter password', {}, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();

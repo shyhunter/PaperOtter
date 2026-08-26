@@ -7,6 +7,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -18,11 +19,17 @@ interface PdfaOption {
   description: string;
 }
 
-const PDFA_OPTIONS: PdfaOption[] = [
-  { level: '1', label: 'PDF/A-1b', description: 'Basic compatibility' },
-  { level: '2', label: 'PDF/A-2b', description: 'Modern standard, supports transparency' },
-  { level: '3', label: 'PDF/A-3b', description: 'Latest, supports attachments' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function pdfaOptions(): PdfaOption[] {
+  return [
+    { level: '1', label: 'PDF/A-1b', description: t('pdfaConvertFlow.basicCompatibility') },
+    { level: '2', label: 'PDF/A-2b', description: t('pdfaConvertFlow.modernStandardSupportsTransparency') },
+    { level: '3', label: 'PDF/A-3b', description: t('pdfaConvertFlow.latestSupportsAttachments') },
+  ];
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -77,7 +84,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -88,7 +95,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -130,9 +137,9 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Convert to PDF/A</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('pdfaConvert.convertToPdfA')}</h2>
               <p className="text-sm text-muted-foreground">
-                Convert a PDF to archival format for long-term preservation.
+                {t('pdfaConvert.convertAPdfToArchival')}
               </p>
 
               {loadError && (
@@ -144,13 +151,13 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -171,16 +178,16 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Archive className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">Conformance Level</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('pdfaConvert.conformanceLevel')}</p>
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  PDF/A is an archival format designed for long-term document preservation.
+                  {t('pdfaConvert.pdfAIsAnArchival')}
                 </p>
 
                 {/* Radio group */}
                 <fieldset className="space-y-2">
-                  {PDFA_OPTIONS.map((opt) => (
+                  {pdfaOptions().map((opt) => (
                     <label
                       key={opt.level}
                       className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors"
@@ -224,7 +231,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -234,11 +241,11 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Converting...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('convertImage.converting')}
                     </>
                   ) : (
-                    'Convert'
+                    t('common.convert')
                   )}
                 </Button>
               </div>
@@ -252,7 +259,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
             {/* File size comparison */}
             <div className="border-b border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground text-center">
-                Original: {formatFileSize(sourceFileSize)} &rarr; PDF/A: {formatFileSize(resultBytes.byteLength)}
+                {t('pdfaConvert.originalToPdfa', { original: formatFileSize(sourceFileSize), pdfa: formatFileSize(resultBytes.byteLength) })}
               </p>
             </div>
 
@@ -260,7 +267,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}
-              saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+              saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
               savedFilePath={savedFilePath}
               onDismissSaveConfirmation={() => setSavedFilePath(null)}
               onSaveComplete={(path) => setSavedFilePath(path)}

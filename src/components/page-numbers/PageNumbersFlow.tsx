@@ -12,6 +12,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addPageNumbers } from '@/lib/pdfPageNumbers';
 import type { PageNumberOptions } from '@/lib/pdfPageNumbers';
+import { t } from '@/i18n';
 
 interface PageNumbersFlowProps {
   onStepChange?: (step: number) => void;
@@ -73,13 +74,13 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       const path = typeof result === 'string' ? result : result;
       await loadFile(path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -92,7 +93,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add page numbers.';
+      const message = err instanceof Error ? err.message : t('pageNumbersFlow.failedToAddPageNumbers');
       setLoadError(message);
     } finally {
       setIsProcessing(false);
@@ -106,8 +107,8 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Add Page Numbers</h2>
-              <p className="text-sm text-muted-foreground">Select a PDF to add page numbers.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('pageNumbers.addPageNumbers')}</h2>
+              <p className="text-sm text-muted-foreground">{t('pageNumbers.selectAPdfToAdd')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -118,13 +119,13 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>

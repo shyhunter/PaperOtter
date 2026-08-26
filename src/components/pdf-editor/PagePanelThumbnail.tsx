@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, memo, type RefObject } from 'react';
 import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThumbnail';
 import { Check } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
+import { t } from '@/i18n';
 
 interface PagePanelThumbnailProps {
   pdfBytes: Uint8Array;
@@ -124,13 +125,13 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
         ${borderClass}
         ${isDragSource ? 'opacity-40' : ''}
       `}
-      aria-label={`Page ${pageIndex + 1}`}
+      aria-label={t('split.pageN', { page: pageIndex + 1 })}
       aria-current={isCurrent ? 'page' : undefined}
       data-page-idx={pageIndex}
     >
       {/* Selection check indicator */}
       {isSelected && (
-        <div className="absolute top-1 right-1 z-10 bg-blue-500 rounded-full p-0.5">
+        <div className="absolute top-1 end-1 z-10 bg-blue-500 rounded-full p-0.5">
           <Check className="h-2.5 w-2.5 text-white" />
         </div>
       )}

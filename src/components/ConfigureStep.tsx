@@ -13,6 +13,7 @@ import {
 } from '@/lib/pdfProcessor';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
+import { plural, t } from '@/i18n';
 
 export interface ConfigureStepProps {
   fileName: string;
@@ -30,13 +31,40 @@ export interface ConfigureStepProps {
   onCancel?: () => void;    // fires immediately when Cancel clicked during processing
 }
 
-/** Slider zone boundaries and their quality mappings */
-const ZONES = [
-  { min: 0,  max: 25,  quality: 'web' as PdfQualityLevel,     label: 'Web',     dpi: '72 dpi',  desc: 'Smallest file' },
-  { min: 25, max: 50,  quality: 'screen' as PdfQualityLevel,  label: 'Screen',  dpi: '150 dpi', desc: 'Balanced' },
-  { min: 50, max: 75,  quality: 'print' as PdfQualityLevel,   label: 'Print',   dpi: '300 dpi', desc: 'High quality' },
-  { min: 75, max: 100, quality: 'archive' as PdfQualityLevel, label: 'Archive', dpi: 'Lossless', desc: 'No recompression' },
+/**
+ * Slider zone boundaries and their quality mappings.
+ *
+ * Boundaries and DPI figures only. The label and description are translated and
+ * so must be resolved per render -- see zoneLabel/zoneDesc below.
+ */
+type ZoneQuality = Exclude<PdfQualityLevel, 'custom'>;
+
+const ZONES: { min: number; max: number; quality: ZoneQuality; dpi: string }[] = [
+  { min: 0,  max: 25,  quality: 'web',     dpi: '72 dpi'   },
+  { min: 25, max: 50,  quality: 'screen',  dpi: '150 dpi'  },
+  { min: 50, max: 75,  quality: 'print',   dpi: '300 dpi'  },
+  { min: 75, max: 100, quality: 'archive', dpi: 'Lossless' },
 ];
+
+function zoneLabel(quality: ZoneQuality): string {
+  const labels: Record<ZoneQuality, string> = {
+    web: t('imageConfigureStep.web'),
+    screen: t('configureStep.screen'),
+    print: t('configureStep.print'),
+    archive: t('configureStep.archive'),
+  };
+  return labels[quality];
+}
+
+function zoneDesc(quality: ZoneQuality): string {
+  const descriptions: Record<ZoneQuality, string> = {
+    web: t('configureStep.smallestFile'),
+    screen: t('configureStep.balanced'),
+    print: t('configureStep.highQuality'),
+    archive: t('configureStep.noRecompression'),
+  };
+  return descriptions[quality];
+}
 
 /** Map slider value (0-100) to quality level */
 function sliderToQuality(value: number): PdfQualityLevel {
@@ -60,12 +88,14 @@ function getActiveZone(value: number) {
   return ZONES[ZONES.length - 1];
 }
 
-const PAGE_PRESETS: { value: PdfPagePreset; label: string }[] = [
-  { value: 'A4',     label: 'A4 (210 × 297 mm)' },
-  { value: 'A3',     label: 'A3 (297 × 420 mm)' },
-  { value: 'Letter', label: 'Letter (216 × 279 mm)' },
-  { value: 'custom', label: 'Custom…' },
-];
+function pagePresets(): { value: PdfPagePreset; label: string }[] {
+  return [
+    { value: 'A4',     label: t('configureStep.a4210297Mm') },
+    { value: 'A3',     label: t('configureStep.a3297420Mm') },
+    { value: 'Letter', label: t('configureStep.letter216279Mm') },
+    { value: 'custom', label: t('configureStep.custom') },
+  ];
+}
 
 
 export function ConfigureStep({
@@ -140,12 +170,12 @@ export function ConfigureStep({
       // Validate custom target size
       const parsed = parseInt(customSizeValue, 10);
       if (!customSizeValue.trim() || isNaN(parsed) || parsed < 1) {
-        setCustomError('Enter a valid target size');
+        setCustomError(t('configureStep.enterAValidTargetSize'));
         return;
       }
       const customBytes = parsed * (unit === 'MB' ? 1024 * 1024 : 1024);
       if (customBytes >= fileSizeBytes) {
-        setCustomError(`Target must be smaller than original (${formatBytes(fileSizeBytes)})`);
+        setCustomError(t('configureStep.targetMustBeSmaller', { size: formatBytes(fileSizeBytes) }));
         return;
       }
       // Resolve custom to a real quality preset
@@ -191,16 +221,16 @@ export function ConfigureStep({
         <div className="text-center">
           <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {pageCount} page{pageCount !== 1 ? 's' : ''}
+            {plural('count.page', pageCount)}
             {fileSizeBytes > 0 && (
-              <span className="ml-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
+              <span className="ms-2 font-medium text-foreground">{formatBytes(fileSizeBytes)}</span>
             )}
           </p>
         </div>
 
         {/* Compression section */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Optimise file size</h2>
+          <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('configure.optimiseSize')}</h2>
 
           {/* Non-compressible warning — shown prominently at top, at most once */}
           {nonCompressibleMsg && (
@@ -208,7 +238,7 @@ export function ConfigureStep({
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-none mt-0.5" />
               <p className="text-xs text-amber-700 dark:text-amber-400">
                 {nonCompressibleMsg}
-                {!resizeEnabled && ' Enable page resize below to still process this file.'}
+                {!resizeEnabled && ` ${t('configureStep.enableResizeToStillProcess')}`}
               </p>
             </div>
           )}
@@ -216,9 +246,9 @@ export function ConfigureStep({
           {/* Compression slider */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Compression level</span>
+              <span className="text-xs text-muted-foreground">{t('configure.compressionLevel')}</span>
               <span className="text-xs font-medium text-foreground">
-                {activeZone.label} ({activeZone.dpi})
+                {zoneLabel(activeZone.quality)} ({activeZone.dpi})
               </span>
             </div>
 
@@ -235,7 +265,7 @@ export function ConfigureStep({
                   )}
                   style={{ left: `${(zone.min + zone.max) / 2}%` }}
                 >
-                  <span className="text-[10px]">{zone.label}</span>
+                  <span className="text-[10px]">{zoneLabel(zone.quality)}</span>
                   <span
                     data-testid={`zone-estimate-${zone.quality}`}
                     className="text-[9px] text-muted-foreground/70 font-normal"
@@ -275,7 +305,7 @@ export function ConfigureStep({
                   if (customMode) setCustomMode(false);
                 }}
                 disabled={isProcessing || isNonCompressible}
-                aria-label="Compression level"
+                aria-label={t('configure.compressionLevel')}
                 data-testid="compression-slider"
                 className="relative w-full h-6 appearance-none bg-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:cursor-pointer [&::-webkit-slider-runnable-track]:bg-transparent [&::-moz-range-track]:bg-transparent"
               />
@@ -283,7 +313,7 @@ export function ConfigureStep({
 
             {/* Zone description */}
             <p className="text-xs text-muted-foreground text-center">
-              {activeZone.desc}
+              {zoneDesc(activeZone.quality)}
             </p>
           </div>
 
@@ -302,16 +332,16 @@ export function ConfigureStep({
               )}
             >
               <Crosshair className="w-3.5 h-3.5 flex-none" />
-              <span className="font-medium">Custom target size</span>
+              <span className="font-medium">{t('configure.customTargetSize')}</span>
               {customMode && (
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  Best preset auto-selected
+                <span className="ms-auto text-[10px] text-muted-foreground">
+                  {t('configure.bestPresetAuto')}
                 </span>
               )}
             </button>
 
             {customMode && (
-              <div className="space-y-1 pl-1">
+              <div className="space-y-1 ps-1">
                 <div className="flex gap-2">
                   <input
                     id={`${formId}-custom-size`}
@@ -361,7 +391,7 @@ export function ConfigureStep({
                       <div data-testid="target-below-min-warning" className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
                         <p className="text-xs text-amber-700 dark:text-amber-400">
-                          Target may not be achievable — estimated minimum is ~{formatBytes(minAchievable)}.
+                          {t('configureStep.targetMayNotBeAchievable', { size: formatBytes(minAchievable) })}
                         </p>
                       </div>
                     );
@@ -372,8 +402,7 @@ export function ConfigureStep({
                     the user discover it by entering a rejected value is a
                     choice, not a limitation. */}
                 <p className="text-xs text-muted-foreground">
-                  Can compress to about {formatBytes(floorBytes)} at best. Maximum file
-                  size — the best compression preset will be chosen automatically.
+                  {t('configureStep.canCompressToAboutMax', { size: formatBytes(floorBytes) })}
                 </p>
               </div>
             )}
@@ -386,8 +415,8 @@ export function ConfigureStep({
               <Info className="h-3.5 w-3.5 text-muted-foreground flex-none mt-0.5" />
               <p className="text-xs text-muted-foreground">
                 {compressibilityScore >= 0.5
-                  ? `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — compression will reduce file size significantly.`
-                  : `This PDF contains ${imageCount} image${imageCount !== 1 ? 's' : ''} — moderate compression savings expected.`}
+                  ? t('configureStep.containsImagesHighSavings', { images: plural('count.image', imageCount) })
+                  : t('configureStep.containsImagesModerateSavings', { images: plural('count.image', imageCount) })}
               </p>
             </div>
           )}
@@ -396,7 +425,7 @@ export function ConfigureStep({
         {/* Resize pages section — always visible, toggled via switch */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">Resize pages</h2>
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">{t('configure.resizePages')}</h2>
 
             {/* Prominent pill toggle switch */}
             <button
@@ -404,7 +433,7 @@ export function ConfigureStep({
               role="switch"
               data-testid="resize-toggle"
               aria-checked={resizeEnabled ? 'true' : 'false'}
-              aria-label="Enable page resize"
+              aria-label={t('configure.enablePageResize')}
               onClick={() => setResizeEnabled((v) => !v)}
               disabled={isProcessing}
               className={cn(
@@ -428,7 +457,7 @@ export function ConfigureStep({
               {/* Preset dropdown */}
               <div className="space-y-1">
                 <label htmlFor={`${formId}-preset`} className="text-xs text-muted-foreground">
-                  Page size
+                  {t('configure.pageSize')}
                 </label>
                 <select
                   id={`${formId}-preset`}
@@ -438,7 +467,7 @@ export function ConfigureStep({
                   disabled={isProcessing}
                   className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                 >
-                  {PAGE_PRESETS.map(({ value, label }) => (
+                  {pagePresets().map(({ value, label }) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
@@ -448,7 +477,7 @@ export function ConfigureStep({
               {pagePreset === 'custom' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label htmlFor={`${formId}-width`} className="text-xs text-muted-foreground">Width (mm)</label>
+                    <label htmlFor={`${formId}-width`} className="text-xs text-muted-foreground">{t('configure.widthMm')}</label>
                     <input
                       id={`${formId}-width`}
                       data-testid="custom-width-input"
@@ -462,7 +491,7 @@ export function ConfigureStep({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground">Height (mm)</label>
+                    <label htmlFor={`${formId}-height`} className="text-xs text-muted-foreground">{t('configure.heightMm')}</label>
                     <input
                       id={`${formId}-height`}
                       data-testid="custom-height-input"
@@ -482,11 +511,11 @@ export function ConfigureStep({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label htmlFor={`${formId}-page-range`} className="text-xs text-muted-foreground">
-                    Pages to resize (leave blank for all)
+                    {t('configure.pagesToResize')}
                   </label>
                   {selectedPageIndices.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
-                      {selectedPageIndices.length} page{selectedPageIndices.length !== 1 ? 's' : ''}
+                      {plural('count.page', selectedPageIndices.length)}
                     </Badge>
                   )}
                 </div>
@@ -495,7 +524,7 @@ export function ConfigureStep({
                   type="text"
                   value={pageRangeInput}
                   onChange={(e) => setPageRangeInput(e.target.value)}
-                  placeholder="e.g. 1-3, 5, 7-9"
+                  placeholder={t('configure.pagesPlaceholder')}
                   disabled={isProcessing}
                   className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                 />
@@ -503,7 +532,7 @@ export function ConfigureStep({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Enable to change page dimensions — A4, A3, Letter, or custom size.
+              {t('configure.enablePageResizeHint')}
             </p>
           )}
         </div>
@@ -514,8 +543,8 @@ export function ConfigureStep({
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground text-center">
               {progress
-                ? `Processing page ${progress.current} of ${progress.total}…`
-                : 'Processing…'}
+                ? t('configureStep.processingPageOf', { current: progress.current, total: progress.total })
+                : t('common.processing')}
             </p>
             <Progress value={progressPct} className="h-1.5" />
           </div>
@@ -535,7 +564,7 @@ export function ConfigureStep({
       {/* Sticky bottom action bar */}
       <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
-          Back
+          {t('common.back')}
         </Button>
         <div className="flex-1" />
         {isProcessing && onCancel && (
@@ -545,7 +574,7 @@ export function ConfigureStep({
             onClick={onCancel}
             className="text-sm text-muted-foreground hover:text-destructive transition-colors flex-none"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <Button
@@ -554,7 +583,7 @@ export function ConfigureStep({
           onClick={handleSubmit}
           disabled={isProcessing || isNonCompressible}
         >
-          {isProcessing ? 'Processing…' : isNonCompressible ? 'Compression not available' : 'Generate Preview'}
+          {isProcessing ? t('common.processing') : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
         </Button>
       </div>
     </div>

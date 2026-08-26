@@ -21,6 +21,7 @@ import {
 import { applyAllEdits } from '@/lib/pdfEditor';
 import type { ConvertFormat, ConvertOptions, ConverterAvailability, EpubLayout } from '@/types/converter';
 import type { PageEditState } from '@/types/editor';
+import { t } from '@/i18n';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -140,7 +141,7 @@ export function ExportPanel({
       if (savePath) {
         await writeFile(savePath, result.outputBytes);
         const sizeMb = (result.outputSize / 1024 / 1024).toFixed(1);
-        setSuccess(`Saved as ${FORMAT_LABELS[selectedFormat]} (${sizeMb} MB)`);
+        setSuccess(t('exportPanel.savedAsFormat', { format: FORMAT_LABELS[selectedFormat], size: sizeMb }));
         onExportComplete?.();
       }
     } catch (err) {
@@ -157,7 +158,7 @@ export function ExportPanel({
   return (
     <div className="flex flex-col gap-3 p-4">
       <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Export / Convert
+        {t('editPdf.exportConvert')}
       </h4>
 
       {/* Format selector grid — only formats this system can produce */}
@@ -186,7 +187,7 @@ export function ExportPanel({
       {selectedFormat === 'epub' && (
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            EPUB Layout
+            {t('convertDoc.epubLayout')}
           </label>
           <div className="flex gap-1">
             {(['reflowable', 'fixed'] as const).map((layout) => (
@@ -197,7 +198,7 @@ export function ExportPanel({
                 className="flex-1 text-xs"
                 onClick={() => setEpubLayout(layout)}
               >
-                {layout === 'reflowable' ? 'Reflowable' : 'Fixed'}
+                {layout === 'reflowable' ? t('convertDoc.reflowable') : t('exportPanel.fixed')}
               </Button>
             ))}
           </div>
@@ -207,16 +208,16 @@ export function ExportPanel({
       {/* Typography controls (collapsible) */}
       <button
         onClick={() => setShowTypography(!showTypography)}
-        className="text-xs text-muted-foreground hover:text-foreground text-left transition-colors"
+        className="text-xs text-muted-foreground hover:text-foreground text-start transition-colors"
       >
-        {showTypography ? '▾' : '▸'} Typography options
+        {showTypography ? '▾' : '▸'} {t('exportPanel.typographyOptions')}
       </button>
 
       {showTypography && (
-        <div className="flex flex-col gap-2 pl-2 border-l-2 border-border">
+        <div className="flex flex-col gap-2 ps-2 border-s-2 border-border">
           {/* Font family */}
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Font</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('convertDoc.font')}</label>
             <select
               value={fontFamily}
               onChange={(e) => setFontFamily(e.target.value)}
@@ -230,7 +231,7 @@ export function ExportPanel({
 
           {/* Font size */}
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Size (pt)</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('editPdf.sizePt')}</label>
             <input
               type="number"
               min={8}
@@ -243,7 +244,7 @@ export function ExportPanel({
 
           {/* Margins */}
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Margins (mm)</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('convertDoc.marginsMm')}</label>
             <input
               type="number"
               min={0}
@@ -256,7 +257,7 @@ export function ExportPanel({
 
           {/* Line spacing */}
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Line spacing</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('convertDoc.lineSpacing')}</label>
             <select
               value={lineSpacing}
               onChange={(e) => setLineSpacing(Number(e.target.value))}
@@ -275,7 +276,7 @@ export function ExportPanel({
         <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md p-2">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span>
-            No document converter found. Install any converter (Microsoft Word, LibreOffice, etc.) to enable export.
+            {t('editPdf.noDocumentConverterFoundInstall')}
           </span>
         </div>
       )}
@@ -289,22 +290,22 @@ export function ExportPanel({
       >
         {isConverting ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-            Converting...
+            <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />
+            {t('convertImage.converting')}
           </>
         ) : (
           <>
-            <Download className="w-3.5 h-3.5 mr-2" />
+            <Download className="w-3.5 h-3.5 me-2" />
             {selectedFormat
-              ? `Export as ${FORMAT_LABELS[selectedFormat]}`
-              : 'Select format'}
+              ? t('exportPanel.exportAsFormat', { format: FORMAT_LABELS[selectedFormat] })
+              : t('exportPanel.selectFormat')}
           </>
         )}
       </Button>
 
       {isDirty && selectedFormat && (
         <p className="text-[10px] text-muted-foreground">
-          Pending edits will be applied before export.
+          {t('editPdf.pendingEditsWillBeApplied')}
         </p>
       )}
 

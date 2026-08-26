@@ -69,7 +69,36 @@ objc2-web-kit = { version = "0.3", default-features = false, features = [
     "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
 ] }
 objc2-pdf-kit = { version = "0.3", default-features = false, features = [
-    "std", "PDFDocument", "PDFPage",
+    "std", "PDFDocument", "PDFPage", "objc2-core-graphics",
+] }
+
+# HEIC decoding via the OS. Every iPhone photo is HEIC by default, and no
+# permissively-licensed Rust decoder exists — the pure-Rust ones are AGPL, which
+# an MIT app cannot take, and libheif means shipping LGPL C libraries built for
+# four targets. macOS has a decoder in the OS, so we use it and report the limit
+# honestly elsewhere (see heic.rs). objc2-core-graphics is already in the tree
+# via wry, so this resolves to the same crate instance.
+objc2-core-graphics = { version = "0.3", default-features = false, features = [
+    "std", "CGImage", "CGContext", "CGColorSpace", "CGBitmapContext", "CGGeometry",
+    "CGPDFDocument", "CGPDFPage", "CGPDFContext", "CGDataConsumer",
+] }
+# Drawing the invisible text layer. System fonts cover every language Vision can
+# read — a bundled Latin font would give a searchable layer for about half of
+# them and fail silently on the rest. Already in the lockfile via wry.
+objc2-core-text = { version = "0.3", default-features = false, features = [
+    "std", "CTFont", "CTLine", "CTStringAttributes", "objc2-core-graphics",
+] }
+objc2-image-io = { version = "0.3", default-features = false, features = [
+    "std", "CGImageSource", "objc2-core-graphics",
+] }
+
+# OCR via the OS. Vision is the engine Preview and Photos use, covers 30
+# languages including the German and Turkish that F13b targets, and needs no
+# bundled binary, no language data and no P012 provenance — unlike Tesseract,
+# which is ~10 dylibs once leptonica and the image libraries are counted.
+objc2-vision = { version = "0.3", default-features = false, features = [
+    "std", "VNRequest", "VNRecognizeTextRequest", "VNObservation",
+    "VNRequestHandler", "VNTypes", "objc2-core-graphics", "objc2-core-foundation",
 ] }
 
 

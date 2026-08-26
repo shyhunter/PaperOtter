@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { readFile } from '@tauri-apps/plugin-fs';
+import { readImageBytes } from '@/lib/imageInput';
 import type { ImageProcessingOptions, ImageProcessingResult, ImageOutputFormat } from '@/types/file';
 
 /** Get image dimensions from bytes using the browser's createImageBitmap (no Rust round-trip needed) */
@@ -15,27 +15,16 @@ function getMimeType(format: ImageOutputFormat): string {
   return format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
 }
 
-// Detect source format from file extension for dimension query
-function detectMimeFromPath(sourcePath: string): string {
-  const ext = sourcePath.split('.').pop()?.toLowerCase() ?? '';
-  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
-  if (ext === 'png') return 'image/png';
-  if (ext === 'webp') return 'image/webp';
-  if (ext === 'tiff' || ext === 'tif') return 'image/tiff';
-  if (ext === 'bmp') return 'image/bmp';
-  if (ext === 'gif') return 'image/gif';
-  return 'image/jpeg'; // fallback
-}
-
 export async function processImage(
   sourcePath: string,
   options: ImageProcessingOptions,
 ): Promise<ImageProcessingResult> {
-  // Read source bytes for the Before panel
-  const sourceBytes = await readFile(sourcePath);
+  // Read source bytes for the Before panel. A HEIC comes back as PNG — the
+  // webview cannot decode HEIC — so these bytes are a stand-in for the preview,
+  // not the file on disk.
+  const { bytes: sourceBytes, mime: sourceMime, sizeBytes: inputSizeBytes } = await readImageBytes(sourcePath);
 
   // Get source dimensions via createImageBitmap (browser-native, no extra Rust command)
-  const sourceMime = detectMimeFromPath(sourcePath);
   const sourceDims = await getImageDimensions(sourceBytes, sourceMime);
 
   // Call Rust command — returns Uint8Array via tauri::ipc::Response
@@ -55,7 +44,7 @@ export async function processImage(
   return {
     bytes: processedBytes,
     sourceBytes,
-    inputSizeBytes: sourceBytes.byteLength,
+    inputSizeBytes,
     outputSizeBytes: processedBytes.byteLength,
     outputFormat: options.outputFormat,
     quality: options.quality,

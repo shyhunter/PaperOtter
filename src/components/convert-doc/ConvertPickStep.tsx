@@ -4,6 +4,7 @@ import { FileUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getExtension } from '@/lib/fileValidation';
 import type { ConvertFormat } from '@/types/converter';
+import { t } from '@/i18n';
 
 const DOC_EXTENSIONS = [
   'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
@@ -40,7 +41,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'Document Files', extensions: DOC_EXTENSIONS }],
+        filters: [{ name: t('filter.documentFiles'), extensions: DOC_EXTENSIONS }],
       });
       if (!result || typeof result !== 'string') {
         setIsLoading(false);
@@ -49,13 +50,13 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
       const ext = getExtension(result);
       const format = extToFormat(ext);
       if (!format) {
-        setError('Unsupported file format. Please use PDF, DOCX, DOC, ODT, EPUB, TXT, RTF, or HTML.');
+        setError(t('convertDoc.unsupportedFileFormatPleaseUse'));
         setIsLoading(false);
         return;
       }
       onFilePicked(result, format);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -65,15 +66,15 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-4 text-center">
-        <h2 className="text-lg font-semibold text-foreground">Convert Document</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('convertDoc.convertDocument')}</h2>
         <p className="text-sm text-muted-foreground">
-          Select a document to convert between formats.
+          {t('convertDoc.selectADocumentToConvert')}
         </p>
         <p className="text-xs text-muted-foreground">
-          Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML
+          {t('convertDoc.openPdfDocxDocOdt')}
         </p>
         <p className="text-xs text-muted-foreground">
-          Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more
+          {t('convertDoc.convertToMarkdownHtmlJson')}
         </p>
 
         {error && (
@@ -85,13 +86,13 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
         <Button onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading...
+              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              {t('common.loading')}
             </>
           ) : (
             <>
-              <FileUp className="w-4 h-4 mr-2" />
-              Select Document
+              <FileUp className="w-4 h-4 me-2" />
+              {t('convertDoc.selectDocument')}
             </>
           )}
         </Button>

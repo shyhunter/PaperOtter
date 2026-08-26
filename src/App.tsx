@@ -13,10 +13,11 @@ import { ImageCompareStep } from '@/components/ImageCompareStep';
 import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary';
 import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
+import { useLocale } from '@/i18n/context';
 import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader } from '@/lib/fileValidation';
+import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
 import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
@@ -46,6 +47,15 @@ import { UpdateChecker } from '@/components/UpdateChecker';
 import { EditorView } from '@/components/pdf-editor/EditorView';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
 import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+import { t } from '@/i18n';
+import { useBatchProcessor } from '@/hooks/useBatchProcessor';
+import { BatchSummaryStep } from '@/components/batch/BatchSummaryStep';
+import { BatchRunStep } from '@/components/batch/BatchRunStep';
+import { processPdf } from '@/lib/pdfProcessor';
+import { processImage } from '@/lib/imageProcessor';
+import { OcrPdfFlow } from '@/components/ocr-pdf/OcrPdfFlow';
+import { resolveInitialLocale } from '@/i18n/preference';
+import { setLocale } from '@/i18n';
 
 function detectImageFormat(filePath: string): ImageOutputFormat {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
@@ -55,16 +65,16 @@ function detectImageFormat(filePath: string): ImageOutputFormat {
 }
 
 function buildImageSaveFileName(sourceFileName: string, outputFormat: ImageOutputFormat): string {
-  const base = sourceFileName.replace(/\.(jpe?g|png|webp)$/i, '');
+  const base = stripImageExtension(sourceFileName);
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
   return `${base}-processed.${ext}`;
 }
 
 function buildImageSaveFilters(outputFormat: ImageOutputFormat): Array<{ name: string; extensions: string[] }> {
   switch (outputFormat) {
-    case 'jpeg': return [{ name: 'JPEG Image', extensions: ['jpg', 'jpeg'] }];
-    case 'png':  return [{ name: 'PNG Image',  extensions: ['png'] }];
-    case 'webp': return [{ name: 'WebP Image', extensions: ['webp'] }];
+    case 'jpeg': return [{ name: t('filter.jpegImage'), extensions: ['jpg', 'jpeg'] }];
+    case 'png':  return [{ name: t('filter.pngImage'),  extensions: ['png'] }];
+    case 'webp': return [{ name: t('filter.webpImage'), extensions: ['webp'] }];
   }
 }
 
@@ -89,6 +99,7 @@ const DEDICATED_TOOLS = new Set<string>([
   'convert-doc',
   'pdfa-convert',
   'repair-pdf',
+  'ocr-pdf',
 ]);
 
 /**
@@ -323,6 +334,15 @@ function DedicatedToolFlow() {
   }
 
   // Repair PDF — dedicated flow
+  if (activeTool === 'ocr-pdf') {
+    return (
+      <>
+        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
+        <OcrPdfFlow onStepChange={setDedicatedFlowStep} />
+      </>
+    );
+  }
+
   if (activeTool === 'repair-pdf') {
     return (
       <>
@@ -340,6 +360,10 @@ function StandardToolFlow() {
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
+  // Every file in the current batch, first included. Length <= 1 means the
+  // ordinary single-file flow, which is untouched.
+  const [batchPaths, setBatchPaths] = useState<string[]>([]);
+  const batchProcessor = useBatchProcessor();
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
   const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
@@ -406,17 +430,25 @@ function StandardToolFlow() {
   }, [pdfProcessor, imageProcessor]);
 
   // Called when a file is confirmed (from picker or drop)
-  const handleFileSelected = useCallback(async (filePath: string) => {
+  const handleFileSelected = useCallback(async (filePath: string, alsoSelected: string[] = []) => {
     if (!filePath) {
-      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
       return;
     }
 
     const format = detectFormat(filePath);
     if (!format) {
-      setInvalidDropError('Unsupported file type — please use PDF, JPG, PNG, or WebP.');
+      setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
+      return;
+    }
+
+    // HEIC decoding needs macOS Image I/O. Say so here rather than letting the
+    // user configure a whole job and fail at the last step.
+    if (isHeicPath(filePath) && !isHeicDecodable()) {
+      setInvalidDropError(heicUnsupportedMessage());
+      setTimeout(() => setInvalidDropError(null), 4000);
       return;
     }
 
@@ -426,13 +458,13 @@ function StandardToolFlow() {
       sizeBytes = await getFileSizeBytes(filePath);
     } catch {
       // Could not read the file at all — treat as corrupt
-      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setCorruptFileError(t('app.thisFileAppearsToBe'));
       setTimeout(() => setCorruptFileError(null), 2500);
       return;
     }
 
     if (sizeBytes === 0) {
-      setEmptyFileError('This file is empty. Please try a different file.');
+      setEmptyFileError(t('app.thisFileIsEmptyPlease'));
       setTimeout(() => setEmptyFileError(null), 2500);
       return;
     }
@@ -461,9 +493,18 @@ function StandardToolFlow() {
       }
     }
 
+    // Only files of the same type join the batch — the options chosen on the
+    // Configure step are type-specific, so a PDF and a JPEG cannot share a run.
+    const sameType = alsoSelected.filter((p) => detectFormat(p) === format);
+    const skipped = alsoSelected.length - sameType.length;
+    if (skipped > 0) {
+      toast(t('batch.skippedDifferentType', { count: skipped }));
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
+      setBatchPaths(sameType.length > 0 ? [filePath, ...sameType] : []);
       addRecentDir(filePath); // persist directory for next session
       setIsLoading(false);
       setCurrentStep(1);
@@ -473,9 +514,10 @@ function StandardToolFlow() {
   // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
   useEffect(() => {
     if (pendingFiles.length > 0 && currentStep === 0 && !fileEntry) {
-      const file = pendingFiles[0];
+      const [file, ...rest] = pendingFiles;
       setPendingFiles([]);
-      handleFileSelected(file);
+      // rest carries the other files staged on the dashboard, which start a batch.
+      handleFileSelected(file, rest);
     }
   }, [pendingFiles, currentStep, fileEntry, handleFileSelected, setPendingFiles]);
 
@@ -550,7 +592,7 @@ function StandardToolFlow() {
   useEffect(() => {
     if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
       handleStartOver();
-      setCorruptFileError('This file appears to be corrupt. Please try a different file.');
+      setCorruptFileError(t('app.thisFileAppearsToBe'));
       setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -579,8 +621,8 @@ function StandardToolFlow() {
       }
       // null = user cancelled — do nothing
     } catch {
-      toast.error('Could not open file picker', {
-        description: 'Please try again.',
+      toast.error(t('app.couldNotOpenFilePicker'), {
+        description: t('app.pleaseTryAgain'),
       });
     }
   }, [handleFileSelected]);
@@ -590,9 +632,24 @@ function StandardToolFlow() {
       if (!fileEntry) return;
       lastPdfOptionsRef.current = options;
       setLastPdfQualityLevel(options.qualityLevel);
+
+      if (batchPaths.length > 1) {
+        setCurrentStep(2);
+        void batchProcessor.run(batchPaths, async (path) => {
+          const result = await processPdf(path, options);
+          return {
+            fileName: `${getFileName(path).replace(/\.pdf$/i, '')}-optimised.pdf`,
+            bytes: result.bytes,
+            inputSizeBytes: result.inputSizeBytes,
+            outputSizeBytes: result.outputSizeBytes,
+          };
+        });
+        return;
+      }
+
       pdfProcessor.run(fileEntry.path, options);
     },
-    [fileEntry, pdfProcessor],
+    [fileEntry, pdfProcessor, batchPaths, batchProcessor],
   );
 
   // Retry PDF processing with the last options after cancellation
@@ -610,9 +667,24 @@ function StandardToolFlow() {
       if (!fileEntry) return;
       // Clear suppress flag so the advance effect triggers when isProcessing becomes true.
       suppressImageAdvance.current = false;
+
+      if (batchPaths.length > 1) {
+        setCurrentStep(2);
+        void batchProcessor.run(batchPaths, async (path) => {
+          const result = await processImage(path, options);
+          return {
+            fileName: buildImageSaveFileName(getFileName(path), options.outputFormat),
+            bytes: result.bytes,
+            inputSizeBytes: result.inputSizeBytes,
+            outputSizeBytes: result.outputSizeBytes,
+          };
+        });
+        return;
+      }
+
       imageProcessor.run(fileEntry.path, options);
     },
-    [fileEntry, imageProcessor],
+    [fileEntry, imageProcessor, batchPaths, batchProcessor],
   );
 
   const handleSave = useCallback(() => {
@@ -642,9 +714,11 @@ function StandardToolFlow() {
     suppressImageAdvance.current = false;
     setCurrentStep(0);
     setFileEntry(null);
+    setBatchPaths([]);
     pdfProcessor.reset();
     imageProcessor.reset();
-  }, [pdfProcessor, imageProcessor]);
+    batchProcessor.reset();
+  }, [pdfProcessor, imageProcessor, batchProcessor]);
 
   return (
     <>
@@ -703,6 +777,26 @@ function StandardToolFlow() {
           />
         )}
       </StepErrorBoundary>
+
+      {/* Step 2: Batch — running, then summary. Replaces Compare, which has no
+          meaning for twelve files at once. */}
+      {currentStep === 2 && batchPaths.length > 1 && batchProcessor.isRunning && (
+        <BatchRunStep progress={batchProcessor.progress} onCancel={batchProcessor.cancel} />
+      )}
+      {currentStep === 2 && batchPaths.length > 1 && !batchProcessor.isRunning && batchProcessor.result && (
+        <BatchSummaryStep
+          succeeded={batchProcessor.result.succeeded.map((s) => ({
+            path: s.path,
+            fileName: s.output.fileName,
+            inputSizeBytes: s.output.inputSizeBytes,
+            outputSizeBytes: s.output.outputSizeBytes,
+          }))}
+          failed={batchProcessor.result.failed}
+          cancelled={batchProcessor.result.cancelled}
+          onSave={() => setCurrentStep(3)}
+          onBack={handleBackFromConfigure}
+        />
+      )}
 
       {/* Step 2: Compare — image */}
       <StepErrorBoundary stepName="Compare">
@@ -788,7 +882,7 @@ function AppContent() {
       const result = await open({
         multiple: false,
         directory: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (cancelled) return;
       if (typeof result === 'string') {
@@ -853,6 +947,17 @@ function AppContent() {
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  // Subscribes the root to the translation store. Components below call the
+  // module-level t() with no hook of their own; this re-render is what makes
+  // their strings update when the language changes. See i18n/context.tsx —
+  // a <Provider>{children}</Provider> wrapper would not work here.
+  useLocale();
+
+  // Follow the OS language on first run, or the remembered choice after that.
+  // Runs once: switching language later goes through the picker.
+  useEffect(() => {
+    void resolveInitialLocale().then(setLocale);
+  }, []);
 
   return (
     <AppErrorBoundary>

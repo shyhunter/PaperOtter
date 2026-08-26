@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ConvertFormat, ConvertResult } from '@/types/converter';
+import { t } from '@/i18n';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -71,7 +72,9 @@ export function ConvertCompareStep({
               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
           )}>
-            {sizeChangePct}% {grew ? 'larger' : 'smaller'}
+            {grew
+              ? t('common.percentLarger', { percent: sizeChangePct })
+              : t('common.percentSmaller', { percent: sizeChangePct })}
           </span>
         )}
       </div>
@@ -83,10 +86,10 @@ export function ConvertCompareStep({
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Original</p>
+                <p className="text-xs text-muted-foreground">{t('imageCompare.original')}</p>
                 <p className="text-sm font-medium text-foreground mt-0.5 truncate">{sourceFileName}</p>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                   {FORMAT_LABELS[sourceFormat]}
                 </span>
@@ -104,10 +107,10 @@ export function ConvertCompareStep({
           <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Converted</p>
+                <p className="text-xs text-muted-foreground">{t('convertDoc.converted')}</p>
                 <p className="text-sm font-medium text-foreground mt-0.5 truncate">{convertedFileName}</p>
               </div>
-              <div className="text-right">
+              <div className="text-end">
                 <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   {FORMAT_LABELS[result.outputFormat]}
                 </span>
@@ -126,10 +129,10 @@ export function ConvertCompareStep({
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
-          Process Another
+          {t('convertDoc.processAnother')}
         </button>
         <Button size="sm" onClick={onSave} className="flex-none">
-          Save...
+          {t('common.saveEllipsis')}
         </Button>
       </div>
     </div>

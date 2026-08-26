@@ -16,6 +16,7 @@ import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { convertDocument, checkSidecarAvailability } from '@/lib/documentConverter';
 import type { MultiFileOutput } from '@/components/SaveStep';
 import type { ConvertFormat } from '@/types/converter';
+import { plural, t } from '@/i18n';
 
 // Worker setup — must match pdfThumbnail.ts
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -33,14 +34,20 @@ interface FormatOption {
   engine?: 'libreoffice' | 'calibre';
 }
 
-const FORMAT_OPTIONS: FormatOption[] = [
-  { value: 'jpeg', label: 'JPG', group: 'image' },
-  { value: 'png', label: 'PNG', group: 'image' },
-  { value: 'docx', label: 'Word', group: 'document', engine: 'libreoffice' },
-  { value: 'epub', label: 'EPUB', group: 'ebook', engine: 'calibre' },
-  { value: 'mobi', label: 'MOBI', group: 'ebook', engine: 'calibre' },
-  { value: 'azw3', label: 'Kindle', group: 'ebook', engine: 'calibre' },
-];
+/**
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import -- before the locale is known.
+ */
+function formatOptions(): FormatOption[] {
+  return [
+    { value: 'jpeg', label: 'JPG', group: 'image' },
+    { value: 'png', label: 'PNG', group: 'image' },
+    { value: 'docx', label: t('pdfToJpgFlow.word'), group: 'document', engine: 'libreoffice' },
+    { value: 'epub', label: 'EPUB', group: 'ebook', engine: 'calibre' },
+    { value: 'mobi', label: 'MOBI', group: 'ebook', engine: 'calibre' },
+    { value: 'azw3', label: t('pdfToJpgFlow.kindle'), group: 'ebook', engine: 'calibre' },
+  ];
+}
 
 type ScaleOption = { label: string; dpiLabel: string; scale: number };
 
@@ -233,12 +240,12 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -284,7 +291,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
           outputFormat,
           quality,
           (current, total) => {
-            setProcessProgress(`Rendering page ${current} of ${total}...`);
+            setProcessProgress(t('pdfToJpgFlow.renderingPageOf', { current, total }));
           },
         );
 
@@ -297,7 +304,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         goToStep(2);
       } else {
         // Document/ebook conversion: extract selected pages → temp PDF → convert
-        setProcessProgress('Extracting selected pages...');
+        setProcessProgress(t('pdfToJpgFlow.extractingSelectedPages'));
         const extractedPdf = await extractPages(pdfBytes, sortedSelectedPages);
 
         // Write to temp file for converter
@@ -306,7 +313,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         const tempPath = await join(tmpBase, `papercut_convert_${ts}.pdf`);
         await writeFile(tempPath, extractedPdf);
 
-        setProcessProgress(`Converting to ${outputFormat.toUpperCase()}...`);
+        setProcessProgress(t('pdfToJpgFlow.convertingTo', { format: outputFormat.toUpperCase() }));
         const result = await convertDocument(tempPath, 'pdf', { outputFormat: outputFormat as ConvertFormat });
 
         // Clean up temp file
@@ -316,7 +323,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         goToStep(2);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Conversion failed.';
+      const message = err instanceof Error ? err.message : t('pdfToJpgFlow.conversionFailed');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -329,7 +336,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   const allSelected = selectedPages.size === pageCount;
 
   // Check if selected format's engine is available
-  const selectedFormatOption = FORMAT_OPTIONS.find(f => f.value === outputFormat);
+  const selectedFormatOption = formatOptions().find(f => f.value === outputFormat);
   const engineUnavailable = selectedFormatOption?.engine
     ? sidecarAvail && !sidecarAvail[selectedFormatOption.engine]
     : false;
@@ -345,8 +352,8 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Convert PDF</h2>
-              <p className="text-sm text-muted-foreground">Convert PDF pages to images, Word, or ebook formats.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('pdfToJpg.convertPdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('pdfToJpg.convertPdfPagesToImages')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -357,13 +364,13 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -379,10 +386,10 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {pageCount} page{pageCount !== 1 ? 's' : ''}
+                  {plural('count.page', pageCount)}
                   {selectedPages.size < pageCount && (
-                    <span className="ml-1 text-primary font-medium">
-                      ({selectedPages.size} selected)
+                    <span className="ms-1 text-primary font-medium">
+                      {t('pdfToJpgFlow.nSelectedParens', { count: selectedPages.size })}
                     </span>
                   )}
                 </p>
@@ -390,9 +397,9 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
               {/* Output format */}
               <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Output format</p>
+                <p className="text-xs text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
                 <div className="flex flex-wrap gap-1">
-                  {FORMAT_OPTIONS.map((fmt) => {
+                  {formatOptions().map((fmt) => {
                     const unavailable = fmt.engine && sidecarAvail && !sidecarAvail[fmt.engine];
                     return (
                       <button
@@ -400,7 +407,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                         type="button"
                         onClick={() => setOutputFormat(fmt.value)}
                         disabled={isProcessing || !!unavailable}
-                        title={unavailable ? `${fmt.engine === 'libreoffice' ? 'LibreOffice' : 'Calibre'} not installed` : fmt.label}
+                        title={unavailable ? t('pdfToJpgFlow.engineNotInstalled', { engine: fmt.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre') }) : fmt.label}
                         className={cn(
                           'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                           'disabled:cursor-not-allowed disabled:opacity-40',
@@ -417,7 +424,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
                 {engineUnavailable && (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    {selectedFormatOption?.engine === 'libreoffice' ? 'LibreOffice' : 'Calibre'} is not installed. Install it to enable this format.
+                    {t('pdfToJpgFlow.engineNotInstalledHint', { engine: selectedFormatOption?.engine === 'libreoffice' ? t('pdfToJpgFlow.libreoffice') : t('pdfToJpgFlow.calibre') })}
                   </p>
                 )}
 
@@ -425,7 +432,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 {showQualitySlider && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">Quality</label>
+                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
                       <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
                     </div>
                     <input
@@ -436,7 +443,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                       value={quality}
                       onChange={(e) => setQuality(Number(e.target.value))}
                       disabled={isProcessing}
-                      aria-label="Image quality"
+                      aria-label={t('imageConfigure.quality')}
                       className="w-full accent-primary disabled:opacity-50"
                     />
                   </div>
@@ -445,7 +452,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 {/* Scale / DPI (image formats only) */}
                 {showScaleOptions && (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Resolution</p>
+                    <p className="text-xs text-muted-foreground">{t('pdfToJpg.resolution')}</p>
                     <div className="grid grid-cols-3 gap-1">
                       {SCALE_OPTIONS.map((opt, idx) => (
                         <button
@@ -486,7 +493,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -496,11 +503,13 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {processProgress ?? 'Converting...'}
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {processProgress ?? t('convertImage.converting')}
                     </>
                   ) : (
-                    `Convert${selectedPages.size < pageCount ? ` (${selectedPages.size} pages)` : ''}`
+                    selectedPages.size < pageCount
+                      ? t('pdfToJpgFlow.convertNPages', { pages: selectedPages.size })
+                      : t('pdfToJpg.convertPdf')
                   )}
                 </Button>
               </div>
@@ -515,18 +524,18 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               {/* Page selection thumbnails */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Select pages</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('pdfToJpg.selectPages')}</p>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={handleSelectAll} className="h-7 text-xs">
                       {allSelected ? (
-                        <><Square className="w-3 h-3 mr-1" /> Deselect All</>
+                        <><Square className="w-3 h-3 me-1" /> {t('pdfToJpg.deselectAll')}</>
                       ) : (
-                        <><CheckSquare className="w-3 h-3 mr-1" /> Select All</>
+                        <><CheckSquare className="w-3 h-3 me-1" /> {t('pdfToJpg.selectAll')}</>
                       )}
                     </Button>
                     {selectedPages.size > 0 && selectedPages.size < pageCount && (
                       <Badge variant="secondary" className="text-xs">
-                        {selectedPages.size} selected
+                        {t('pdfToJpgFlow.nSelected', { count: selectedPages.size })}
                       </Badge>
                     )}
                   </div>
@@ -556,12 +565,12 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                           className="w-full h-full bg-muted/30"
                           canvasClassName="w-full h-full object-contain"
                         />
-                        <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                        <span className="absolute bottom-0 start-0 end-0 bg-black/60 text-white text-[9px] text-center py-0.5">
                           {i + 1}
                         </span>
                         {/* Selection indicator */}
                         <span className={cn(
-                          'absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
+                          'absolute top-0.5 start-0.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] transition-colors',
                           isSelected
                             ? 'bg-primary border-primary text-primary-foreground'
                             : 'bg-background/70 border-border text-transparent',

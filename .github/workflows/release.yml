@@ -113,6 +113,59 @@ jobs:
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # ── Ghostscript sidecar ───────────────────────────────────────────────
+      # Every platform must ship a Ghostscript that runs on a machine with no
+      # package manager. The binary this repo carried before 2026-08-26 was
+      # copied from Homebrew and referenced eleven libraries under
+      # /opt/homebrew, so PDF compression was broken for every real user.
+      # The macOS and Linux binaries are committed and verified self-contained
+      # (GS-SIDECAR-02 checks macOS at test time). Only Windows is produced here,
+      # because Windows Ghostscript is an installer containing an exe plus a DLL
+      # and cannot be built or extracted from a Mac.
+      #
+      # Licence: Ghostscript is AGPL-3.0. See THIRD-PARTY-LICENSES.md.
+      - name: Fetch Ghostscript sidecar (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $url = 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10060/gs10060w64.exe'
+          Invoke-WebRequest -Uri $url -OutFile gs-installer.exe -MaximumRetryCount 3
+          # P012: verify before extracting anything from it.
+          $sha = (Get-FileHash gs-installer.exe -Algorithm SHA256).Hash.ToLower()
+          Write-Host "installer sha256: $sha"
+          # Pinned from Artifex's published SHA512SUMS for the gs10060 release,
+          # cross-checked locally before being written here.
+          $expected = '8d552205c0fe87a16bac2f377c8a1b090cfcbc610db7c281bd6a646b39c9c468'
+          if ($sha -ne $expected) {
+            throw "Ghostscript installer checksum mismatch. Expected $expected, got $sha"
+          }
+          # The installer is NSIS; 7z is preinstalled on GitHub Windows runners.
+          # Windows Ghostscript is gswin64c.exe PLUS gsdll64.dll, so the DLL is
+          # placed beside the sidecar rather than the exe shipping alone.
+          7z x gs-installer.exe -ogs-extracted -y | Out-Null
+          Copy-Item gs-extracted/bin/gswin64c.exe "$env:GITHUB_WORKSPACE/src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe" -Force
+          Copy-Item gs-extracted/bin/gsdll64.dll  "$env:GITHUB_WORKSPACE/src-tauri/binaries/gsdll64.dll" -Force
+          & "$env:GITHUB_WORKSPACE/src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe" --version
+
+      - name: Verify a real Ghostscript is bundled
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.target }}" in
+            *windows*) BIN="src-tauri/binaries/gs-${{ matrix.target }}.exe" ;;
+            *)         BIN="src-tauri/binaries/gs-${{ matrix.target }}" ;;
+          esac
+          SIZE=$(wc -c < "$BIN")
+          # The stubs are under 100 bytes. A real Ghostscript is tens of MB.
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "$BIN is still a placeholder ($SIZE bytes)."
+            echo "Shipping this means PDF compression silently requires the user"
+            echo "to install Ghostscript themselves. Refusing to release."
+            exit 1
+          fi
+          echo "$BIN: $SIZE bytes"
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
@@ -312,6 +365,76 @@ jobs:
 
           Stop-Process -Id $proc.Id -Force
           Write-Host "=== Windows smoke test PASSED ==="
+
+      # ── Windows: the bundled Ghostscript must actually load and compress ──
+      #
+      # This is the check the build job cannot make. There, the exe and gsdll64.dll
+      # sit in the same folder, so gs runs whatever happens. In the *installed*
+      # layout the sidecar goes next to Papercut.exe while the DLL goes under
+      # resources\, and gswin64c.exe is only a thin wrapper around that DLL — so
+      # the interesting failure only exists after installation.
+      #
+      # Runs against the installed tree, replicating what with_windows_dll_path
+      # does in lib.rs: prepend the resource directory to the child's PATH.
+      - name: "Windows: bundled Ghostscript loads and compresses"
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $searchRoots = @($env:LOCALAPPDATA, $env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:APPDATA) | Where-Object { $_ }
+
+          $gs = $null; $dll = $null
+          foreach ($root in $searchRoots) {
+            if (-Not $gs)  { $gs  = (Get-ChildItem -Path $root -Recurse -Filter 'gs.exe'       -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
+            if (-Not $dll) { $dll = (Get-ChildItem -Path $root -Recurse -Filter 'gsdll64.dll'  -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
+          }
+
+          if (-Not $gs) {
+            Write-Host "FAIL: no Ghostscript sidecar in the installed app."
+            Write-Host "PDF compression would silently require the user to install Ghostscript."
+            exit 1
+          }
+          if (-Not $dll) {
+            Write-Host "FAIL: gsdll64.dll was not bundled. gs.exe is only a wrapper around it"
+            Write-Host "and cannot start without it."
+            exit 1
+          }
+          Write-Host "sidecar: $gs"
+          Write-Host "dll:     $dll"
+
+          # Exactly what with_windows_dll_path does before spawning.
+          $env:PATH = "$([System.IO.Path]::GetDirectoryName($dll));$env:PATH"
+
+          & $gs --version
+          if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: bundled Ghostscript did not start."; exit 1 }
+
+          # And that it does real work, not just print a version. This job does
+          # not check out the repo, so Ghostscript generates its own input: a
+          # PostScript page through the pdfwrite device, which is the same device
+          # PDF compression uses.
+          # Built as an array rather than a here-string: a here-string would put
+          # "%!PS" at column 0, and YAML reads a leading % as a directive.
+          $ps = @(
+            '%!PS',
+            '/Helvetica findfont 24 scalefont setfont',
+            '72 720 moveto (Papercut Ghostscript smoke test) show',
+            'showpage'
+          )
+          Set-Content -Path smoke.ps -Value $ps -Encoding ascii
+
+          & $gs -q -dNOPAUSE -dBATCH -dSAFER -dPDFSETTINGS=/screen `
+                -sDEVICE=pdfwrite -sOutputFile=out.pdf smoke.ps
+          if ($LASTEXITCODE -ne 0 -or -Not (Test-Path out.pdf)) {
+            Write-Host "FAIL: bundled Ghostscript could not produce a PDF."
+            exit 1
+          }
+          $header = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes("out.pdf")[0..4])
+          if ($header -ne "%PDF-") {
+            Write-Host "FAIL: output is not a PDF (header: '$header')"
+            exit 1
+          }
+          Write-Host "PASS: bundled Ghostscript produced a valid PDF ($((Get-Item out.pdf).Length) bytes)"
+          Write-Host "=== Windows Ghostscript smoke test PASSED ==="
 
       # ── Linux (AppImage) ──
       - name: "Linux: Install display dependencies"

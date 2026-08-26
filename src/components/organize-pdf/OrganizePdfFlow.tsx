@@ -12,6 +12,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { organizePdf } from '@/lib/pdfOrganize';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
+import { plural, t } from '@/i18n';
 
 interface PageEntry {
   sourceIndex: number;
@@ -84,12 +85,12 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -143,7 +144,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       setProcessedBytes(result);
       goToStep(2);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to organize PDF.';
+      const message = err instanceof Error ? err.message : t('organizePdfFlow.failedToOrganizePdf');
       setProcessError(message);
     } finally {
       setIsProcessing(false);
@@ -157,8 +158,8 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Organize PDF</h2>
-              <p className="text-sm text-muted-foreground">Reorder, delete, or duplicate pages in a PDF.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('organizePdf.organizePdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('organizePdf.reorderDeleteOrDuplicatePages')}</p>
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
                   <p className="text-xs text-destructive">{loadError}</p>
@@ -166,9 +167,9 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               )}
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading...</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
                 ) : (
-                  <><FileUp className="w-4 h-4 mr-2" />Select PDF</>
+                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
               </Button>
             </div>
@@ -181,15 +182,15 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
             {/* Toolbar */}
             <div className="border-b border-border bg-background px-4 py-2 flex items-center gap-3 flex-none">
               <span className="text-sm font-medium text-foreground">
-                {pages.length} page{pages.length !== 1 ? 's' : ''}
+                {plural('count.page', pages.length)}
               </span>
               <div className="flex-1" />
               <Button variant="outline" size="sm" onClick={reverseOrder} disabled={pages.length < 2}>
-                Reverse
+                {t('organizePdf.reverse')}
               </Button>
               <Button variant="outline" size="sm" onClick={resetOrder}>
-                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                Reset
+                <RotateCcw className="w-3.5 h-3.5 me-1.5" />
+                {t('common.reset')}
               </Button>
             </div>
 
@@ -212,11 +213,11 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                           canvasClassName="w-full h-full object-cover"
                         />
                         {/* Page number badge */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5 text-center">
+                        <div className="absolute bottom-0 start-0 end-0 bg-black/60 px-1.5 py-0.5 text-center">
                           <span className="text-[10px] text-white font-medium">
                             {index + 1}
                             {entry.sourceIndex !== index && (
-                              <span className="text-white/60 ml-0.5">(p{entry.sourceIndex + 1})</span>
+                              <span className="text-white/60 ms-0.5">(p{entry.sourceIndex + 1})</span>
                             )}
                           </span>
                         </div>
@@ -234,7 +235,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                               ? 'text-muted-foreground/30 cursor-not-allowed'
                               : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                           )}
-                          title="Move up"
+                          title={t('common.moveUp')}
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
@@ -248,7 +249,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                               ? 'text-muted-foreground/30 cursor-not-allowed'
                               : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                           )}
-                          title="Move down"
+                          title={t('common.moveDown')}
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
                         </button>
@@ -256,7 +257,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                           type="button"
                           onClick={() => duplicatePage(index)}
                           className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                          title="Duplicate"
+                          title={t('organizePdf.duplicate')}
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
@@ -270,7 +271,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                               ? 'text-muted-foreground/30 cursor-not-allowed'
                               : 'text-destructive/70 hover:bg-destructive/10 hover:text-destructive',
                           )}
-                          title="Delete"
+                          title={t('organizePdf.delete')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -289,14 +290,14 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
             {/* Bottom bar */}
             <div className="border-t border-border bg-background px-4 py-3 flex items-center gap-3 flex-none">
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
-                Back
+                {t('common.back')}
               </Button>
               <div className="flex-1" />
               <Button size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.processing')}</>
                 ) : (
-                  `Apply (${pages.length} page${pages.length !== 1 ? 's' : ''})`
+                  t('organizePdfFlow.applyPages', { pages: plural('count.page', pages.length) })
                 )}
               </Button>
             </div>

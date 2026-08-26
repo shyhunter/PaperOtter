@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { ColorPicker } from '@/components/ColorPicker';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 
 afterEach(cleanup);
 
@@ -10,10 +10,10 @@ describe('ColorPicker', () => {
   it('PNC-01: offers every shared preset, White among them', () => {
     render(<ColorPicker value="#000000" onChange={() => {}} />);
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeTruthy();
     }
-    expect(COLOR_PRESETS.map((p) => p.hex)).toContain('#FFFFFF');
+    expect(colorPresets().map((p) => p.hex)).toContain('#FFFFFF');
   });
 
   it('PNC-02: choosing a preset reports its hex', () => {
@@ -45,7 +45,7 @@ describe('ColorPicker', () => {
   it('PNC-05: a custom value marks no preset as selected', () => {
     render(<ColorPicker value="#123456" onChange={() => {}} />);
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label }).getAttribute('aria-pressed')).toBe('false');
     }
   });

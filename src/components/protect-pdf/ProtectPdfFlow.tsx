@@ -6,6 +6,7 @@ import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -59,7 +60,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: PDF_EXTENSIONS }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
       });
       if (!result) {
         setIsLoadingFile(false);
@@ -70,7 +71,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
       setFileName(name);
       goToStep(1);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
@@ -111,8 +112,8 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Protect PDF</h2>
-              <p className="text-sm text-muted-foreground">Add password encryption to a PDF file.</p>
+              <h2 className="text-lg font-semibold text-foreground">{t('protectPdf.protectPdf')}</h2>
+              <p className="text-sm text-muted-foreground">{t('protectPdf.addPasswordEncryptionToA')}</p>
 
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -123,13 +124,13 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -150,13 +151,13 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
               <div className="rounded-lg border border-border bg-card p-4 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">Set Password</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t('protectPdf.setPassword')}</p>
                 </div>
 
                 {/* Password */}
                 <div className="space-y-1.5">
                   <label htmlFor="protect-password" className="text-xs text-muted-foreground">
-                    Password
+                    {t('protectPdf.password')}
                   </label>
                   <div className="relative">
                     <input
@@ -165,14 +166,14 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isProcessing}
-                      placeholder="Enter password"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                      placeholder={t('protectPdf.enterPassword')}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -183,7 +184,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                 {/* Confirm password */}
                 <div className="space-y-1.5">
                   <label htmlFor="protect-confirm-password" className="text-xs text-muted-foreground">
-                    Confirm Password
+                    {t('protectPdf.confirmPassword')}
                   </label>
                   <div className="relative">
                     <input
@@ -192,20 +193,20 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={isProcessing}
-                      placeholder="Confirm password"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                      placeholder={t('protectPdf.confirmPassword')}
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((v) => !v)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {confirmPassword.length > 0 && !passwordsMatch && (
-                    <p className="text-xs text-destructive">Passwords do not match.</p>
+                    <p className="text-xs text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
                   )}
                 </div>
               </div>
@@ -233,7 +234,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                   disabled={isProcessing}
                   className="flex-none"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   size="sm"
@@ -243,11 +244,11 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Encrypting...
+                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      {t('protectPdf.encrypting')}
                     </>
                   ) : (
-                    'Protect PDF'
+                    t('tool.protectPdf.name')
                   )}
                 </Button>
               </div>
@@ -261,7 +262,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}
-            saveFilters={[{ name: 'PDF Document', extensions: ['pdf'] }]}
+            saveFilters={[{ name: t('filter.pdfDocument'), extensions: ['pdf'] }]}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(path) => setSavedFilePath(path)}

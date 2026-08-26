@@ -8,6 +8,8 @@ import { useEditorContext } from '@/context/EditorContext';
 import type { TextBlock } from '@/types/editor';
 import { ColorPicker } from '@/components/ColorPicker';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
+import { t } from '@/i18n';
+import { SearchBar } from './SearchBar';
 
 /** Standard PDF fonts available in pdf-lib */
 const FONT_OPTIONS = [
@@ -124,7 +126,7 @@ export function FormattingToolbar() {
         type="button"
         onClick={handleAddText}
         className={btnToggle(editorMode === 'text')}
-        title="Add text mode (click on page to add)"
+        title={t('pdfEditor.addTextModeClickOn')}
       >
         <span className="flex items-center gap-1">
           <Plus className="w-3 h-3" />
@@ -155,7 +157,7 @@ export function FormattingToolbar() {
           onClick={() => handleFontSizeChange(-1)}
           disabled={isDisabled}
           className={btnBase + ' hover:bg-muted w-6'}
-          title="Decrease font size"
+          title={t('pdfEditor.decreaseFontSize')}
         >
           <Minus className="w-3 h-3 mx-auto" />
         </button>
@@ -173,7 +175,7 @@ export function FormattingToolbar() {
           onClick={() => handleFontSizeChange(1)}
           disabled={isDisabled}
           className={btnBase + ' hover:bg-muted w-6'}
-          title="Increase font size"
+          title={t('pdfEditor.increaseFontSize')}
         >
           <Plus className="w-3 h-3 mx-auto" />
         </button>
@@ -186,14 +188,14 @@ export function FormattingToolbar() {
           onClick={() => !isDisabled && setShowColorPicker(!showColorPicker)}
           disabled={isDisabled}
           className={`${btnBase} hover:bg-muted w-7 flex items-center justify-center`}
-          title="Text color"
+          title={t('pdfEditor.textColor')}
         >
           <div className="w-4 h-4 rounded-sm border border-border" style={{
             backgroundColor: selectedBlock?.color ?? DEFAULT_TEXT_COLOR,
           }} />
         </button>
         {showColorPicker && !isDisabled && (
-          <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2 min-w-[140px]">
+          <div className="absolute top-full start-0 mt-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2 min-w-[140px]">
             <ColorPicker
               value={selectedBlock?.color ?? DEFAULT_TEXT_COLOR}
               onChange={handleColorChange}
@@ -213,7 +215,7 @@ export function FormattingToolbar() {
         onClick={() => updateProp({ bold: !selectedBlock?.bold })}
         disabled={isDisabled}
         className={btnToggle(selectedBlock?.bold ?? false) + ' w-7 font-bold'}
-        title="Bold"
+        title={t('common.bold')}
       >
         <Bold className="w-3.5 h-3.5 mx-auto" />
       </button>
@@ -222,7 +224,7 @@ export function FormattingToolbar() {
         onClick={() => updateProp({ italic: !selectedBlock?.italic })}
         disabled={isDisabled}
         className={btnToggle(selectedBlock?.italic ?? false) + ' w-7'}
-        title="Italic"
+        title={t('common.italic')}
       >
         <Italic className="w-3.5 h-3.5 mx-auto" />
       </button>
@@ -231,7 +233,7 @@ export function FormattingToolbar() {
         onClick={() => updateProp({ underline: !selectedBlock?.underline })}
         disabled={isDisabled}
         className={btnToggle(selectedBlock?.underline ?? false) + ' w-7'}
-        title="Underline"
+        title={t('common.underline')}
       >
         <Underline className="w-3.5 h-3.5 mx-auto" />
       </button>
@@ -246,7 +248,7 @@ export function FormattingToolbar() {
           onChange={(e) => handleLineHeightChange(e.target.value)}
           disabled={isDisabled}
           className="h-7 rounded border border-input bg-background px-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed min-w-[52px]"
-          title="Line spacing"
+          title={t('convertDoc.lineSpacing')}
         >
           <option value={0.8}>0.8</option>
           <option value={1.0}>1.0</option>
@@ -255,6 +257,11 @@ export function FormattingToolbar() {
           <option value={2.0}>2.0</option>
         </select>
       </div>
+
+      {/* Pushed to the end and never disabled: everything to the left acts on the
+          selected text block, search acts on the document. */}
+      <div className="flex-1" />
+      <SearchBar />
     </div>
   );
 }

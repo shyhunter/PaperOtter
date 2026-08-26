@@ -10,14 +10,15 @@ import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
+import { t } from '@/i18n';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
   const fileName = savedPath.split('/').pop() ?? savedPath.split('\\').pop() ?? 'file';
-  toast.success(`Saved to ${fileName}`, {
+  toast.success(t('saveController.savedTo', { name: fileName }), {
     duration: 5000,
     action: {
-      label: 'Show in Finder',
+      label: t('save.showInFinder'),
       onClick: () => {
         invoke('reveal_in_finder', { path: savedPath }).catch(() => {});
       },
@@ -50,7 +51,7 @@ export function SaveController() {
           defaultPath: targetPath
             ? targetPath.replace(/[^/\\]+$/, defaultName)
             : defaultName,
-          filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         });
         if (!selected) {
           setIsSaving(false);
@@ -72,8 +73,8 @@ export function SaveController() {
 
       showSavedToast(targetPath);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
-      toast.error('Failed to save', { description: msg });
+      const msg = err instanceof Error ? err.message : t('save.failed');
+      toast.error(t('pdfEditor.failedToSave'), { description: msg });
     } finally {
       setIsSaving(false);
     }
@@ -100,9 +101,9 @@ export function SaveController() {
   // Saving indicator
   if (isSaving) {
     return (
-      <div className="fixed top-2 right-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+      <div className="fixed top-2 end-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
         <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-        Saving...
+        {t('pdfEditor.saving')}
       </div>
     );
   }
@@ -136,7 +137,7 @@ export function useSaveActions() {
           defaultPath: targetPath
             ? targetPath.replace(/[^/\\]+$/, defaultName)
             : defaultName,
-          filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
+          filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
         });
         if (!selected) {
           setIsSaving(false);
@@ -156,8 +157,8 @@ export function useSaveActions() {
       showSavedToast(targetPath);
       return true;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
-      toast.error('Failed to save', { description: msg });
+      const msg = err instanceof Error ? err.message : t('save.failed');
+      toast.error(t('pdfEditor.failedToSave'), { description: msg });
       return false;
     } finally {
       setIsSaving(false);

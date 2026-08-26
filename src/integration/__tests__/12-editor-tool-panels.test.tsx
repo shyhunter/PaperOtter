@@ -18,9 +18,10 @@ import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
-import { COLOR_PRESETS } from '@/lib/colorPresets';
+import { colorPresets } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
 import { findTextMatches } from '@/lib/pdfTextSearch';
+import { t } from '@/i18n';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -791,15 +792,15 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByPlaceholderText('CONFIDENTIAL')).toBeInTheDocument();
 
     // Font Size and Rotation labels
-    expect(screen.getByText('Font Size')).toBeInTheDocument();
+    expect(screen.getByText('Font size')).toBeInTheDocument();
     expect(screen.getByText('Rotation')).toBeInTheDocument();
 
     // Opacity slider
     expect(screen.getByText(/Opacity:/)).toBeInTheDocument();
 
     // The shared colour picker, not the watermark's own three-colour vocabulary.
-    expect(screen.getByText('Color')).toBeInTheDocument();
-    for (const preset of COLOR_PRESETS) {
+    expect(screen.getByText('Colour')).toBeInTheDocument();
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
@@ -877,7 +878,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Sign PDF'));
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
@@ -894,7 +895,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Redact PDF'));
 
-    for (const preset of COLOR_PRESETS) {
+    for (const preset of colorPresets()) {
       expect(screen.getByRole('button', { name: preset.label })).toBeInTheDocument();
     }
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
@@ -934,8 +935,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Page Numbers')).toBeInTheDocument();
     expect(screen.getByText('Position')).toBeInTheDocument();
     expect(screen.getByText('Format')).toBeInTheDocument();
-    expect(screen.getByText('Start At')).toBeInTheDocument();
-    expect(screen.getByText('Font Size')).toBeInTheDocument();
+    expect(screen.getByText('Start at')).toBeInTheDocument();
+    expect(screen.getByText('Font size')).toBeInTheDocument();
 
     // Position select with options
     const posSelect = screen.getAllByRole('combobox')[0];
@@ -1141,11 +1142,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     const allEqualCheckbox = screen.getByRole('checkbox');
     await user.click(allEqualCheckbox);
 
-    // Should show individual side inputs
-    expect(screen.getByText('top')).toBeInTheDocument();
-    expect(screen.getByText('bottom')).toBeInTheDocument();
-    expect(screen.getByText('left')).toBeInTheDocument();
-    expect(screen.getByText('right')).toBeInTheDocument();
+    // Should show individual side inputs. These read the dictionary rather than
+    // the raw 'top'/'bottom' union members: the label used to be the value
+    // itself with a CSS capitalize, which is a label no non-English user could
+    // read. Asserting the English word would pin that bug back in place.
+    expect(screen.getByText(t('common.top'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.bottom'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.left'))).toBeInTheDocument();
+    expect(screen.getByText(t('common.right'))).toBeInTheDocument();
   });
 
   it('TP-05c — Crop preview processes only the current page; Apply processes the full document', async () => {
@@ -1196,8 +1200,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Save button
     expect(screen.getByText('Save')).toBeInTheDocument();
 
-    // Click-to-Place Mode button
-    expect(screen.getByText('Click-to-Place Mode')).toBeInTheDocument();
+    // Click-to-place mode button
+    expect(screen.getByText('Click-to-place mode')).toBeInTheDocument();
   });
 
   it('TP-06b — Typing a name shows signature preview and enables Place', async () => {
@@ -1380,7 +1384,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     expect(screen.getByText('Protect PDF')).toBeInTheDocument();
     expect(screen.getByText('Password')).toBeInTheDocument();
-    expect(screen.getByText('Confirm Password')).toBeInTheDocument();
+    expect(screen.getByText('Confirm password')).toBeInTheDocument();
 
     // Type mismatched passwords
     const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
@@ -1466,7 +1470,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Switch to Protect
     await user.click(screen.getByTitle('Protect PDF'));
     expect(screen.queryByPlaceholderText('CONFIDENTIAL')).not.toBeInTheDocument();
-    expect(screen.getByText('Confirm Password')).toBeInTheDocument();
+    expect(screen.getByText('Confirm password')).toBeInTheDocument();
   });
 
   // TP-13: Redact Click-to-Place mode toggle
@@ -1484,7 +1488,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Sign PDF'));
 
-    await user.click(screen.getByText('Click-to-Place Mode'));
+    await user.click(screen.getByText('Click-to-place mode'));
 
     expect(latestCtx!.state.editorMode).toBe('text');
     expect(screen.getByText('Placement Mode Active')).toBeInTheDocument();

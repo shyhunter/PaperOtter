@@ -21,6 +21,7 @@ import { ZoomToolbar } from './ZoomToolbar';
 import { ToolSidebar } from './ToolSidebar';
 import { PagePanel } from './PagePanel';
 import { SaveController } from './SaveController';
+import { t } from '@/i18n';
 
 interface EditorViewProps {
   /** File path to open */
@@ -73,7 +74,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
             diagLog('closeRequested.ask.before');
             const confirmed = await ask(
               'You have unsaved changes. Close without saving?',
-              { title: 'Unsaved Changes', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+              { title: t('common.unsavedChanges'), kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
             );
             diagLog(`closeRequested.ask.after confirmed=${confirmed}`);
             if (confirmed) {
@@ -196,7 +197,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading PDF...</span>
+          <span className="text-sm text-muted-foreground">{t('pdfEditor.loadingPdf')}</span>
         </div>
       </div>
     );
@@ -209,25 +210,24 @@ function EditorViewInner({ filePath }: EditorViewProps) {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground">Unable to open file</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('pdfEditor.unableToOpenFile')}</h2>
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
             <p className="text-xs text-destructive">{error}</p>
           </div>
           {repairFailed && (
             <p className="text-xs text-muted-foreground">
-              This file could not be repaired. Whatever is wrong with it is
-              beyond what a rebuild can recover.
+              {t('editorView.couldNotBeRepaired')}
             </p>
           )}
 
           <Button onClick={tryRepair} disabled={isRepairing} className="w-full">
-            <Wrench className="h-4 w-4 mr-2" />
-            {isRepairing ? 'Repairing…' : 'Try to repair'}
+            <Wrench className="h-4 w-4 me-2" />
+            {isRepairing ? t('repairPdf.repairing') : t('editorView.tryToRepair')}
           </Button>
 
           <Button onClick={goToDashboard} variant="outline" className="w-full">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            <ArrowLeft className="h-4 w-4 me-2" />
+            {t('pdfEditor.backToDashboard')}
           </Button>
         </div>
       </div>

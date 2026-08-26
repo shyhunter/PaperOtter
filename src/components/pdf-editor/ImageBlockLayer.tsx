@@ -9,6 +9,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { ImageBlock } from '@/types/editor';
 import { resizeFromCorner, type Corner } from '@/lib/blockResize';
+import { t } from '@/i18n';
 
 interface ImageBlockLayerProps {
   pageIndex: number;
@@ -20,6 +21,17 @@ interface ImageBlockLayerProps {
 const DRAG_THRESHOLD_PX = 3;
 
 const RESIZE_LIMITS = { minWidth: 12, minHeight: 8 };
+
+/** Corner names for the resize handles, so the tooltip is not English-only. */
+function cornerLabel(corner: Corner): string {
+  const labels: Record<Corner, string> = {
+    'top-left': t('pdfEditor.topLeft'),
+    'top-right': t('pdfEditor.topRight'),
+    'bottom-left': t('pdfEditor.bottomLeft'),
+    'bottom-right': t('pdfEditor.bottomRight'),
+  };
+  return labels[corner];
+}
 
 const CORNERS: { corner: Corner; style: React.CSSProperties; cursor: string }[] = [
   { corner: 'top-left', style: { top: -5, left: -5 }, cursor: 'nwse-resize' },
@@ -178,7 +190,7 @@ function ImageBlockView({
     >
       <img
         src={src}
-        alt="Placed signature"
+        alt={t('pdfEditor.placedSignature')}
         draggable={false}
         style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }}
       />
@@ -187,7 +199,7 @@ function ImageBlockView({
         <div
           key={corner}
           data-testid={`image-resize-${corner}`}
-          title={`Resize from ${corner.replace('-', ' ')}`}
+          title={t('imageBlockLayer.resizeFromCorner', { corner: cornerLabel(corner) })}
           onMouseDown={(e) => handleResizeMouseDown(e, corner)}
           style={{
             position: 'absolute',

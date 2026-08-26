@@ -7,6 +7,7 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { useToolContext } from '@/context/ToolContext';
 import { getFileName } from '@/lib/fileValidation';
 import type { ConvertFormat, ConvertResult } from '@/types/converter';
+import { t } from '@/i18n';
 
 function buildSaveName(sourceFileName: string, outputFormat: ConvertFormat, archive?: boolean): string {
   const base = sourceFileName.replace(/\.[^.]+$/, '');
@@ -17,17 +18,17 @@ function buildSaveFilters(
   outputFormat: ConvertFormat,
   archive?: boolean,
 ): Array<{ name: string; extensions: string[] }> {
-  if (archive) return [{ name: 'ZIP Archive', extensions: ['zip'] }];
+  if (archive) return [{ name: t('filter.zipArchive'), extensions: ['zip'] }];
   const labels: Record<ConvertFormat, string> = {
     pdf: 'PDF Document',
-    docx: 'Word Document',
-    doc: 'Word 97-2003 Document',
+    docx: t('convertDocFlow.wordDocument'),
+    doc: t('convertDocFlow.word972003Document'),
     odt: 'OpenDocument Text',
     epub: 'EPUB Ebook',
     mobi: 'MOBI Ebook',
     azw3: 'AZW3 Ebook',
-    txt: 'Plain Text',
-    rtf: 'Rich Text Format',
+    txt: t('convertDocFlow.plainText'),
+    rtf: t('convertDocFlow.richTextFormat'),
     md: 'Markdown',
     html: 'HTML',
     json: 'JSON',

@@ -11,6 +11,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
+import { plural, t } from '@/i18n';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -43,6 +44,10 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
     setPendingFiles([]);
   }
 
+  // OCR reads from the file rather than the bytes already in memory, so the
+  // path has to survive alongside them.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
+
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
     setLoadError(null);
@@ -50,6 +55,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       const bytes = await readFile(filePath);
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       setPdfBytes(bytes);
+      setSourcePath(filePath);
       setFileName(name);
       goToStep(1);
     } catch (err) {
@@ -68,12 +74,12 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
     try {
       const result = await open({
         multiple: false,
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
       });
       if (!result) return;
       await loadFile(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not open file picker.';
+      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     }
   }, [loadFile]);
@@ -96,7 +102,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
 
         goToStep(2);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Redaction failed.';
+        const message = err instanceof Error ? err.message : t('redactPdfFlow.redactionFailed');
         setProcessError(message);
       } finally {
         setIsProcessing(false);
@@ -112,9 +118,9 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Redact PDF</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('redactPdf.redactPdf')}</h2>
               <p className="text-sm text-muted-foreground">
-                Select a PDF to permanently redact sensitive content.
+                {t('redactPdf.selectAPdfToPermanently')}
               </p>
               {loadError && (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
@@ -124,13 +130,13 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
               <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    <FileUp className="w-4 h-4 mr-2" />
-                    Select PDF
+                    <FileUp className="w-4 h-4 me-2" />
+                    {t('pdfToJpg.selectPdf')}
                   </>
                 )}
               </Button>
@@ -144,14 +150,15 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             {isProcessing ? (
               <div className="flex flex-1 flex-col items-center justify-center p-6">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-3" />
-                <p className="text-sm font-medium text-foreground">Applying redactions...</p>
+                <p className="text-sm font-medium text-foreground">{t('redactPdf.applyingRedactions')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Rendering pages and removing content permanently
+                  {t('redactPdf.renderingPagesAndRemovingContent')}
                 </p>
               </div>
             ) : (
               <RedactStep
                 pdfBytes={pdfBytes}
+                sourcePath={sourcePath}
                 onComplete={handleRedactComplete}
                 onBack={() => goToStep(0)}
               />
@@ -171,12 +178,14 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             <div className="mx-4 mt-3 space-y-2">
               <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3">
                 <p className="text-xs text-amber-800 dark:text-amber-200">
-                  Redacted pages have been flattened to images. Text on those pages is no longer selectable.
+                  {t('redactPdf.redactedPagesHaveBeenFlattened')}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                {redactionCount} redaction{redactionCount !== 1 ? 's' : ''} applied across{' '}
-                {redactedPageCount} page{redactedPageCount !== 1 ? 's' : ''}
+                {t('redactPdf.appliedAcross', {
+                  redactions: plural('count.redaction', redactionCount),
+                  pages: plural('count.page', redactedPageCount),
+                })}
               </p>
             </div>
 

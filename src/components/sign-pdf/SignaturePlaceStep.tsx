@@ -4,6 +4,7 @@ import { addSignature } from '@/lib/pdfSign';
 import { PDFDocument } from 'pdf-lib';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { t } from '@/i18n';
 
 interface SignaturePlaceStepProps {
   pdfBytes: Uint8Array;
@@ -289,7 +290,7 @@ export function SignaturePlaceStep({
             >
               <img
                 src={signatureDataUrl}
-                alt="Signature"
+                alt={t('signPdf.signature')}
                 className="pointer-events-none h-full w-full object-contain"
                 draggable={false}
               />
@@ -314,7 +315,7 @@ export function SignaturePlaceStep({
         {/* Page navigation */}
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Page Navigation
+            {t('signPdf.pageNavigation')}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -329,12 +330,12 @@ export function SignaturePlaceStep({
             <select
               value={pageIndex}
               onChange={(e) => setPageIndex(Number(e.target.value))}
-              aria-label="Page selector"
+              aria-label={t('signPdf.pageSelector')}
               className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-center text-sm text-foreground"
             >
               {Array.from({ length: totalPages }, (_, i) => (
                 <option key={i} value={i}>
-                  Page {i + 1} of {totalPages}
+                  {t('common.pageOf', { page: i + 1, total: totalPages })}
                 </option>
               ))}
             </select>
@@ -353,7 +354,7 @@ export function SignaturePlaceStep({
         {/* Page range selector */}
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Apply To
+            {t('signPdf.applyTo')}
           </p>
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
@@ -364,7 +365,7 @@ export function SignaturePlaceStep({
                 onChange={() => setRangeMode('current')}
                 className="accent-primary"
               />
-              Current page only
+              {t('signPdf.currentPageOnly')}
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
               <input
@@ -374,7 +375,7 @@ export function SignaturePlaceStep({
                 onChange={() => setRangeMode('all')}
                 className="accent-primary"
               />
-              All pages
+              {t('signPdf.allPages')}
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
               <input
@@ -384,7 +385,7 @@ export function SignaturePlaceStep({
                 onChange={() => setRangeMode('custom')}
                 className="accent-primary"
               />
-              Custom range
+              {t('signPdf.customRange')}
             </label>
             {rangeMode === 'custom' && (
               <input
@@ -410,15 +411,15 @@ export function SignaturePlaceStep({
           >
             {isProcessing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Applying...
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                {t('common.applying')}
               </>
             ) : (
-              'Apply Signature'
+              t('signaturePlaceStep.applySignature')
             )}
           </Button>
           <Button variant="outline" size="sm" onClick={onBack} className="w-full">
-            Back
+            {t('common.back')}
           </Button>
         </div>
       </div>
