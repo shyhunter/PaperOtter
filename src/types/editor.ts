@@ -1,6 +1,7 @@
 /** PDF editor types — used by the Edit PDF tool (Phase 13). */
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
+import type { TextMatch } from '@/lib/pdfTextSearch';
 
 export interface TextBlock {
   id: string;
@@ -109,4 +110,10 @@ export interface EditorViewState {
   editingBlockId: string | null;
   editorMode: EditorMode;
   compareMode: CompareMode;
+  /** Matches from the toolbar search, so the canvas can draw them. Lives in
+   *  editor state rather than the toolbar because the highlight is painted by a
+   *  layer on each page, not by the control that found it. */
+  searchMatches: TextMatch[];
+  /** Index into searchMatches of the one the user is standing on, or -1. */
+  searchCurrent: number;
 }

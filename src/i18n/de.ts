@@ -1067,4 +1067,12 @@ export const de: Dictionary = {
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
+  'search.placeholder': 'Im Dokument suchen',
+  'search.currentOfTotal': '{current} von {total}',
+  'search.next': 'Nächster Treffer',
+  'search.previous': 'Vorheriger Treffer',
+  'search.clear': 'Suche zurücksetzen',
+  'search.noMatches': 'Keine Treffer für „{query}“.',
+  'search.noMatchesInScan': 'Keine Treffer für „{query}“ im Text, der aus diesem Scan gelesen wurde.',
+  'search.readScanHint': 'Diese Seite enthält keinen durchsuchbaren Text. Beim Lesen wird eine unsichtbare Textebene hinzugefügt; das Aussehen der Seite bleibt unverändert.',
 };

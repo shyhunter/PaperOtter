@@ -691,4 +691,12 @@ export const nl: Dictionary = {
   'split.split': 'Splitsen',
   'toolSidebarPanel.clickToPlaceMode': 'Klik-om-te-plaatsen-modus',
   'unsavedChangesDialog.dontSave': 'Niet opslaan',
+  'search.placeholder': 'Zoeken in document',
+  'search.currentOfTotal': '{current} van {total}',
+  'search.next': 'Volgende overeenkomst',
+  'search.previous': 'Vorige overeenkomst',
+  'search.clear': 'Zoekopdracht wissen',
+  'search.noMatches': 'Geen resultaten voor “{query}”.',
+  'search.noMatchesInScan': 'Geen resultaten voor “{query}” in de tekst die uit deze scan is gelezen.',
+  'search.readScanHint': 'Deze pagina bevat geen doorzoekbare tekst. Bij lezen wordt een onzichtbare tekstlaag toegevoegd; de pagina blijft er precies hetzelfde uitzien.',
 };

@@ -1095,6 +1095,14 @@ export const en = {
   'split.split': 'Split',
   'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
   'unsavedChangesDialog.dontSave': 'Don\'t save',
+  'search.placeholder': 'Find in document',
+  'search.currentOfTotal': '{current} of {total}',
+  'search.next': 'Next match',
+  'search.previous': 'Previous match',
+  'search.clear': 'Clear search',
+  'search.noMatches': 'No matches for “{query}”.',
+  'search.noMatchesInScan': 'No matches for “{query}” in the text read from this scan.',
+  'search.readScanHint': 'This page has no text to search. Reading it adds an invisible text layer, leaving the page looking exactly as it does now.',
 } as const;
 
 /** Every key the app may ask for. A typo here is a compile error, not a blank. */

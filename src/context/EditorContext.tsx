@@ -18,6 +18,7 @@ import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import type { RedactionRect } from '@/components/redact-pdf/RedactOverlay';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import type { ImageBlock } from '@/types/editor';
+import type { TextMatch } from '@/lib/pdfTextSearch';
 import type { EditorViewState, ZoomPreset, PageEditState, TextBlock, EditorMode, CompareMode } from '@/types/editor';
 import { t } from '@/i18n';
 
@@ -50,7 +51,9 @@ type EditorAction =
   | { type: 'UPDATE_IMAGE_BLOCK'; pageIdx: number; block: ImageBlock }
   | { type: 'DELETE_IMAGE_BLOCK'; pageIdx: number; blockId: string }
   | { type: 'DELETE_TEXT_BLOCK'; pageIdx: number; blockId: string }
-  | { type: 'SET_COMPARE_MODE'; mode: CompareMode };
+  | { type: 'SET_COMPARE_MODE'; mode: CompareMode }
+  | { type: 'SET_SEARCH_MATCHES'; matches: TextMatch[] }
+  | { type: 'SET_SEARCH_CURRENT'; index: number };
 
 // ── Reducer ────────────────────────────────────────────────────────────
 
@@ -228,6 +231,17 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
     }
     case 'SET_COMPARE_MODE':
       return { ...state, compareMode: action.mode };
+    case 'SET_SEARCH_MATCHES':
+      // Standing on the first result rather than none: the user pressed Enter to
+      // go somewhere, so landing nowhere would need a second keystroke.
+      return { ...state, searchMatches: action.matches, searchCurrent: action.matches.length > 0 ? 0 : -1 };
+    case 'SET_SEARCH_CURRENT': {
+      // Wraps at both ends. Next from the last result goes back to the first,
+      // which is what every find bar does.
+      const total = state.searchMatches.length;
+      if (total === 0) return { ...state, searchCurrent: -1 };
+      return { ...state, searchCurrent: ((action.index % total) + total) % total };
+    }
     default:
       return state;
   }
@@ -242,6 +256,10 @@ interface EditorContextValue {
   zoomIn: () => void;
   zoomOut: () => void;
   setCurrentPage: (idx: number) => void;
+  /** Replaces the search results and stands on the first, or on none. */
+  setSearchMatches: (matches: TextMatch[]) => void;
+  /** Moves between results, wrapping at both ends. */
+  setSearchCurrent: (index: number) => void;
   markDirty: () => void;
   clearDirty: () => void;
   updatePdfBytes: (bytes: Uint8Array) => void;
@@ -320,6 +338,8 @@ function createEmptyState(): EditorViewState {
     selectedBlockId: null,
     editingBlockId: null,
     editorMode: 'select',
+    searchMatches: [],
+    searchCurrent: -1,
     compareMode: 'off',
   };
 }
@@ -352,6 +372,14 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const setCurrentPage = useCallback((idx: number) => {
     dispatch({ type: 'SET_CURRENT_PAGE', page: idx });
+  }, []);
+
+  const setSearchMatches = useCallback((matches: TextMatch[]) => {
+    dispatch({ type: 'SET_SEARCH_MATCHES', matches });
+  }, []);
+
+  const setSearchCurrent = useCallback((index: number) => {
+    dispatch({ type: 'SET_SEARCH_CURRENT', index });
   }, []);
 
   const markDirty = useCallback(() => {
@@ -690,6 +718,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       zoomIn,
       zoomOut,
       setCurrentPage,
+      setSearchMatches,
+      setSearchCurrent,
       markDirty,
       clearDirty,
       updatePdfBytes,
@@ -735,6 +765,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       zoomIn,
       zoomOut,
       setCurrentPage,
+      setSearchMatches,
+      setSearchCurrent,
       markDirty,
       clearDirty,
       updatePdfBytes,
@@ -812,6 +844,8 @@ export function createEditorViewState(
     selectedBlockId: null,
     editingBlockId: null,
     editorMode: 'select',
+    searchMatches: [],
+    searchCurrent: -1,
     compareMode: 'off',
   };
 }

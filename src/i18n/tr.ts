@@ -746,4 +746,12 @@ export const tr: Dictionary = {
   'split.split': 'Böl',
   'toolSidebarPanel.clickToPlaceMode': 'Tıkla-yerleştir kipi',
   'unsavedChangesDialog.dontSave': 'Kaydetme',
+  'search.placeholder': 'Belgede bul',
+  'search.currentOfTotal': '{current} / {total}',
+  'search.next': 'Sonraki eşleşme',
+  'search.previous': 'Önceki eşleşme',
+  'search.clear': 'Aramayı temizle',
+  'search.noMatches': '“{query}” için eşleşme yok.',
+  'search.noMatchesInScan': 'Bu taramadan okunan metinde “{query}” için eşleşme yok.',
+  'search.readScanHint': 'Bu sayfada aranacak metin yok. Sayfayı okumak görünmez bir metin katmanı ekler; sayfanın görünümü aynı kalır.',
 };

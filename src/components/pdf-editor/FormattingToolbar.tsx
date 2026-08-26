@@ -9,6 +9,7 @@ import type { TextBlock } from '@/types/editor';
 import { ColorPicker } from '@/components/ColorPicker';
 import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { t } from '@/i18n';
+import { SearchBar } from './SearchBar';
 
 /** Standard PDF fonts available in pdf-lib */
 const FONT_OPTIONS = [
@@ -256,6 +257,11 @@ export function FormattingToolbar() {
           <option value={2.0}>2.0</option>
         </select>
       </div>
+
+      {/* Pushed to the end and never disabled: everything to the left acts on the
+          selected text block, search acts on the document. */}
+      <div className="flex-1" />
+      <SearchBar />
     </div>
   );
 }

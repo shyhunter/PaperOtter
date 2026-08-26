@@ -752,4 +752,12 @@ export const pt: Dictionary = {
   'split.split': 'Dividir',
   'toolSidebarPanel.clickToPlaceMode': 'Modo clicar para colocar',
   'unsavedChangesDialog.dontSave': 'Não guardar',
+  'search.placeholder': 'Procurar no documento',
+  'search.currentOfTotal': '{current} de {total}',
+  'search.next': 'Correspondência seguinte',
+  'search.previous': 'Correspondência anterior',
+  'search.clear': 'Limpar a procura',
+  'search.noMatches': 'Sem resultados para «{query}».',
+  'search.noMatchesInScan': 'Sem resultados para «{query}» no texto lido desta digitalização.',
+  'search.readScanHint': 'Esta página não tem texto para procurar. Ao lê-la é acrescentada uma camada de texto invisível, e o aspeto da página mantém-se igual.',
 };

@@ -1030,4 +1030,12 @@ export const fr: Dictionary = {
   'split.split': 'Diviser',
   'toolSidebarPanel.clickToPlaceMode': 'Mode clic-pour-placer',
   'unsavedChangesDialog.dontSave': 'Ne pas enregistrer',
+  'search.placeholder': 'Rechercher dans le document',
+  'search.currentOfTotal': '{current} sur {total}',
+  'search.next': 'Résultat suivant',
+  'search.previous': 'Résultat précédent',
+  'search.clear': 'Effacer la recherche',
+  'search.noMatches': 'Aucun résultat pour « {query} ».',
+  'search.noMatchesInScan': 'Aucun résultat pour « {query} » dans le texte lu depuis ce scan.',
+  'search.readScanHint': 'Cette page ne contient aucun texte à rechercher. La lecture ajoute une couche de texte invisible : l’aspect de la page reste identique.',
 };

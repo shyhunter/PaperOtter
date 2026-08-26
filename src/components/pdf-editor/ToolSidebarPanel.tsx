@@ -19,7 +19,8 @@ import {
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { rasteriseSignature } from '@/lib/signatureRaster';
 import { applyRedactions } from '@/lib/pdfRedact';
-import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
+import type { TextMatch } from '@/lib/pdfTextSearch';
+import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
@@ -1595,10 +1596,27 @@ function RedactPanel() {
   // and re-create every callback that depends on it.
   const draft = useMemo(() => state.redactionDraft ?? [], [state.redactionDraft]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<TextMatch[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchRan, setSearchRan] = useState(false);
+  // The same search the toolbar uses, so the two cannot drift. This panel used
+  // to own a private copy that told the user a scan "cannot be searched" and
+  // stopped, while the standalone Redact tool offered to read it -- a dead end
+  // and a way forward, for the same document.
+  const search = useDocumentSearch(state.pdfBytes);
+  // Read a scan in the interface language: someone told their page has no text
+  // wants it read, not a second form. The full picker is in Make Searchable.
+  const locale = useLocale();
+  const [ocrLanguage, setOcrLanguage] = useState('en-US');
+  useEffect(() => {
+    let cancelled = false;
+    listOcrLanguages(locale).then((available) => {
+      if (cancelled) return;
+      const match = available.find((l) => l.tag.split('-')[0] === locale.split('-')[0]);
+      setOcrLanguage(match?.tag ?? 'en-US');
+    });
+    return () => { cancelled = true; };
+  }, [locale]);
+  const { query: searchQuery, matches: searchResults, searched: searchRan, isSearching } = search;
+  const setSearchQuery = search.setQuery;
+  const handleSearch = search.search;
   const [scope, setScope] = useState<RedactionScope>('match');
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -1608,26 +1626,6 @@ function RedactPanel() {
     setRedactionDraft([]);
     return () => setRedactionDraft(null);
   }, [setRedactionDraft]);
-
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setSearchResults([]);
-    setSearchRan(false);
-
-    const pdfjsLib = await import('pdfjs-dist');
-    let doc: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']> | null = null;
-    try {
-      doc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
-      setSearchResults(await findTextMatches(doc, searchQuery));
-    } catch {
-      setSearchResults([]);
-    } finally {
-      doc?.destroy();
-      setSearchRan(true);
-      setIsSearching(false);
-    }
-  }, [searchQuery, state.pdfBytes]);
 
   const addMatch = useCallback(
     (match: TextMatch) => {
@@ -1678,14 +1676,14 @@ function RedactPanel() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') void handleSearch(); }}
             placeholder={t('pdfEditor.nameNumber')}
             title={t('pdfEditor.findTextToRedact')}
             className="flex-1 min-w-0 px-2 py-1 text-xs border rounded bg-background"
           />
           <button
             type="button"
-            onClick={handleSearch}
+            onClick={() => void handleSearch()}
             disabled={isSearching || !searchQuery.trim()}
             className="flex-none px-2 py-1 text-xs rounded border border-border hover:bg-muted disabled:opacity-50"
           >
@@ -1694,8 +1692,39 @@ function RedactPanel() {
         </div>
 
         {searchRan && !isSearching && searchResults.length === 0 && (
-          <p className="text-[10px] leading-relaxed text-muted-foreground">
-            {t('toolSidebarPanel.noMatchesNoSelectableText')}
+          <div className="space-y-1.5">
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {search.isScanRead
+                ? t('search.noMatchesInScan', { query: searchQuery })
+                : t('toolSidebarPanel.noMatchesNoSelectableText')}
+            </p>
+            {/* Searching a scan again cannot help -- there is no text layer to
+                look in. Reading the page is what makes the search possible. */}
+            {!search.isScanRead && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void search.readScanAndSearch(ocrLanguage)}
+                  disabled={search.isReadingScan}
+                  className="flex w-full items-center justify-center gap-1.5 rounded border border-border px-2 py-1 text-[10px] hover:bg-muted disabled:opacity-50"
+                >
+                  {search.isReadingScan
+                    ? t('redactPdf.readingScan')
+                    : t('redactPdf.readScanAndSearch')}
+                </button>
+                {search.scanError && (
+                  <p className="text-[10px] text-destructive">{search.scanError}</p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        {search.isScanRead && searchResults.length > 0 && (
+          // Boxes derived from recognised text are approximate, and a redaction
+          // that lands slightly short is a privacy failure rather than a
+          // cosmetic one. Say so before the user applies it.
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            {t('redactPdf.scanBoxesApproximate')}
           </p>
         )}
 

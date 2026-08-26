@@ -698,4 +698,12 @@ export const pl: Dictionary = {
   'split.split': 'Podziel',
   'toolSidebarPanel.clickToPlaceMode': 'Tryb „kliknij, aby umieścić”',
   'unsavedChangesDialog.dontSave': 'Nie zapisuj',
+  'search.placeholder': 'Znajdź w dokumencie',
+  'search.currentOfTotal': '{current} z {total}',
+  'search.next': 'Następny wynik',
+  'search.previous': 'Poprzedni wynik',
+  'search.clear': 'Wyczyść wyszukiwanie',
+  'search.noMatches': 'Brak wyników dla „{query}”.',
+  'search.noMatchesInScan': 'Brak wyników dla „{query}” w tekście odczytanym z tego skanu.',
+  'search.readScanHint': 'Ta strona nie zawiera tekstu do przeszukania. Odczytanie dodaje niewidoczną warstwę tekstu, a wygląd strony pozostaje bez zmian.',
 };

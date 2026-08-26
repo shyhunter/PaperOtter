@@ -815,4 +815,12 @@ export const es: Dictionary = {
   'split.split': 'Dividir',
   'toolSidebarPanel.clickToPlaceMode': 'Modo de clic para colocar',
   'unsavedChangesDialog.dontSave': 'No guardar',
+  'search.placeholder': 'Buscar en el documento',
+  'search.currentOfTotal': '{current} de {total}',
+  'search.next': 'Coincidencia siguiente',
+  'search.previous': 'Coincidencia anterior',
+  'search.clear': 'Borrar la búsqueda',
+  'search.noMatches': 'Ninguna coincidencia con «{query}».',
+  'search.noMatchesInScan': 'Ninguna coincidencia con «{query}» en el texto leído de este escaneo.',
+  'search.readScanHint': 'Esta página no tiene texto que buscar. Al leerla se añade una capa de texto invisible y el aspecto de la página no cambia.',
 };

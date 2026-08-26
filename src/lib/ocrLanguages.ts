@@ -40,7 +40,15 @@ export function nameForLanguageTag(tag: string, uiLocale: string): string {
 export async function listOcrLanguages(uiLocale: string): Promise<OcrLanguage[]> {
   let tags: string[];
   try {
-    tags = await invoke<string[]>('ocr_languages');
+    const answer = await invoke<string[]>('ocr_languages');
+    // Checked, not trusted. A throw is not the only way this fails: a command
+    // that answers with the wrong shape used to reach `.map` and reject after
+    // the caller had already returned, which surfaces as an unhandled rejection
+    // with no route back to the control that asked.
+    if (!Array.isArray(answer)) throw new Error('ocr_languages did not return a list');
+    // An empty list is a real answer -- an engine that recognises nothing -- and
+    // OCR-06f pins it as distinct from no engine at all. Only a non-list is a fault.
+    tags = answer.filter((tag): tag is string => typeof tag === 'string');
   } catch {
     // A build with no engine still has to render a working picker.
     return [{ tag: 'en-US', name: nameForLanguageTag('en-US', uiLocale) }];
