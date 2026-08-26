@@ -9,26 +9,10 @@ import { useToolContext } from '@/context/ToolContext';
 import { ocrPdf, type OcrResult } from '@/lib/ocrProcessor';
 import { getFileName, isHeicDecodable } from '@/lib/fileValidation';
 import { plural, t } from '@/i18n';
+import { useLocale } from '@/i18n/context';
+import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
 
 const PDF_EXTENSIONS = ['pdf'];
-
-/**
- * The languages offered for recognition.
- *
- * A subset of the 30 Vision supports, chosen for the bureaucracy corridors this
- * app is built around rather than by speaker count — the same reasoning that put
- * German and Turkish first in F13b.
- */
-const OCR_LANGUAGES = [
-  { tag: 'en-US', labelKey: 'ocrLang.english' },
-  { tag: 'de-DE', labelKey: 'ocrLang.german' },
-  { tag: 'tr-TR', labelKey: 'ocrLang.turkish' },
-  { tag: 'fr-FR', labelKey: 'ocrLang.french' },
-  { tag: 'es-ES', labelKey: 'ocrLang.spanish' },
-  { tag: 'it-IT', labelKey: 'ocrLang.italian' },
-  { tag: 'nl-NL', labelKey: 'ocrLang.dutch' },
-  { tag: 'pl-PL', labelKey: 'ocrLang.polish' },
-] as const;
 
 interface OcrPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -36,6 +20,7 @@ interface OcrPdfFlowProps {
 
 export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
+  const locale = useLocale();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -46,6 +31,10 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [language, setLanguage] = useState<string>('en-US');
+  // Asked of the OS rather than hardcoded: Vision reads 30 languages today and
+  // the set grows between macOS releases, so a fixed list would either offer
+  // something this machine cannot do or hide something it can.
+  const [languages, setLanguages] = useState<OcrLanguage[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,6 +56,19 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
 
   // Recognition can take seconds per page, so the Rust side reports which page
   // it is on. Without this a long document is indistinguishable from a hang.
+  useEffect(() => {
+    let cancelled = false;
+    listOcrLanguages(locale).then((list) => {
+      if (cancelled) return;
+      setLanguages(list);
+      // Prefer the language the interface is already in — someone reading a
+      // German UI is far more likely to be scanning a German document.
+      const match = list.find((l) => l.tag.split('-')[0] === locale.split('-')[0]);
+      if (match) setLanguage(match.tag);
+    });
+    return () => { cancelled = true; };
+  }, [locale]);
+
   useEffect(() => {
     const unlisten = listen<[number, number]>('ocr-progress', (event) => {
       const [index, total] = event.payload;
@@ -155,8 +157,8 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
                 disabled={isProcessing}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
               >
-                {OCR_LANGUAGES.map((l) => (
-                  <option key={l.tag} value={l.tag}>{t(l.labelKey)}</option>
+                {languages.map((l) => (
+                  <option key={l.tag} value={l.tag}>{l.name}</option>
                 ))}
               </select>
             </div>

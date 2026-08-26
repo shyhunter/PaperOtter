@@ -970,14 +970,6 @@ export const en = {
   'ocr.needsMacos': 'Text recognition is only available on macOS for now.',
   'count.word_one': '{count} word',
   'count.word_other': '{count} words',
-  'ocrLang.english': 'English',
-  'ocrLang.german': 'German',
-  'ocrLang.turkish': 'Turkish',
-  'ocrLang.french': 'French',
-  'ocrLang.spanish': 'Spanish',
-  'ocrLang.italian': 'Italian',
-  'ocrLang.dutch': 'Dutch',
-  'ocrLang.polish': 'Polish',
 
   // ── Redaction search on a scan ──────────────────────────────────────────
   'redactPdf.noMatches': 'No matches for “{query}”. A scanned page has no selectable text, so it cannot be searched until it has been read.',

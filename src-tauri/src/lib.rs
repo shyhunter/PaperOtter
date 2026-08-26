@@ -551,6 +551,15 @@ async fn ocr_pdf(
     serde_json::to_string(&pages).map_err(|e| format!("Could not encode the result: {e}"))
 }
 
+/// Which languages this machine can recognise text in.
+///
+/// Queried rather than hardcoded so the picker can never offer a language the
+/// installed macOS cannot actually do, and never hides one it can.
+#[tauri::command]
+fn ocr_languages() -> Result<Vec<String>, String> {
+    ocr::supported_languages()
+}
+
 /// Writes a searchable copy of a scanned PDF from text already recognised.
 ///
 /// Split from `ocr_pdf` on purpose. Recognition is the slow part and its result
@@ -2083,7 +2092,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.

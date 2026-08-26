@@ -273,6 +273,19 @@ mod imp {
         Some(unsafe { CTLine::with_attributed_string(&attributed) })
     }
 
+    /// Every language this machine's Vision can recognise.
+    ///
+    /// Asked at runtime rather than hardcoded: the set grows between macOS
+    /// releases, and a hardcoded list would either offer a language the OS cannot
+    /// do or hide one it can. Returned as BCP-47 tags for the UI to name.
+    pub fn supported_languages() -> Result<Vec<String>, String> {
+        let request = VNRecognizeTextRequest::new();
+        request.setRecognitionLevel(VNRequestTextRecognitionLevel::Accurate);
+        let langs = unsafe { request.supportedRecognitionLanguagesAndReturnError() }
+            .map_err(|e| format!("Could not read the supported languages: {e}"))?;
+        Ok(langs.iter().map(|l| l.to_string()).collect())
+    }
+
     /// Reads whatever text layer a PDF already carries.
     #[cfg(test)]
     pub fn extract_text(path: &str) -> Result<String, String> {
@@ -338,6 +351,17 @@ pub use imp::recognize_pdf;
 #[cfg(all(target_os = "macos", test))]
 pub fn extract_text(path: &str) -> Result<String, String> {
     imp::extract_text(path)
+}
+
+/// Every language this build can recognise, as BCP-47 tags.
+#[cfg(target_os = "macos")]
+pub fn supported_languages() -> Result<Vec<String>, String> {
+    imp::supported_languages()
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn supported_languages() -> Result<Vec<String>, String> {
+    Ok(Vec::new())
 }
 
 /// Writes a copy of the PDF with an invisible text layer over each page.

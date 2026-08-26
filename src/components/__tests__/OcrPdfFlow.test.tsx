@@ -21,6 +21,15 @@ vi.mock('@/lib/ocrProcessor', async (importOriginal) => ({
 vi.mock('@/context/ToolContext', () => ({
   useToolContext: () => ({ pendingFiles: [], setPendingFiles: vi.fn() }),
 }));
+// The picker is populated from the OS at runtime, so the list has to be stubbed
+// for the flow to have anything to select.
+vi.mock('@/lib/ocrLanguages', () => ({
+  listOcrLanguages: vi.fn(async () => [
+    { tag: 'en-US', name: 'English' },
+    { tag: 'de-DE', name: 'German' },
+    { tag: 'tr-TR', name: 'Turkish' },
+  ]),
+}));
 
 const result = (over: Partial<Awaited<ReturnType<typeof ocrPdf>>['summary']> = {}) => ({
   bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]),
