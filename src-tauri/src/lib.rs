@@ -3030,6 +3030,72 @@ mod tests {
             assert_eq!(px[3], 255, "an opaque photo must stay opaque");
         }
 
+        // ─── HEIC-07/08 — an iPhone photo taken in portrait ───────────────────
+        //
+        // Every iPhone stores its photos in one sensor orientation and records
+        // the upright rotation as EXIF metadata. Preview and Finder apply it;
+        // CGImageSourceCreateImageAtIndex does not, and neither did we — so the
+        // persona's very first action, photographing an ID in portrait and
+        // dragging it in, produced a document lying on its side.
+        //
+        // Confirmed against a real iPhone 13 mini capture during the release
+        // gate: exifOrientation=6, decoded 4032x3024 instead of 3024x4032.
+        // Nothing caught it because both existing fixtures are orientation 1.
+
+        // The companion to ocr_a_real_path: decodes a photo from outside the
+        // fixtures, so a real capture can be checked without guessing.
+        //   PAPERCUT_HEIC_PATH=~/Downloads/IMG_0001.HEIC \
+        //     cargo test --lib heic_a_real_path -- --ignored --nocapture
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn heic_a_real_path() {
+            let path = std::env::var("PAPERCUT_HEIC_PATH").expect("PAPERCUT_HEIC_PATH");
+            let bytes = std::fs::read(&path).expect("read");
+            let frames = frame_count(&bytes).expect("frame count");
+            let img = decode_input_image(&bytes).expect("decode");
+            eprintln!("--- {path}: frames={frames} decoded={}x{}", img.width(), img.height());
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_photo_taken_in_portrait_decodes_upright() {
+            // rotated.heic is stored 120x80 with orientation 6 ("rotate 90° CW
+            // to display"), so an honest decoder must return 80x120.
+            let img = decode_input_image(&read_fixture("rotated.heic"))
+                .expect("rotated.heic must decode");
+            assert_eq!(
+                (img.width(), img.height()),
+                (80, 120),
+                "a portrait photo must not come out on its side"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_rotation_turns_the_right_way() {
+            // Size alone cannot tell 90° clockwise from 90° anticlockwise — both
+            // give 80x120, and one of them puts the document upside down.
+            // The marker sits in the stored top-left, which a correct clockwise
+            // turn moves to the displayed top-right.
+            let img = decode_input_image(&read_fixture("rotated.heic"))
+                .expect("rotated.heic must decode");
+            let rgba = img.to_rgba8();
+            let (w, _h) = (rgba.width(), rgba.height());
+
+            let top_right = rgba.get_pixel(w - 6, 5).0;
+            assert!(
+                top_right[2] > 200 && top_right[0] < 80,
+                "the marker must land top-right after a clockwise turn, got {top_right:?}"
+            );
+
+            let top_left = rgba.get_pixel(5, 5).0;
+            assert!(
+                top_left[0] > 200 && top_left[2] > 200,
+                "the top-left must be the white field once the marker has moved, got {top_left:?}"
+            );
+        }
+
         #[cfg(target_os = "macos")]
         #[test]
         fn frame_count_reports_every_frame_so_the_user_can_be_told() {

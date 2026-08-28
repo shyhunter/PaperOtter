@@ -63,7 +63,7 @@ block2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = [
     "std", "NSString", "NSURL", "NSData", "NSError", "NSObject", "NSValue", "NSKeyValueCoding",
 ] }
-objc2-core-foundation = { version = "0.3", default-features = false, features = ["std"] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFNumber"] }
 objc2-web-kit = { version = "0.3", default-features = false, features = [
     "std", "WKWebView", "WKNavigation", "WKPDFConfiguration", "block2",
     "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
@@ -89,7 +89,10 @@ objc2-core-text = { version = "0.3", default-features = false, features = [
     "std", "CTFont", "CTLine", "CTStringAttributes", "objc2-core-graphics",
 ] }
 objc2-image-io = { version = "0.3", default-features = false, features = [
-    "std", "CGImageSource", "objc2-core-graphics",
+    # CGImageProperties carries kCGImagePropertyOrientation: an iPhone stores its
+    # photos in one sensor orientation and records the upright turn as metadata,
+    # which Image I/O reports but does not apply.
+    "std", "CGImageSource", "CGImageProperties", "objc2-core-graphics",
 ] }
 
 # OCR via the OS. Vision is the engine Preview and Photos use, covers 30
