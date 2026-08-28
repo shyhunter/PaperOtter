@@ -3189,6 +3189,68 @@ mod tests {
             assert!(err.contains("could not be opened"), "got: {err}");
         }
 
+        // ─── OCR-09..11 — the reason a file failed, not just that it did ───────
+        //
+        // PDFKit reports every failure as a nil document, so `recognize_pdf`
+        // said "This PDF could not be opened." whether the file was missing,
+        // unreadable, or genuinely corrupt. That is not a cosmetic problem: the
+        // one message it produces sends the user to the Repair PDF tool, which
+        // cannot help with any of the other causes.
+        //
+        // Found while diagnosing REL-03. A readable, structurally valid PDF on
+        // an iCloud-synced Desktop failed to open while the machine was offline,
+        // and the app blamed the document.
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_missing_file_says_so_rather_than_blaming_the_pdf() {
+            let err = ocr::recognize_pdf("/nonexistent/papercut-no-such-file.pdf", &[], |_, _| {})
+                .expect_err("a missing file cannot be recognised");
+            assert!(
+                err.contains("could not be found"),
+                "a missing file must not be reported as an unopenable PDF; got: {err}"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_unreadable_file_names_the_permission_rather_than_blaming_the_pdf() {
+            use std::os::unix::fs::PermissionsExt;
+
+            // A real PDF the process genuinely cannot read: the exact shape of
+            // the REL-03 failure, minus the cloud daemon.
+            let dir = std::env::temp_dir().join("papercut-ocr-perm");
+            std::fs::create_dir_all(&dir).expect("temp dir");
+            let path = dir.join("unreadable.pdf");
+            std::fs::copy(fixture_path("scanned.pdf"), &path).expect("copy fixture");
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o000))
+                .expect("drop read permission");
+
+            let err = ocr::recognize_pdf(path.to_str().unwrap(), &[], |_, _| {})
+                .expect_err("an unreadable file cannot be recognised");
+
+            // Restore before asserting so a failure cannot leave the file locked.
+            let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644));
+            let _ = std::fs::remove_file(&path);
+
+            assert!(
+                err.to_lowercase().contains("not allowed") || err.to_lowercase().contains("permission"),
+                "a permission failure must name the permission; got: {err}"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn writing_a_searchable_pdf_reports_a_missing_source_honestly() {
+            // build_searchable_pdf carries the same conflation at ocr.rs:191.
+            let err = ocr::build_searchable_pdf("/nonexistent/papercut-no-such-file.pdf", &[])
+                .expect_err("a missing source cannot be written");
+            assert!(
+                err.contains("could not be found"),
+                "got: {err}"
+            );
+        }
+
 
         #[cfg(target_os = "macos")]
         #[test]

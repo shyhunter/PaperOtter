@@ -177,6 +177,8 @@ mod imp {
 
     /// Lays invisible text over a copy of the source PDF.
     pub fn build_searchable_pdf(source_path: &str, pages: &[super::OcrPage]) -> Result<Vec<u8>, String> {
+        super::check_readable(source_path)?;
+
         // SAFETY: the byte slice is a valid POSIX path for the lifetime of the call.
         let url = unsafe {
             CFURL::from_file_system_representation(
@@ -302,6 +304,8 @@ mod imp {
         languages: &[String],
         mut on_page: impl FnMut(usize, usize),
     ) -> Result<Vec<OcrPage>, String> {
+        super::check_readable(path)?;
+
         let url = NSURL::fileURLWithPath(&NSString::from_str(path));
         let document = unsafe { PDFDocument::initWithURL(PDFDocument::alloc(), &url) }
             .ok_or_else(|| "This PDF could not be opened.".to_string())?;
@@ -336,6 +340,35 @@ mod imp {
         _on_page: impl FnMut(usize, usize),
     ) -> Result<Vec<OcrPage>, String> {
         Err(super::NO_ENGINE.to_string())
+    }
+}
+
+/// Establishes *why* a file cannot be used, before PDFKit flattens the reason.
+///
+/// `PDFDocument(url:)` and `CGPDFDocument(url:)` both report every failure the
+/// same way — a nil document — so a missing file, a file this process may not
+/// read, and a genuinely corrupt PDF were indistinguishable. The single message
+/// they produced pointed the user at the Repair PDF tool, which can only help
+/// with the last of the three.
+///
+/// Found while running REL-03: a structurally valid, byte-readable PDF sitting
+/// on an iCloud-synced Desktop failed to open while the machine was offline, and
+/// the app blamed the document.
+///
+/// One `open` syscall buys the distinction.
+fn check_readable(path: &str) -> Result<(), String> {
+    use std::io::ErrorKind;
+    match std::fs::File::open(path) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(match e.kind() {
+            ErrorKind::NotFound => "This file could not be found. It may have been moved, renamed or deleted.".to_string(),
+            ErrorKind::PermissionDenied => "Papercut is not allowed to read this file. Check its permissions, or move it somewhere Papercut can reach.".to_string(),
+            // ETIMEDOUT on a local path means a file provider — iCloud Drive is
+            // the common one — never answered. Naming it saves the user from
+            // hunting a fault in the document.
+            ErrorKind::TimedOut => "This file could not be read in time. If it is stored in iCloud Drive or another cloud folder, it may not be downloaded to this Mac yet.".to_string(),
+            _ => format!("This file could not be read: {e}"),
+        }),
     }
 }
 
