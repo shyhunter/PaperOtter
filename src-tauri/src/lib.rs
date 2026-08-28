@@ -386,6 +386,29 @@ fn encode_image(
         }
     }
 
+    // Never hand back something larger than what we were given.
+    //
+    // image-0.25's JPEG encoder hardcodes h:1 v:1 for all three components, so
+    // it always writes 4:4:4 and cannot subsample chroma at all. Re-encoding a
+    // photograph that arrived as 4:2:0 therefore stores four times the colour
+    // data the source had, and a 2.4 MB scan came back 7.5% *larger* at quality
+    // 60 -- having also discarded luma detail. Worst of both.
+    //
+    // This is a floor, not the fix. Returning the original is the honest outcome
+    // when our encoder cannot beat the one that wrote the file, but it still
+    // means we fail to shrink a file a competent encoder could have shrunk. The
+    // real repair is an encoder that can subsample; until then this at least
+    // guarantees the app never does the opposite of its purpose.
+    //
+    // Narrow on purpose: only when the caller asked for the same format they
+    // gave us and requested no resize. Converting formats or scaling up may
+    // legitimately grow a file, and short-circuiting those would be wrong.
+    let unresized = resize_width.is_none() && resize_height.is_none();
+    let source_is_jpeg = source_bytes.starts_with(&[0xFF, 0xD8]);
+    if output_format == "jpeg" && unresized && source_is_jpeg && output_buf.len() >= source_bytes.len() {
+        return Ok(source_bytes.to_vec());
+    }
+
     Ok(output_buf)
 }
 
@@ -2883,6 +2906,32 @@ mod tests {
             bytes.len() >= 12
                 && bytes[0..4] == [0x52, 0x49, 0x46, 0x46]
                 && bytes[8..12] == [0x57, 0x45, 0x42, 0x50]
+        }
+
+        #[test]
+        fn compressing_a_photograph_never_returns_a_bigger_file() {
+            // The app exists to make a file fit an upload limit. Handing back
+            // something larger is not a degraded result, it is the opposite of
+            // the product.
+            //
+            // Found during BAT-06 and reproducible byte for byte: this fixture
+            // is 4:2:0 progressive at 2,385,146 bytes, and re-encoding it at
+            // quality 60 produced 2,563,428 -- 7.5% larger, while also throwing
+            // away luma detail. image-0.25's JPEG encoder hardcodes h:1 v:1 for
+            // every component, so it always writes 4:4:4 and stores four times
+            // the chroma the source had. Its own doc comment claims 4:2:2; the
+            // code says otherwise.
+            let src = read_fixture("pexels-pixabay-459225.jpg");
+            let out = encode_image(&src, 60, "jpeg", None, None, false)
+                .expect("the fixture must encode");
+
+            assert!(
+                out.len() <= src.len(),
+                "compression returned a LARGER file: {} -> {} ({:+.1}%)",
+                src.len(),
+                out.len(),
+                (out.len() as f64 / src.len() as f64 - 1.0) * 100.0
+            );
         }
 
         #[test]
