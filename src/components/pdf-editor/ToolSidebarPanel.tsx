@@ -7,7 +7,7 @@ import type { ToolId } from '@/types/tools';
 import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
-import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
+import { rotatePdf, turnBy, type RotationDegrees } from '@/lib/pdfRotate';
 import {
   addWatermark,
   addWatermarkSinglePage,
@@ -34,7 +34,7 @@ import {
 import type { PdfQualityLevel } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Lock, Unlock, Expand, RotateCcw, RotateCw } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
@@ -667,14 +667,13 @@ function CompressPanel() {
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
 /** Compass direction entries for the rotate tool */
-function compassDirections(): { label: string; short: string; degrees: RotationDegrees | 0 }[] {
-  return [
-    { label: t('imageCompare.original'), short: '↑', degrees: 0 },
-    { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
-    { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
-    { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
-  ];
-}
+/**
+ * How long turning must be idle before the document is rebuilt.
+ *
+ * Short enough to feel immediate, long enough that tapping Right four times is
+ * one pdf-lib rebuild rather than four.
+ */
+const TURN_COMMIT_DELAY_MS = 400;
 
 function RotatePanel() {
   diagLog('RotatePanel.render');
@@ -689,7 +688,6 @@ function RotatePanel() {
   const [rotation, setRotation] = useState<RotationDegrees | 0>(0);
   const [applyToAll, setApplyToAll] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
   // Preview: a pure CSS rotation of the already-rendered page, not a real edit.
@@ -723,32 +721,49 @@ function RotatePanel() {
     [selectPageRange, clearPageSelection, state.pageCount],
   );
 
-  // Apply rotation to the requested pages (full processing, runs only on
-  // explicit user action).
-  const handleApply = useCallback(async () => {
+  // Commit the accumulated turn to the document.
+  //
+  // There is no Apply button: turning a page should just turn it. The button
+  // was also a trap — it disabled itself whenever the pending rotation was 0,
+  // so turning a full circle back to where you started left a control that
+  // looked broken.
+  //
+  // What the button did buy was batching, and that still matters: pdf-lib
+  // rebuilds the whole document and never yields, which measured over two
+  // minutes on a real 30MB/688-page PDF. So the commit is debounced rather
+  // than fired per click. Four quick taps are one rebuild, not four.
+  const commitRotation = useCallback(async (delta: RotationDegrees) => {
     setIsApplying(true);
     setApplyError(null);
-    setApplySuccess(false);
-    diagLog('rotate.apply.start');
+    diagLog(`rotate.commit.start deg=${delta}`);
     const t0 = performance.now();
     try {
-      const pageIndices = targetPages;
       const result = await rotatePdf(
         state.pdfBytes,
-        pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
+        targetPages.map((idx) => ({ pageIndex: idx, rotation: delta })),
       );
-      diagLog(`rotate.apply.done ms=${(performance.now() - t0).toFixed(0)}`);
+      diagLog(`rotate.commit.done ms=${(performance.now() - t0).toFixed(0)}`);
       updatePdfBytes(result.bytes);
       markDirty();
-      setApplySuccess(true);
-      setTimeout(() => setApplySuccess(false), 2000);
+      // Consumed: the bytes now carry it, so the pending delta returns to zero
+      // and the CSS preview stops double-counting what the page already shows.
+      setRotation(0);
     } catch (err) {
-      diagLog(`rotate.apply.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
+      diagLog(`rotate.commit.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
       setApplyError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsApplying(false);
     }
-  }, [targetPages, rotation, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [targetPages, state.pdfBytes, updatePdfBytes, markDirty]);
+
+  // Turning is instant on screen (a CSS transform on the already-rendered
+  // page); the document itself catches up once the turning stops. Each new
+  // click clears the previous timer, so a burst commits once.
+  useEffect(() => {
+    if (rotation === 0 || isApplying) return;
+    const id = setTimeout(() => { void commitRotation(rotation); }, TURN_COMMIT_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [rotation, isApplying, commitRotation]);
 
   return (
     <div className="space-y-3">
@@ -756,24 +771,39 @@ function RotatePanel() {
 
       <div className="space-y-1.5">
         <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.direction')}</label>
-        {/* Compass-style 2x2 grid */}
+        {/* Two relative turns, matching the standalone Rotate PDF step. The
+            engine applies deltas, so accumulating quarter turns is the only
+            control that says what it does: two rights are a half turn, and a
+            left undoes a right. */}
         <div className="grid grid-cols-2 gap-1">
-          {compassDirections().map((dir) => (
-            <button
-              type="button"
-              key={dir.degrees}
-              onClick={() => { diagLog(`rotate.click deg=${dir.degrees}`); setRotation(dir.degrees); }}
-              className={`flex items-center gap-1.5 py-1.5 px-2 text-[11px] rounded border transition-colors ${
-                rotation === dir.degrees
-                  ? 'border-primary bg-primary/10 font-medium'
-                  : 'border-border hover:bg-muted/50'
-              }`}
-            >
-              <span className="text-base leading-none">{dir.short}</span>
-              <span>{dir.label}</span>
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => { const next = turnBy(rotation, 'left'); diagLog(`rotate.turn left -> ${next}`); setRotation(next); }}
+            title={t('rotate.rotateSelectedPagesLeft')}
+            className="flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11px] rounded border border-border hover:bg-muted/50 transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>{t('rotate.left')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { const next = turnBy(rotation, 'right'); diagLog(`rotate.turn right -> ${next}`); setRotation(next); }}
+            title={t('rotate.rotateSelectedPagesRight')}
+            className="flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11px] rounded border border-border hover:bg-muted/50 transition-colors"
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+            <span>{t('rotate.right')}</span>
+          </button>
         </div>
+        {/* Without this the second click has no visible effect, and the user
+            cannot tell a half turn from a quarter one. */}
+        <p className="text-[10px] text-muted-foreground" data-testid="pending-rotation">
+          {isApplying
+            ? t('toolSidebarPanel.turningPages')
+            : rotation === 0
+              ? t('toolSidebarPanel.noTurnYet')
+              : t('toolSidebarPanel.willTurnBy', { degrees: rotation })}
+        </p>
       </div>
 
       <label className="flex items-center gap-2 text-[11px] cursor-pointer">
@@ -801,13 +831,9 @@ function RotatePanel() {
         afterImageStyle={rotation !== 0 ? { transform: `rotate(${rotation}deg)` } : undefined}
       />
 
-      <ApplyButton
-        onClick={handleApply}
-        disabled={rotation === 0 || !previewBytes}
-        isApplying={isApplying}
-        success={applySuccess}
-        error={applyError}
-      />
+      {applyError && (
+        <p className="text-[10px] text-destructive" role="alert">{applyError}</p>
+      )}
     </div>
   );
 }

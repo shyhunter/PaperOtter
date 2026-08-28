@@ -68,7 +68,6 @@ export const nl: Dictionary = {
   'save.toFolder': 'In map opslaan', 'save.asZip': 'Als ZIP opslaan', 'save.again': 'Opnieuw opslaan',
   'save.showInFinder': 'Tonen in Finder', 'save.success': 'Bestand opgeslagen',
   'save.failed': 'Opslaan mislukt', 'save.backToCompare': 'Terug naar de vergelijking',
-  'save.chooseSplitMode': 'Kies hoe de gesplitste bestanden worden opgeslagen.',
   'save.zipHint': 'Alle bestanden in één ZIP-archief',
   'save.individualHint': 'Elk bestand apart opgeslagen met automatische naamgeving',
   'save.saveNFiles': '{files} opslaan',
@@ -154,7 +153,7 @@ export const nl: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Kies een document om naar een ander formaat om te zetten.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Niet-ondersteund bestandsformaat. Gebruik PDF, DOCX, DOC, ODT, EPUB, TXT, RTF of HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Omzetten naar: Markdown, HTML, JSON, PDF, Word, e-books &amp; meer',
+  'convertDoc.convertToMarkdownHtmlJson': 'Omzetten naar: Markdown, HTML, JSON, PDF, Word, e-books & meer',
   'convertDoc.openPdfDocxDocOdt': 'Openen: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Word 97-2003-document',
   'convertDocFlow.richTextFormat': 'Rich Text Format', 'convertDocFlow.wordDocument': 'Word-document',
@@ -379,7 +378,6 @@ export const nl: Dictionary = {
   'batch.processingFile': 'Bestand {current} van {total} verwerken — {name}',
   'batch.skippedDifferentType':
     '{count} bestand(en) van een ander type overgeslagen — een reeks moet uit één type bestaan.',
-  'deps.ghostscriptMac': 'PDF comprimeren vereist Ghostscript. Installeer met: brew install ghostscript',
   'deps.ghostscriptWindows':
     'PDF comprimeren vereist Ghostscript. Download het van ghostscript.com/releases/gsdnld.html en zorg dat het in het PATH staat.',
   'deps.ghostscriptLinux':
@@ -526,7 +524,7 @@ export const nl: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Klik op een andere kaart om te verwisselen',
   'dashboard.clickToReorder': 'Klik om te herordenen',
   'dashboard.clickToReorderMiddotClick':
-    'Klik ⠿ om te herordenen &middot; Klik &#9733; op een gereedschap om het toe te voegen',
+    'Klik ⠿ om te herordenen · Klik ★ op een gereedschap om het toe te voegen',
   'dashboard.documentTools': 'Documentgereedschap', 'dashboard.imageTools': 'Afbeeldingsgereedschap',
   'firstLaunchBanner.dismissPrivacyBanner': 'Privacymelding sluiten',
   'firstLaunchBanner.learnMore': 'Meer informatie',

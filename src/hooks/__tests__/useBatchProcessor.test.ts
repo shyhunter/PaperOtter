@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { invoke } from '@tauri-apps/api/core';
 import { useBatchProcessor } from '@/hooks/useBatchProcessor';
 
 // ─── Batch processor hook (BATCH-05) ─────────────────────────────────────────
@@ -15,6 +16,8 @@ const output = (path: string) => ({
 });
 
 describe('useBatchProcessor', () => {
+  beforeEach(() => vi.mocked(invoke).mockClear());
+
   it('[BATCH-05a] starts idle', () => {
     const { result } = renderHook(() => useBatchProcessor());
     expect(result.current.isRunning).toBe(false);
@@ -88,5 +91,29 @@ describe('useBatchProcessor', () => {
 
     expect(result.current.result).toBeNull();
     expect(result.current.progress).toBeNull();
+  });
+
+  it('[BATCH-05f] cancel kills the running Ghostscript, not just the queue', async () => {
+    // runBatch only checks the abort signal *between* files, and BATCH-03g
+    // guarantees strictly one at a time precisely so the Rust side can track a
+    // single child process for cancellation. That guarantee is pointless unless
+    // someone actually asks Rust to kill it.
+    //
+    // Without this, pressing Cancel on a twelve-file batch during file three
+    // stops file four from starting and leaves Ghostscript compressing file
+    // three to completion -- minutes of work on a document the user abandoned,
+    // while the UI says the batch was cancelled. usePdfProcessor and
+    // useImageProcessor both get this right; the batch hook was the one that
+    // did not.
+    const { result } = renderHook(() => useBatchProcessor());
+
+    await act(async () => {
+      await result.current.run(['a.pdf', 'b.pdf'], async (p) => {
+        if (p === 'a.pdf') result.current.cancel();
+        return output(p);
+      });
+    });
+
+    expect(vi.mocked(invoke).mock.calls.map((c) => c[0])).toContain('cancel_processing');
   });
 });

@@ -121,7 +121,6 @@ export const fr: Dictionary = {
   'save.success': 'Fichier enregistré',
   'save.failed': 'Échec de l’enregistrement',
   'save.backToCompare': 'Retour à la comparaison',
-  'save.chooseSplitMode': 'Choisissez comment enregistrer les fichiers séparés.',
   'save.zipHint': 'Tous les fichiers dans une seule archive ZIP',
   'save.individualHint': 'Chaque fichier enregistré séparément avec nommage automatique',
   'save.saveNFiles': 'Enregistrer {files}',
@@ -250,7 +249,7 @@ export const fr: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Choisissez un document à convertir vers un autre format.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Format non pris en charge. Utilisez PDF, DOCX, DOC, ODT, EPUB, TXT, RTF ou HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Convertir en : Markdown, HTML, JSON, PDF, Word, e-books &amp; plus',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convertir en : Markdown, HTML, JSON, PDF, Word, e-books & plus',
   'convertDoc.openPdfDocxDocOdt': 'Ouvrir : PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Document Word 97-2003',
   'convertDocFlow.richTextFormat': 'Rich Text Format',
@@ -609,8 +608,6 @@ export const fr: Dictionary = {
     '{count} fichier(s) d’un autre type ignoré(s) — un lot doit être d’un seul type.',
 
   // ── Dependencies and file filters ─────────────────────────────────────────
-  'deps.ghostscriptMac':
-    'La compression de PDF nécessite Ghostscript. Installation : brew install ghostscript',
   'deps.ghostscriptWindows':
     'La compression de PDF nécessite Ghostscript. Téléchargez-le sur ghostscript.com/releases/gsdnld.html et vérifiez qu’il est dans le PATH.',
   'deps.ghostscriptLinux':
@@ -843,7 +840,7 @@ export const fr: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Cliquez sur une autre carte pour échanger',
   'dashboard.clickToReorder': 'Cliquez pour réordonner',
   'dashboard.clickToReorderMiddotClick':
-    'Cliquez ⠿ pour réordonner &middot; Cliquez &#9733; sur un outil pour l’ajouter',
+    'Cliquez ⠿ pour réordonner · Cliquez ★ sur un outil pour l’ajouter',
   'dashboard.documentTools': 'Outils document',
   'dashboard.imageTools': 'Outils image',
   'firstLaunchBanner.dismissPrivacyBanner': 'Masquer le bandeau de confidentialité',

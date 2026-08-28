@@ -119,7 +119,6 @@ export const tr: Dictionary = {
   'save.success': 'Dosya kaydedildi',
   'save.failed': 'Kaydetme başarısız',
   'save.backToCompare': 'Karşılaştırmaya dön',
-  'save.chooseSplitMode': 'Bölünen dosyaların nasıl kaydedileceğini seçin.',
   'save.zipHint': 'Tüm dosyalar tek bir ZIP arşivinde',
   'save.individualHint': 'Her dosya otomatik adlandırmayla ayrı ayrı kaydedilir',
   'save.saveNFiles': '{files} kaydet',
@@ -219,7 +218,7 @@ export const tr: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Başka bir biçime dönüştürmek için bir belge seçin.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Desteklenmeyen dosya biçimi. Lütfen PDF, DOCX, DOC, ODT, EPUB, TXT, RTF veya HTML kullanın.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Şuna dönüştür: Markdown, HTML, JSON, PDF, Word, e-kitap &amp; daha fazlası',
+  'convertDoc.convertToMarkdownHtmlJson': 'Şuna dönüştür: Markdown, HTML, JSON, PDF, Word, e-kitap & daha fazlası',
   'convertDoc.openPdfDocxDocOdt': 'Aç: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Word 97-2003 belgesi',
   'convertDocFlow.richTextFormat': 'Zengin Metin Biçimi', 'convertDocFlow.wordDocument': 'Word belgesi',
@@ -436,7 +435,6 @@ export const tr: Dictionary = {
   'batch.couldNotBeProcessed': '{files} işlenemedi',
   'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor — {name}',
   'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı — bir küme tek türden olmalıdır.',
-  'deps.ghostscriptMac': 'PDF sıkıştırmak için Ghostscript gerekir. Kurulum: brew install ghostscript',
   'deps.ghostscriptWindows':
     'PDF sıkıştırmak için Ghostscript gerekir. ghostscript.com/releases/gsdnld.html adresinden indirin ve PATH’te olduğundan emin olun.',
   'deps.ghostscriptLinux':
@@ -582,7 +580,7 @@ export const tr: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Yer değiştirmek için başka bir karta tıklayın',
   'dashboard.clickToReorder': 'Yeniden sıralamak için tıklayın',
   'dashboard.clickToReorderMiddotClick':
-    'Yeniden sıralamak için ⠿ tıklayın &middot; Eklemek için bir araçta &#9733; tıklayın',
+    'Yeniden sıralamak için ⠿ tıklayın · Eklemek için bir araçta ★ tıklayın',
   'dashboard.documentTools': 'Belge araçları', 'dashboard.imageTools': 'Görüntü araçları',
   'firstLaunchBanner.dismissPrivacyBanner': 'Gizlilik bildirimini kapat',
   'firstLaunchBanner.learnMore': 'Daha fazla bilgi',

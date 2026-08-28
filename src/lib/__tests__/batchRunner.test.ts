@@ -106,4 +106,27 @@ describe('runBatch', () => {
     expect(result.succeeded).toEqual([]);
     expect(result.failed).toEqual([]);
   });
+
+  it('[BATCH-03h] does not report the interrupted file as a failure', async () => {
+    // Killing Ghostscript makes the in-flight call reject, which would otherwise
+    // be recorded like any other error -- so a batch the user deliberately
+    // stopped would report "1 failed" and invite them to investigate a file
+    // that was working fine. Cancelling is not failing.
+    const controller = new AbortController();
+    const process = async (path: string) => {
+      if (path === 'b.pdf') {
+        controller.abort();
+        throw new Error('CANCELLED');
+      }
+      return ok(path);
+    };
+
+    const result = await runBatch(['a.pdf', 'b.pdf', 'c.pdf'], process, {
+      signal: controller.signal,
+    });
+
+    expect(result.cancelled).toBe(true);
+    expect(result.succeeded.map((s) => s.path)).toEqual(['a.pdf']);
+    expect(result.failed).toEqual([]);
+  });
 });

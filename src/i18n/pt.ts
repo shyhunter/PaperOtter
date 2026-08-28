@@ -70,7 +70,6 @@ export const pt: Dictionary = {
   'save.again': 'Guardar novamente', 'save.showInFinder': 'Mostrar no Finder',
   'save.success': 'Ficheiro guardado com êxito', 'save.failed': 'Não foi possível guardar',
   'save.backToCompare': 'Voltar à comparação',
-  'save.chooseSplitMode': 'Escolha como guardar os ficheiros divididos.',
   'save.zipHint': 'Todos os ficheiros reunidos num único arquivo ZIP',
   'save.individualHint': 'Cada ficheiro guardado em separado, com nome automático',
   'imageConfigure.quality': 'Qualidade da imagem', 'imageConfigure.outputFormat': 'Formato de saída',
@@ -142,7 +141,7 @@ export const pt: Dictionary = {
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Formato de ficheiro não suportado. Utilize PDF, DOCX, DOC, ODT, EPUB, TXT, RTF ou HTML.',
   'convertDoc.convertToMarkdownHtmlJson':
-    'Converter para: Markdown, HTML, JSON, PDF, Word, livros digitais &amp; mais',
+    'Converter para: Markdown, HTML, JSON, PDF, Word, livros digitais & mais',
   'convertDoc.openPdfDocxDocOdt': 'Abrir: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Documento do Word 97-2003',
   'convertDocFlow.richTextFormat': 'Rich Text Format', 'convertDocFlow.wordDocument': 'Documento do Word',
@@ -382,7 +381,6 @@ export const pt: Dictionary = {
   'batch.processingFile': 'A processar o ficheiro {current} de {total} — {name}',
   'batch.skippedDifferentType':
     '{count} ficheiro(s) de outro tipo foram ignorados — um lote tem de ser de um só tipo.',
-  'deps.ghostscriptMac': 'A compressão de PDF requer o Ghostscript. Instale-o com: brew install ghostscript',
   'deps.ghostscriptWindows':
     'A compressão de PDF requer o Ghostscript. Transfira-o em ghostscript.com/releases/gsdnld.html e certifique-se de que está no PATH.',
   'deps.ghostscriptLinux':
@@ -537,7 +535,7 @@ export const pt: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Clique noutro cartão para trocar',
   'dashboard.clickToReorder': 'Clique para reordenar',
   'dashboard.clickToReorderMiddotClick':
-    'Clique em ⠿ para reordenar &middot; Clique em &#9733; numa ferramenta para a adicionar',
+    'Clique em ⠿ para reordenar · Clique em ★ numa ferramenta para a adicionar',
   'dashboard.documentTools': 'Ferramentas de documentos', 'dashboard.imageTools': 'Ferramentas de imagem',
   'firstLaunchBanner.dismissPrivacyBanner': 'Fechar o aviso de privacidade',
   'firstLaunchBanner.learnMore': 'Saber mais',

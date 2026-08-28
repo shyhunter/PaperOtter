@@ -2,6 +2,7 @@
 // Tauri's API (dragDropEnabled: true, default) intercepts OS file drops and provides
 // the real file path. HTML5 drag events only give File objects without OS paths.
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { grantDroppedPaths } from '@/lib/dropScope';
 import { useEffect, useRef, useState } from 'react';
 import { isSupportedFile } from '@/lib/fileValidation';
 import type { DragState } from '@/types/file';
@@ -52,7 +53,11 @@ export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) =>
           // whole drop: a folder of scans easily picks up a stray .DS_Store.
           const supported = paths.filter(isSupportedFile);
           if (supported.length > 0) {
-            onFileDropRef.current(supported[0], supported.slice(1));
+            // Tauri gives a dragged-in file no filesystem grant, and the
+            // consumer reads it immediately — so the grant has to land first.
+            void grantDroppedPaths(supported).then(() => {
+              onFileDropRef.current(supported[0], supported.slice(1));
+            });
           } else {
             // Call with empty string to signal invalid drop to parent
             onFileDropRef.current('', []);

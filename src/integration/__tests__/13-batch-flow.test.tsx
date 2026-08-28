@@ -7,6 +7,7 @@
  * options, a run, and a summary that says what happened to each.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { StrictMode } from 'react';
 import { render, screen, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '@/App';
@@ -56,7 +57,10 @@ beforeEach(() => { vi.mocked(processImage).mockReset(); dropHandler = undefined;
 
 /** Drops several images on the window and reaches the Configure step. */
 async function dropImages(user: ReturnType<typeof userEvent.setup>, paths: string[]) {
-  render(<App />);
+  // main.tsx wraps the app in StrictMode. Rendering without it hid a bug in five
+  // flows where a ref flipped during the first render pass left the second pass
+  // — the one the mount effect closes over — with no file at all.
+  render(<StrictMode><App /></StrictMode>);
   await user.click(screen.getByRole('button', { name: /compress image/i }));
   await act(async () => { dropHandler?.({ payload: { type: 'drop', paths } }); });
   // 600 ms staged-load delay before Configure appears.
@@ -90,6 +94,42 @@ describe('Suite 13 — Batch processing', () => {
     expect(await screen.findByText(/2 files ready to save/i, {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(/could not be read/i)).toBeInTheDocument();
     expect(screen.getByText(/b\.jpg/)).toBeInTheDocument();
+  });
+
+  it('BATCH-07d — the batch summary leads to a save step that can actually save', async () => {
+    // BAT-06 and BAT-07 both start here and neither was performable: step 3 only
+    // rendered when pdfProcessor.result or imageProcessor.result was set, and a
+    // batch populates neither. "Save 3 files" advanced the step onto a blank
+    // screen, so the non-destructive naming in MultiFileSave — the whole point of
+    // BATCH-02 — had never once run on a batch.
+    const user = userEvent.setup();
+    vi.mocked(processImage).mockResolvedValue(FAKE_IMAGE_RESULT);
+    await dropImages(user, three);
+
+    await user.click(screen.getByRole('button', { name: /generate preview/i }));
+    await screen.findByText(/3 files ready to save/i, {}, { timeout: 3000 });
+
+    await user.click(screen.getByRole('button', { name: /save 3 files/i }));
+
+    // Both destinations, the same pair SplitFlow offers. They are radios inside
+    // labels, not buttons.
+    expect(await screen.findByRole('radio', { name: /save to folder/i }, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /zip/i })).toBeInTheDocument();
+    // The copy must not call a compress batch "the split files".
+    expect(screen.queryByText(/split files/i)).not.toBeInTheDocument();
+
+    // Which destination is selected has to be visible, not inferred from a small
+    // radio dot. The chosen option carries a marked state its sibling does not.
+    const folder = screen.getByRole('radio', { name: /save to folder/i });
+    const zip = screen.getByRole('radio', { name: /zip/i });
+    expect(folder).toBeChecked();
+    expect(zip).not.toBeChecked();
+    expect(folder.closest('label')).toHaveAttribute('data-selected', 'true');
+    expect(zip.closest('label')).toHaveAttribute('data-selected', 'false');
+
+    await user.click(zip);
+    expect(zip.closest('label')).toHaveAttribute('data-selected', 'true');
+    expect(folder.closest('label')).toHaveAttribute('data-selected', 'false');
   });
 
   it('BATCH-07c — a single dropped file still uses the ordinary compare flow', async () => {

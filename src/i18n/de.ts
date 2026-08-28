@@ -95,7 +95,6 @@ export const de: Dictionary = {
   'save.success': 'Datei erfolgreich gespeichert',
   'save.failed': 'Speichern fehlgeschlagen',
   'save.backToCompare': 'Zurück zum Vergleich',
-  'save.chooseSplitMode': 'Wählen Sie, wie die geteilten Dateien gespeichert werden.',
   'save.zipHint': 'Alle Dateien in einem einzigen ZIP-Archiv',
   'save.individualHint': 'Jede Datei einzeln mit automatischer Benennung',
   'save.saveNFiles': '{files} speichern',
@@ -709,8 +708,6 @@ export const de: Dictionary = {
     '{count} Datei(en) eines anderen Typs übersprungen — ein Stapel muss aus einem Typ bestehen.',
 
   // ── Dependency hints ──────────────────────────────────────────────────────
-  'deps.ghostscriptMac':
-    'Zum Komprimieren von PDFs wird Ghostscript benötigt. Installation mit: brew install ghostscript',
   'deps.ghostscriptWindows':
     'Zum Komprimieren von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
   'deps.ghostscriptLinux':
@@ -921,10 +918,10 @@ export const de: Dictionary = {
   'colorPresets.pink': 'Rosa',
 
   // ── Mixed proper nouns ────────────────────────────────────────────────────
-  'convertDoc.convertToMarkdownHtmlJson': 'Umwandeln in: Markdown, HTML, JSON, PDF, Word, E-Books &amp; mehr',
+  'convertDoc.convertToMarkdownHtmlJson': 'Umwandeln in: Markdown, HTML, JSON, PDF, Word, E-Books & mehr',
   'convertDoc.openPdfDocxDocOdt': 'Öffnen: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'dashboard.clickToReorderMiddotClick':
-    '⠿ klicken zum Umsortieren &middot; &#9733; auf einem Werkzeug klicken zum Hinzufügen',
+    '⠿ klicken zum Umsortieren · ★ auf einem Werkzeug klicken zum Hinzufügen',
   'editorToolbar.helveticaArialSansSerif': 'Helvetica / Arial (Serifenlos)',
   'editorToolbar.timesNewRomanSerif': 'Times New Roman (Serifen)',
 

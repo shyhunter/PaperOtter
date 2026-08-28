@@ -386,6 +386,29 @@ fn encode_image(
         }
     }
 
+    // Never hand back something larger than what we were given.
+    //
+    // image-0.25's JPEG encoder hardcodes h:1 v:1 for all three components, so
+    // it always writes 4:4:4 and cannot subsample chroma at all. Re-encoding a
+    // photograph that arrived as 4:2:0 therefore stores four times the colour
+    // data the source had, and a 2.4 MB scan came back 7.5% *larger* at quality
+    // 60 -- having also discarded luma detail. Worst of both.
+    //
+    // This is a floor, not the fix. Returning the original is the honest outcome
+    // when our encoder cannot beat the one that wrote the file, but it still
+    // means we fail to shrink a file a competent encoder could have shrunk. The
+    // real repair is an encoder that can subsample; until then this at least
+    // guarantees the app never does the opposite of its purpose.
+    //
+    // Narrow on purpose: only when the caller asked for the same format they
+    // gave us and requested no resize. Converting formats or scaling up may
+    // legitimately grow a file, and short-circuiting those would be wrong.
+    let unresized = resize_width.is_none() && resize_height.is_none();
+    let source_is_jpeg = source_bytes.starts_with(&[0xFF, 0xD8]);
+    if output_format == "jpeg" && unresized && source_is_jpeg && output_buf.len() >= source_bytes.len() {
+        return Ok(source_bytes.to_vec());
+    }
+
     Ok(output_buf)
 }
 
@@ -1997,6 +2020,57 @@ fn system_info() -> String {
     format_system_info(std::env::consts::OS, std::env::consts::ARCH)
 }
 
+/// Grants read access to files the user dragged onto the window.
+///
+/// Tauri treats the two ways a file arrives differently. A file picked through
+/// a dialog is granted in the fs plugin's runtime scope by tauri-plugin-dialog.
+/// A file that is dragged in is not: tauri core widens `tauri::scope::Scopes`,
+/// which carries the asset protocol alone and is not what tauri-plugin-fs
+/// consults when it resolves a path. So a dropped file from outside the roots
+/// in `capabilities/default.json` could not be read, and the app reported that
+/// as a corrupt document.
+///
+/// Granting one file at a time, rather than widening the capability to
+/// `$HOME/**`, keeps the app's reach to the files this person handed it.
+///
+/// Note this deliberately does not call `validate_source_path`. That guard
+/// exists to keep shell-dangerous characters away from the commands that spawn
+/// Ghostscript, Calibre and `open`; this command spawns nothing, and its
+/// filename allow-list would reject ordinary documents like `John's CV.pdf`.
+/// The checks that do matter here — no null bytes, no traversal, a real file —
+/// are applied directly.
+#[tauri::command]
+fn allow_dropped_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+
+    let scope = app
+        .try_fs_scope()
+        .ok_or_else(|| "Filesystem scope is unavailable".to_string())?;
+
+    for path in &paths {
+        if path.is_empty() || path.contains('\0') || path.len() > 4096 {
+            return Err("Invalid file path".to_string());
+        }
+        let candidate = std::path::Path::new(path);
+        if candidate
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            return Err("Path traversal not allowed".to_string());
+        }
+        // Only real files. A grant means nothing for a path that is not there,
+        // and this keeps a dropped directory from being opened up wholesale.
+        if !candidate.is_file() {
+            return Err(format!("Not a file: {}", path));
+        }
+        scope
+            .allow_file(path)
+            .map_err(|e| format!("Could not grant access to {}: {}", path, e))?;
+    }
+
+    Ok(())
+}
+
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
@@ -2092,7 +2166,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -2835,6 +2909,32 @@ mod tests {
         }
 
         #[test]
+        fn compressing_a_photograph_never_returns_a_bigger_file() {
+            // The app exists to make a file fit an upload limit. Handing back
+            // something larger is not a degraded result, it is the opposite of
+            // the product.
+            //
+            // Found during BAT-06 and reproducible byte for byte: this fixture
+            // is 4:2:0 progressive at 2,385,146 bytes, and re-encoding it at
+            // quality 60 produced 2,563,428 -- 7.5% larger, while also throwing
+            // away luma detail. image-0.25's JPEG encoder hardcodes h:1 v:1 for
+            // every component, so it always writes 4:4:4 and stores four times
+            // the chroma the source had. Its own doc comment claims 4:2:2; the
+            // code says otherwise.
+            let src = read_fixture("pexels-pixabay-459225.jpg");
+            let out = encode_image(&src, 60, "jpeg", None, None, false)
+                .expect("the fixture must encode");
+
+            assert!(
+                out.len() <= src.len(),
+                "compression returned a LARGER file: {} -> {} ({:+.1}%)",
+                src.len(),
+                out.len(),
+                (out.len() as f64 / src.len() as f64 - 1.0) * 100.0
+            );
+        }
+
+        #[test]
         fn jpeg_quality_50_roundtrip() {
             let src = read_fixture("pexels-pixabay-459225.jpg");
             let result = encode_image(&src, 50, "jpeg", None, None, false);
@@ -2977,6 +3077,72 @@ mod tests {
             assert!(px[0] > 200, "red channel must be red, got {:?}", px);
             assert!(px[2] < 80, "blue channel must be blue, got {:?}", px);
             assert_eq!(px[3], 255, "an opaque photo must stay opaque");
+        }
+
+        // ─── HEIC-07/08 — an iPhone photo taken in portrait ───────────────────
+        //
+        // Every iPhone stores its photos in one sensor orientation and records
+        // the upright rotation as EXIF metadata. Preview and Finder apply it;
+        // CGImageSourceCreateImageAtIndex does not, and neither did we — so the
+        // persona's very first action, photographing an ID in portrait and
+        // dragging it in, produced a document lying on its side.
+        //
+        // Confirmed against a real iPhone 13 mini capture during the release
+        // gate: exifOrientation=6, decoded 4032x3024 instead of 3024x4032.
+        // Nothing caught it because both existing fixtures are orientation 1.
+
+        // The companion to ocr_a_real_path: decodes a photo from outside the
+        // fixtures, so a real capture can be checked without guessing.
+        //   PAPERCUT_HEIC_PATH=~/Downloads/IMG_0001.HEIC \
+        //     cargo test --lib heic_a_real_path -- --ignored --nocapture
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn heic_a_real_path() {
+            let path = std::env::var("PAPERCUT_HEIC_PATH").expect("PAPERCUT_HEIC_PATH");
+            let bytes = std::fs::read(&path).expect("read");
+            let frames = frame_count(&bytes).expect("frame count");
+            let img = decode_input_image(&bytes).expect("decode");
+            eprintln!("--- {path}: frames={frames} decoded={}x{}", img.width(), img.height());
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_photo_taken_in_portrait_decodes_upright() {
+            // rotated.heic is stored 120x80 with orientation 6 ("rotate 90° CW
+            // to display"), so an honest decoder must return 80x120.
+            let img = decode_input_image(&read_fixture("rotated.heic"))
+                .expect("rotated.heic must decode");
+            assert_eq!(
+                (img.width(), img.height()),
+                (80, 120),
+                "a portrait photo must not come out on its side"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn the_rotation_turns_the_right_way() {
+            // Size alone cannot tell 90° clockwise from 90° anticlockwise — both
+            // give 80x120, and one of them puts the document upside down.
+            // The marker sits in the stored top-left, which a correct clockwise
+            // turn moves to the displayed top-right.
+            let img = decode_input_image(&read_fixture("rotated.heic"))
+                .expect("rotated.heic must decode");
+            let rgba = img.to_rgba8();
+            let (w, _h) = (rgba.width(), rgba.height());
+
+            let top_right = rgba.get_pixel(w - 6, 5).0;
+            assert!(
+                top_right[2] > 200 && top_right[0] < 80,
+                "the marker must land top-right after a clockwise turn, got {top_right:?}"
+            );
+
+            let top_left = rgba.get_pixel(5, 5).0;
+            assert!(
+                top_left[0] > 200 && top_left[2] > 200,
+                "the top-left must be the white field once the marker has moved, got {top_left:?}"
+            );
         }
 
         #[cfg(target_os = "macos")]
@@ -3136,6 +3302,98 @@ mod tests {
             let err = ocr::recognize_pdf(&fixture_path("sample.jpg"), &[], |_, _| {})
                 .expect_err("a JPEG is not a PDF");
             assert!(err.contains("could not be opened"), "got: {err}");
+        }
+
+        // ─── OCR-09..11 — the reason a file failed, not just that it did ───────
+        //
+        // PDFKit reports every failure as a nil document, so `recognize_pdf`
+        // said "This PDF could not be opened." whether the file was missing,
+        // unreadable, or genuinely corrupt. That is not a cosmetic problem: the
+        // one message it produces sends the user to the Repair PDF tool, which
+        // cannot help with any of the other causes.
+        //
+        // Found while diagnosing REL-03. A readable, structurally valid PDF on
+        // an iCloud-synced Desktop failed to open while the machine was offline,
+        // and the app blamed the document.
+
+        // A gate tool, not a test: runs the real recognition path against a file
+        // outside the fixtures, so an app-layer failure can be told apart from an
+        // engine failure without guessing. Written during REL-03, where the app
+        // blamed a document that the engine reads perfectly.
+        //
+        // It is also how the low-confidence path gets exercised: the committed
+        // fixtures are clean synthetic renders at ~1.00, and only a real skewed
+        // phone photo produces anything else.
+        //
+        //   PAPERCUT_OCR_PATH=/path/to.pdf cargo test --lib ocr_a_real_path -- --ignored --nocapture
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn ocr_a_real_path() {
+            let path = std::env::var("PAPERCUT_OCR_PATH").expect("PAPERCUT_OCR_PATH");
+            eprintln!("--- recognize_pdf({path})");
+            match ocr::recognize_pdf(&path, &["en-US".to_string()], |i, t| eprintln!("    page {i}/{t}")) {
+                Ok(pages) => {
+                    let words: usize = pages.iter().map(|p| p.blocks.len()).sum();
+                    eprintln!("--- OK pages={} blocks={}", pages.len(), words);
+                    for p in &pages {
+                        for b in p.blocks.iter().take(3) {
+                            eprintln!("    p{} conf={:.2} {:?}", p.index, b.confidence, b.text);
+                        }
+                    }
+                }
+                Err(e) => eprintln!("--- ERR {e}"),
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn a_missing_file_says_so_rather_than_blaming_the_pdf() {
+            let err = ocr::recognize_pdf("/nonexistent/papercut-no-such-file.pdf", &[], |_, _| {})
+                .expect_err("a missing file cannot be recognised");
+            assert!(
+                err.contains("could not be found"),
+                "a missing file must not be reported as an unopenable PDF; got: {err}"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn an_unreadable_file_names_the_permission_rather_than_blaming_the_pdf() {
+            use std::os::unix::fs::PermissionsExt;
+
+            // A real PDF the process genuinely cannot read: the exact shape of
+            // the REL-03 failure, minus the cloud daemon.
+            let dir = std::env::temp_dir().join("papercut-ocr-perm");
+            std::fs::create_dir_all(&dir).expect("temp dir");
+            let path = dir.join("unreadable.pdf");
+            std::fs::copy(fixture_path("scanned.pdf"), &path).expect("copy fixture");
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o000))
+                .expect("drop read permission");
+
+            let err = ocr::recognize_pdf(path.to_str().unwrap(), &[], |_, _| {})
+                .expect_err("an unreadable file cannot be recognised");
+
+            // Restore before asserting so a failure cannot leave the file locked.
+            let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644));
+            let _ = std::fs::remove_file(&path);
+
+            assert!(
+                err.to_lowercase().contains("not allowed") || err.to_lowercase().contains("permission"),
+                "a permission failure must name the permission; got: {err}"
+            );
+        }
+
+        #[cfg(target_os = "macos")]
+        #[test]
+        fn writing_a_searchable_pdf_reports_a_missing_source_honestly() {
+            // build_searchable_pdf carries the same conflation at ocr.rs:191.
+            let err = ocr::build_searchable_pdf("/nonexistent/papercut-no-such-file.pdf", &[])
+                .expect_err("a missing source cannot be written");
+            assert!(
+                err.contains("could not be found"),
+                "got: {err}"
+            );
         }
 
 

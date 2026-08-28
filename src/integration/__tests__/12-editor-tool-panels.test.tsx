@@ -55,6 +55,9 @@ vi.mock('@/lib/pdfThumbnail', () => ({
 // Mock pdf-lib page operations used by rotate/crop/watermark/page-numbers panels
 vi.mock('@/lib/pdfRotate', () => ({
   rotatePdf: vi.fn().mockResolvedValue({ bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]) }),
+  // Real arithmetic. TP-02b asserts that turns accumulate, which a stub
+  // returning a constant would satisfy while proving nothing.
+  turnBy: (r: number, d: 'left' | 'right') => (((r + (d === 'right' ? 90 : 270)) % 360) + 360) % 360,
 }));
 
 // Partial: only the pdf-lib drawing call is stubbed. The defaults and the
@@ -643,7 +646,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-02: Rotate Panel
-  it('TP-02 — Rotate panel shows compass direction buttons and apply-to-all toggle', async () => {
+  it('TP-02 — Rotate panel offers two relative turns and an apply-to-all toggle', async () => {
     const user = userEvent.setup();
 
     render(
@@ -657,20 +660,25 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Rotate PDF')).toBeInTheDocument();
     expect(screen.getByText('Direction')).toBeInTheDocument();
 
-    // Compass directions
-    expect(screen.getByText('Original')).toBeInTheDocument();
-    expect(screen.getByText('Turn Right')).toBeInTheDocument();
-    expect(screen.getByText('Upside Down')).toBeInTheDocument();
-    expect(screen.getByText('Turn Left')).toBeInTheDocument();
+    // Two relative turns, not four absolute positions. rotatePdf applies its
+    // value as a delta, so a compass reading "Original / Upside Down" described
+    // something the engine never did: "Original" restored nothing, and "Upside
+    // Down" on a page already at 90° produced 270°.
+    expect(screen.getByText('Left')).toBeInTheDocument();
+    expect(screen.getByText('Right')).toBeInTheDocument();
+    expect(screen.queryByText('Upside Down')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/not turned yet/i);
 
     // Apply to all pages checkbox
     expect(screen.getByText('Apply to all pages')).toBeInTheDocument();
 
-    // Apply button (should be disabled since rotation is 0)
-    expect(screen.getByText('Apply')).toBeInTheDocument();
+    // No Apply button. Turning a page should turn it. The button was also a
+    // trap: it disabled itself whenever the pending rotation was 0, so turning
+    // a full circle back to the start left a control that looked broken.
+    expect(screen.queryByRole('button', { name: /^apply$/i })).not.toBeInTheDocument();
   });
 
-  it('TP-02b — Selecting a rotation direction enables Apply', async () => {
+  it('TP-02b — Turns accumulate, and a left undoes a right', async () => {
     const user = userEvent.setup();
 
     render(
@@ -681,15 +689,21 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Rotate PDF'));
 
-    // Click "Turn Right" direction
-    await user.click(screen.getByText('Turn Right'));
+    await user.click(screen.getByText('Right'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/90°/);
 
-    // Apply should eventually become enabled as the debounced preview completes
-    // We verify the button exists (its disabled state depends on the preview)
-    expect(screen.getByText('Apply')).toBeInTheDocument();
+    // The whole point of the change: turns accumulate. The old compass *set*
+    // the value, so clicking Right twice still sent 90° and a half turn could
+    // not be expressed at all.
+    await user.click(screen.getByText('Right'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/180°/);
+
+    // And a left undoes a right rather than jumping to an absolute position.
+    await user.click(screen.getByText('Left'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/90°/);
   });
 
-  it('TP-02c — Rotate preview never touches pdf-lib; Apply processes the full document', async () => {
+  it('TP-02c — turning is instant, and a burst of turns is one rebuild', async () => {
     const user = userEvent.setup();
 
     render(
@@ -698,21 +712,26 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
       </ToolPanelHarness>,
     );
 
+    vi.mocked(rotatePdf).mockClear();
     await user.click(screen.getByTitle('Rotate PDF'));
-    await user.click(screen.getByText('Turn Right'));
 
-    // Regression: computing a rotated preview via pdf-lib (even scoped to a
-    // single extracted page) meant loading the whole document into pdf-lib on
-    // every direction change. pdf-lib builds a full mutable object graph and
-    // never yields to the event loop while doing it — measured hanging for
-    // over two minutes with no sign of finishing on a real
-    // 30MB/688-page/1300+-image PDF. The preview must be pure CSS: pdf-lib is
-    // only ever invoked once, on explicit Apply.
-    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
-    expect(rotatePdf).not.toHaveBeenCalled();
+    // Four quick taps. On screen each one lands immediately, as a CSS transform
+    // over the already-rendered page.
+    await user.click(screen.getByText('Right'));
+    await user.click(screen.getByText('Right'));
+    await user.click(screen.getByText('Right'));
+    await user.click(screen.getByText('Left'));
 
-    await user.click(screen.getByText('Apply'));
-    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1));
+    // The document is rebuilt only once the turning stops. pdf-lib builds a
+    // full mutable object graph of the whole file and never yields to the event
+    // loop — measured over two minutes with no sign of finishing on a real
+    // 30MB/688-page/1300+-image PDF. Rebuilding per click would freeze the app
+    // solid, which is why removing the Apply button had to mean debouncing
+    // rather than firing on every press.
+    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1), { timeout: 3000 });
+
+    // And it commits what the taps added up to: right ×3 then left = 180°.
+    expect(vi.mocked(rotatePdf).mock.calls[0][1][0].rotation).toBe(180);
   });
 
   // TP-02d: Rotate applies to every selected page, not just the current one.
@@ -736,11 +755,9 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(ctx!.selectedPages.size).toBe(2));
 
     await user.click(screen.getByTitle('Rotate PDF'));
-    await user.click(screen.getByText('Turn Right'));
-    await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
-    await user.click(screen.getByText('Apply'));
+    await user.click(screen.getByText('Right'));
 
-    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(rotatePdf).toHaveBeenCalledTimes(1), { timeout: 3000 });
     // Regression: the panel used state.currentPage only, so a multi-page
     // selection silently rotated just the first page.
     const rotations = vi.mocked(rotatePdf).mock.calls[0][1];

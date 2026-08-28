@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
+import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError, isPdfLoadError, isPermissionError } from '@/lib/pdfUtils';
 
 // ─── parseSizeInput ───────────────────────────────────────────────────────────
 
@@ -165,6 +165,30 @@ describe('formatBytes', () => {
 // ─── friendlyPdfError ─────────────────────────────────────────────────────────
 
 describe('friendlyPdfError', () => {
+  // ─── DROP-SCOPE-09 — a permission denial is not a broken file ──────────────
+  //
+  // Tauri rejects a read outside the capability scope with "forbidden path".
+  // Every branch below missed it, so it fell through to the generic message and
+  // told the user their document was corrupt. For someone compressing a visa
+  // scan off a USB stick, that is the worst possible thing to say: the file is
+  // fine, and the advice ("try a different file") cannot help them.
+  it('[DROP-SCOPE-09] reports a blocked path as a permission problem, not corruption', () => {
+    const err = new Error(
+      'forbidden path: /Volumes/USB/scan.pdf, maybe it is not allowed on the ' +
+      'scope for `allow-read-file` permission in your capability file',
+    );
+    const message = friendlyPdfError(err);
+
+    expect(message).not.toMatch(/corrupt|not a valid PDF/i);
+    expect(message).toMatch(/permission/i);
+  });
+
+  it('[DROP-SCOPE-10] still calls a genuinely broken file broken', () => {
+    // The guard above must not swallow real corruption.
+    const err = new Error('Failed to parse PDF document: No PDF header found');
+    expect(friendlyPdfError(err)).toMatch(/not a valid PDF/i);
+  });
+
   it('returns user-friendly message for "No PDF header found" errors', () => {
     const err = new Error(
       'Failed to parse PDF document (line:10443 col:114 offset=1693099): No PDF header found',
@@ -230,5 +254,32 @@ describe('isPdfLoadError', () => {
 
   it('is false for a Ghostscript exit-code error', () => {
     expect(isPdfLoadError('Ghostscript compression failed (exit code 1). Details: some stderr')).toBe(false);
+  });
+});
+
+// ─── isPermissionError (DROP-SCOPE-11) ────────────────────────────────────────
+//
+// App.tsx cannot read the file, and has to decide what to tell the user. It used
+// to have one answer for every failure: "this PDF is corrupt", with a button
+// offering to repair it. Run against a file that is merely out of scope, that
+// advice sends someone to repair a document that was never damaged.
+
+describe('isPermissionError', () => {
+  it('[DROP-SCOPE-11a] recognises a Tauri scope rejection', () => {
+    const err = new Error(
+      'forbidden path: /Volumes/USB/scan.pdf, maybe it is not allowed on the ' +
+      'scope for `allow-read-file` permission in your capability file',
+    );
+    expect(isPermissionError(err)).toBe(true);
+  });
+
+  it('[DROP-SCOPE-11b] does not mistake a damaged file for a blocked one', () => {
+    expect(isPermissionError(new Error('No PDF header found'))).toBe(false);
+    expect(isPermissionError(new Error('Failed to parse PDF document'))).toBe(false);
+  });
+
+  it('[DROP-SCOPE-11c] handles a thrown string, which Tauri IPC does emit', () => {
+    expect(isPermissionError('forbidden path: /x/y.pdf')).toBe(true);
+    expect(isPermissionError('something else entirely')).toBe(false);
   });
 });

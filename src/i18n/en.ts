@@ -73,7 +73,7 @@ export const en = {
   'common.tryAgain': 'Try Again',
   'common.dismiss': 'Dismiss',
   'save.backToCompare': 'Back to Compare',
-  'save.chooseSplitMode': 'Choose how to save the split files.',
+  'save.chooseSplitMode': 'Choose how to save these files.',
   'save.zipHint': 'All files bundled into a single ZIP archive',
   'save.individualHint': 'Each file saved individually with auto-naming',
 
@@ -166,7 +166,7 @@ export const en = {
 
   // ── convertDoc ──────────────────────────────────────────────────────────
   'convertDoc.convertDocument': 'Convert Document',
-  'convertDoc.convertToMarkdownHtmlJson': 'Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convert to: Markdown, HTML, JSON, PDF, Word, e-books & more',
   'convertDoc.openPdfDocxDocOdt': 'Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDoc.selectDocument': 'Select Document',
   'convertDoc.selectADocumentToConvert': 'Select a document to convert between formats.',
@@ -543,9 +543,10 @@ export const en = {
   'crashReporter.thisWillOpenInYour': 'This will open in your email app:',
 
   // ── dashboard ───────────────────────────────────────────────────────────
-  'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder &middot; Click &#9733; on any tool to add',
+  'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder · Click ★ on any tool to add',
   'dashboard.dropFileToGetStarted': 'Drop file to get started',
   'dashboard.myFavorites': 'My Favourites',
+  'dashboard.andMoreFiles': '+{count} more',
   'dashboard.readyToProcessChooseA': 'Ready to process — choose a tool below',
   'dashboard.removeFromFavorites': 'Remove from favourites',
   'dashboard.searchTools': 'Search tools…',
@@ -853,10 +854,14 @@ export const en = {
   'toolSidebarPanel.maximumPrepress': 'Maximum (Prepress)',
   'toolSidebarPanel.mediumEbook': 'Medium (eBook)',
   'toolSidebarPanel.highPrint': 'High (Print)',
+  'toolSidebarPanel.noTurnYet': 'Not turned yet.',
+  'toolSidebarPanel.turningPages': 'Turning…',
+  'toolSidebarPanel.willTurnBy': 'Apply turns these pages {degrees}° from how they look now.',
   'toolSidebarPanel.upsideDown': 'Upside Down',
   'toolSidebarPanel.turnRight': 'Turn Right',
   'toolSidebarPanel.turnLeft': 'Turn Left',
   'docModel.thisDocumentHasNoExtractable': 'This document has no extractable text — it looks scanned or image-only.',
+  'pdfUtils.permissionDenied': 'Papercut does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
   'pdfUtils.thisFileAppearsToBe': 'This file appears to be corrupted or is not a valid PDF. Please try a different file.',
   'pdfUtils.failedToLoadPdfThe': 'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
   'pdfUtils.thisFileIsNotA': 'This file is not a valid PDF document. Please select a valid PDF file.',
@@ -924,7 +929,7 @@ export const en = {
   'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type — a batch has to be one type.',
 
   // ── Dependency hints ────────────────────────────────────────────────────
-  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript. Install it with: brew install ghostscript',
+  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start — reinstalling Papercut should restore it.',
   'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
   'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',

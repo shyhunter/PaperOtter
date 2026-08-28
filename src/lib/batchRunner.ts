@@ -63,6 +63,13 @@ export async function runBatch<T>(
     try {
       succeeded.push({ path, output: await processOne(path) });
     } catch (err) {
+      // A cancel kills the child process mid-file, so the rejection that lands
+      // here is the user's own doing rather than a bad document. Recording it
+      // would report "1 failed" for a batch they deliberately stopped, and send
+      // them to investigate a file that was working.
+      if (signal?.aborted) {
+        return { succeeded, failed, cancelled: true };
+      }
       // Isolated on purpose. One unreadable scan must not cost the other eleven,
       // and the reason is kept per file so the summary can be specific.
       failed.push({ path, message: err instanceof Error ? err.message : String(err) });

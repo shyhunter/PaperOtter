@@ -204,4 +204,34 @@ describe('one name for one thing', () => {
 
     expect(offenders, 'three dots instead of …').toEqual([]);
   });
+
+  // ─── I18N-07 — entities are not characters ─────────────────────────────────
+  //
+  // `t()` returns a plain string, and React renders a string into a text node
+  // verbatim. An HTML entity in a dictionary therefore reaches the user as its
+  // literal source: the favourites hint read
+  //
+  //   Click ⠿ to reorder &middot; Click &#9733; on any tool to add
+  //
+  // on screen, in all nine languages. JSX would have decoded those, which is
+  // presumably where they came from — the key is still called
+  // `dashboard.clickToReorderMiddotClick`. Once the copy moved into the
+  // dictionary, nothing decoded anything.
+  //
+  // Checked across English and every translation, because the entities were
+  // carried into all of them by the same extraction.
+
+  const HTML_ENTITY = /&(?:[a-zA-Z][a-zA-Z0-9]{1,9}|#[0-9]{1,6}|#x[0-9a-fA-F]{1,6});/;
+
+  it('[I18N-07] no dictionary ships an HTML entity', () => {
+    const offenders: string[] = [];
+    for (const [name, dict] of [['en', en] as [string, Dictionary], ...TRANSLATIONS]) {
+      for (const [key, value] of Object.entries(dict)) {
+        if (typeof value === 'string' && HTML_ENTITY.test(value)) {
+          offenders.push(`${name}.${key}: ${value}`);
+        }
+      }
+    }
+    expect(offenders, `these render as literal source text:\n${offenders.join('\n')}`).toEqual([]);
+  });
 });

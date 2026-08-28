@@ -13,6 +13,8 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { plural, t } from '@/i18n';
 import { uniqueOutputPath } from '@/lib/outputPath';
+import { toBytes } from '@/lib/zipOutputs';
+import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
 
 export interface MultiFileOutput {
@@ -251,7 +253,9 @@ function MultiFileSave({
           if (!filePath.endsWith(`/${output.fileName}`)) {
             renamed.push(getFileName(filePath));
           }
-          await writeFile(filePath, output.bytes);
+          // Same coercion the archive needs: what Tauri returned is an
+          // ArrayBuffer, whatever the call site's type annotation claims.
+          await writeFile(filePath, toBytes(output.bytes));
         }
         if (renamed.length > 0) {
           // Say so rather than leaving the user to notice: they asked for one set
@@ -273,12 +277,8 @@ function MultiFileSave({
       setMultiProgress(t('saveStep.creatingZip'));
 
       try {
-        const { zipSync } = await import('fflate');
-        const zipData: Record<string, Uint8Array> = {};
-        for (const output of multiFileOutputs) {
-          zipData[output.fileName] = output.bytes;
-        }
-        const zipped = zipSync(zipData);
+        const { buildZip } = await import('@/lib/zipOutputs');
+        const zipped = buildZip(multiFileOutputs);
         setMultiProgress(null);
 
         // Open save dialog for the ZIP file
@@ -379,7 +379,18 @@ function MultiFileSave({
         </div>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+          {/* The selected destination has to read at a glance: a small radio dot
+              against an identical card left users unsure which one they had
+              picked, on the screen where the choice is least recoverable. */}
+          <label
+            data-selected={multiSaveMode === 'folder'}
+            className={cn(
+              'flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors',
+              multiSaveMode === 'folder'
+                ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                : 'border-border hover:bg-accent/50',
+            )}
+          >
             <input
               type="radio"
               name="multi-save-mode"
@@ -388,11 +399,21 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">{t('save.toFolder')}</p>
+              <p className={cn('text-sm font-medium', multiSaveMode === 'folder' ? 'text-primary' : 'text-foreground')}>
+                {t('save.toFolder')}
+              </p>
               <p className="text-xs text-muted-foreground">{t('save.individualHint')}</p>
             </div>
           </label>
-          <label className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+          <label
+            data-selected={multiSaveMode === 'zip'}
+            className={cn(
+              'flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors',
+              multiSaveMode === 'zip'
+                ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                : 'border-border hover:bg-accent/50',
+            )}
+          >
             <input
               type="radio"
               name="multi-save-mode"
@@ -401,7 +422,9 @@ function MultiFileSave({
               className="accent-primary"
             />
             <div>
-              <p className="text-sm font-medium text-foreground">{t('save.asZip')}</p>
+              <p className={cn('text-sm font-medium', multiSaveMode === 'zip' ? 'text-primary' : 'text-foreground')}>
+                {t('save.asZip')}
+              </p>
               <p className="text-xs text-muted-foreground">{t('save.zipHint')}</p>
             </div>
           </label>

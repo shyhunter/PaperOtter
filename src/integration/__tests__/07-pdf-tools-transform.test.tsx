@@ -107,6 +107,9 @@ vi.mock('@/lib/pdfPageNumbers', () => ({
 vi.mock('@/lib/pdfRotate', () => ({
   rotatePdf: vi.fn().mockResolvedValue({ bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]) }),
   cycleRotation: vi.fn().mockImplementation((r: number) => ((r + 90) % 360)),
+  // Real arithmetic, not a stub: the direction of a quarter turn is the thing
+  // under test in RF-05/RF-06, and a mock that got it wrong would pass anyway.
+  turnBy: (r: number, d: 'left' | 'right') => (((r + (d === 'right' ? 90 : 270)) % 360) + 360) % 360,
 }));
 
 vi.mock('@/lib/pdfProcessor', () => ({

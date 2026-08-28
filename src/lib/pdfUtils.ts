@@ -11,6 +11,12 @@ import { t } from '@/i18n';
 export function friendlyPdfError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
 
+  // Checked before the corruption branches: a blocked read says nothing about
+  // the file's contents, and telling someone their visa scan is corrupt when it
+  // is merely out of scope sends them looking for a problem that is not there.
+  if (/forbidden path/i.test(raw) || /not allowed on the scope/i.test(raw)) {
+    return t('pdfUtils.permissionDenied');
+  }
   if (/no pdf header/i.test(raw) || /not a pdf/i.test(raw)) {
     return t('pdfUtils.thisFileIsNotA');
   }
@@ -22,6 +28,20 @@ export function friendlyPdfError(err: unknown): string {
   }
 
   return t('pdfUtils.failedToLoadPdfThe');
+}
+
+/**
+ * Whether a failure is the filesystem refusing access rather than the file being
+ * wrong. Tauri rejects a read outside the capability scope with "forbidden path".
+ *
+ * Worth its own predicate because the two need opposite responses: a damaged
+ * file should be offered the repair tool, while a blocked one is intact and
+ * repairing it would be nonsense. Getting this backwards is what told people
+ * their documents were corrupt when they were not.
+ */
+export function isPermissionError(err: unknown): boolean {
+  const raw = err instanceof Error ? err.message : String(err);
+  return /forbidden path|not allowed on the scope/i.test(raw);
 }
 
 /**

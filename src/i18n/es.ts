@@ -112,7 +112,6 @@ export const es: Dictionary = {
   'save.success': 'Archivo guardado correctamente',
   'save.failed': 'Error al guardar',
   'save.backToCompare': 'Volver a la comparación',
-  'save.chooseSplitMode': 'Elija cómo guardar los archivos divididos.',
   'save.zipHint': 'Todos los archivos en un único archivo ZIP',
   'save.individualHint': 'Cada archivo guardado por separado con nombre automático',
   'save.saveNFiles': 'Guardar {files}',
@@ -232,7 +231,7 @@ export const es: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Elija un documento para convertirlo a otro formato.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Formato no admitido. Use PDF, DOCX, DOC, ODT, EPUB, TXT, RTF o HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Convertir a: Markdown, HTML, JSON, PDF, Word, libros electrónicos &amp; más',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convertir a: Markdown, HTML, JSON, PDF, Word, libros electrónicos & más',
   'convertDoc.openPdfDocxDocOdt': 'Abrir: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Documento de Word 97-2003',
   'convertDocFlow.richTextFormat': 'Formato de texto enriquecido',
@@ -503,7 +502,6 @@ export const es: Dictionary = {
   'batch.processingFile': 'Procesando el archivo {current} de {total}: {name}',
   'batch.skippedDifferentType':
     'Se omitieron {count} archivo(s) de otro tipo: un lote debe ser de un solo tipo.',
-  'deps.ghostscriptMac': 'Comprimir PDF requiere Ghostscript. Instálelo con: brew install ghostscript',
   'deps.ghostscriptWindows':
     'Comprimir PDF requiere Ghostscript. Descárguelo de ghostscript.com/releases/gsdnld.html y asegúrese de que esté en el PATH.',
   'deps.ghostscriptLinux':
@@ -649,7 +647,7 @@ export const es: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Haga clic en otra tarjeta para intercambiar',
   'dashboard.clickToReorder': 'Haga clic para reordenar',
   'dashboard.clickToReorderMiddotClick':
-    'Haga clic en ⠿ para reordenar &middot; Haga clic en &#9733; en una herramienta para añadirla',
+    'Haga clic en ⠿ para reordenar · Haga clic en ★ en una herramienta para añadirla',
   'dashboard.documentTools': 'Herramientas de documento', 'dashboard.imageTools': 'Herramientas de imagen',
   'firstLaunchBanner.dismissPrivacyBanner': 'Ocultar el aviso de privacidad',
   'firstLaunchBanner.learnMore': 'Más información',

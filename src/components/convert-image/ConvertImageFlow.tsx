@@ -90,7 +90,15 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
   const consumedPending = useRef(false);
 
   // Consume pending file on mount
-  const initialFile = (!consumedPending.current && pendingFiles.length > 0) ? pendingFiles[0] : null;
+  // Captured into a ref on the first render, never recomputed. StrictMode renders
+  // twice; deriving this from `consumedPending` — which the first pass flips —
+  // left the second pass with null, and the mount effect closes over the second
+  // pass. That is how a dropped file reached the flow and was still never opened.
+  const capturedPending = useRef<string | null>(null);
+  if (capturedPending.current === null && pendingFiles.length > 0) {
+    capturedPending.current = pendingFiles[0];
+  }
+  const initialFile = capturedPending.current;
   if (!consumedPending.current && pendingFiles.length > 0) {
     consumedPending.current = true;
     setPendingFiles([]);

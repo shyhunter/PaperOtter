@@ -3,7 +3,7 @@
 // needing the user to copy/paste browser console output.
 // Remove this file and all its call sites once the bug is resolved.
 import { writeFile } from '@tauri-apps/plugin-fs';
-import { desktopDir, join } from '@tauri-apps/api/path';
+import { downloadDir, join } from '@tauri-apps/api/path';
 
 let logPath: string | null = null;
 let queue: string[] = [];
@@ -12,7 +12,16 @@ let accumulated = ''; // writeFile always overwrites, so we keep the full text i
 
 async function getLogPath(): Promise<string> {
   if (!logPath) {
-    logPath = await join(await desktopDir(), 'papercut-diag.log');
+    // Deliberately not the Desktop. Desktop is TCC-protected and, when the
+    // "Desktop & Documents in iCloud" setting is on, synced — so a write can
+    // block on a cloud daemon that is offline and fail with ETIMEDOUT. That is
+    // not hypothetical: it happened during REL-03 and cost the session its logs
+    // at exactly the moment they were needed. Startup chains off diagLogReset,
+    // so the stall delayed app launch too.
+    //
+    // Downloads is inside the static fs capability scope (so no grant is
+    // needed) and is not covered by the iCloud Desktop & Documents setting.
+    logPath = await join(await downloadDir(), 'papercut-diag.log');
   }
   return logPath;
 }

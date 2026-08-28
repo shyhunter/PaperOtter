@@ -42,12 +42,12 @@ pub const NO_DECODER: &str =
 
 #[cfg(target_os = "macos")]
 mod imp {
-    use objc2_core_foundation::{CFData, CGPoint, CGRect, CGSize};
+    use objc2_core_foundation::{CFData, CFNumber, CFNumberType, CFString, CGPoint, CGRect, CGSize};
     use objc2_core_graphics::{
         CGBitmapContextCreate, CGColorSpace, CGContext, CGImage, CGImageAlphaInfo,
         CGImageByteOrderInfo,
     };
-    use objc2_image_io::CGImageSource;
+    use objc2_image_io::{kCGImagePropertyOrientation, CGImageSource};
 
     fn open(bytes: &[u8]) -> Result<objc2_core_foundation::CFRetained<CGImageSource>, String> {
         let data = CFData::from_bytes(bytes);
@@ -77,6 +77,8 @@ mod imp {
         }
         let cg_image = unsafe { source.image_at_index(primary, None) }
             .ok_or_else(|| "This HEIC photo could not be decoded — the file may be damaged.".to_string())?;
+
+        let orientation = exif_orientation(&source, primary);
 
         let width = CGImage::width(Some(&cg_image));
         let height = CGImage::height(Some(&cg_image));
@@ -128,7 +130,62 @@ mod imp {
 
         let rgba = image::RgbaImage::from_raw(width as u32, height as u32, buffer)
             .ok_or_else(|| "Decoded HEIC pixels did not match the reported size.".to_string())?;
-        Ok((image::DynamicImage::ImageRgba8(rgba), count))
+        let img = apply_orientation(image::DynamicImage::ImageRgba8(rgba), orientation);
+        Ok((img, count))
+    }
+
+    /// The EXIF orientation Image I/O reports, or 1 when there is none.
+    ///
+    /// Every iPhone stores its photos in a single sensor orientation and records
+    /// the upright rotation as metadata. `image_at_index` returns the *stored*
+    /// pixels and does not apply it — Preview and Finder do, which is precisely
+    /// why an unrotated photo reads as this app's fault rather than the file's.
+    ///
+    /// A missing, unreadable or out-of-range value means "leave it alone": a
+    /// photo shown as stored is wrong, but a photo mangled by a bad tag is worse.
+    fn exif_orientation(source: &CGImageSource, index: usize) -> u32 {
+        // SAFETY: `source` is a live CGImageSource, and the key is a static
+        // CFString owned by Image I/O.
+        let Some(props) = (unsafe { source.properties_at_index(index, None) }) else {
+            return 1;
+        };
+        let key: *const core::ffi::c_void =
+            (unsafe { kCGImagePropertyOrientation }) as *const CFString as *const _;
+        // SAFETY: `props` is a live CFDictionary and `key` is a valid CFString.
+        let value = unsafe { props.value(key) };
+        if value.is_null() {
+            return 1;
+        }
+        // SAFETY: kCGImagePropertyOrientation's value is documented as a CFNumber.
+        let number = unsafe { &*(value as *const CFNumber) };
+        let mut raw: i32 = 1;
+        // SAFETY: `raw` is a live i32 matching the SInt32Type requested.
+        let ok = unsafe {
+            number.value(CFNumberType::SInt32Type, (&mut raw as *mut i32).cast())
+        };
+        if ok && (1..=8).contains(&raw) {
+            raw as u32
+        } else {
+            1
+        }
+    }
+
+    /// Turns stored pixels into what the photographer saw.
+    ///
+    /// The eight EXIF values are four rotations and their mirrors. The mirrored
+    /// four are rare from a camera but arrive from screenshots and scanners, and
+    /// costing nothing to support is better than being subtly wrong on them.
+    fn apply_orientation(img: image::DynamicImage, orientation: u32) -> image::DynamicImage {
+        match orientation {
+            2 => img.fliph(),
+            3 => img.rotate180(),
+            4 => img.flipv(),
+            5 => img.rotate90().fliph(),
+            6 => img.rotate90(),
+            7 => img.rotate270().fliph(),
+            8 => img.rotate270(),
+            _ => img,
+        }
     }
 
     /// Core Graphics hands back premultiplied alpha; the `image` crate expects
