@@ -6,11 +6,19 @@ import type { DependencyName } from '@/types/tools';
 /**
  * What to tell someone whose build cannot compress PDFs.
  *
- * This used to say Ghostscript was "bundled with Papercut" and suggest
- * reinstalling the app. Ghostscript is only genuinely bundled for Apple Silicon;
- * the other three platforms ship a stub, so that advice sent people to reinstall
- * something that would never fix it. The app does fall back to a system-installed
- * Ghostscript, so pointing at the right installer is advice that actually works.
+ * The advice has to differ by platform because what is actually in the bundle
+ * differs by platform. Verified during REL-02 on 2026-08-28: real Ghostscript
+ * binaries are committed for macOS arm64, macOS x86_64 and Linux, and both macOS
+ * slices link nothing outside /usr/lib — no Homebrew required. Only Windows still
+ * holds a placeholder locally, which CI replaces at release time.
+ *
+ * So on macOS, "reinstall" is the correct advice and `brew install ghostscript`
+ * was not: it points at a program the app already ships, and it is unusable by
+ * the very person most likely to see it, who has no Homebrew. Detection tries the
+ * sidecar before anything else, so this hint is only ever reached when the
+ * bundled copy failed to start — which reinstalling does fix.
+ *
+ * Windows and Linux copy is unchanged pending verification on real machines.
  */
 export function ghostscriptHint(): string {
   const ua = navigator.userAgent;

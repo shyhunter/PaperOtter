@@ -435,7 +435,6 @@ export const tr: Dictionary = {
   'batch.couldNotBeProcessed': '{files} işlenemedi',
   'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor — {name}',
   'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı — bir küme tek türden olmalıdır.',
-  'deps.ghostscriptMac': 'PDF sıkıştırmak için Ghostscript gerekir. Kurulum: brew install ghostscript',
   'deps.ghostscriptWindows':
     'PDF sıkıştırmak için Ghostscript gerekir. ghostscript.com/releases/gsdnld.html adresinden indirin ve PATH’te olduğundan emin olun.',
   'deps.ghostscriptLinux':

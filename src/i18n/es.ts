@@ -502,7 +502,6 @@ export const es: Dictionary = {
   'batch.processingFile': 'Procesando el archivo {current} de {total}: {name}',
   'batch.skippedDifferentType':
     'Se omitieron {count} archivo(s) de otro tipo: un lote debe ser de un solo tipo.',
-  'deps.ghostscriptMac': 'Comprimir PDF requiere Ghostscript. Instálelo con: brew install ghostscript',
   'deps.ghostscriptWindows':
     'Comprimir PDF requiere Ghostscript. Descárguelo de ghostscript.com/releases/gsdnld.html y asegúrese de que esté en el PATH.',
   'deps.ghostscriptLinux':

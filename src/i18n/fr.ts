@@ -608,8 +608,6 @@ export const fr: Dictionary = {
     '{count} fichier(s) d’un autre type ignoré(s) — un lot doit être d’un seul type.',
 
   // ── Dependencies and file filters ─────────────────────────────────────────
-  'deps.ghostscriptMac':
-    'La compression de PDF nécessite Ghostscript. Installation : brew install ghostscript',
   'deps.ghostscriptWindows':
     'La compression de PDF nécessite Ghostscript. Téléchargez-le sur ghostscript.com/releases/gsdnld.html et vérifiez qu’il est dans le PATH.',
   'deps.ghostscriptLinux':

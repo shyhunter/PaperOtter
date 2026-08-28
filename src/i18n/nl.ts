@@ -378,7 +378,6 @@ export const nl: Dictionary = {
   'batch.processingFile': 'Bestand {current} van {total} verwerken — {name}',
   'batch.skippedDifferentType':
     '{count} bestand(en) van een ander type overgeslagen — een reeks moet uit één type bestaan.',
-  'deps.ghostscriptMac': 'PDF comprimeren vereist Ghostscript. Installeer met: brew install ghostscript',
   'deps.ghostscriptWindows':
     'PDF comprimeren vereist Ghostscript. Download het van ghostscript.com/releases/gsdnld.html en zorg dat het in het PATH staat.',
   'deps.ghostscriptLinux':

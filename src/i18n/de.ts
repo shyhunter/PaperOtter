@@ -708,8 +708,6 @@ export const de: Dictionary = {
     '{count} Datei(en) eines anderen Typs übersprungen — ein Stapel muss aus einem Typ bestehen.',
 
   // ── Dependency hints ──────────────────────────────────────────────────────
-  'deps.ghostscriptMac':
-    'Zum Komprimieren von PDFs wird Ghostscript benötigt. Installation mit: brew install ghostscript',
   'deps.ghostscriptWindows':
     'Zum Komprimieren von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
   'deps.ghostscriptLinux':

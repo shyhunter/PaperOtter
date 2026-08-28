@@ -382,7 +382,6 @@ export const pl: Dictionary = {
   'batch.processingFile': 'Przetwarzanie pliku {current} z {total} — {name}',
   'batch.skippedDifferentType':
     'Pominięto {count} plik(ów) innego typu — partia musi zawierać jeden typ.',
-  'deps.ghostscriptMac': 'Kompresja PDF wymaga Ghostscript. Instalacja: brew install ghostscript',
   'deps.ghostscriptWindows':
     'Kompresja PDF wymaga Ghostscript. Pobierz go z ghostscript.com/releases/gsdnld.html i upewnij się, że jest w zmiennej PATH.',
   'deps.ghostscriptLinux':

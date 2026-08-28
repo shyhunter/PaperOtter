@@ -926,7 +926,7 @@ export const en = {
   'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type — a batch has to be one type.',
 
   // ── Dependency hints ────────────────────────────────────────────────────
-  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript. Install it with: brew install ghostscript',
+  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start — reinstalling Papercut should restore it.',
   'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
   'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',
