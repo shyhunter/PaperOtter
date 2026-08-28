@@ -918,10 +918,10 @@ export const de: Dictionary = {
   'colorPresets.pink': 'Rosa',
 
   // ── Mixed proper nouns ────────────────────────────────────────────────────
-  'convertDoc.convertToMarkdownHtmlJson': 'Umwandeln in: Markdown, HTML, JSON, PDF, Word, E-Books &amp; mehr',
+  'convertDoc.convertToMarkdownHtmlJson': 'Umwandeln in: Markdown, HTML, JSON, PDF, Word, E-Books & mehr',
   'convertDoc.openPdfDocxDocOdt': 'Öffnen: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'dashboard.clickToReorderMiddotClick':
-    '⠿ klicken zum Umsortieren &middot; &#9733; auf einem Werkzeug klicken zum Hinzufügen',
+    '⠿ klicken zum Umsortieren · ★ auf einem Werkzeug klicken zum Hinzufügen',
   'editorToolbar.helveticaArialSansSerif': 'Helvetica / Arial (Serifenlos)',
   'editorToolbar.timesNewRomanSerif': 'Times New Roman (Serifen)',
 

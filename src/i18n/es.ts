@@ -231,7 +231,7 @@ export const es: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Elija un documento para convertirlo a otro formato.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Formato no admitido. Use PDF, DOCX, DOC, ODT, EPUB, TXT, RTF o HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Convertir a: Markdown, HTML, JSON, PDF, Word, libros electrónicos &amp; más',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convertir a: Markdown, HTML, JSON, PDF, Word, libros electrónicos & más',
   'convertDoc.openPdfDocxDocOdt': 'Abrir: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Documento de Word 97-2003',
   'convertDocFlow.richTextFormat': 'Formato de texto enriquecido',
@@ -647,7 +647,7 @@ export const es: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Haga clic en otra tarjeta para intercambiar',
   'dashboard.clickToReorder': 'Haga clic para reordenar',
   'dashboard.clickToReorderMiddotClick':
-    'Haga clic en ⠿ para reordenar &middot; Haga clic en &#9733; en una herramienta para añadirla',
+    'Haga clic en ⠿ para reordenar · Haga clic en ★ en una herramienta para añadirla',
   'dashboard.documentTools': 'Herramientas de documento', 'dashboard.imageTools': 'Herramientas de imagen',
   'firstLaunchBanner.dismissPrivacyBanner': 'Ocultar el aviso de privacidad',
   'firstLaunchBanner.learnMore': 'Más información',

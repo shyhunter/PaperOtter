@@ -167,7 +167,7 @@ export const pl: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Wybierz dokument do konwersji na inny format.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Nieobsługiwany format pliku. Użyj PDF, DOCX, DOC, ODT, EPUB, TXT, RTF lub HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Konwertuj na: Markdown, HTML, JSON, PDF, Word, e-booki &amp; więcej',
+  'convertDoc.convertToMarkdownHtmlJson': 'Konwertuj na: Markdown, HTML, JSON, PDF, Word, e-booki & więcej',
   'convertDoc.openPdfDocxDocOdt': 'Otwórz: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Dokument Word 97-2003',
   'convertDocFlow.richTextFormat': 'Rich Text Format', 'convertDocFlow.wordDocument': 'Dokument Word',
@@ -526,7 +526,7 @@ export const pl: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Kliknij inną kartę, aby zamienić',
   'dashboard.clickToReorder': 'Kliknij, aby zmienić kolejność',
   'dashboard.clickToReorderMiddotClick':
-    'Kliknij ⠿, aby zmienić kolejność &middot; Kliknij &#9733; na narzędziu, aby je dodać',
+    'Kliknij ⠿, aby zmienić kolejność · Kliknij ★ na narzędziu, aby je dodać',
   'dashboard.documentTools': 'Narzędzia dokumentów', 'dashboard.imageTools': 'Narzędzia obrazów',
   'firstLaunchBanner.dismissPrivacyBanner': 'Zamknij informację o prywatności',
   'firstLaunchBanner.learnMore': 'Dowiedz się więcej',

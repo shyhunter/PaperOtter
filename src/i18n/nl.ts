@@ -153,7 +153,7 @@ export const nl: Dictionary = {
   'convertDoc.selectADocumentToConvert': 'Kies een document om naar een ander formaat om te zetten.',
   'convertDoc.unsupportedFileFormatPleaseUse':
     'Niet-ondersteund bestandsformaat. Gebruik PDF, DOCX, DOC, ODT, EPUB, TXT, RTF of HTML.',
-  'convertDoc.convertToMarkdownHtmlJson': 'Omzetten naar: Markdown, HTML, JSON, PDF, Word, e-books &amp; meer',
+  'convertDoc.convertToMarkdownHtmlJson': 'Omzetten naar: Markdown, HTML, JSON, PDF, Word, e-books & meer',
   'convertDoc.openPdfDocxDocOdt': 'Openen: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDocFlow.word972003Document': 'Word 97-2003-document',
   'convertDocFlow.richTextFormat': 'Rich Text Format', 'convertDocFlow.wordDocument': 'Word-document',
@@ -524,7 +524,7 @@ export const nl: Dictionary = {
   'dashboard.clickAnotherCardToSwap': 'Klik op een andere kaart om te verwisselen',
   'dashboard.clickToReorder': 'Klik om te herordenen',
   'dashboard.clickToReorderMiddotClick':
-    'Klik ⠿ om te herordenen &middot; Klik &#9733; op een gereedschap om het toe te voegen',
+    'Klik ⠿ om te herordenen · Klik ★ op een gereedschap om het toe te voegen',
   'dashboard.documentTools': 'Documentgereedschap', 'dashboard.imageTools': 'Afbeeldingsgereedschap',
   'firstLaunchBanner.dismissPrivacyBanner': 'Privacymelding sluiten',
   'firstLaunchBanner.learnMore': 'Meer informatie',

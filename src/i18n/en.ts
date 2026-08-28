@@ -166,7 +166,7 @@ export const en = {
 
   // ── convertDoc ──────────────────────────────────────────────────────────
   'convertDoc.convertDocument': 'Convert Document',
-  'convertDoc.convertToMarkdownHtmlJson': 'Convert to: Markdown, HTML, JSON, PDF, Word, e-books &amp; more',
+  'convertDoc.convertToMarkdownHtmlJson': 'Convert to: Markdown, HTML, JSON, PDF, Word, e-books & more',
   'convertDoc.openPdfDocxDocOdt': 'Open: PDF, DOCX, DOC, ODT, EPUB, MOBI, AZW3, TXT, RTF, HTML',
   'convertDoc.selectDocument': 'Select Document',
   'convertDoc.selectADocumentToConvert': 'Select a document to convert between formats.',
@@ -543,7 +543,7 @@ export const en = {
   'crashReporter.thisWillOpenInYour': 'This will open in your email app:',
 
   // ── dashboard ───────────────────────────────────────────────────────────
-  'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder &middot; Click &#9733; on any tool to add',
+  'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder · Click ★ on any tool to add',
   'dashboard.dropFileToGetStarted': 'Drop file to get started',
   'dashboard.myFavorites': 'My Favourites',
   'dashboard.andMoreFiles': '+{count} more',
