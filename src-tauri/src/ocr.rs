@@ -356,6 +356,11 @@ mod imp {
 /// the app blamed the document.
 ///
 /// One `open` syscall buys the distinction.
+///
+/// macOS-only because its only callers are: the platforms without a Vision
+/// engine return NO_ENGINE before any file is touched, so an ungated definition
+/// is dead code there — and `clippy -D warnings` is right to say so.
+#[cfg(target_os = "macos")]
 fn check_readable(path: &str) -> Result<(), String> {
     use std::io::ErrorKind;
     match std::fs::File::open(path) {
