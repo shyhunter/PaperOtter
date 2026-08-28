@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PDFDocument, degrees } from 'pdf-lib';
-import { rotatePdf, cycleRotation } from '../pdfRotate';
+import { rotatePdf, cycleRotation, turnBy } from '../pdfRotate';
 
 const FIXTURE = resolve(__dirname, '../../../test-fixtures/sample.pdf');
 
@@ -73,5 +73,47 @@ describe('rotatePdf — relative rotation (RT-01..RT-05)', () => {
     expect(cycleRotation(90)).toBe(180);
     expect(cycleRotation(180)).toBe(270);
     expect(cycleRotation(270)).toBe(0);
+  });
+});
+
+// ─── RT-06..RT-09 — turning is relative, and it accumulates ──────────────────
+//
+// The editor's rotate panel offered a 2x2 compass — Original / Turn Right /
+// Upside Down / Turn Left — whose values were fed straight to rotatePdf, which
+// treats them as deltas on the page's existing /Rotate. So the labels described
+// absolute positions while the engine applied relative ones:
+//
+//   * "Original" did not restore anything; a delta of 0 simply changes nothing.
+//   * "Upside Down" on a page already at 90 produced 270, not upside down.
+//   * Clicking "Turn Right" twice still sent 90, because the compass *set* the
+//     value instead of adding to it — a half turn was unreachable.
+//
+// Two buttons that accumulate match the engine exactly, which is how the
+// standalone Rotate PDF step already worked.
+
+describe('turnBy — relative quarter turns (RT-06..RT-09)', () => {
+  it('RT-06: turning right accumulates a quarter at a time', () => {
+    expect(turnBy(0, 'right')).toBe(90);
+    expect(turnBy(90, 'right')).toBe(180);
+    expect(turnBy(180, 'right')).toBe(270);
+    expect(turnBy(270, 'right')).toBe(0);
+  });
+
+  it('RT-07: turning left accumulates the other way', () => {
+    expect(turnBy(0, 'left')).toBe(270);
+    expect(turnBy(270, 'left')).toBe(180);
+    expect(turnBy(180, 'left')).toBe(90);
+    expect(turnBy(90, 'left')).toBe(0);
+  });
+
+  it('RT-08: two turns right make a half turn', () => {
+    // Unreachable with the compass, which set 90 however many times it was hit.
+    expect(turnBy(turnBy(0, 'right'), 'right')).toBe(180);
+  });
+
+  it('RT-09: a turn each way returns to where it started', () => {
+    for (const start of [0, 90, 180, 270] as const) {
+      expect(turnBy(turnBy(start, 'right'), 'left')).toBe(start);
+    }
   });
 });

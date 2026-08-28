@@ -5,18 +5,9 @@ import { RotateCw, RotateCcw, Loader2, CheckSquare, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
-import { cycleRotation } from '@/lib/pdfRotate';
+import { turnBy } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
 import { plural, t } from '@/i18n';
-
-/** Rotate counter-clockwise: cycle 3 forward = 1 backward */
-function rotateCCW(r: RotationDegrees): RotationDegrees {
-  let v = r;
-  v = cycleRotation(v);
-  v = cycleRotation(v);
-  v = cycleRotation(v);
-  return v;
-}
 
 interface RotateStepProps {
   pdfBytes: Uint8Array;
@@ -70,7 +61,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
       const next = new Map(prev);
       for (const i of indices) {
         const current = next.get(i) ?? 0;
-        next.set(i, direction === 'cw' ? cycleRotation(current) : rotateCCW(current));
+        next.set(i, turnBy(current, direction === 'cw' ? 'right' : 'left'));
       }
       return next;
     });

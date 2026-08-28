@@ -55,6 +55,9 @@ vi.mock('@/lib/pdfThumbnail', () => ({
 // Mock pdf-lib page operations used by rotate/crop/watermark/page-numbers panels
 vi.mock('@/lib/pdfRotate', () => ({
   rotatePdf: vi.fn().mockResolvedValue({ bytes: new Uint8Array([0x25, 0x50, 0x44, 0x46]) }),
+  // Real arithmetic. TP-02b asserts that turns accumulate, which a stub
+  // returning a constant would satisfy while proving nothing.
+  turnBy: (r: number, d: 'left' | 'right') => (((r + (d === 'right' ? 90 : 270)) % 360) + 360) % 360,
 }));
 
 // Partial: only the pdf-lib drawing call is stubbed. The defaults and the
@@ -643,7 +646,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-02: Rotate Panel
-  it('TP-02 — Rotate panel shows compass direction buttons and apply-to-all toggle', async () => {
+  it('TP-02 — Rotate panel offers two relative turns and an apply-to-all toggle', async () => {
     const user = userEvent.setup();
 
     render(
@@ -657,11 +660,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Rotate PDF')).toBeInTheDocument();
     expect(screen.getByText('Direction')).toBeInTheDocument();
 
-    // Compass directions
-    expect(screen.getByText('Original')).toBeInTheDocument();
-    expect(screen.getByText('Turn Right')).toBeInTheDocument();
-    expect(screen.getByText('Upside Down')).toBeInTheDocument();
-    expect(screen.getByText('Turn Left')).toBeInTheDocument();
+    // Two relative turns, not four absolute positions. rotatePdf applies its
+    // value as a delta, so a compass reading "Original / Upside Down" described
+    // something the engine never did: "Original" restored nothing, and "Upside
+    // Down" on a page already at 90° produced 270°.
+    expect(screen.getByText('Left')).toBeInTheDocument();
+    expect(screen.getByText('Right')).toBeInTheDocument();
+    expect(screen.queryByText('Upside Down')).not.toBeInTheDocument();
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/not turned yet/i);
 
     // Apply to all pages checkbox
     expect(screen.getByText('Apply to all pages')).toBeInTheDocument();
@@ -681,11 +687,19 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Rotate PDF'));
 
-    // Click "Turn Right" direction
-    await user.click(screen.getByText('Turn Right'));
+    await user.click(screen.getByText('Right'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/90°/);
 
-    // Apply should eventually become enabled as the debounced preview completes
-    // We verify the button exists (its disabled state depends on the preview)
+    // The whole point of the change: turns accumulate. The old compass *set*
+    // the value, so clicking Right twice still sent 90° and a half turn could
+    // not be expressed at all.
+    await user.click(screen.getByText('Right'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/180°/);
+
+    // And a left undoes a right rather than jumping to an absolute position.
+    await user.click(screen.getByText('Left'));
+    expect(screen.getByTestId('pending-rotation')).toHaveTextContent(/90°/);
+
     expect(screen.getByText('Apply')).toBeInTheDocument();
   });
 
@@ -699,7 +713,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     );
 
     await user.click(screen.getByTitle('Rotate PDF'));
-    await user.click(screen.getByText('Turn Right'));
+    await user.click(screen.getByText('Right'));
 
     // Regression: computing a rotated preview via pdf-lib (even scoped to a
     // single extracted page) meant loading the whole document into pdf-lib on
@@ -736,7 +750,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(ctx!.selectedPages.size).toBe(2));
 
     await user.click(screen.getByTitle('Rotate PDF'));
-    await user.click(screen.getByText('Turn Right'));
+    await user.click(screen.getByText('Right'));
     await waitFor(() => expect(screen.getByText('Apply')).not.toBeDisabled(), { timeout: 2000 });
     await user.click(screen.getByText('Apply'));
 

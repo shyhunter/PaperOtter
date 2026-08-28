@@ -7,7 +7,7 @@ import type { ToolId } from '@/types/tools';
 import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
-import { rotatePdf, type RotationDegrees } from '@/lib/pdfRotate';
+import { rotatePdf, turnBy, type RotationDegrees } from '@/lib/pdfRotate';
 import {
   addWatermark,
   addWatermarkSinglePage,
@@ -34,7 +34,7 @@ import {
 import type { PdfQualityLevel } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock, Expand } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Lock, Unlock, Expand, RotateCcw, RotateCw } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
@@ -667,15 +667,6 @@ function CompressPanel() {
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
 /** Compass direction entries for the rotate tool */
-function compassDirections(): { label: string; short: string; degrees: RotationDegrees | 0 }[] {
-  return [
-    { label: t('imageCompare.original'), short: '↑', degrees: 0 },
-    { label: t('toolSidebarPanel.turnRight'), short: '→', degrees: 90 },
-    { label: t('toolSidebarPanel.upsideDown'), short: '↓', degrees: 180 },
-    { label: t('toolSidebarPanel.turnLeft'), short: '←', degrees: 270 },
-  ];
-}
-
 function RotatePanel() {
   diagLog('RotatePanel.render');
   const {
@@ -756,24 +747,37 @@ function RotatePanel() {
 
       <div className="space-y-1.5">
         <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.direction')}</label>
-        {/* Compass-style 2x2 grid */}
+        {/* Two relative turns, matching the standalone Rotate PDF step. The
+            engine applies deltas, so accumulating quarter turns is the only
+            control that says what it does: two rights are a half turn, and a
+            left undoes a right. */}
         <div className="grid grid-cols-2 gap-1">
-          {compassDirections().map((dir) => (
-            <button
-              type="button"
-              key={dir.degrees}
-              onClick={() => { diagLog(`rotate.click deg=${dir.degrees}`); setRotation(dir.degrees); }}
-              className={`flex items-center gap-1.5 py-1.5 px-2 text-[11px] rounded border transition-colors ${
-                rotation === dir.degrees
-                  ? 'border-primary bg-primary/10 font-medium'
-                  : 'border-border hover:bg-muted/50'
-              }`}
-            >
-              <span className="text-base leading-none">{dir.short}</span>
-              <span>{dir.label}</span>
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => { const next = turnBy(rotation, 'left'); diagLog(`rotate.turn left -> ${next}`); setRotation(next); }}
+            title={t('rotate.rotateSelectedPagesLeft')}
+            className="flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11px] rounded border border-border hover:bg-muted/50 transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>{t('rotate.left')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { const next = turnBy(rotation, 'right'); diagLog(`rotate.turn right -> ${next}`); setRotation(next); }}
+            title={t('rotate.rotateSelectedPagesRight')}
+            className="flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11px] rounded border border-border hover:bg-muted/50 transition-colors"
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+            <span>{t('rotate.right')}</span>
+          </button>
         </div>
+        {/* Without this the second click has no visible effect, and the user
+            cannot tell a half turn from a quarter one. */}
+        <p className="text-[10px] text-muted-foreground" data-testid="pending-rotation">
+          {rotation === 0
+            ? t('toolSidebarPanel.noTurnYet')
+            : t('toolSidebarPanel.willTurnBy', { degrees: rotation })}
+        </p>
       </div>
 
       <label className="flex items-center gap-2 text-[11px] cursor-pointer">

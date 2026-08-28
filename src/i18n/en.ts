@@ -854,6 +854,8 @@ export const en = {
   'toolSidebarPanel.maximumPrepress': 'Maximum (Prepress)',
   'toolSidebarPanel.mediumEbook': 'Medium (eBook)',
   'toolSidebarPanel.highPrint': 'High (Print)',
+  'toolSidebarPanel.noTurnYet': 'Not turned yet.',
+  'toolSidebarPanel.willTurnBy': 'Apply turns these pages {degrees}° from how they look now.',
   'toolSidebarPanel.upsideDown': 'Upside Down',
   'toolSidebarPanel.turnRight': 'Turn Right',
   'toolSidebarPanel.turnLeft': 'Turn Left',

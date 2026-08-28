@@ -23,6 +23,28 @@ export function cycleRotation(current: RotationDegrees): RotationDegrees {
   return cycle[current];
 }
 
+/** Which way a quarter turn goes. */
+export type TurnDirection = 'left' | 'right';
+
+/**
+ * One quarter turn from where the page currently sits.
+ *
+ * The rotation values this module produces are *deltas*, not positions — see
+ * rotatePdf below. A control that offers absolute-sounding choices over that
+ * engine misleads: the editor's rotate panel had a compass reading "Original /
+ * Turn Right / Upside Down / Turn Left" whose value was passed straight through
+ * as a delta, so "Original" restored nothing, "Upside Down" on a page already
+ * at 90° produced 270°, and clicking "Turn Right" twice still sent 90° because
+ * the compass set the value instead of adding to it — a half turn could not be
+ * expressed at all.
+ *
+ * Turning accumulates, so two rights are a half turn and a left undoes a right.
+ */
+export function turnBy(current: RotationDegrees, direction: TurnDirection): RotationDegrees {
+  const delta = direction === 'right' ? 90 : 270;
+  return (((current + delta) % 360) + 360) % 360 as RotationDegrees;
+}
+
 /**
  * Apply per-page rotations to a PDF.
  *
