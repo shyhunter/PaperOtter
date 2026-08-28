@@ -24,7 +24,8 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const addFiles = useCallback(async (filePaths: string[]) => {
+  /** Returns what it managed to load, so a caller can act on success only. */
+  const addFiles = useCallback(async (filePaths: string[]): Promise<FileWithThumb[]> => {
     setIsLoading(true);
     setLoadError(null);
 
@@ -36,8 +37,10 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         newFiles.push({ ...input, thumbnailUrl });
       }
       setFiles((prev) => [...prev, ...newFiles]);
+      return newFiles;
     } catch (err) {
       setLoadError(friendlyPdfError(err));
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +53,9 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
   useEffect(() => {
     if (!initialFilesLoaded.current && initialFiles && initialFiles.length > 0) {
       initialFilesLoaded.current = true;
-      addFiles(initialFiles);
+      // Load them, but stay on this step: a merge of two dropped files is very
+      // often a merge of three, and this is the only place to add the third.
+      void addFiles(initialFiles);
     }
   }, [addFiles, initialFiles]);
 

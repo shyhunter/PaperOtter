@@ -112,7 +112,6 @@ export const es: Dictionary = {
   'save.success': 'Archivo guardado correctamente',
   'save.failed': 'Error al guardar',
   'save.backToCompare': 'Volver a la comparación',
-  'save.chooseSplitMode': 'Elija cómo guardar los archivos divididos.',
   'save.zipHint': 'Todos los archivos en un único archivo ZIP',
   'save.individualHint': 'Cada archivo guardado por separado con nombre automático',
   'save.saveNFiles': 'Guardar {files}',

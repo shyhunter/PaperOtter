@@ -121,7 +121,6 @@ export const fr: Dictionary = {
   'save.success': 'Fichier enregistré',
   'save.failed': 'Échec de l’enregistrement',
   'save.backToCompare': 'Retour à la comparaison',
-  'save.chooseSplitMode': 'Choisissez comment enregistrer les fichiers séparés.',
   'save.zipHint': 'Tous les fichiers dans une seule archive ZIP',
   'save.individualHint': 'Chaque fichier enregistré séparément avec nommage automatique',
   'save.saveNFiles': 'Enregistrer {files}',

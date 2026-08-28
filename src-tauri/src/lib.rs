@@ -1997,6 +1997,57 @@ fn system_info() -> String {
     format_system_info(std::env::consts::OS, std::env::consts::ARCH)
 }
 
+/// Grants read access to files the user dragged onto the window.
+///
+/// Tauri treats the two ways a file arrives differently. A file picked through
+/// a dialog is granted in the fs plugin's runtime scope by tauri-plugin-dialog.
+/// A file that is dragged in is not: tauri core widens `tauri::scope::Scopes`,
+/// which carries the asset protocol alone and is not what tauri-plugin-fs
+/// consults when it resolves a path. So a dropped file from outside the roots
+/// in `capabilities/default.json` could not be read, and the app reported that
+/// as a corrupt document.
+///
+/// Granting one file at a time, rather than widening the capability to
+/// `$HOME/**`, keeps the app's reach to the files this person handed it.
+///
+/// Note this deliberately does not call `validate_source_path`. That guard
+/// exists to keep shell-dangerous characters away from the commands that spawn
+/// Ghostscript, Calibre and `open`; this command spawns nothing, and its
+/// filename allow-list would reject ordinary documents like `John's CV.pdf`.
+/// The checks that do matter here — no null bytes, no traversal, a real file —
+/// are applied directly.
+#[tauri::command]
+fn allow_dropped_paths(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+
+    let scope = app
+        .try_fs_scope()
+        .ok_or_else(|| "Filesystem scope is unavailable".to_string())?;
+
+    for path in &paths {
+        if path.is_empty() || path.contains('\0') || path.len() > 4096 {
+            return Err("Invalid file path".to_string());
+        }
+        let candidate = std::path::Path::new(path);
+        if candidate
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            return Err("Path traversal not allowed".to_string());
+        }
+        // Only real files. A grant means nothing for a path that is not there,
+        // and this keeps a dropped directory from being opened up wholesale.
+        if !candidate.is_file() {
+            return Err(format!("Not a file: {}", path));
+        }
+        scope
+            .allow_file(path)
+            .map_err(|e| format!("Could not grant access to {}: {}", path, e))?;
+    }
+
+    Ok(())
+}
+
 /// Reveal a file in Finder (macOS) or the system file manager.
 #[tauri::command]
 async fn reveal_in_finder(path: String) -> Result<(), String> {
@@ -2092,7 +2143,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.

@@ -68,7 +68,6 @@ export const nl: Dictionary = {
   'save.toFolder': 'In map opslaan', 'save.asZip': 'Als ZIP opslaan', 'save.again': 'Opnieuw opslaan',
   'save.showInFinder': 'Tonen in Finder', 'save.success': 'Bestand opgeslagen',
   'save.failed': 'Opslaan mislukt', 'save.backToCompare': 'Terug naar de vergelijking',
-  'save.chooseSplitMode': 'Kies hoe de gesplitste bestanden worden opgeslagen.',
   'save.zipHint': 'Alle bestanden in één ZIP-archief',
   'save.individualHint': 'Elk bestand apart opgeslagen met automatische naamgeving',
   'save.saveNFiles': '{files} opslaan',

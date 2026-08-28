@@ -160,9 +160,15 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
   const consumedPending = useRef(false);
 
   // Consume pending files on mount
-  const initialFiles = (!consumedPending.current && pendingFiles.length > 0)
-    ? [...pendingFiles]
-    : [];
+  // Captured into a ref on the first render, never recomputed. StrictMode renders
+  // twice; deriving this from `consumedPending` — which the first pass flips —
+  // left the second pass with an empty list, and the mount effect closes over the
+  // second pass. That is why a dropped image never opened.
+  const capturedPending = useRef<string[] | null>(null);
+  if (capturedPending.current === null && pendingFiles.length > 0) {
+    capturedPending.current = [...pendingFiles];
+  }
+  const initialFiles = capturedPending.current ?? [];
   if (!consumedPending.current && pendingFiles.length > 0) {
     consumedPending.current = true;
     setPendingFiles([]);
@@ -170,7 +176,8 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
 
   // ── Add images ────────────────────────────────────────────────────────────
 
-  const addImages = useCallback(async (filePaths: string[]) => {
+  /** Returns what it managed to load, so a caller can act on success only. */
+  const addImages = useCallback(async (filePaths: string[]): Promise<ImageEntry[]> => {
     setIsLoading(true);
     setLoadError(null);
 
@@ -189,9 +196,11 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
         });
       }
       setImages((prev) => [...prev, ...newEntries]);
+      return newEntries;
     } catch (err) {
       const message = err instanceof Error ? err.message : t('convertImageFlow.failedToLoadImage');
       setLoadError(message);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +211,10 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
   useEffect(() => {
     if (!initialFilesLoaded.current && initialFiles.length > 0) {
       initialFilesLoaded.current = true;
-      addImages(initialFiles);
+      // Load them, but stay on this step. It is where the user sees what is
+      // selected, reorders it, and — the common case — adds a second image.
+      // Skipping ahead would take that away for the sake of one click.
+      void addImages(initialFiles);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

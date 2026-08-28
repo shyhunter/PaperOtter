@@ -95,7 +95,6 @@ export const de: Dictionary = {
   'save.success': 'Datei erfolgreich gespeichert',
   'save.failed': 'Speichern fehlgeschlagen',
   'save.backToCompare': 'Zurück zum Vergleich',
-  'save.chooseSplitMode': 'Wählen Sie, wie die geteilten Dateien gespeichert werden.',
   'save.zipHint': 'Alle Dateien in einem einzigen ZIP-Archiv',
   'save.individualHint': 'Jede Datei einzeln mit automatischer Benennung',
   'save.saveNFiles': '{files} speichern',

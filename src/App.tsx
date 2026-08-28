@@ -18,7 +18,7 @@ import type { ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
-import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
+import { friendlyPdfError, isPdfLoadError, isPermissionError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -486,9 +486,15 @@ function StandardToolFlow() {
           setCorruptPdfBlock({ name: getFileName(filePath) });
           return;
         }
-      } catch {
-        // Could not read — treat as corrupt
-        setCorruptPdfBlock({ name: getFileName(filePath) });
+      } catch (err) {
+        // A file we are not allowed to read is not a damaged file. The corrupt
+        // block offers to repair the document, which for a blocked-but-intact
+        // scan sends the user to fix a problem that does not exist.
+        if (isPermissionError(err)) {
+          toast.error(friendlyPdfError(err));
+        } else {
+          setCorruptPdfBlock({ name: getFileName(filePath) });
+        }
         return;
       }
     }
@@ -824,6 +830,37 @@ function StandardToolFlow() {
         )}
       </StepErrorBoundary>
 
+      {/* Step 3: Save — batch */}
+      <StepErrorBoundary stepName="Save">
+        {/* A batch run goes through batchProcessor, so neither pdfProcessor.result
+            nor imageProcessor.result is ever set — the two branches below cannot
+            match and the step rendered nothing at all. Its outputs already carry
+            the fileName and bytes MultiFileSave needs, which is what gives the
+            batch the same folder/ZIP save Split has, collision naming included. */}
+        {currentStep === 3 && batchPaths.length > 1 && batchProcessor.result && (
+          <SaveStep
+            // Only read in single-file mode; MultiFileSave writes each output's
+            // own bytes. Passing the first keeps the prop honest rather than
+            // widening the type for a value that is never used here.
+            processedBytes={batchProcessor.result.succeeded[0]?.output.bytes ?? new Uint8Array()}
+            sourceFileName={fileEntry?.name ?? ''}
+            defaultSaveName={`papercut-batch-${batchProcessor.result.succeeded.length}-files.zip`}
+            multiFileOutputs={batchProcessor.result.succeeded.map((s) => ({
+              fileName: s.output.fileName,
+              bytes: s.output.bytes,
+            }))}
+            savedFilePath={savedFilePath}
+            onDismissSaveConfirmation={() => setSavedFilePath(null)}
+            onSaveComplete={(savedPath) => setSavedFilePath(savedPath)}
+            onCancel={() => setCurrentStep(2)}
+            onBack={() => {
+              setSavedFilePath(null);
+              setCurrentStep(2);
+            }}
+          />
+        )}
+      </StepErrorBoundary>
+
       {/* Step 3: Save — PDF */}
       <StepErrorBoundary stepName="Save">
         {currentStep === 3 && pdfProcessor.result && fileEntry?.format === 'pdf' && (
@@ -871,11 +908,24 @@ function StandardToolFlow() {
 
 
 function AppContent() {
-  const { activeTool, editorFilePath, documentEpoch, openEditor, goToDashboard, selectTool } = useToolContext();
+  const { activeTool, editorFilePath, documentEpoch, openEditor, goToDashboard, selectTool, pendingFiles, setPendingFiles } = useToolContext();
 
   // Intercept edit-pdf tool: open file picker then redirect to new editor
   useEffect(() => {
     if (activeTool !== 'edit-pdf') return;
+
+    // A file dropped on the dashboard has already been chosen. Asking for it
+    // again is the complaint this fixes: the picking happened at the drag, and
+    // this interception used to run before EditPdfFlow could look at
+    // pendingFiles at all. openEditor clears activeTool, so this effect does not
+    // re-enter and fall through to the picker below.
+    if (pendingFiles.length > 0) {
+      const dropped = pendingFiles[0];
+      setPendingFiles([]);
+      openEditor(dropped);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       const { open } = await import('@tauri-apps/plugin-dialog');
@@ -892,21 +942,33 @@ function AppContent() {
       }
     })();
     return () => { cancelled = true; };
-  }, [activeTool, openEditor, goToDashboard]);
+  }, [activeTool, openEditor, goToDashboard, pendingFiles, setPendingFiles]);
 
   // Listen for "file-opened" event from Tauri backend (file association / CLI arg)
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      listen<string>('file-opened', (event) => {
-        if (event.payload && event.payload.endsWith('.pdf')) {
-          openEditor(event.payload);
-        }
-      }).then((fn) => {
+    // Cleanup can run before the dynamic import resolves — StrictMode mounts,
+    // unmounts and remounts faster than the module loads. Without this flag the
+    // first listener is never removed, and a file association fires twice.
+    let cancelled = false;
+    import('@tauri-apps/api/event')
+      .then(({ listen }) =>
+        listen<string>('file-opened', (event) => {
+          if (event.payload && event.payload.endsWith('.pdf')) {
+            openEditor(event.payload);
+          }
+        }),
+      )
+      .then((fn) => {
+        if (cancelled) { fn(); return; }
         unlisten = fn;
+      })
+      .catch(() => {
+        // Nothing to listen with; a floating rejection here would take the whole
+        // app down in dev and tells the user nothing.
       });
-    });
     return () => {
+      cancelled = true;
       unlisten?.();
     };
   }, [openEditor]);

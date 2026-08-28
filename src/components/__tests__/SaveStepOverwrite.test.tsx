@@ -54,7 +54,12 @@ describe('folder save', () => {
     renderSaveStep();
     await saveToFolder(user);
 
-    const written = vi.mocked(writeFile).mock.calls.map((c) => c[0]);
+    // Only the writes that landed in the chosen folder. Asserting on every
+    // writeFile call ever made couples this to unrelated writes elsewhere in the
+    // app, which is exactly what it should not care about.
+    const written = vi.mocked(writeFile).mock.calls
+      .map((c) => c[0] as string)
+      .filter((p) => typeof p === 'string' && p.startsWith('/out/'));
     expect(written).toEqual(['/out/scan-1.pdf', '/out/scan-2.pdf']);
   });
 
@@ -65,7 +70,12 @@ describe('folder save', () => {
     renderSaveStep();
     await saveToFolder(user);
 
-    const written = vi.mocked(writeFile).mock.calls.map((c) => c[0]);
+    // Only the writes that landed in the chosen folder. Asserting on every
+    // writeFile call ever made couples this to unrelated writes elsewhere in the
+    // app, which is exactly what it should not care about.
+    const written = vi.mocked(writeFile).mock.calls
+      .map((c) => c[0] as string)
+      .filter((p) => typeof p === 'string' && p.startsWith('/out/'));
     expect(written).not.toContain('/out/scan-1.pdf');
     expect(written).toEqual(['/out/scan-1 (2).pdf', '/out/scan-2.pdf']);
   });

@@ -70,7 +70,6 @@ export const pt: Dictionary = {
   'save.again': 'Guardar novamente', 'save.showInFinder': 'Mostrar no Finder',
   'save.success': 'Ficheiro guardado com êxito', 'save.failed': 'Não foi possível guardar',
   'save.backToCompare': 'Voltar à comparação',
-  'save.chooseSplitMode': 'Escolha como guardar os ficheiros divididos.',
   'save.zipHint': 'Todos os ficheiros reunidos num único arquivo ZIP',
   'save.individualHint': 'Cada ficheiro guardado em separado, com nome automático',
   'imageConfigure.quality': 'Qualidade da imagem', 'imageConfigure.outputFormat': 'Formato de saída',

@@ -119,7 +119,6 @@ export const tr: Dictionary = {
   'save.success': 'Dosya kaydedildi',
   'save.failed': 'Kaydetme başarısız',
   'save.backToCompare': 'Karşılaştırmaya dön',
-  'save.chooseSplitMode': 'Bölünen dosyaların nasıl kaydedileceğini seçin.',
   'save.zipHint': 'Tüm dosyalar tek bir ZIP arşivinde',
   'save.individualHint': 'Her dosya otomatik adlandırmayla ayrı ayrı kaydedilir',
   'save.saveNFiles': '{files} kaydet',

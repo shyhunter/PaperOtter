@@ -82,7 +82,6 @@ export const pl: Dictionary = {
   'save.toFolder': 'Zapisz w folderze', 'save.asZip': 'Zapisz jako ZIP', 'save.again': 'Zapisz ponownie',
   'save.showInFinder': 'Pokaż w Finderze', 'save.success': 'Plik zapisany',
   'save.failed': 'Zapisywanie nie powiodło się', 'save.backToCompare': 'Wróć do porównania',
-  'save.chooseSplitMode': 'Wybierz sposób zapisania podzielonych plików.',
   'save.zipHint': 'Wszystkie pliki w jednym archiwum ZIP',
   'save.individualHint': 'Każdy plik zapisany osobno z automatyczną nazwą',
   'save.saveNFiles': 'Zapisz {files}',

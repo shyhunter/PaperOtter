@@ -63,7 +63,6 @@ export const it: Dictionary = {
   'save.toFolder': 'Salva in una cartella', 'save.asZip': 'Salva come ZIP', 'save.again': 'Salva di nuovo',
   'save.showInFinder': 'Mostra nel Finder', 'save.success': 'File salvato',
   'save.failed': 'Salvataggio non riuscito', 'save.backToCompare': 'Torna al confronto',
-  'save.chooseSplitMode': 'Scelga come salvare i file divisi.',
   'save.zipHint': 'Tutti i file in un unico archivio ZIP',
   'save.individualHint': 'Ogni file salvato singolarmente con nome automatico',
   'save.saveNFiles': 'Salva {files}',

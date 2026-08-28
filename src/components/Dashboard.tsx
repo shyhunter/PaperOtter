@@ -33,6 +33,7 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import type { ToolDefinition, ToolCategory } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { grantDroppedPaths } from '@/lib/dropScope';
 import { toast } from 'sonner';
 import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
 import type { SupportedFormat } from '@/types/file';
@@ -40,7 +41,7 @@ import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useDependencies } from '@/hooks/useDependencies';
-import { t } from '@/i18n';
+import { t, plural } from '@/i18n';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   FileDown,
@@ -350,6 +351,10 @@ export function Dashboard() {
           const format = detectFormat(filePath);
           if (!format) return;
 
+          // Tauri grants no filesystem access to a dragged-in file. Do it before
+          // staging, so the tool that picks this up on the next click can read it.
+          void grantDroppedPaths(validPaths);
+
           setStagedFile({
             path: filePath,
             name: filePath.split('/').pop() ?? filePath,
@@ -388,6 +393,9 @@ export function Dashboard() {
     }
     selectTool(tool.id);
   }, [stagedFile, selectTool, setPendingFiles]);
+
+  // Everything staged, first file included — `alsoDropped` carries the rest.
+  const stagedCount = stagedFile ? 1 + (stagedFile.alsoDropped?.length ?? 0) : 0;
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
@@ -447,10 +455,19 @@ export function Dashboard() {
           <div className="flex items-center gap-3 border border-primary/30 bg-primary/5 rounded-lg px-4 py-3">
             {(() => { const FormatIcon = FORMAT_ICONS[stagedFile.format]; return <FormatIcon className="h-5 w-5 text-primary flex-shrink-0" />; })()}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{stagedFile.name}</p>
+              <p className="text-sm font-medium text-foreground truncate">
+                {stagedFile.name}
+                {stagedCount > 1 && (
+                  <span className="ms-1.5 text-xs font-normal text-muted-foreground">
+                    {t('dashboard.andMoreFiles', { count: stagedCount - 1 })}
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-muted-foreground">
                 <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium me-1.5">
-                  {formatLabel(stagedFile.format)}
+                  {/* The count, not just the type: a twelve-scan drop that reads
+                      as one file is indistinguishable from eleven being lost. */}
+                  {stagedCount > 1 ? plural('count.file', stagedCount) : formatLabel(stagedFile.format)}
                 </span>
                 {t('dashboard.readyToProcessChooseA')}
               </p>
