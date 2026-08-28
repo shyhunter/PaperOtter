@@ -667,6 +667,14 @@ function CompressPanel() {
 // ── Rotate Panel ─────────────────────────────────────────────────────
 
 /** Compass direction entries for the rotate tool */
+/**
+ * How long turning must be idle before the document is rebuilt.
+ *
+ * Short enough to feel immediate, long enough that tapping Right four times is
+ * one pdf-lib rebuild rather than four.
+ */
+const TURN_COMMIT_DELAY_MS = 400;
+
 function RotatePanel() {
   diagLog('RotatePanel.render');
   const {
@@ -680,7 +688,6 @@ function RotatePanel() {
   const [rotation, setRotation] = useState<RotationDegrees | 0>(0);
   const [applyToAll, setApplyToAll] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
   // Preview: a pure CSS rotation of the already-rendered page, not a real edit.
@@ -714,32 +721,49 @@ function RotatePanel() {
     [selectPageRange, clearPageSelection, state.pageCount],
   );
 
-  // Apply rotation to the requested pages (full processing, runs only on
-  // explicit user action).
-  const handleApply = useCallback(async () => {
+  // Commit the accumulated turn to the document.
+  //
+  // There is no Apply button: turning a page should just turn it. The button
+  // was also a trap — it disabled itself whenever the pending rotation was 0,
+  // so turning a full circle back to where you started left a control that
+  // looked broken.
+  //
+  // What the button did buy was batching, and that still matters: pdf-lib
+  // rebuilds the whole document and never yields, which measured over two
+  // minutes on a real 30MB/688-page PDF. So the commit is debounced rather
+  // than fired per click. Four quick taps are one rebuild, not four.
+  const commitRotation = useCallback(async (delta: RotationDegrees) => {
     setIsApplying(true);
     setApplyError(null);
-    setApplySuccess(false);
-    diagLog('rotate.apply.start');
+    diagLog(`rotate.commit.start deg=${delta}`);
     const t0 = performance.now();
     try {
-      const pageIndices = targetPages;
       const result = await rotatePdf(
         state.pdfBytes,
-        pageIndices.map((idx) => ({ pageIndex: idx, rotation: rotation as RotationDegrees })),
+        targetPages.map((idx) => ({ pageIndex: idx, rotation: delta })),
       );
-      diagLog(`rotate.apply.done ms=${(performance.now() - t0).toFixed(0)}`);
+      diagLog(`rotate.commit.done ms=${(performance.now() - t0).toFixed(0)}`);
       updatePdfBytes(result.bytes);
       markDirty();
-      setApplySuccess(true);
-      setTimeout(() => setApplySuccess(false), 2000);
+      // Consumed: the bytes now carry it, so the pending delta returns to zero
+      // and the CSS preview stops double-counting what the page already shows.
+      setRotation(0);
     } catch (err) {
-      diagLog(`rotate.apply.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
+      diagLog(`rotate.commit.threw ms=${(performance.now() - t0).toFixed(0)} ${err}`);
       setApplyError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsApplying(false);
     }
-  }, [targetPages, rotation, state.pdfBytes, updatePdfBytes, markDirty]);
+  }, [targetPages, state.pdfBytes, updatePdfBytes, markDirty]);
+
+  // Turning is instant on screen (a CSS transform on the already-rendered
+  // page); the document itself catches up once the turning stops. Each new
+  // click clears the previous timer, so a burst commits once.
+  useEffect(() => {
+    if (rotation === 0 || isApplying) return;
+    const id = setTimeout(() => { void commitRotation(rotation); }, TURN_COMMIT_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [rotation, isApplying, commitRotation]);
 
   return (
     <div className="space-y-3">
@@ -774,9 +798,11 @@ function RotatePanel() {
         {/* Without this the second click has no visible effect, and the user
             cannot tell a half turn from a quarter one. */}
         <p className="text-[10px] text-muted-foreground" data-testid="pending-rotation">
-          {rotation === 0
-            ? t('toolSidebarPanel.noTurnYet')
-            : t('toolSidebarPanel.willTurnBy', { degrees: rotation })}
+          {isApplying
+            ? t('toolSidebarPanel.turningPages')
+            : rotation === 0
+              ? t('toolSidebarPanel.noTurnYet')
+              : t('toolSidebarPanel.willTurnBy', { degrees: rotation })}
         </p>
       </div>
 
@@ -805,13 +831,9 @@ function RotatePanel() {
         afterImageStyle={rotation !== 0 ? { transform: `rotate(${rotation}deg)` } : undefined}
       />
 
-      <ApplyButton
-        onClick={handleApply}
-        disabled={rotation === 0 || !previewBytes}
-        isApplying={isApplying}
-        success={applySuccess}
-        error={applyError}
-      />
+      {applyError && (
+        <p className="text-[10px] text-destructive" role="alert">{applyError}</p>
+      )}
     </div>
   );
 }
