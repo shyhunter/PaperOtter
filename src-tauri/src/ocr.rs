@@ -212,7 +212,7 @@ mod imp {
             unsafe { CGContext::begin_page(Some(&ctx), &raw const page_rect) };
             CGContext::draw_pdf_page(Some(&ctx), Some(&src_page));
 
-            if let Some(ocr) = pages.iter().find(|p| p.index == index as usize) {
+            if let Some(ocr) = pages.iter().find(|p| p.index == index) {
                 draw_invisible_text(&ctx, ocr);
             }
             CGContext::end_page(Some(&ctx));
@@ -310,7 +310,7 @@ mod imp {
         let document = unsafe { PDFDocument::initWithURL(PDFDocument::alloc(), &url) }
             .ok_or_else(|| "This PDF could not be opened.".to_string())?;
 
-        let page_count = unsafe { document.pageCount() } as usize;
+        let page_count = unsafe { document.pageCount() };
         if page_count == 0 {
             return Err("This PDF has no pages.".to_string());
         }
