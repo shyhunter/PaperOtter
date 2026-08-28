@@ -3201,6 +3201,36 @@ mod tests {
         // an iCloud-synced Desktop failed to open while the machine was offline,
         // and the app blamed the document.
 
+        // A gate tool, not a test: runs the real recognition path against a file
+        // outside the fixtures, so an app-layer failure can be told apart from an
+        // engine failure without guessing. Written during REL-03, where the app
+        // blamed a document that the engine reads perfectly.
+        //
+        // It is also how the low-confidence path gets exercised: the committed
+        // fixtures are clean synthetic renders at ~1.00, and only a real skewed
+        // phone photo produces anything else.
+        //
+        //   PAPERCUT_OCR_PATH=/path/to.pdf cargo test --lib ocr_a_real_path -- --ignored --nocapture
+        #[cfg(target_os = "macos")]
+        #[test]
+        #[ignore]
+        fn ocr_a_real_path() {
+            let path = std::env::var("PAPERCUT_OCR_PATH").expect("PAPERCUT_OCR_PATH");
+            eprintln!("--- recognize_pdf({path})");
+            match ocr::recognize_pdf(&path, &["en-US".to_string()], |i, t| eprintln!("    page {i}/{t}")) {
+                Ok(pages) => {
+                    let words: usize = pages.iter().map(|p| p.blocks.len()).sum();
+                    eprintln!("--- OK pages={} blocks={}", pages.len(), words);
+                    for p in &pages {
+                        for b in p.blocks.iter().take(3) {
+                            eprintln!("    p{} conf={:.2} {:?}", p.index, b.confidence, b.text);
+                        }
+                    }
+                }
+                Err(e) => eprintln!("--- ERR {e}"),
+            }
+        }
+
         #[cfg(target_os = "macos")]
         #[test]
         fn a_missing_file_says_so_rather_than_blaming_the_pdf() {
