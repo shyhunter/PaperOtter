@@ -35,12 +35,14 @@ Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
 
 ## Features
 
-Papercut ships with **21 built-in tools** across three categories -- all running locally on your machine.
+Papercut ships with **22 tools** across three categories -- all running locally on your machine.
+
+**21 of the 22 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else, Ghostscript included, is bundled.
 
 ### PDF Tools
 
 - 🗜️ **Compress** — Reduce PDF file size using Ghostscript presets
-- 📐 **Resize** — Scale pages to standard or custom dimensions
+- 📐 **Resize** — Scale pages to standard or custom dimensions (part of Compress)
 - 🔗 **Merge** — Combine multiple PDFs into one
 - ✂️ **Split** — Extract page ranges into separate files
 - 🔄 **Rotate** — Rotate individual or all pages
@@ -54,6 +56,9 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 - 🛠️ **Repair** — Fix corrupted or damaged PDFs
 - 🔒 **Protect** — Add password encryption to PDFs
 - 🔓 **Unlock** — Remove password protection from PDFs
+- 🖼️ **PDF to JPG** — Export PDF pages as JPEG or PNG images
+- 📄 **JPG to PDF** — Convert images into a single PDF document
+- 🔍 **Make Searchable** — Read the text on a scan so it can be searched and copied *(macOS only — see [Platform support](#platform-support))*
 
 ### Image Tools
 
@@ -68,6 +73,33 @@ Papercut ships with **21 built-in tools** across three categories -- all running
 - 📝 **Edit PDF** — Annotate and modify PDF content
 
 > **New in beta.9 — structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device — no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
+
+> **Batch processing.** Drop several files of the same type and run one tool
+> across all of them, with per-file progress and a running total of what was
+> saved. Cancel mid-run and nothing further is started.
+
+> **Available in nine languages.** English, German, French, Spanish, Turkish,
+> Italian, Dutch, Polish and European Portuguese. Papercut follows your
+> operating system's language on first run and remembers an explicit choice.
+> The eight translations beyond English are community-quality and still under
+> review -- if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
+
+---
+
+## Platform support
+
+Almost everything works identically on macOS, Windows and Linux. Two things do not,
+and Papercut hides rather than greys out what it cannot run, so you will not be
+offered a tool that cannot work on your machine:
+
+| Feature | macOS | Windows | Linux |
+|---|---|---|---|
+| **Make Searchable** (OCR) | Yes -- Apple Vision | Not yet | Not yet |
+| **HEIC / HEIF input** | Yes | Only with the HEIF extension installed | Only where the distribution ships libheif |
+
+OCR on Windows and Linux is planned. HEIC is bounded by patent licensing rather
+than effort: Papercut never ships an HEVC decoder, and uses the operating
+system's where one is licensed.
 
 ---
 
