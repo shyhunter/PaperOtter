@@ -1,5 +1,7 @@
 import type { TranslationKey } from '@/i18n';
 
+import type { Platform } from '@/lib/platform';
+
 export type ToolId =
   | 'compress-pdf'
   | 'compress-image'
@@ -51,6 +53,15 @@ export interface ToolDefinition {
   steps: ToolStep[];
   /** External dependency required to use this tool. Tool is disabled if not installed. */
   requiresDependency?: DependencyName;
+  /**
+   * Platforms this tool can run on. Absent means all of them.
+   *
+   * Different in kind from `requiresDependency`: a missing dependency is a
+   * thing the user can install, so the tool is shown disabled with a hint. A
+   * missing platform engine is not installable, so the tool is hidden entirely.
+   * See isToolAvailableHere in src/lib/platform.ts.
+   */
+  requiresPlatform?: Platform[];
 }
 
 export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
@@ -313,6 +324,10 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
   },
   'ocr-pdf': {
     id: 'ocr-pdf',
+    // macOS Vision is the only engine that exists today. Tesseract for Windows
+    // and Linux is planned (PLATFORM_PARITY.md phase 3); until it lands this
+    // tool is hidden off macOS rather than shown and broken.
+    requiresPlatform: ['macos'],
     name: 'tool.ocrPdf.name',
     description: 'tool.ocrPdf.desc',
     category: 'pdf',

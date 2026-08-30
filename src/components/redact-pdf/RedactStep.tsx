@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { findTextMatches, type TextMatch } from '@/lib/pdfTextSearch';
 import { findTextMatchesInOcr } from '@/lib/ocrTextSearch';
 import { recognisePdf, type OcrPage } from '@/lib/ocrProcessor';
+import { isToolAvailableHere } from '@/lib/platform';
+import { TOOL_REGISTRY } from '@/types/tools';
 import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { ColorPicker } from '@/components/ColorPicker';
 import { isLightColor } from '@/lib/colorPresets';
@@ -29,6 +31,9 @@ function genId(prefix: string): string {
 }
 
 export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactStepProps) {
+  // No OCR engine off macOS, so the scan fallback is never offered there. Read
+  // per render for the same reason as SearchBar: synchronous, and stubbable.
+  const canReadScans = isToolAvailableHere(TOOL_REGISTRY['ocr-pdf']);
   // Text recognised from a scan, kept so a second search does not re-read the
   // document — recognition is seconds per page.
   const [ocrPages, setOcrPages] = useState<OcrPage[] | null>(null);
@@ -269,7 +274,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
 
               {/* A scan has no text layer, so searching it again changes nothing.
                   Reading it first is what makes the search possible at all. */}
-              {!ocrPages && sourcePath && (
+              {!ocrPages && sourcePath && canReadScans && (
                 <>
                   <Button
                     variant="outline"

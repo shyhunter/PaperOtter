@@ -10,6 +10,18 @@ import { findTextMatches } from '@/lib/pdfTextSearch';
 import { findTextMatchesInOcr } from '@/lib/ocrTextSearch';
 import { recognisePdf } from '@/lib/ocrProcessor';
 
+/**
+ * OCR is macOS-only (Vision), and the platform gate in src/lib/platform.ts now
+ * hides every OCR entry point elsewhere. jsdom's default user agent is not a
+ * Mac, so these tests must say which platform they are exercising -- otherwise
+ * they assert on an offer the gate correctly withholds.
+ */
+Object.defineProperty(window.navigator, 'userAgent', {
+  value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  configurable: true,
+});
+
+
 vi.mock('pdfjs-dist', () => ({
   getDocument: vi.fn(() => ({ promise: Promise.resolve({ numPages: 3, destroy: vi.fn() }) })),
   GlobalWorkerOptions: { workerSrc: '' },

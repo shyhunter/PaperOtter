@@ -8,6 +8,8 @@ import { ChevronDown, ChevronUp, ScanText, Search, X, Loader2 } from 'lucide-rea
 import { useEditorContext } from '@/context/EditorContext';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { listOcrLanguages } from '@/lib/ocrLanguages';
+import { isToolAvailableHere } from '@/lib/platform';
+import { TOOL_REGISTRY } from '@/types/tools';
 import { useLocale } from '@/i18n/context';
 import { t } from '@/i18n';
 
@@ -91,8 +93,16 @@ export function SearchBar() {
     [matches.length, state.searchCurrent],
   );
 
-  /** A scan is only worth offering to read once, and only when nothing was found. */
-  const offerScanRead = searched && !isSearching && matches.length === 0 && !isScanRead;
+  // Read per render, not once at module load. navigator.userAgent is synchronous
+  // and constant for the session, so this cannot cause the appear-then-vanish
+  // flicker an async lookup would -- and unlike a module-scope constant, a test
+  // can stub the platform it is exercising.
+  const canReadScans = isToolAvailableHere(TOOL_REGISTRY['ocr-pdf']);
+
+  /** A scan is only worth offering to read once, and only when nothing was found.
+   *  On a platform with no OCR engine it is never worth offering at all. */
+  const offerScanRead =
+    canReadScans && searched && !isSearching && matches.length === 0 && !isScanRead;
 
   return (
     <div className="relative flex items-center gap-1">
