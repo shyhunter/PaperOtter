@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { TOOL_REGISTRY } from '@/types/tools';
+import { availableTools } from '@/lib/platform';
 import type { ToolDefinition, ToolCategory } from '@/types/tools';
 import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -111,7 +112,10 @@ function formatLabel(format: SupportedFormat): string {
 
 function groupByCategory(): Record<ToolCategory, ToolDefinition[]> {
   const groups: Record<ToolCategory, ToolDefinition[]> = { pdf: [], image: [], document: [] };
-  for (const tool of Object.values(TOOL_REGISTRY)) {
+  // Hidden, not disabled: a tool whose engine does not exist on this platform
+  // cannot be made to work by the user, so offering it greyed out would
+  // advertise something unattainable. See src/lib/platform.ts.
+  for (const tool of availableTools(Object.values(TOOL_REGISTRY))) {
     groups[tool.category].push(tool);
   }
   return groups;
@@ -306,7 +310,9 @@ export function Dashboard() {
 
   // Favorite tools resolved from IDs
   const favoriteTools = useMemo(
-    () => favorites.map((id) => TOOL_REGISTRY[id]).filter(Boolean),
+    // Favourites are persisted per machine, but a profile can be restored onto a
+    // different platform, so the gate applies here too.
+    () => availableTools(favorites.map((id) => TOOL_REGISTRY[id]).filter(Boolean)),
     [favorites],
   );
 

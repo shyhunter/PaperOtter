@@ -21,6 +21,18 @@ import { render, screen, cleanup, act, waitFor } from '@testing-library/react';
 import { open } from '@tauri-apps/plugin-dialog';
 import App from '@/App';
 
+/**
+ * OCR is macOS-only (Vision), and the platform gate in src/lib/platform.ts now
+ * hides every OCR entry point elsewhere. jsdom's default user agent is not a
+ * Mac, so these tests must say which platform they are exercising -- otherwise
+ * they assert on an offer the gate correctly withholds.
+ */
+Object.defineProperty(window.navigator, 'userAgent', {
+  value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  configurable: true,
+});
+
+
 vi.mock('@tauri-apps/plugin-store', () => ({
   LazyStore: class {
     get() { return Promise.resolve(null); }

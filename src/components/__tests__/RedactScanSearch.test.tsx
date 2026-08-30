@@ -7,6 +7,18 @@ import { recognisePdf } from '@/lib/ocrProcessor';
 import { findTextMatches } from '@/lib/pdfTextSearch';
 import { REAL_OCR_PAGES } from '@/lib/__tests__/fixtures/realOcrOutput';
 
+/**
+ * OCR is macOS-only (Vision), and the platform gate in src/lib/platform.ts now
+ * hides every OCR entry point elsewhere. jsdom's default user agent is not a
+ * Mac, so these tests must say which platform they are exercising -- otherwise
+ * they assert on an offer the gate correctly withholds.
+ */
+Object.defineProperty(window.navigator, 'userAgent', {
+  value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  configurable: true,
+});
+
+
 // ─── Searching a scan from the redact tool (OCR-05) ──────────────────────────
 //
 // The brief's bonus, at the seam where a user meets it: a scanned page finds

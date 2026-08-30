@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { ToolId } from '@/types/tools';
 import { EDITOR_SIDEBAR_TOOLS, TOOL_REGISTRY } from '@/types/tools';
+import { isToolAvailableHere } from '@/lib/platform';
 import { ToolSidebarPanel } from './ToolSidebarPanel';
 import { diagLog } from '@/lib/diagLog';
 import { t } from '@/i18n';
@@ -49,7 +50,7 @@ export function ToolSidebar() {
 
   const tools = useMemo(
     () =>
-      EDITOR_SIDEBAR_TOOLS.map((id) => ({
+      EDITOR_SIDEBAR_TOOLS.filter((id) => isToolAvailableHere(TOOL_REGISTRY[id])).map((id) => ({
         id,
         def: TOOL_REGISTRY[id],
         Icon: ICON_MAP[TOOL_REGISTRY[id].icon],
