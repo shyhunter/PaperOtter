@@ -9,15 +9,19 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { diagLog, diagLogReset } from "./lib/diagLog";
 
-diagLogReset().then(() => {
-  let last = performance.now();
-  setInterval(() => {
-    const now = performance.now();
-    const drift = now - last - 500;
-    if (drift > 30) diagLog(`hb drift=${drift.toFixed(0)}`);
-    last = now;
-  }, 500);
-});
+// Development only. diagLog() and diagLogReset() are inert in a shipped build,
+// but the 500ms heartbeat would still tick forever, so it is gated here too.
+if (import.meta.env.DEV) {
+  diagLogReset().then(() => {
+    let last = performance.now();
+    setInterval(() => {
+      const now = performance.now();
+      const drift = now - last - 500;
+      if (drift > 30) diagLog(`hb drift=${drift.toFixed(0)}`);
+      last = now;
+    }, 500);
+  });
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

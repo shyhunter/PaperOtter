@@ -1,9 +1,31 @@
-// TEMPORARY diagnostic logger for tracking down the editor freeze bug.
-// Writes to a fixed file on disk so logs can be read directly, without
-// needing the user to copy/paste browser console output.
-// Remove this file and all its call sites once the bug is resolved.
+// Diagnostic logger, DEVELOPMENT ONLY.
+//
+// Built to chase the editor freeze bug (now resolved: React 19.2's dev-only
+// Performance Tracks walking a Uint8Array). Kept because it is the instrument
+// for the next freeze-shaped bug, but it must never run in a shipped build.
+//
+// It used to. Confirmed on a real Linux build on 2026-08-30: every launch
+// painted a green bar across the top of the window reading "DIAG-OK: /home/
+// .../Downloads/papercut-diag.log", at z-index 999999 with no timeout, wrote a
+// file into the user's Downloads folder, and started a 500ms heartbeat that
+// never stopped. Types, lint, the whole vitest suite and CI passed on it for
+// weeks -- it took installing the .deb and looking at the window.
+//
+// Removing the 39 call sites is a separate, later task. This gate is what stops
+// any of it reaching a user.
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { downloadDir, join } from '@tauri-apps/api/path';
+
+/**
+ * Whether the logger runs at all.
+ *
+ * Read per call rather than captured in a module-scope constant. The platform
+ * gate shipped with exactly that bug first: a constant evaluated at import is
+ * unstubbable, so no test can exercise the other branch.
+ */
+function diagEnabled(): boolean {
+  return import.meta.env.DEV;
+}
 
 let logPath: string | null = null;
 let queue: string[] = [];
@@ -44,6 +66,7 @@ async function flush() {
 }
 
 export function diagLog(msg: string) {
+  if (!diagEnabled()) return;
   queue.push(`[${performance.now().toFixed(0)}] ${msg}\n`);
   flush();
 }
@@ -65,6 +88,7 @@ function showDiagBanner(text: string, ok: boolean) {
 
 /** Call once at app startup to reset the log file for a fresh session, and print its path. */
 export async function diagLogReset() {
+  if (!diagEnabled()) return;
   try {
     const path = await getLogPath();
     accumulated = `=== SESSION START ${new Date().toISOString()} — ${path} ===\n`;
