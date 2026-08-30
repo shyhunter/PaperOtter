@@ -75,5 +75,11 @@
     "vite": "^7.3.2",
     "vitest": "^4.1.11",
     "webdriverio": "^9.24.0"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5",
+    "esbuild": "^0.28.1",
+    "deepmerge-ts": "^8.0.0",
+    "@puppeteer/browsers": "^3.2.1"
   }
 }
