@@ -130,6 +130,19 @@ body {
     @apply bg-background text-foreground;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
+  /* Native <select> popups take their text colour from the control but their
+     background from the platform, so in dark theme every dropdown in the app
+     rendered light text on a white list -- unreadable. Reported from a real
+     Linux build; invisible on macOS, which draws select popups natively and
+     ignores CSS entirely.
+     Global rather than a className on each of the 29 <option> elements: this
+     covers every dropdown shipping today and every one added later, and there
+     is nothing in the type system to remind anyone otherwise. Popover tokens
+     rather than background/foreground because a dropdown is a floating surface,
+     and both are defined under :root and .dark. */
+  option {
+    @apply bg-popover text-popover-foreground;
+  }
 }
 
 /* ── Theme transition for cards, panels, and inputs ──────────────────── */
