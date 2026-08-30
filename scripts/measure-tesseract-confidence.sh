@@ -39,7 +39,10 @@ echo "langs:      $(tesseract --list-langs 2>&1 | tail -n +2 | tr '\n' ' ')"
 echo
 
 # --- rasterise ---------------------------------------------------------------
-case "${INPUT,,}" in
+# tr rather than ${INPUT,,}: the latter is a bash 4+ expansion and macOS
+# still ships bash 3.2, so the script could not be tested on the machine
+# that wrote it.
+case "$(printf '%s' "$INPUT" | tr 'A-Z' 'a-z')" in
   *.pdf)
     # 216 dpi == ocr.rs RENDER_SCALE 3x. Alpha bits are the standard OCR
     # rasterisation setting; on an already-raster scan they change little.
