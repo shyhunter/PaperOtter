@@ -12,6 +12,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import { currentPlatform, type Platform } from '@/lib/platform';
 import type {
   ConvertFormat,
   ConvertOptions,
@@ -228,6 +229,152 @@ export function listAllOutputFormats(
 }
 
 /**
+ * Which platforms each engine can exist on at all.
+ *
+ * Naming a tool the user cannot install is worse than naming none: `textutil`
+ * is a macOS built-in, so telling a Linux user their conversion "needs
+ * textutil" sends them looking for something that does not exist for them.
+ */
+const ENGINE_PLATFORMS: Record<ConverterEngine, readonly Platform[]> = {
+  builtin: ['macos', 'windows', 'linux'],
+  textutil: ['macos'],
+  word: ['macos', 'windows'],
+  libreoffice: ['macos', 'windows', 'linux'],
+  calibre: ['macos', 'windows', 'linux'],
+  pandoc: ['macos', 'windows', 'linux'],
+  webview: ['macos'],
+};
+
+/**
+ * Every engine that could produce this conversion and could exist on this
+ * platform, in priority order.
+ *
+ * Two things this fixes over naming `requiredEngineFor`'s single answer.
+ *
+ * It named only the first candidate, so PDF to RTF reported "needs Microsoft
+ * Word" when LibreOffice does it too — free, cross-platform, and the better
+ * suggestion for most people. Telling someone to buy Word when a free tool
+ * would do is bad advice, not merely incomplete.
+ *
+ * And it ignored platform, so DOCX to RTF reported "needs textutil" on Linux,
+ * where textutil cannot be installed by anyone.
+ */
+export function installableEnginesFor(
+  outputFormat: ConvertFormat,
+  inputFormat: ConvertFormat | undefined,
+  platform: Platform,
+): ConverterEngine[] {
+  return (ENGINE_SUPPORT[outputFormat] ?? []).filter((engine) => {
+    if (!ENGINE_PLATFORMS[engine].includes(platform)) return false;
+    // The engine must also be able to read the source, or it is not a candidate.
+    if (inputFormat && !ENGINE_INPUT_SUPPORT[engine].includes(inputFormat)) return false;
+    return true;
+  });
+}
+
+/** "A", "A or B", "A, B or C" — plain English list for an untranslated error. */
+export function joinOr(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
+}
+
+/** What *kind* of program a conversion needs, when it needs an external one. */
+export type RequirementKind = 'wordProcessor' | 'ebookConverter';
+
+export interface ConversionRequirement {
+  kind: RequirementKind;
+  /** Programs that would satisfy it, free and cross-platform ones first. */
+  examples: string[];
+}
+
+/** Engines that come with the operating system or with Papercut, so are never
+ *  something a user installs. If one of these can do the job, say nothing. */
+const OS_PROVIDED: readonly ConverterEngine[] = ['builtin', 'textutil', 'webview'];
+
+/** Which kind each engine belongs to, for describing what is missing. */
+const ENGINE_KIND: Partial<Record<ConverterEngine, RequirementKind>> = {
+  textutil: 'wordProcessor',
+  word: 'wordProcessor',
+  libreoffice: 'wordProcessor',
+  calibre: 'ebookConverter',
+  pandoc: 'ebookConverter',
+};
+
+/**
+ * Engines a user could actually go and install, with the name they would
+ * recognise. Ordered so the free, cross-platform option is suggested first —
+ * telling someone to buy Word when LibreOffice would do is bad advice.
+ *
+ * `textutil` and `webview` are absent on purpose: they ship with the operating
+ * system, so they are never something to install. `builtin` is ours.
+ */
+const INSTALLABLE: readonly { engine: ConverterEngine; name: string }[] = [
+  { engine: 'libreoffice', name: 'LibreOffice' },
+  { engine: 'word', name: 'Microsoft Word' },
+  { engine: 'calibre', name: 'Calibre' },
+  { engine: 'pandoc', name: 'Pandoc' },
+];
+
+/**
+ * What this conversion needs, described as a kind of program rather than one
+ * product name.
+ *
+ * "Needs Microsoft Word" is wrong twice: it names a paid product when a free
+ * one does the same job, and it implies only that product will do. What a user
+ * needs to know is the category — a word processor, an ebook converter — and
+ * some examples they can pick from with whatever they already have.
+ *
+ * Returns null when nothing needs installing, either because the built-in
+ * engine handles it or because no program could.
+ */
+export function requirementFor(
+  outputFormat: ConvertFormat,
+  inputFormat: ConvertFormat | undefined,
+  platform: Platform,
+): ConversionRequirement | null {
+  const engines = installableEnginesFor(outputFormat, inputFormat, platform);
+  if (engines.length === 0) return null;
+  // If anything the OS already ships can do it, there is nothing to install and
+  // nothing to say. macOS converts DOCX to RTF with textutil, which is part of
+  // the system -- suggesting LibreOffice there would be noise.
+  if (engines.some((e) => OS_PROVIDED.includes(e))) return null;
+
+  const kind = ENGINE_KIND[engines[0]]!;
+  const examples = INSTALLABLE
+    .filter(({ engine }) => engines.includes(engine) && ENGINE_KIND[engine] === kind)
+    .map(({ name }) => name);
+
+  return examples.length > 0 ? { kind, examples } : null;
+}
+
+/**
+ * Which engine this conversion needs, assuming everything were installed.
+ * Null when no engine could ever do it, so no install would help.
+ */
+export function requiredEngineFor(
+  outputFormat: ConvertFormat,
+  inputFormat?: ConvertFormat,
+): ConverterEngine | null {
+  return getBestEngine(outputFormat, EVERYTHING, inputFormat);
+}
+
+/**
+ * Whether the user may press Convert for this format.
+ *
+ * Any format that was offered may be attempted, including one detection could
+ * not verify. Offering a format and then disabling the button is worse than not
+ * offering it at all: it moves the dead end one step later and tells the user
+ * nothing. If the tool really is absent the attempt fails with a message naming
+ * it, which is something they can act on.
+ */
+export function canAttemptConversion(
+  outputFormat: ConvertFormat,
+  offered: OutputFormatOption[],
+): boolean {
+  return offered.some((o) => o.format === outputFormat);
+}
+
+/**
  * Check if ANY conversion is possible with the tools available.
  * Returns true if at least one engine is available.
  */
@@ -306,9 +453,16 @@ export async function convertDocument(
   const engine = getBestEngine(options.outputFormat, availability, sourceFormat);
 
   if (!engine) {
+    // Name the tool this conversion actually needs. The old message said
+    // "Install LibreOffice or Microsoft Word" for everything, which is simply
+    // wrong for an ebook format and sends the user to install the wrong thing.
+    const pair = `${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()}`;
+    const req = requirementFor(options.outputFormat, sourceFormat, currentPlatform());
+    if (!req) throw new Error(`Papercut cannot convert ${pair}.`);
+    const kind = req.kind === 'ebookConverter' ? 'an ebook converter' : 'a word processor';
     throw new Error(
-      `Cannot convert ${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()} ` +
-      `with the tools available. Install LibreOffice or Microsoft Word to enable this.`
+      `Converting ${pair} needs ${kind} such as ${joinOr(req.examples)}, ` +
+      `which could not be found on this system.`,
     );
   }
 

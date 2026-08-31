@@ -32,6 +32,9 @@ const PROPER_NOUNS = new Set([
   'Times New Roman', 'Times Roman', 'Courier New', 'Helvetica Neue',
   'Brush Script MT', 'Dancing Script', 'Great Vibes', 'Microsoft Word',
   'Helvetica', 'Courier', 'Caveat', 'Georgia', 'Arial',
+  // Document converters offered as examples of what to install. Product
+  // names, never translated — alongside LibreOffice and Calibre above.
+  'Pandoc',
 ]);
 
 /**

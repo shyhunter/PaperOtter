@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   listAllOutputFormats,
-  ENGINE_LABELS,
+  canAttemptConversion,
+  requirementFor,
   detectConverters,
   getBestEngine,
   hasAnyConverter,
@@ -19,6 +20,7 @@ import type {
   EpubLayout,
 } from '@/types/converter';
 import { t } from '@/i18n';
+import { currentPlatform } from '@/lib/platform';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -101,6 +103,18 @@ export function ConvertConfigStep({
         libreoffice: false, calibre: false, pandoc: false, webview: false,
       });
   const availableFormats = formatOptions.map((o) => o.format);
+
+  /** Names the kind of program a format would need, with examples to choose from. */
+  const mayNeedHint = (fmt: ConvertFormat): string | undefined => {
+    const req = requirementFor(fmt, sourceFormat, currentPlatform());
+    if (!req) return undefined;
+    const tools = req.examples.join(' / ');
+    const requirement = t(
+      req.kind === 'ebookConverter' ? 'convertDoc.kindEbookConverter' : 'convertDoc.kindWordProcessor',
+      { tools },
+    );
+    return t('convertDoc.formatMayNeed', { requirement });
+  };
   const verified = formatOptions.filter((o) => o.available).map((o) => o.format);
 
   const [outputFormat, setOutputFormat] = useState<ConvertFormat>(verified[0] ?? availableFormats[0] ?? 'pdf');
@@ -120,7 +134,12 @@ export function ConvertConfigStep({
   const showEpubLayoutToggle = outputFormat === 'epub';
   // Splitting operates on the built-in engine's document model (per top-level heading).
   const showSplitToggle = currentEngine === 'builtin';
-  const canConvert = !isDetecting && availability && currentEngine !== null;
+  // Any offered format may be attempted, including one detection could not
+  // verify. Requiring currentEngine !== null here is what made the dimmed
+  // formats unattemptable: getBestEngine returns null exactly when detection says
+  // the tool is missing, so marking a format then disabling Convert moved the
+  // dead end one step later instead of removing it.
+  const canConvert = !isDetecting && !!availability && canAttemptConversion(outputFormat, formatOptions);
 
   // When link margins is on, propagate changes from any margin to all
   const handleMarginChange = useCallback((setter: (v: number) => void, value: number) => {
@@ -177,13 +196,13 @@ export function ConvertConfigStep({
           <p className="text-xs font-medium text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
           {availableFormats.length > 0 ? (
             <div className="grid grid-cols-3 gap-1.5">
-              {formatOptions.map(({ format: fmt, available, needs }) => (
+              {formatOptions.map(({ format: fmt, available }) => (
                 <button
                   key={fmt}
                   type="button"
                   onClick={() => setOutputFormat(fmt)}
                   disabled={isProcessing}
-                  title={available ? undefined : t('convertDoc.formatMayNeed', { tool: ENGINE_LABELS[needs!] })}
+                  title={available ? undefined : mayNeedHint(fmt)}
                   className={cn(
                     'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                     'disabled:cursor-not-allowed disabled:opacity-50',

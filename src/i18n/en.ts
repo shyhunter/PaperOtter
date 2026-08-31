@@ -937,7 +937,11 @@ export const en = {
   'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
   'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',
-  'convertDoc.formatMayNeed': 'May need {tool}. Papercut could not find it, but detection is not always right — try it and see.',
+  // The kind of program, not one product's name: several will do, and naming
+  // only the paid one is bad advice when a free one works.
+  'convertDoc.kindWordProcessor': 'a word processor such as {tools}',
+  'convertDoc.kindEbookConverter': 'an ebook converter such as {tools}',
+  'convertDoc.formatMayNeed': 'May need {requirement}. Papercut could not find one, but detection is not always right — try it and see.',
   'deps.libreoffice': 'Install LibreOffice for document conversion — libreoffice.org/download',
 
   // ── OCR ─────────────────────────────────────────────────────────────────
