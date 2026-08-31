@@ -5,6 +5,14 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Native form controls -- the <select> popup above all -- are drawn by the
+     platform (GTK on Linux), not from the DOM, so CSS on <option> cannot reach
+     them. `color-scheme` is the property that does: it tells the engine which
+     chrome to draw. Without it, GTK drew a light popup while the app was dark,
+     and the option text stayed white: white on white, unreadable.
+     Declared for BOTH themes on purpose. A lone `color-scheme: dark` would fix
+     dark mode by breaking light mode. */
+  color-scheme: light;
   --radius: 0.625rem;
   /* shadcn/ui CSS vars will be populated by `npx shadcn init` */
   --background: oklch(1 0 0);
@@ -89,6 +97,8 @@ body {
 }
 
 .dark {
+  /* See the note on :root. This is the line that actually fixes the dropdown. */
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
