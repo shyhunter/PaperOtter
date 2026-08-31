@@ -24,6 +24,13 @@ import { join } from 'node:path';
 
 const GLOBALS = 'src/styles/globals.css';
 
+/** CSS comments explain these rules and quote the values they set, so a source
+ *  scan that reads them will match prose instead of a declaration. */
+function stripComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+
 function tsxFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -81,5 +88,48 @@ describe('dropdown contrast', () => {
       0,
     );
     expect(total).toBeGreaterThan(20);
+  });
+});
+
+/**
+ * [UI-04] Native form controls must follow the theme.
+ *
+ * UI-03 was not enough, and the reason is worth keeping. A native <select>
+ * popup is drawn by the platform -- GTK on Linux -- not from the DOM, so CSS on
+ * <option> does not control it. The `option` rule in UI-03 sets a background
+ * the popup never reads, and in dark theme it set the text to
+ * --popover-foreground (oklch 0.985) when the options already inherited
+ * --foreground (oklch 0.985). Identical. It changed nothing, and the dropdown
+ * stayed white-on-white on a real Linux build after the fix shipped.
+ *
+ * `color-scheme` is the property that actually reaches native controls: it tells
+ * the engine to draw selects, scrollbars and checkboxes with dark chrome. It has
+ * to be declared for BOTH themes -- a lone `color-scheme: dark` would make light
+ * mode render dark controls.
+ */
+describe('native control color-scheme', () => {
+  it('[UI-04a] light theme declares its color-scheme', () => {
+    const css = stripComments(readFileSync(GLOBALS, 'utf8'));
+    const root = /(^|\n):root \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    expect(root, ':root must declare color-scheme').toMatch(/color-scheme:\s*light/);
+  });
+
+  it('[UI-04b] dark theme declares its color-scheme', () => {
+    const css = stripComments(readFileSync(GLOBALS, 'utf8'));
+    const dark = /(^|\n)\.dark \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    expect(dark, '.dark must declare color-scheme, or GTK draws light popups').
+      toMatch(/color-scheme:\s*dark/);
+  });
+
+  it('[UI-04c] the two are not the same value', () => {
+    // Declaring `dark` in both would break light mode instead of dark mode.
+    // Comments are stripped first: the explanatory comment beside these rules
+    // contains the literal text "color-scheme: dark", and matching it instead of
+    // the declaration made this assertion read `dark` out of the :root block.
+    const css = stripComments(readFileSync(GLOBALS, 'utf8'));
+    const root = /(^|\n):root \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    const dark = /(^|\n)\.dark \{[\s\S]*?\n\}/.exec(css)?.[0] ?? '';
+    const val = (block: string) => /color-scheme:\s*(\w+)/.exec(block)?.[1];
+    expect(val(root)).not.toBe(val(dark));
   });
 });
