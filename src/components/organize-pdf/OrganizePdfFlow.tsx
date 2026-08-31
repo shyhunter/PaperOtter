@@ -198,7 +198,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
             </div>
 
             {/* Page grid — each thumbnail renders lazily as it scrolls into view */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 min-h-0">
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {pages.map((entry, index) => (
                     <div

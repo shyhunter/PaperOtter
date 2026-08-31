@@ -282,7 +282,7 @@ export function PagePanel({ onScrollToPage }: PagePanelProps) {
       </div>
 
       {/* Thumbnail list */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-0">
         {Array.from({ length: pageCount }, (_, i) => (
           <div
             key={i}

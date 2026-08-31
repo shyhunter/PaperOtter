@@ -93,8 +93,8 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
   }, [rotations, onApplied]);
 
   return (
-    <div className="flex flex-1 flex-col p-6">
-      <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto">
+    <div className="flex flex-1 flex-col p-6 min-h-0">
+      <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto min-h-0">
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('common.rotatePages')}</h2>
           <p className="text-sm text-muted-foreground">

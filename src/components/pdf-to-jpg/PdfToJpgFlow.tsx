@@ -391,7 +391,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
 
         {/* Step 1: Configure */}
         {step === 1 && pdfBytes && (
-          <div ref={scrollContainerRef} className="flex flex-1 flex-col overflow-y-auto p-6">
+          <div ref={scrollContainerRef} className="flex flex-1 flex-col overflow-y-auto p-6 min-h-0">
             <div className="w-full max-w-2xl mx-auto space-y-4">
               {/* File info */}
               <div className="text-center">
