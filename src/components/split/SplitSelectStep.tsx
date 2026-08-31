@@ -7,6 +7,7 @@ import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
 import { plural, t } from '@/i18n';
+import { usePdfDocument } from '@/hooks/usePdfDocument';
 
 type TabMode = 'range' | 'every-n' | 'individual';
 
@@ -27,6 +28,8 @@ export function SplitSelectStep({
   onBack,
   isProcessing,
 }: SplitSelectStepProps) {
+  // One document for the whole grid. Each tile used to parse the file itself.
+  const pdfDoc = usePdfDocument(pdfBytes);
   const [mode, setMode] = useState<TabMode>('range');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -217,7 +220,7 @@ export function SplitSelectStep({
                     }`}
                   >
                     <LazyPageThumbnail
-                      pdfBytes={pdfBytes}
+                      doc={pdfDoc}
                       pageIndex={i}
                       scale={0.3}
                       scrollContainerRef={scrollContainerRef}

@@ -8,6 +8,7 @@ import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { turnBy } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
 import { plural, t } from '@/i18n';
+import { usePdfDocument } from '@/hooks/usePdfDocument';
 
 interface RotateStepProps {
   pdfBytes: Uint8Array;
@@ -18,6 +19,8 @@ interface RotateStepProps {
 }
 
 export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessing }: RotateStepProps) {
+  // One document for the whole grid. Each tile used to parse the file itself.
+  const pdfDoc = usePdfDocument(pdfBytes);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [rotations, setRotations] = useState<Map<number, RotationDegrees>>(() => {
     const map = new Map<number, RotationDegrees>();
@@ -189,7 +192,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
                 }`}
               >
                 <LazyPageThumbnail
-                  pdfBytes={pdfBytes}
+                  doc={pdfDoc}
                   pageIndex={i}
                   scale={thumbScale}
                   scrollContainerRef={scrollContainerRef}
