@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { TOOL_REGISTRY, EDITOR_SIDEBAR_TOOLS } from '@/types/tools';
-import { currentPlatform, isToolAvailableHere, availableTools } from '@/lib/platform';
+import { currentPlatform, isToolAvailableHere, availableTools, revealLabelKey } from '@/lib/platform';
 
 /**
  * [PGATE-01] Nothing that cannot work on this platform is ever offered.
@@ -104,5 +104,40 @@ describe('OCR entry points', () => {
       return !/from '@\/lib\/platform'/.test(source);
     });
     expect(ungated, 'OCR entry points that never consult the platform gate').toEqual([]);
+  });
+});
+
+/**
+ * [PGATE-04] "Show in Finder" is macOS wording.
+ *
+ * Reported from a real Linux build: the save step offered "Show in Finder" on
+ * Ubuntu. Finder is a macOS application; Windows has File Explorer and Linux
+ * has no single answer at all — Nautilus, Dolphin and Thunar are all "Files" to
+ * their users, so the neutral wording is the honest one there.
+ */
+describe('reveal-in-file-manager wording', () => {
+  it('[PGATE-04a] names Finder only on macOS', () => {
+    setUA(MAC_UA);
+    expect(revealLabelKey()).toBe('save.showInFinder');
+  });
+
+  it('[PGATE-04b] names File Explorer on Windows', () => {
+    setUA(WIN_UA);
+    expect(revealLabelKey()).toBe('save.showInExplorer');
+  });
+
+  it('[PGATE-04c] uses neutral wording on Linux', () => {
+    setUA(LINUX_UA);
+    expect(revealLabelKey()).toBe('save.showInFiles');
+  });
+
+  it('[PGATE-04d] the three keys are distinct', () => {
+    // One key reused across platforms would defeat the point.
+    const keys = new Set<string>();
+    for (const ua of [MAC_UA, WIN_UA, LINUX_UA]) {
+      setUA(ua);
+      keys.add(revealLabelKey());
+    }
+    expect(keys.size).toBe(3);
   });
 });

@@ -4,7 +4,9 @@
 // only what it can produce.
 
 import { describe, it, expect } from 'vitest';
-import { getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
+import { TOOL_REGISTRY } from '@/types/tools';
+import {
+  listAllOutputFormats, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
 import type { ConverterAvailability } from '@/types/converter';
 
 function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
@@ -81,5 +83,74 @@ describe('getAvailableOutputFormats is input-aware', () => {
 
   it('for a PDF with LibreOffice, odt becomes available', () => {
     expect(getAvailableOutputFormats('pdf', avail({ libreoffice: true }))).toContain('odt');
+  });
+});
+
+/**
+ * [CONV-10] A missing optional tool must not remove the whole feature.
+ *
+ * Reported from a real Linux build: "Convert Document" was greyed out on the
+ * dashboard because Calibre was not installed. But Calibre is only needed for
+ * EPUB, MOBI and AZW3 — PDF and DOCX convert to Markdown, HTML, JSON, TXT and
+ * DOCX entirely in-process, needing nothing at all. The tool declared
+ * `requiresDependency: 'calibre'`, which gates the card before any of the
+ * per-format routing runs, so a whole working feature was unreachable.
+ *
+ * And the detection it was gating on is not reliable. On Linux it runs
+ * `ebook-convert --version`, which only finds Calibre on PATH — a Flatpak or
+ * Snap install (the common ones on Ubuntu) is a false negative. Blocking on a
+ * detection that can be wrong is worse than attempting and reporting honestly.
+ */
+describe('convert-doc availability', () => {
+  const nothingInstalled: ConverterAvailability = {
+    builtin: true, textutil: false, word: false, libreoffice: false,
+    calibre: false, pandoc: false, webview: false,
+  };
+
+  it('[CONV-10a] the built-in engine alone still produces five formats from a PDF', () => {
+    const formats = getAvailableOutputFormats('pdf', nothingInstalled);
+    for (const f of ['md', 'html', 'json'] as const) {
+      expect(formats, `${f} needs no external tool`).toContain(f);
+    }
+    expect(formats.length, 'a bare machine can still convert').toBeGreaterThan(0);
+  });
+
+  it('[CONV-10b] listAllOutputFormats offers ebook formats even when Calibre is absent', () => {
+    // Detection can be wrong (Flatpak/Snap), so the user decides, not us. The
+    // format is offered and marked, rather than silently removed.
+    const all = listAllOutputFormats('pdf', nothingInstalled);
+    const epub = all.find((f) => f.format === 'epub');
+    expect(epub, 'epub must still be offered').toBeDefined();
+    expect(epub!.available, 'but marked unavailable').toBe(false);
+    expect(epub!.needs, 'and it must name what it needs').toBe('calibre');
+  });
+
+  it('[CONV-10c] formats needing nothing are marked available on a bare machine', () => {
+    const all = listAllOutputFormats('pdf', nothingInstalled);
+    const md = all.find((f) => f.format === 'md');
+    expect(md!.available).toBe(true);
+    expect(md!.needs).toBeNull();
+  });
+
+  it('[CONV-10d] with Calibre present, epub is available and needs nothing further', () => {
+    const withCalibre = { ...nothingInstalled, calibre: true };
+    const all = listAllOutputFormats('pdf', withCalibre);
+    const epub = all.find((f) => f.format === 'epub');
+    expect(epub!.available).toBe(true);
+    expect(epub!.needs).toBeNull();
+  });
+
+  it('[CONV-10f] the tool itself is not gated on an optional engine', () => {
+    // This is the reported bug. Calibre is needed for three of eleven formats;
+    // gating the dashboard card on it made the other eight unreachable.
+    expect(
+      TOOL_REGISTRY['convert-doc'].requiresDependency,
+      'convert-doc must not be disabled wholesale for an optional engine',
+    ).toBeUndefined();
+  });
+
+  it('[CONV-10e] never offers the input format as an output', () => {
+    const all = listAllOutputFormats('pdf', nothingInstalled);
+    expect(all.map((f) => f.format)).not.toContain('pdf');
   });
 });

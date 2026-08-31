@@ -3,7 +3,8 @@ import { Loader2, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  getAvailableOutputFormats,
+  listAllOutputFormats,
+  ENGINE_LABELS,
   detectConverters,
   getBestEngine,
   hasAnyConverter,
@@ -88,19 +89,30 @@ export function ConvertConfigStep({
       .finally(() => setIsDetecting(false));
   }, []);
 
-  // Available formats based on what engines exist on this system
-  const availableFormats = availability
-    ? getAvailableOutputFormats(sourceFormat, availability)
-    : getAvailableOutputFormats(sourceFormat);
+  // Every format worth offering, each marked with whether this machine could be
+  // verified as able to produce it. Deliberately not filtered: detection can be
+  // wrong (Calibre via Flatpak or Snap is invisible to a PATH lookup), and an
+  // optional tool is something the user can act on. Removing the option denies a
+  // capability they may have; marking it does not.
+  const formatOptions = availability
+    ? listAllOutputFormats(sourceFormat, availability)
+    : listAllOutputFormats(sourceFormat, {
+        builtin: true, textutil: false, word: false,
+        libreoffice: false, calibre: false, pandoc: false, webview: false,
+      });
+  const availableFormats = formatOptions.map((o) => o.format);
+  const verified = formatOptions.filter((o) => o.available).map((o) => o.format);
 
-  const [outputFormat, setOutputFormat] = useState<ConvertFormat>(availableFormats[0] ?? 'pdf');
+  const [outputFormat, setOutputFormat] = useState<ConvertFormat>(verified[0] ?? availableFormats[0] ?? 'pdf');
 
   // Update output format if current selection becomes unavailable after detection
   useEffect(() => {
+    // Only correct a selection that is not offered at all. An unverified format
+    // the user picked on purpose is left alone — that is the whole point.
     if (availability && !availableFormats.includes(outputFormat) && availableFormats.length > 0) {
-      setOutputFormat(availableFormats[0]);
+      setOutputFormat(verified[0] ?? availableFormats[0]);
     }
-  }, [availability, availableFormats, outputFormat]);
+  }, [availability, availableFormats, verified, outputFormat]);
 
   // Which engine will handle the current format
   const currentEngine = availability ? getBestEngine(outputFormat, availability, sourceFormat) : null;
@@ -165,18 +177,22 @@ export function ConvertConfigStep({
           <p className="text-xs font-medium text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
           {availableFormats.length > 0 ? (
             <div className="grid grid-cols-3 gap-1.5">
-              {availableFormats.map((fmt) => (
+              {formatOptions.map(({ format: fmt, available, needs }) => (
                 <button
                   key={fmt}
                   type="button"
                   onClick={() => setOutputFormat(fmt)}
                   disabled={isProcessing}
+                  title={available ? undefined : t('convertDoc.formatMayNeed', { tool: ENGINE_LABELS[needs!] })}
                   className={cn(
                     'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     outputFormat === fmt
                       ? 'border-primary bg-primary/5 text-foreground'
                       : 'border-border text-muted-foreground hover:border-primary/50',
+                    // Dimmed, not removed: still selectable, because detection
+                    // can be wrong and only an attempt settles it.
+                    !available && outputFormat !== fmt && 'opacity-60 border-dashed',
                   )}
                 >
                   {FORMAT_LABELS[fmt]}

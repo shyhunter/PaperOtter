@@ -68,6 +68,10 @@ export const en = {
   'save.asZip': 'Save as ZIP',
   'save.again': 'Save Again',
   'save.showInFinder': 'Show in Finder',
+  'save.showInExplorer': 'Show in File Explorer',
+  // Neutral on purpose: Linux has no one file manager, and naming Nautilus
+  // would be wrong for everyone on Dolphin or Thunar.
+  'save.showInFiles': 'Show in file manager',
   'save.success': 'File saved successfully',
   'save.failed': 'Save failed',
   'common.tryAgain': 'Try Again',
@@ -933,6 +937,7 @@ export const en = {
   'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
   'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',
+  'convertDoc.formatMayNeed': 'May need {tool}. Papercut could not find it, but detection is not always right — try it and see.',
   'deps.libreoffice': 'Install LibreOffice for document conversion — libreoffice.org/download',
 
   // ── OCR ─────────────────────────────────────────────────────────────────

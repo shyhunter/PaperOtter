@@ -1417,11 +1417,28 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        let cal_ok = std::process::Command::new("ebook-convert")
-            .arg("--version")
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
+        // A bare `ebook-convert` only finds Calibre when it is on PATH. On
+        // Ubuntu the common installs are Flatpak and Snap, and neither puts it
+        // there — so a user with Calibre installed was told they had none, and
+        // (before this change) had the whole Convert Document tool disabled for
+        // it. Reported from a real Linux machine.
+        //
+        // Written inline rather than as a module-scope helper on purpose: a
+        // helper whose only callers sit inside a cfg block is dead code on the
+        // other targets, and `-D warnings` makes that a hard CI error. That is
+        // exactly how PR #71 broke after every local check passed.
+        let candidates: [(&str, &[&str]); 3] = [
+            ("ebook-convert", &["--version"]),
+            ("flatpak", &["run", "--command=ebook-convert", "com.calibre_ebook.calibre", "--version"]),
+            ("calibre.ebook-convert", &["--version"]),
+        ];
+        let cal_ok = candidates.iter().any(|(bin, args)| {
+            std::process::Command::new(bin)
+                .args(*args)
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false)
+        });
         results.insert("calibre", cal_ok);
     }
 

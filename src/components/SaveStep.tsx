@@ -16,6 +16,7 @@ import { uniqueOutputPath } from '@/lib/outputPath';
 import { toBytes } from '@/lib/zipOutputs';
 import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
+import { revealLabelKey } from '@/lib/platform';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -172,7 +173,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
             onClick={handleRevealInFinder}
             className="text-xs text-muted-foreground hover:text-foreground cursor-pointer mt-0.5"
           >
-            {t('save.showInFinder')}
+            {t(revealLabelKey())}
           </button>
         </div>
       </div>

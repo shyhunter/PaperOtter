@@ -164,6 +164,69 @@ export function getAvailableOutputFormats(
   return candidates;
 }
 
+/** Human names for engines, for telling a user what a format would need.
+ *  Product names, deliberately untranslated — "Calibre" is Calibre everywhere. */
+export const ENGINE_LABELS: Record<ConverterEngine, string> = {
+  builtin: 'the built-in engine',
+  textutil: 'textutil',
+  word: 'Microsoft Word',
+  libreoffice: 'LibreOffice',
+  calibre: 'Calibre',
+  pandoc: 'Pandoc',
+  webview: 'the system webview',
+};
+
+/** One output format, with whether this machine can currently produce it. */
+export interface OutputFormatOption {
+  format: ConvertFormat;
+  /** True when some detected engine can read this input and write this format. */
+  available: boolean;
+  /** The engine it would need but which was not detected, or null when available. */
+  needs: ConverterEngine | null;
+}
+
+/** Every engine present — used to ask "could this ever work?" rather than "does it now?". */
+const EVERYTHING: ConverterAvailability = {
+  builtin: true, textutil: true, word: true, libreoffice: true,
+  calibre: true, pandoc: true, webview: true,
+};
+
+/**
+ * Every output format worth offering for this input, each marked with whether
+ * this machine can produce it right now.
+ *
+ * Different from getAvailableOutputFormats, which removes what it cannot do.
+ * Removing is wrong for an optional tool, for two reasons.
+ *
+ * Detection is not reliable. On Linux Calibre is found by running
+ * `ebook-convert --version`, which only sees it on PATH — a Flatpak or Snap
+ * install, the common ones on Ubuntu, reads as absent. Silently deleting EPUB
+ * from the list denies a capability the user may well have.
+ *
+ * And an absent optional tool is something the user can act on, unlike a
+ * missing platform engine. The registry already draws that line:
+ * requiresPlatform hides, requiresDependency shows-and-explains. This is the
+ * second kind, at format granularity instead of whole-tool.
+ *
+ * What it still drops is what no engine could produce even fully equipped —
+ * Markdown from an EPUB, say, since only the built-in engine writes Markdown
+ * and it cannot read EPUB. Offering that would be a dead end no install fixes.
+ */
+export function listAllOutputFormats(
+  inputFormat: ConvertFormat,
+  availability: ConverterAvailability,
+): OutputFormatOption[] {
+  return ALL_FORMATS
+    .filter((format) => format !== inputFormat)
+    .map((format) => {
+      const possible = getBestEngine(format, EVERYTHING, inputFormat);
+      if (!possible) return null;
+      const actual = getBestEngine(format, availability, inputFormat);
+      return { format, available: actual !== null, needs: actual ? null : possible };
+    })
+    .filter((o): o is OutputFormatOption => o !== null);
+}
+
 /**
  * Check if ANY conversion is possible with the tools available.
  * Returns true if at least one engine is available.

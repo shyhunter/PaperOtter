@@ -361,7 +361,11 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'document',
     icon: 'ArrowLeftRight',
     acceptsFormats: ['pdf', 'document'],
-    requiresDependency: 'calibre',
+    // Deliberately no requiresDependency. Calibre is needed for EPUB, MOBI and
+    // AZW3 only; PDF and DOCX convert to Markdown, HTML, JSON, TXT and DOCX
+    // entirely in-process. Gating the card on Calibre made eight working
+    // formats unreachable on any machine without it, which is what a user hit
+    // on Linux. Per-format availability is handled by listAllOutputFormats.
     steps: [
       { label: 'step.pick', description: 'tool.convertDoc.step3' },
       { label: 'step.configure', description: 'tool.convertDoc.step4' },
