@@ -6,7 +6,9 @@
 import { describe, it, expect } from 'vitest';
 import { TOOL_REGISTRY } from '@/types/tools';
 import {
-  listAllOutputFormats, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
+  listAllOutputFormats,
+  canAttemptConversion,
+  requiredEngineFor, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
 import type { ConverterAvailability } from '@/types/converter';
 
 function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
@@ -152,5 +154,57 @@ describe('convert-doc availability', () => {
   it('[CONV-10e] never offers the input format as an output', () => {
     const all = listAllOutputFormats('pdf', nothingInstalled);
     expect(all.map((f) => f.format)).not.toContain('pdf');
+  });
+});
+
+/**
+ * [CONV-11] Offering a format and then refusing to run it is worse than not
+ * offering it.
+ *
+ * CONV-10 made unverified formats selectable, because detection can be wrong
+ * (Calibre via Flatpak or Snap is invisible to a PATH lookup). But the Convert
+ * button stayed disabled for them: `canConvert` required
+ * `getBestEngine(...) !== null`, which is null precisely when detection says the
+ * engine is missing. So a user could pick EPUB, see it dimmed with "detection is
+ * not always right — try it and see", and then find the button dead. The marking
+ * was decoration and the dead end was still there, one step later.
+ *
+ * An offered format may always be attempted. If the tool really is absent, the
+ * attempt fails with a message naming what is missing — which is information the
+ * user can act on, unlike a disabled button.
+ */
+describe('attempting an unverified conversion', () => {
+  const bare: ConverterAvailability = {
+    builtin: true, textutil: false, word: false, libreoffice: false,
+    calibre: false, pandoc: false, webview: false,
+  };
+
+  it('[CONV-11a] an offered-but-unverified format may still be attempted', () => {
+    const options = listAllOutputFormats('pdf', bare);
+    const epub = options.find((o) => o.format === 'epub');
+    expect(epub!.available, 'precondition: epub is unverified here').toBe(false);
+    expect(
+      canAttemptConversion('epub', options),
+      'an offered format must be attemptable, or marking it is decoration',
+    ).toBe(true);
+  });
+
+  it('[CONV-11b] a format that was never offered cannot be attempted', () => {
+    const options = listAllOutputFormats('pdf', bare);
+    expect(canAttemptConversion('pdf', options), 'the input format is not an output').toBe(false);
+  });
+
+  it('[CONV-11c] the required engine is named accurately per format', () => {
+    // The old error said "Install LibreOffice or Microsoft Word" for everything,
+    // which is simply wrong for an ebook format.
+    expect(requiredEngineFor('epub', 'pdf')).toBe('calibre');
+    expect(requiredEngineFor('mobi', 'pdf')).toBe('calibre');
+    expect(requiredEngineFor('md', 'pdf')).toBe('builtin');
+  });
+
+  it('[CONV-11d] a genuinely impossible pairing has no required engine', () => {
+    // Markdown from EPUB: only the built-in engine writes Markdown and it
+    // cannot read EPUB, so no install fixes it.
+    expect(requiredEngineFor('md', 'epub')).toBeNull();
   });
 });

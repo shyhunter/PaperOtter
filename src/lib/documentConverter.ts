@@ -228,6 +228,33 @@ export function listAllOutputFormats(
 }
 
 /**
+ * Which engine this conversion needs, assuming everything were installed.
+ * Null when no engine could ever do it, so no install would help.
+ */
+export function requiredEngineFor(
+  outputFormat: ConvertFormat,
+  inputFormat?: ConvertFormat,
+): ConverterEngine | null {
+  return getBestEngine(outputFormat, EVERYTHING, inputFormat);
+}
+
+/**
+ * Whether the user may press Convert for this format.
+ *
+ * Any format that was offered may be attempted, including one detection could
+ * not verify. Offering a format and then disabling the button is worse than not
+ * offering it at all: it moves the dead end one step later and tells the user
+ * nothing. If the tool really is absent the attempt fails with a message naming
+ * it, which is something they can act on.
+ */
+export function canAttemptConversion(
+  outputFormat: ConvertFormat,
+  offered: OutputFormatOption[],
+): boolean {
+  return offered.some((o) => o.format === outputFormat);
+}
+
+/**
  * Check if ANY conversion is possible with the tools available.
  * Returns true if at least one engine is available.
  */
@@ -306,9 +333,15 @@ export async function convertDocument(
   const engine = getBestEngine(options.outputFormat, availability, sourceFormat);
 
   if (!engine) {
+    // Name the tool this conversion actually needs. The old message said
+    // "Install LibreOffice or Microsoft Word" for everything, which is simply
+    // wrong for an ebook format and sends the user to install the wrong thing.
+    const needed = requiredEngineFor(options.outputFormat, sourceFormat);
+    const pair = `${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()}`;
     throw new Error(
-      `Cannot convert ${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()} ` +
-      `with the tools available. Install LibreOffice or Microsoft Word to enable this.`
+      needed
+        ? `Converting ${pair} needs ${ENGINE_LABELS[needed]}, which could not be found on this system.`
+        : `Papercut cannot convert ${pair}.`,
     );
   }
 

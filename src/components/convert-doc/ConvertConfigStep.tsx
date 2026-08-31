@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   listAllOutputFormats,
+  canAttemptConversion,
   ENGINE_LABELS,
   detectConverters,
   getBestEngine,
@@ -120,7 +121,12 @@ export function ConvertConfigStep({
   const showEpubLayoutToggle = outputFormat === 'epub';
   // Splitting operates on the built-in engine's document model (per top-level heading).
   const showSplitToggle = currentEngine === 'builtin';
-  const canConvert = !isDetecting && availability && currentEngine !== null;
+  // Any offered format may be attempted, including one detection could not
+  // verify. Requiring currentEngine !== null here is what made the dimmed
+  // formats unattemptable: getBestEngine returns null exactly when detection says
+  // the tool is missing, so marking a format then disabling Convert moved the
+  // dead end one step later instead of removing it.
+  const canConvert = !isDetecting && !!availability && canAttemptConversion(outputFormat, formatOptions);
 
   // When link margins is on, propagate changes from any margin to all
   const handleMarginChange = useCallback((setter: (v: number) => void, value: number) => {
