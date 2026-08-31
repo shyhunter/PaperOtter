@@ -45,3 +45,23 @@ export function isToolAvailableHere(tool: ToolDefinition): boolean {
 export function availableTools(tools: ToolDefinition[]): ToolDefinition[] {
   return tools.filter(isToolAvailableHere);
 }
+
+/**
+ * Which translation key names "reveal this file in the file manager".
+ *
+ * Finder is a macOS application, and the label was hardcoded to it on every
+ * platform -- a Linux user was told to look in Finder. Windows has File
+ * Explorer. Linux has no single answer: Nautilus, Dolphin and Thunar are all
+ * "Files" to the people using them, so neutral wording is the honest choice
+ * rather than naming one and being wrong for the others.
+ */
+export function revealLabelKey(): 'save.showInFinder' | 'save.showInExplorer' | 'save.showInFiles' {
+  switch (currentPlatform()) {
+    case 'macos':
+      return 'save.showInFinder';
+    case 'windows':
+      return 'save.showInExplorer';
+    default:
+      return 'save.showInFiles';
+  }
+}

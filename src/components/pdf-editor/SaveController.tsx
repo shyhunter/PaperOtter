@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
 import { t } from '@/i18n';
+import { revealLabelKey } from '@/lib/platform';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
@@ -18,7 +19,7 @@ function showSavedToast(savedPath: string) {
   toast.success(t('saveController.savedTo', { name: fileName }), {
     duration: 5000,
     action: {
-      label: t('save.showInFinder'),
+      label: t(revealLabelKey()),
       onClick: () => {
         invoke('reveal_in_finder', { path: savedPath }).catch(() => {});
       },
