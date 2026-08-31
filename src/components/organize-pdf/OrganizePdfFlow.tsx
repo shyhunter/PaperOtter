@@ -13,6 +13,7 @@ import { organizePdf } from '@/lib/pdfOrganize';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
 import { plural, t } from '@/i18n';
+import { usePdfDocument } from '@/hooks/usePdfDocument';
 
 interface PageEntry {
   sourceIndex: number;
@@ -37,6 +38,8 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     onStepChange?.(s);
   }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  // One document for the whole grid. Each tile used to parse the file itself.
+  const pdfDoc = usePdfDocument(pdfBytes);
   const [originalPageCount, setOriginalPageCount] = useState(0);
   const [fileName, setFileName] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -205,7 +208,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                       {/* Thumbnail */}
                       <div className="relative aspect-[3/4] bg-muted">
                         <LazyPageThumbnail
-                          pdfBytes={pdfBytes}
+                          doc={pdfDoc}
                           pageIndex={entry.sourceIndex}
                           scale={0.3}
                           scrollContainerRef={scrollContainerRef}

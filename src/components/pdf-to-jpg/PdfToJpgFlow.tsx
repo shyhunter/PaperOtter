@@ -17,6 +17,7 @@ import { convertDocument, checkSidecarAvailability } from '@/lib/documentConvert
 import type { MultiFileOutput } from '@/components/SaveStep';
 import type { ConvertFormat } from '@/types/converter';
 import { plural, t } from '@/i18n';
+import { usePdfDocument } from '@/hooks/usePdfDocument';
 
 // Worker setup — must match pdfThumbnail.ts
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -160,6 +161,8 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   const [_filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
+  // One document for the whole grid. Each tile used to parse the file itself.
+  const pdfDoc = usePdfDocument(pdfBytes);
   const [pageCount, setPageCount] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -566,7 +569,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                         )}
                       >
                         <LazyPageThumbnail
-                          pdfBytes={pdfBytes}
+                          doc={pdfDoc}
                           pageIndex={i}
                           scale={0.25}
                           scrollContainerRef={scrollContainerRef}

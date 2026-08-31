@@ -2,11 +2,18 @@
 // scrolls near the given scroll container's viewport, instead of every page
 // being rasterized up front. Rendering all pages eagerly (renderAllPdfPages)
 // freezes the app on large documents (hundreds of pages).
+//
+// It takes an already-parsed document rather than raw bytes. It used to call
+// getDocument itself, which meant a full copy of the file and a complete parse
+// of every page PER TILE -- roughly twenty at once with a 200px root margin, so
+// a 3-4 MB 134-page file froze the window outright. The grid parses once now
+// (usePdfDocument) and every tile shares that proxy.
 import { useEffect, useRef, useState, memo, type CSSProperties, type RefObject } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 interface LazyPageThumbnailProps {
-  pdfBytes: Uint8Array;
+  /** Shared, already-parsed document. Null while the grid is still loading it. */
+  doc: pdfjsLib.PDFDocumentProxy | null;
   /** Zero-based page index to render */
   pageIndex: number;
   scale?: number;
@@ -21,7 +28,7 @@ interface LazyPageThumbnailProps {
 }
 
 export const LazyPageThumbnail = memo(function LazyPageThumbnail({
-  pdfBytes,
+  doc,
   pageIndex,
   scale = 0.3,
   scrollContainerRef,
@@ -55,17 +62,15 @@ export const LazyPageThumbnail = memo(function LazyPageThumbnail({
 
   // Render thumbnail when visible
   useEffect(() => {
-    if (!isVisible || rendered) return;
+    if (!isVisible || rendered || !doc) return;
     let cancelled = false;
-    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
 
     async function render() {
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        pdfDoc = await loadingTask.promise;
-        if (cancelled) return;
-
-        const page = await pdfDoc.getPage(pageIndex + 1);
+        // No getDocument here on purpose. The document is owned by the grid, so
+        // this must neither parse nor destroy it -- destroying a shared proxy
+        // would blank every other tile.
+        const page = await doc!.getPage(pageIndex + 1);
         if (cancelled) return;
 
         const viewport = page.getViewport({ scale });
@@ -79,21 +84,21 @@ export const LazyPageThumbnail = memo(function LazyPageThumbnail({
         if (!cancelled) setRendered(true);
       } catch {
         // Thumbnail rendering is non-critical
-      } finally {
-        pdfDoc?.destroy();
       }
     }
 
     render();
     return () => { cancelled = true; };
-  }, [isVisible, rendered, pdfBytes, pageIndex, scale]);
+  }, [isVisible, rendered, doc, pageIndex, scale]);
 
-  // Re-render when pdfBytes identity changes (e.g. page operations elsewhere)
+  // Re-render when the document changes (e.g. page operations elsewhere). The
+  // grid reloads the document when its bytes change, so this identity is the
+  // same signal `pdfBytes` used to be.
   useEffect(() => {
     if (!rendered) return;
     setRendered(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfBytes]);
+  }, [doc]);
 
   return (
     <div ref={containerRef} className={className}>
