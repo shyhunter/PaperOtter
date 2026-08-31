@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   listAllOutputFormats,
   canAttemptConversion,
-  ENGINE_LABELS,
+  requirementFor,
   detectConverters,
   getBestEngine,
   hasAnyConverter,
@@ -20,6 +20,7 @@ import type {
   EpubLayout,
 } from '@/types/converter';
 import { t } from '@/i18n';
+import { currentPlatform } from '@/lib/platform';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -102,6 +103,18 @@ export function ConvertConfigStep({
         libreoffice: false, calibre: false, pandoc: false, webview: false,
       });
   const availableFormats = formatOptions.map((o) => o.format);
+
+  /** Names the kind of program a format would need, with examples to choose from. */
+  const mayNeedHint = (fmt: ConvertFormat): string | undefined => {
+    const req = requirementFor(fmt, sourceFormat, currentPlatform());
+    if (!req) return undefined;
+    const tools = req.examples.join(' / ');
+    const requirement = t(
+      req.kind === 'ebookConverter' ? 'convertDoc.kindEbookConverter' : 'convertDoc.kindWordProcessor',
+      { tools },
+    );
+    return t('convertDoc.formatMayNeed', { requirement });
+  };
   const verified = formatOptions.filter((o) => o.available).map((o) => o.format);
 
   const [outputFormat, setOutputFormat] = useState<ConvertFormat>(verified[0] ?? availableFormats[0] ?? 'pdf');
@@ -183,13 +196,13 @@ export function ConvertConfigStep({
           <p className="text-xs font-medium text-muted-foreground">{t('imageConfigure.outputFormat')}</p>
           {availableFormats.length > 0 ? (
             <div className="grid grid-cols-3 gap-1.5">
-              {formatOptions.map(({ format: fmt, available, needs }) => (
+              {formatOptions.map(({ format: fmt, available }) => (
                 <button
                   key={fmt}
                   type="button"
                   onClick={() => setOutputFormat(fmt)}
                   disabled={isProcessing}
-                  title={available ? undefined : t('convertDoc.formatMayNeed', { tool: ENGINE_LABELS[needs!] })}
+                  title={available ? undefined : mayNeedHint(fmt)}
                   className={cn(
                     'rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
                     'disabled:cursor-not-allowed disabled:opacity-50',

@@ -8,7 +8,9 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import {
   listAllOutputFormats,
   canAttemptConversion,
-  requiredEngineFor, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
+  requiredEngineFor,
+  installableEnginesFor,
+  requirementFor, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
 import type { ConverterAvailability } from '@/types/converter';
 
 function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
@@ -206,5 +208,95 @@ describe('attempting an unverified conversion', () => {
     // Markdown from EPUB: only the built-in engine writes Markdown and it
     // cannot read EPUB, so no install fixes it.
     expect(requiredEngineFor('md', 'epub')).toBeNull();
+  });
+});
+
+/**
+ * [CONV-12] Name tools the user can actually install, and do not name one when
+ * several would do.
+ *
+ * requiredEngineFor returns the first engine in the priority list, which made
+ * two misleading messages:
+ *
+ *   PDF  -> RTF/DOC/ODT  said "needs Microsoft Word", when LibreOffice does it
+ *                        too, is free, and runs everywhere. Telling a Linux
+ *                        user to buy Word is bad advice.
+ *   DOCX -> RTF/DOC/ODT  said "needs textutil", which is a macOS built-in. A
+ *                        Linux user cannot install it at all, so the message
+ *                        named something unobtainable.
+ */
+describe('naming the tool a user could install', () => {
+  it('[CONV-12a] on Linux, never names macOS-only engines', () => {
+    for (const fmt of ['rtf', 'doc', 'odt'] as const) {
+      const engines = installableEnginesFor(fmt, 'docx', 'linux');
+      expect(engines, `${fmt} must not suggest textutil on Linux`).not.toContain('textutil');
+      expect(engines, `${fmt} must not suggest Word on Linux`).not.toContain('word');
+    }
+  });
+
+  it('[CONV-12b] on Linux, LibreOffice is offered for the office formats', () => {
+    for (const fmt of ['rtf', 'doc', 'odt'] as const) {
+      expect(installableEnginesFor(fmt, 'docx', 'linux')).toContain('libreoffice');
+    }
+  });
+
+  it('[CONV-12c] names every engine that would work, not just the first', () => {
+    // PDF -> RTF: Word and LibreOffice both do it. On a Mac both are nameable.
+    const onMac = installableEnginesFor('rtf', 'pdf', 'macos');
+    expect(onMac.length, 'more than one engine can do this').toBeGreaterThan(1);
+    expect(onMac).toContain('libreoffice');
+  });
+
+  it('[CONV-12d] EPUB still names Calibre alone, because it is alone', () => {
+    expect(installableEnginesFor('epub', 'pdf', 'linux')).toEqual(['calibre']);
+  });
+
+  it('[CONV-12e] an impossible pairing names nothing', () => {
+    expect(installableEnginesFor('md', 'epub', 'linux')).toEqual([]);
+  });
+
+  it('[CONV-12f] Word is nameable on Windows, where it exists', () => {
+    expect(installableEnginesFor('rtf', 'pdf', 'windows')).toContain('word');
+  });
+});
+
+/**
+ * [CONV-13] Say what kind of program is needed, not one product's name.
+ *
+ * "Converting PDF to RTF needs Microsoft Word" is wrong twice over: it names a
+ * paid product when a free one does the same job, and it implies only that
+ * product will do. What the user needs is the category and some examples, so
+ * they can use whatever they already have.
+ */
+describe('describing what to install', () => {
+  it('[CONV-13a] office formats ask for a word processor, free option first', () => {
+    const req = requirementFor('rtf', 'pdf', 'windows');
+    expect(req!.kind).toBe('wordProcessor');
+    expect(req!.examples[0], 'suggest the free cross-platform one first').toBe('LibreOffice');
+    expect(req!.examples).toContain('Microsoft Word');
+  });
+
+  it('[CONV-13b] on Linux it never suggests Word, which cannot run there', () => {
+    const req = requirementFor('rtf', 'pdf', 'linux');
+    expect(req!.examples).toEqual(['LibreOffice']);
+  });
+
+  it('[CONV-13c] ebook formats ask for an ebook converter', () => {
+    const req = requirementFor('epub', 'pdf', 'linux');
+    expect(req!.kind).toBe('ebookConverter');
+    expect(req!.examples).toContain('Calibre');
+  });
+
+  it('[CONV-13d] nothing to install when the OS already provides it', () => {
+    // DOCX -> RTF goes through textutil on macOS, which ships with the system.
+    expect(requirementFor('rtf', 'docx', 'macos')).toBeNull();
+  });
+
+  it('[CONV-13e] nothing to install when the built-in engine handles it', () => {
+    expect(requirementFor('md', 'pdf', 'linux')).toBeNull();
+  });
+
+  it('[CONV-13f] nothing to suggest for an impossible pairing', () => {
+    expect(requirementFor('md', 'epub', 'linux')).toBeNull();
   });
 });
