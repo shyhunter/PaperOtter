@@ -2,6 +2,7 @@ import { useState, useId } from 'react';
 import { Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { pngLevelForQuality } from '@/lib/pngCompression';
 import type {
   ImageOutputFormat,
   ImageProcessingOptions,
@@ -89,8 +90,10 @@ export function ImageConfigureStep({
   // Quality slider label
   function getQualityLabel(): string {
     if (outputFormat === 'png') {
-      const compressionDisplay = Math.round(((100 - quality) * 9) / 100);
-      return t('imageConfigureStep.compressionOutOfNine', { level: compressionDisplay });
+      // Shared with the Rust encoder rather than recomputed here: the label and
+      // the encoder previously disagreed, so the number named a level the file
+      // was not encoded at.
+      return t('imageConfigureStep.compressionOutOfNine', { level: pngLevelForQuality(quality) });
     }
     return `${quality}%`;
   }
@@ -98,10 +101,16 @@ export function ImageConfigureStep({
   // Quality slider description text
   function getQualityDescription(): string {
     if (outputFormat === 'png') {
-      return 'PNG uses lossless compression — higher compression means smaller files but slower encoding.';
+      return t('imageConfigureStep.pngIsLossless');
     }
-    return 'Higher quality preserves more detail; lower quality produces smaller files.';
+    return t('imageConfigureStep.higherQualityMoreDetail');
   }
+
+  // PNG stores a decoded JPEG pixel for pixel, artefacts included, so the output
+  // is routinely several times the input. That is correct and unavoidable, but
+  // it is not what "Compress Image" leads anyone to expect, and reporting it
+  // only afterwards as "542% larger" spends the encode before saying so.
+  const warnsAboutGrowth = outputFormat === 'png' && sourceFormat !== 'png';
 
   // Handle width input change with aspect ratio lock
   function handleWidthChange(value: string) {
@@ -236,6 +245,15 @@ export function ImageConfigureStep({
                 </button>
               ))}
             </div>
+
+            {warnsAboutGrowth && (
+              <p
+                data-testid="lossless-growth-warning"
+                className="text-xs text-amber-600 dark:text-amber-500"
+              >
+                {t('imageConfigureStep.pngFromLossyGrows', { format: FORMAT_LABELS[sourceFormat] })}
+              </p>
+            )}
           </div>
 
           {/* Quality / Compression slider */}

@@ -313,6 +313,34 @@ fn decode_input_image(bytes: &[u8]) -> Result<image::DynamicImage, String> {
     image::load_from_memory(bytes).map_err(|e| format!("Failed to decode image: {}", e))
 }
 
+/// Maps the 1..=100 quality slider to a PNG deflate level, inverted: quality 100
+/// is level 0 (fastest, largest file), quality 1 is level 9 (smallest, slowest).
+///
+/// PNG is lossless, so this changes encode effort and file size, never pixels.
+///
+/// Mirrors `pngLevelForQuality` in `src/lib/pngCompression.ts`, which draws the
+/// slider's label. The two used to be separate formulas — TypeScript rounded and
+/// Rust truncated — so the label named a level the encoder was not using. The
+/// divisor is 99 rather than 100 because the slider's range is 1..=100, which is
+/// 99 steps; dividing by 100 made level 9 unreachable from the bottom of the
+/// slider, so "maximum compression" silently was not.
+fn png_compression_level(quality: u8) -> u8 {
+    let level = ((100.0 - quality as f32) * 9.0 / 99.0).round();
+    level.clamp(0.0, 9.0) as u8
+}
+
+/// The encoder setting for a slider position.
+///
+/// `Level(n)` for 1..=9 rather than the three named constants this used to pick
+/// between: `Fast`/`Default`/`Best` meant levels 1..8 all encoded identically,
+/// so ten labelled steps produced two distinct files.
+fn png_compression_for_quality(quality: u8) -> CompressionType {
+    match png_compression_level(quality) {
+        0 => CompressionType::Fast,
+        n => CompressionType::Level(n),
+    }
+}
+
 /// Core image processing logic — no Tauri dependency.
 /// Called by the `process_image` command and directly by unit tests.
 fn encode_image(
@@ -357,18 +385,9 @@ fn encode_image(
                 .map_err(|e| format!("JPEG encoding failed: {}", e))?;
         }
         "png" => {
-            // Map quality (1-100) inversely to PNG compression level (0-9):
-            //   quality 100 → level 0 (fast deflate, largest file)
-            //   quality 1   → level 9 (best deflate, smallest file)
-            let level = ((100u32 - quality as u32) * 9 / 100) as u8;
-            let compression = match level {
-                0 => CompressionType::Fast,
-                9 => CompressionType::Best,
-                _ => CompressionType::Default,
-            };
             let encoder = PngEncoder::new_with_quality(
                 Cursor::new(&mut output_buf),
-                compression,
+                png_compression_for_quality(quality),
                 image::codecs::png::FilterType::Adaptive,
             );
             img.write_with_encoder(encoder)
@@ -452,15 +471,9 @@ fn rotate_image(
                 .map_err(|e| format!("JPEG encoding failed: {}", e))?;
         }
         "png" => {
-            let level = ((100u32 - quality as u32) * 9 / 100) as u8;
-            let compression = match level {
-                0 => CompressionType::Fast,
-                9 => CompressionType::Best,
-                _ => CompressionType::Default,
-            };
             let encoder = PngEncoder::new_with_quality(
                 Cursor::new(&mut output_buf),
-                compression,
+                png_compression_for_quality(quality),
                 image::codecs::png::FilterType::Adaptive,
             );
             rotated.write_with_encoder(encoder)
@@ -2287,6 +2300,59 @@ mod tests {
     use image::codecs::png::{PngEncoder, CompressionType};
     use std::io::Cursor;
 
+    /// IC-09: reported from a real Linux build — a 248 KB JPEG converted to PNG
+    /// gave 1.55 MB at "1/9" and 1.45 MB at "8/9". Two outcomes across a ten-step
+    /// control, because levels 1..8 all mapped to CompressionType::Default and
+    /// level 9 was never reachable at all.
+    #[test]
+    fn png_compression_level_reaches_both_ends_of_the_slider() {
+        assert_eq!(
+            super::png_compression_level(1),
+            9,
+            "the bottom of the slider must reach level 9"
+        );
+        assert_eq!(
+            super::png_compression_level(100),
+            0,
+            "the top of the slider must reach level 0"
+        );
+    }
+
+    #[test]
+    fn png_compression_level_covers_every_step() {
+        let mut seen = [false; 10];
+        for quality in 1..=100u8 {
+            seen[super::png_compression_level(quality) as usize] = true;
+        }
+        for (level, reached) in seen.iter().enumerate() {
+            assert!(reached, "level {} is unreachable from the slider", level);
+        }
+    }
+
+    #[test]
+    fn png_compression_uses_real_levels_not_three_named_constants() {
+        assert_eq!(super::png_compression_for_quality(1), CompressionType::Level(9));
+        assert_eq!(super::png_compression_for_quality(50), CompressionType::Level(5));
+        assert_eq!(super::png_compression_for_quality(100), CompressionType::Fast);
+    }
+
+    /// The slider's label is drawn by `pngLevelForQuality` in TypeScript while the
+    /// file is encoded here. Nothing in either language checks the other, so these
+    /// are the five slider positions where the previous two formulas disagreed —
+    /// if they drift apart again, the number shown is not the level used.
+    #[test]
+    fn png_compression_level_matches_the_typescript_label() {
+        for (quality, level) in [(6u8, 9u8), (17, 8), (28, 7), (39, 6), (50, 5)] {
+            assert_eq!(
+                super::png_compression_level(quality),
+                level,
+                "quality {} should map to level {}",
+                quality,
+                level
+            );
+        }
+    }
+
     // ─── Fixtures ─────────────────────────────────────────────────────────────
 
     /// Builds a high-frequency noise JPEG.
@@ -3660,3 +3726,4 @@ mod tests {
         }
     }
 }
+
