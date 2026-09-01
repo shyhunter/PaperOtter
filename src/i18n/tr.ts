@@ -119,6 +119,34 @@ export const tr: Dictionary = {
   'save.success': 'Dosya kaydedildi',
   'pdfEncryption.lockedUseUnlock':
     'Bu PDF parola korumalı, bu yüzden burada açılamıyor. Önce “PDF kilidini aç” aracıyla kilidini kaldırın, sonra yeniden deneyin.',
+  'destination.webUpload2mbA4':
+    'Web yüklemesi — 2 MB altı, A4',
+  'destination.email10mb':
+    'E-posta eki — 10 MB altı',
+  'destination.email25mb':
+    'E-posta eki — 25 MB altı',
+  'destination.meets':
+    '“{name}” koşullarını karşılıyor',
+  'destination.doesNotMeet':
+    '“{name}” koşullarını karşılamıyor',
+  'destination.none':
+    'Hedef yok',
+  'destination.saveCurrent':
+    'Bu ayarları hedef olarak kaydet…',
+  'destination.namePlaceholder':
+    'örn. Konsolosluk vize başvurusu',
+  'destination.nameLabel':
+    'Hedef adı',
+  'destination.forget':
+    '“{name}” hedefini unut',
+  'destination.label':
+    'Bunu ne için hazırlıyorsunuz',
+  'destination.underSize':
+    '{size} altında',
+  'destination.maxPages':
+    'En fazla {count} sayfa',
+  'destination.notChecked':
+    'denetlenmedi',
   'save.failedReadOnly':
     '“{name}” salt okunur, bu yüzden içine hiçbir şey yazılmadı. Değişiklikleriniz duruyor — dosyanın iznini değiştirip yeniden deneyin ya da Farklı kaydet… ile bir kopya yazın.',
   'save.failedGone':

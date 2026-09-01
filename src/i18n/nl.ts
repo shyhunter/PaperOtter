@@ -69,6 +69,34 @@ export const nl: Dictionary = {
   'save.showInFinder': 'Tonen in Finder', 'save.success': 'Bestand opgeslagen',
   'pdfEncryption.lockedUseUnlock':
     'Deze PDF is met een wachtwoord beveiligd en kan hier niet worden geopend. Ontgrendel hem eerst met het hulpmiddel ‘PDF ontgrendelen’ en probeer het opnieuw.',
+  'destination.webUpload2mbA4':
+    'Webupload — onder 2 MB, A4',
+  'destination.email10mb':
+    'E-mailbijlage — onder 10 MB',
+  'destination.email25mb':
+    'E-mailbijlage — onder 25 MB',
+  'destination.meets':
+    'Voldoet aan ‘{name}’',
+  'destination.doesNotMeet':
+    'Voldoet niet aan ‘{name}’',
+  'destination.none':
+    'Geen bestemming',
+  'destination.saveCurrent':
+    'Deze instellingen als bestemming opslaan…',
+  'destination.namePlaceholder':
+    'bijv. visum consulaat',
+  'destination.nameLabel':
+    'Naam van de bestemming',
+  'destination.forget':
+    '‘{name}’ vergeten',
+  'destination.label':
+    'U bereidt dit voor',
+  'destination.underSize':
+    'Onder {size}',
+  'destination.maxPages':
+    'Hoogstens {count} pagina’s',
+  'destination.notChecked':
+    'niet gecontroleerd',
   'save.failedReadOnly':
     '‘{name}’ is alleen-lezen, er is niets naartoe geschreven. Uw wijzigingen zijn er nog — wijzig de rechten van het bestand en probeer het opnieuw, of gebruik Opslaan als… om een kopie te schrijven.',
   'save.failedGone':

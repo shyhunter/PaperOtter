@@ -121,6 +121,34 @@ export const fr: Dictionary = {
   'save.success': 'Fichier enregistré',
   'pdfEncryption.lockedUseUnlock':
     'Ce PDF est protégé par un mot de passe et ne peut pas être ouvert ici. Déverrouillez-le d’abord avec l’outil « Déverrouiller le PDF », puis réessayez.',
+  'destination.webUpload2mbA4':
+    'Envoi web — moins de 2 Mo, A4',
+  'destination.email10mb':
+    'Pièce jointe — moins de 10 Mo',
+  'destination.email25mb':
+    'Pièce jointe — moins de 25 Mo',
+  'destination.meets':
+    'Conforme à « {name} »',
+  'destination.doesNotMeet':
+    'Non conforme à « {name} »',
+  'destination.none':
+    'Aucune destination',
+  'destination.saveCurrent':
+    'Enregistrer ces réglages comme destination…',
+  'destination.namePlaceholder':
+    'ex. visa consulat',
+  'destination.nameLabel':
+    'Nom de la destination',
+  'destination.forget':
+    'Oublier « {name} »',
+  'destination.label':
+    'Vous préparez ceci pour',
+  'destination.underSize':
+    'Moins de {size}',
+  'destination.maxPages':
+    '{count} pages au maximum',
+  'destination.notChecked':
+    'non vérifié',
   'save.failedReadOnly':
     '« {name} » est en lecture seule ; rien n’y a été écrit. Vos modifications sont toujours là — changez les autorisations du fichier et réessayez, ou utilisez Enregistrer sous… pour écrire une copie.',
   'save.failedGone':
