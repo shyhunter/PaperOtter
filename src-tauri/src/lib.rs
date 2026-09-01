@@ -498,8 +498,14 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+/// Encode an image, off the UI thread.
+///
+/// A synchronous #[tauri::command] runs on the main thread, so the window stops
+/// responding for as long as the encode takes. JPEG and WebP were quick enough
+/// to hide that; PNG is lossless, so a photo that arrived as a multi-megabyte
+/// JPEG has to be stored pixel for pixel and the app visibly hung.
 #[tauri::command]
-fn process_image(
+async fn process_image(
     source_path: String,
     quality: u8,
     output_format: String,
@@ -508,16 +514,20 @@ fn process_image(
     resize_exact: bool,
 ) -> Result<Response, String> {
     validate_source_path(&source_path)?;
-    let source_bytes = std::fs::read(&source_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-    let output_buf = encode_image(
-        &source_bytes,
-        quality,
-        &output_format,
-        resize_width,
-        resize_height,
-        resize_exact,
-    )?;
+    let output_buf = tauri::async_runtime::spawn_blocking(move || {
+        let source_bytes = std::fs::read(&source_path)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
+        encode_image(
+            &source_bytes,
+            quality,
+            &output_format,
+            resize_width,
+            resize_height,
+            resize_exact,
+        )
+    })
+    .await
+    .map_err(|e| format!("Image processing could not be started: {e}"))??;
     Ok(Response::new(output_buf))
 }
 
@@ -2280,6 +2290,45 @@ pub fn run_with_file(open_file: Option<String>) {
 
 #[cfg(test)]
 mod tests {
+
+    // ─── commands must not encode on the UI thread ────────────────────────────
+
+    /// [IMG-THREAD-01] A synchronous #[tauri::command] runs on the main thread,
+    /// so the window stops responding for as long as it takes.
+    ///
+    /// Reported from a real build: converting a JPEG to PNG made the app go
+    /// "not responding" until the encode finished. PNG is lossless, so a photo
+    /// that arrived as a 2.4 MB JPEG has to be stored pixel for pixel and takes
+    /// far longer than the JPEG and WebP paths that hid this.
+    ///
+    /// Reading the source is the only way to assert this: whether a command
+    /// blocks the event loop is a property of how it is declared, and a test
+    /// that called the function directly would pass either way.
+    #[test]
+    fn image_encoding_never_blocks_the_event_loop() {
+        let src = include_str!("lib.rs");
+
+        for name in ["process_image"] {
+            let at = src
+                .find(&format!("fn {name}("))
+                .unwrap_or_else(|| panic!("{name} is gone -- update this test"));
+            let decl_start = src[..at].rfind("#[tauri::command]").expect("not a command");
+            let decl = &src[decl_start..at];
+
+            assert!(
+                decl.contains("async"),
+                "{name} is a synchronous command, so it encodes on the main thread \
+                 and the window freezes until it finishes"
+            );
+
+            let body_end = src[at..].find("\n}\n").map(|e| at + e).unwrap_or(src.len());
+            assert!(
+                src[at..body_end].contains("spawn_blocking"),
+                "{name} is async but still does its CPU work on the async runtime \
+                 thread; hand it to spawn_blocking"
+            );
+        }
+    }
 
     // ─── system_info ──────────────────────────────────────────────────────────
 

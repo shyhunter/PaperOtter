@@ -240,4 +240,31 @@ describe('Suite 08b — Convert Image', () => {
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('button', { name: /select image/i })).toBeInTheDocument();
   });
+  // CI-08 ─────────────────────────────────────────────────────────────────────
+  it('CI-08 — PNG output keeps a control, shown as a compression level', async () => {
+    // Reported from a real build: the slider that is there for JPEG and WebP
+    // vanishes for PNG. Convert Image hid it whenever the output was PNG, so
+    // the quality still went to the encoder -- silently fixed at the default --
+    // with nothing on screen to move it. Compress Image already shows the same
+    // number as "Compression: N/9"; Convert simply never learned to.
+    const { user } = await navigateToTool(/^Convert Image/);
+    await selectImageFile(user, '/test/photo.jpg');
+    await screen.findByRole('button', { name: /convert to png/i }, { timeout: 2000 });
+
+    expect(
+      screen.getByRole('slider'),
+      'PNG output lost the control that JPEG and WebP have',
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Compression: \d\/9/)).toBeInTheDocument();
+  });
+
+  // CI-09 ─────────────────────────────────────────────────────────────────────
+  it('CI-09 — JPEG output still reads as a percentage, not a level', async () => {
+    const { user } = await navigateToTool(/^Convert Image/);
+    await selectImageFile(user, '/test/photo.png');
+    await screen.findByRole('button', { name: /convert to jpe?g/i }, { timeout: 2000 });
+
+    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.queryByText(/Compression: \d\/9/)).not.toBeInTheDocument();
+  });
 });
