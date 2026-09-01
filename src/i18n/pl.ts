@@ -98,13 +98,15 @@ export const pl: Dictionary = {
   'destination.saveCurrent':
     'Zapisz te ustawienia jako miejsce docelowe…',
   'destination.namePlaceholder':
-    'np. wiza konsulat',
+    'Nadaj nazwę do użycia później',
   'destination.nameLabel':
     'Nazwa miejsca docelowego',
   'destination.forget':
     'Zapomnij „{name}”',
   'destination.label':
     'Przygotowujesz to do',
+  'destination.emptyHint':
+    'Ustaw opcje poniżej, a potem zapisz je pod nazwą, aby użyć ich później — i sprawdzać względem nich kolejne dokumenty.',
   'destination.underSize':
     'Poniżej {size}',
   'destination.maxPages':

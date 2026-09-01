@@ -14,6 +14,7 @@
 // the ones who read the form.
 import type { PdfPagePreset } from '@/types/file';
 import { formatBytes } from '@/lib/pdfUtils';
+import { formatNumber } from '@/i18n';
 import { offersKbUnit, type SizeUnit } from '@/lib/compressTargetSize';
 import { t } from '@/i18n';
 
@@ -68,8 +69,6 @@ export interface CheckableResult {
   outputPageDimensions: { widthPt: number; heightPt: number } | null;
 }
 
-const MB = 1024 * 1024;
-
 /** Page sizes in PDF points, as pdf-lib's `PageSizes` defines them. */
 const PAGE_POINTS: Record<Exclude<PdfPagePreset, 'custom'>, [number, number]> = {
   A4: [595.28, 841.89],
@@ -108,6 +107,23 @@ function describePage(dims: { widthPt: number; heightPt: number }): string {
   return `${mm(dims.widthPt)} × ${mm(dims.heightPt)} mm`;
 }
 
+
+/**
+ * A size limit, as a round number rather than a measurement.
+ *
+ * `formatBytes` is right for a size that was *measured* — the two decimals in
+ * "8.26 MB" carry information about a real file. A limit is a round number
+ * somebody wrote on a form, and rendering it as "2.00 MB" makes the app look
+ * like it is guessing at a threshold it was handed exactly.
+ */
+function formatLimit(bytes: number): string {
+  const [value, suffix] = bytes >= 1024 * 1024
+    ? [bytes / (1024 * 1024), 'MB']
+    : [bytes / 1024, 'KB'];
+  // Up to one decimal, and none at all when the limit is whole.
+  return `${formatNumber(value, { maximumFractionDigits: 1 })} ${suffix}`;
+}
+
 /**
  * Check a finished result against what a destination asks for.
  *
@@ -124,7 +140,7 @@ export function checkDestination(
   if (requirement.maxBytes !== undefined) {
     constraints.push({
       kind: 'size',
-      label: t('destination.underSize', { size: formatBytes(requirement.maxBytes) }),
+      label: t('destination.underSize', { size: formatLimit(requirement.maxBytes) }),
       actual: formatBytes(result.outputSizeBytes),
       status: result.outputSizeBytes <= requirement.maxBytes ? 'met' : 'unmet',
     });
@@ -132,10 +148,14 @@ export function checkDestination(
 
   if (requirement.pageSize !== undefined) {
     const dims = result.outputPageDimensions;
+    const got = dims ? describePage(dims) : t('destination.notChecked');
     constraints.push({
       kind: 'pageSize',
       label: requirement.pageSize,
-      actual: dims ? describePage(dims) : t('destination.notChecked'),
+      // Nothing to add when the measurement *is* the requirement: the row would
+      // read "A4  A4", and the tick already says it matched. The value is kept
+      // for the one case where it carries something -- a page that is not A4.
+      actual: got === requirement.pageSize ? '' : got,
       status: dims === null ? 'unknown' : matchesPageSize(dims, requirement.pageSize) ? 'met' : 'unmet',
     });
   }
@@ -158,17 +178,20 @@ export function checkDestination(
 }
 
 /**
- * The ones we can state as fact.
+ * Ships empty, by decision (2026-09-01).
  *
- * Mail servers publish their attachment limits and they are stable; "under
- * 2 MB, A4" is the shape almost every government upload form takes and claims
- * nothing about which one. Anything more specific belongs to the user.
+ * The first version carried three "safe" generic ones -- an email attachment
+ * limit, "under 2 MB, A4" -- and that was inconsistent with the reason
+ * institutional presets were refused in the first place. Naming a consulate
+ * claims to know its rules; naming a web upload limit claims to know which
+ * portal *this* user is fighting. Both are the app guessing at a use case it
+ * cannot see, and one is only quieter about it.
+ *
+ * Everyone's requirement comes from a form only they have read. They save their
+ * own and name it themselves, which is the one version of this that cannot be
+ * wrong about somebody.
  */
-export const BUILT_IN_DESTINATIONS: DestinationRequirement[] = [
-  { id: 'upload-2mb-a4', nameKey: 'destination.webUpload2mbA4', maxBytes: 2 * MB, pageSize: 'A4' },
-  { id: 'email-10mb', nameKey: 'destination.email10mb', maxBytes: 10 * MB },
-  { id: 'email-25mb', nameKey: 'destination.email25mb', maxBytes: 25 * MB },
-];
+export const BUILT_IN_DESTINATIONS: DestinationRequirement[] = [];
 
 /** What to show for a destination, built-in or the user's own. */
 export function destinationName(d: DestinationRequirement): string {

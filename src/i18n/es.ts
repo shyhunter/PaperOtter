@@ -127,13 +127,15 @@ export const es: Dictionary = {
   'destination.saveCurrent':
     'Guardar estos ajustes como destino…',
   'destination.namePlaceholder':
-    'p. ej. visado del consulado',
+    'Póngale un nombre para usarlo después',
   'destination.nameLabel':
     'Nombre del destino',
   'destination.forget':
     'Olvidar «{name}»',
   'destination.label':
     'Está preparando esto para',
+  'destination.emptyHint':
+    'Configure las opciones de abajo y guárdelas con un nombre para reutilizarlas más adelante, y para comprobar futuros documentos.',
   'destination.underSize':
     'Menos de {size}',
   'destination.maxPages':

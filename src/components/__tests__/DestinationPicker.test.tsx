@@ -82,3 +82,36 @@ describe('DestinationPicker', () => {
     expect(onSaveCurrent).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('with nothing saved yet', () => {
+  it('[DEST-PICK-07] explains what saving is for instead of showing an empty row', async () => {
+    // The built-in list ships empty by decision, so this is the first-run state
+    // for everyone. A bare "No destination" pill with nothing beside it does not
+    // say what the feature is, and there is no example to show without inventing
+    // somebody's use case -- which is the thing that was removed.
+    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
+
+    expect(screen.getByTestId('destination-empty')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save these settings/i })).toBeInTheDocument();
+  });
+
+  it('[DEST-PICK-08] the name field suggests nothing about the use case', async () => {
+    // The placeholder read "e.g. Turkish consulate visa". Removing the built-in
+    // presets because they assume a use case, while leaving an example that
+    // assumes one, would have kept the same mistake in a smaller font.
+    const user = userEvent.setup();
+    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /save these settings/i }));
+    const field = screen.getByLabelText(/name/i) as HTMLInputElement;
+
+    expect(field.placeholder).not.toMatch(/e\.g\.|consulate|visa|passport|university/i);
+    expect(field.placeholder.length, 'it still has to say what to type').toBeGreaterThan(0);
+  });
+
+  it('[DEST-PICK-09] the row of choices is hidden entirely when there is nothing to choose', () => {
+    // "No destination" is only a meaningful choice when there is another one.
+    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /no destination/i })).toBeNull();
+  });
+});

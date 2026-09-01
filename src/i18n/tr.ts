@@ -134,13 +134,15 @@ export const tr: Dictionary = {
   'destination.saveCurrent':
     'Bu ayarları hedef olarak kaydet…',
   'destination.namePlaceholder':
-    'örn. Konsolosluk vize başvurusu',
+    'Sonra kullanmak için bir ad verin',
   'destination.nameLabel':
     'Hedef adı',
   'destination.forget':
     '“{name}” hedefini unut',
   'destination.label':
     'Bunu ne için hazırlıyorsunuz',
+  'destination.emptyHint':
+    'Aşağıdaki seçenekleri ayarlayın, sonra bir adla kaydedin; daha sonra yeniden kullanmak ve belgeleri buna göre denetlemek için.',
   'destination.underSize':
     '{size} altında',
   'destination.maxPages':
