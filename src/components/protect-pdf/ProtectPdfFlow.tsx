@@ -80,8 +80,25 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
+  // Checked when the button is pressed, not on every keystroke. Validating as
+  // the user types accuses a correct confirmation of being wrong for as long as
+  // it is being entered — the message is on screen from the first character to
+  // the last, and only disappears at the moment it stops being needed.
+  const [showMismatch, setShowMismatch] = useState(false);
+
+  // Both fields filled is what makes the form submittable; whether they agree is
+  // what the button reports. Gating the button on agreement, as this used to,
+  // means the check can never run: the only control that could report the
+  // problem is disabled by the problem.
+  const canSubmit = password.length > 0 && confirmPassword.length > 0;
+
   const handleProtect = useCallback(async () => {
-    if (!filePath || !passwordsMatch) return;
+    if (!filePath || !canSubmit) return;
+    if (!passwordsMatch) {
+      setShowMismatch(true);
+      return;
+    }
+    setShowMismatch(false);
     setIsProcessing(true);
     setProcessError(null);
     try {
@@ -98,7 +115,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [filePath, password, passwordsMatch, goToStep]);
+  }, [filePath, password, passwordsMatch, canSubmit, goToStep]);
 
   const buildSaveName = (sourceFileName: string): string => {
     const base = sourceFileName.replace(/\.pdf$/i, '');
@@ -164,7 +181,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       id="protect-password"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); setShowMismatch(false); }}
                       disabled={isProcessing}
                       placeholder={t('protectPdf.enterPassword')}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
@@ -191,7 +208,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       id="protect-confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => { setConfirmPassword(e.target.value); setShowMismatch(false); }}
                       disabled={isProcessing}
                       placeholder={t('protectPdf.confirmPassword')}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 pe-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
@@ -205,7 +222,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  {confirmPassword.length > 0 && !passwordsMatch && (
+                  {showMismatch && (
                     <p className="text-xs text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
                   )}
                 </div>
@@ -239,7 +256,7 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                 <Button
                   size="sm"
                   onClick={handleProtect}
-                  disabled={isProcessing || !passwordsMatch}
+                  disabled={isProcessing || !canSubmit}
                   className="flex-1"
                 >
                   {isProcessing ? (

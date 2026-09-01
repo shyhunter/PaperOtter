@@ -105,7 +105,7 @@ describe('Suite 06a — Protect PDF', () => {
   });
 
   // PP-04 ─────────────────────────────────────────────────────────────────────
-  it('PP-04 — Protect PDF button is disabled until both passwords match', async () => {
+  it('PP-04 — Protect PDF button is disabled until both fields are filled', async () => {
     const { user } = await navigateToTool(/protect pdf/i);
     await selectPdfFile(user, '/test/report.pdf');
     await screen.findByText('Set Password', {}, { timeout: 2000 });
@@ -114,7 +114,8 @@ describe('Suite 06a — Protect PDF', () => {
     const protectBtn = screen.getByRole('button', { name: /protect pdf/i });
     expect(protectBtn).toBeDisabled();
 
-    // Enter password only — still disabled (confirm doesn't match)
+    // Enter password only — still disabled: the confirmation is empty, which is
+    // not a mismatch to report, it is an unfinished form.
     await user.type(screen.getByLabelText('Password'), 'secret123');
     expect(protectBtn).toBeDisabled();
   });
@@ -159,7 +160,22 @@ describe('Suite 06a — Protect PDF', () => {
   });
 
   // PP-08 ─────────────────────────────────────────────────────────────────────
-  it('PP-08 — mismatched passwords show a validation error message', async () => {
+  it('PP-08 — a half-typed confirmation is not called wrong', async () => {
+    // Reported from a real Linux build: "Passwords do not match" appeared on the
+    // first keystroke of the confirmation and stayed until the last one. Every
+    // correct entry was accused of being wrong while it was being made.
+    const { user } = await navigateToTool(/protect pdf/i);
+    await selectPdfFile(user, '/test/report.pdf');
+    await screen.findByText('Set Password', {}, { timeout: 2000 });
+
+    await user.type(screen.getByLabelText('Password'), 'secret123');
+    await user.type(screen.getByLabelText('Confirm password'), 'secret');
+
+    expect(screen.queryByText(/passwords do not match/i)).not.toBeInTheDocument();
+  });
+
+  // PP-09 ─────────────────────────────────────────────────────────────────────
+  it('PP-09 — clicking Protect with a real mismatch reports it and does not encrypt', async () => {
     const { user } = await navigateToTool(/protect pdf/i);
     await selectPdfFile(user, '/test/report.pdf');
     await screen.findByText('Set Password', {}, { timeout: 2000 });
@@ -167,7 +183,46 @@ describe('Suite 06a — Protect PDF', () => {
     await user.type(screen.getByLabelText('Password'), 'secret123');
     await user.type(screen.getByLabelText('Confirm password'), 'different');
 
+    // The button has to be reachable, or "check on click" can never happen:
+    // it used to be disabled by the very condition it needed to report.
+    const protectBtn = screen.getByRole('button', { name: /protect pdf/i });
+    expect(protectBtn).not.toBeDisabled();
+
+    // The invoke mock is shared across this suite and its calls accumulate, so
+    // "was not called" only means anything from a cleared baseline.
+    vi.mocked(invoke).mockClear();
+    await user.click(protectBtn);
+
     expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+    expect(vi.mocked(invoke)).not.toHaveBeenCalled();
+    expect(screen.getByText('Set Password')).toBeInTheDocument();
+  });
+
+  // PP-10 ─────────────────────────────────────────────────────────────────────
+  it('PP-10 — correcting the confirmation clears the complaint', async () => {
+    // Otherwise the message outlives the mistake and the user is told they are
+    // wrong while they are typing the fix.
+    const { user } = await navigateToTool(/protect pdf/i);
+    await selectPdfFile(user, '/test/report.pdf');
+    await screen.findByText('Set Password', {}, { timeout: 2000 });
+
+    await user.type(screen.getByLabelText('Password'), 'secret123');
+    await user.type(screen.getByLabelText('Confirm password'), 'different');
+    await user.click(screen.getByRole('button', { name: /protect pdf/i }));
+    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Confirm password'), 'x');
+    expect(screen.queryByText(/passwords do not match/i)).not.toBeInTheDocument();
+  });
+
+  // PP-11 ─────────────────────────────────────────────────────────────────────
+  it('PP-11 — an empty confirmation still cannot be submitted', async () => {
+    const { user } = await navigateToTool(/protect pdf/i);
+    await selectPdfFile(user, '/test/report.pdf');
+    await screen.findByText('Set Password', {}, { timeout: 2000 });
+
+    await user.type(screen.getByLabelText('Password'), 'secret123');
+    expect(screen.getByRole('button', { name: /protect pdf/i })).toBeDisabled();
   });
 });
 

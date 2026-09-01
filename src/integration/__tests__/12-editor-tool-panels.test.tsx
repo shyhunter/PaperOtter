@@ -1415,7 +1415,10 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-10: Protect Panel
-  it('TP-10 — Protect panel shows password fields and mismatch warning', async () => {
+  it('TP-10 — Protect panel checks the confirmation on Apply, not on every keystroke', async () => {
+    // This panel is separate code from ProtectPdfFlow and had the same defect:
+    // "Passwords do not match" from the first character of the confirmation to
+    // the last, so a correct entry was called wrong while it was being typed.
     const user = userEvent.setup();
 
     render(
@@ -1430,17 +1433,23 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Password')).toBeInTheDocument();
     expect(screen.getByText('Confirm password')).toBeInTheDocument();
 
-    // Type mismatched passwords
     const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
     await user.type(pwField, 'secret123');
     await user.type(confirmField, 'different');
 
-    // Mismatch warning should appear
+    // Silent while typing.
+    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
+
+    // And reachable: gating Apply on the match meant the check could never run.
+    const applyBtn = screen.getByText('Apply').closest('button')!;
+    expect(applyBtn).not.toBeDisabled();
+
+    await user.click(applyBtn);
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
 
-    // Apply should be disabled with mismatched passwords
-    const applyBtn = screen.getByText('Apply');
-    expect(applyBtn.closest('button')).toBeDisabled();
+    // Editing again takes the complaint back down.
+    await user.type(confirmField, 'x');
+    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
   });
 
   it('TP-10b — Protect panel enables Apply when passwords match', async () => {

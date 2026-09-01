@@ -2027,8 +2027,22 @@ function ProtectPanel() {
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
+  // Reported on a real build: the mismatch warning appeared on the first
+  // keystroke of the confirmation and only cleared on the last, so a correct
+  // entry was called wrong for the whole time it was being typed. Checked on
+  // the button now — which also means the button cannot be gated on the same
+  // condition, or the only control that could report the problem is disabled
+  // by it. Same fix as ProtectPdfFlow; these two panels are separate code.
+  const [showMismatch, setShowMismatch] = useState(false);
+  const canSubmit = password.length > 0 && confirmPassword.length > 0;
+
   const handleApply = useCallback(async () => {
-    if (!passwordsMatch) return;
+    if (!canSubmit) return;
+    if (!passwordsMatch) {
+      setShowMismatch(true);
+      return;
+    }
+    setShowMismatch(false);
     setIsProcessing(true);
     try {
       const { tempDir, join } = await import('@tauri-apps/api/path');
@@ -2054,7 +2068,7 @@ function ProtectPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, password, passwordsMatch, apply]);
+  }, [state.pdfBytes, password, passwordsMatch, canSubmit, apply]);
 
   return (
     <div className="space-y-3">
@@ -2066,7 +2080,7 @@ function ProtectPanel() {
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); setShowMismatch(false); }}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
             placeholder={t('protectPdf.enterPassword')}
           />
@@ -2076,12 +2090,12 @@ function ProtectPanel() {
           <input
             type="password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => { setConfirmPassword(e.target.value); setShowMismatch(false); }}
             className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
             placeholder={t('protectPdf.confirmPassword')}
           />
         </div>
-        {password && confirmPassword && !passwordsMatch && (
+        {showMismatch && (
           <p className="text-[10px] text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
         )}
       </div>
@@ -2101,7 +2115,7 @@ function ProtectPanel() {
 
       <ApplyButton
         onClick={handleApply}
-        disabled={!passwordsMatch}
+        disabled={!canSubmit}
         isApplying={isApplying || isProcessing}
         success={success}
         error={error}
