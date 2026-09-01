@@ -361,13 +361,35 @@ export function Dashboard() {
           // staging, so the tool that picks this up on the next click can read it.
           void grantDroppedPaths(validPaths);
 
-          setStagedFile({
-            path: filePath,
-            name: filePath.split('/').pop() ?? filePath,
-            format,
-            // Everything else dropped of the same type, so choosing a tool starts
-            // a batch rather than silently discarding eleven of twelve scans.
-            alsoDropped: validPaths.slice(1).filter((p) => detectFormat(p) === format),
+          // Everything of the same type in this drop. Mixed drops keep only the
+          // first file's type: there is no single operation for a PDF and a JPEG.
+          const dropped = validPaths.filter((p) => detectFormat(p) === format);
+
+          setStagedFile((previous) => {
+            // A second drop of the same type *adds* to the first. Reported from
+            // a real build: drag one file in, drag another, and only the second
+            // survived -- the first was gone with nothing said about it. That is
+            // exactly the gathering flow Merge and JPG-to-PDF exist for, since
+            // files come from different folders and a multi-select is fiddly, so
+            // people drop them one at a time.
+            if (previous && previous.format === format) {
+              const already = [previous.path, ...(previous.alsoDropped ?? [])];
+              // Deduplicated: the same file twice is silent in a merge and
+              // almost never meant. Repeating a document deliberately is what
+              // the merge step itself is for.
+              const added = dropped.filter((p) => !already.includes(p));
+              return { ...previous, alsoDropped: [...already.slice(1), ...added] };
+            }
+
+            // A different type replaces, and the banner visibly changes to say
+            // so. Nothing can be combined across types, so carrying the old set
+            // forward would only produce a batch with no single operation.
+            return {
+              path: dropped[0],
+              name: dropped[0].split('/').pop() ?? dropped[0],
+              format,
+              alsoDropped: dropped.slice(1),
+            };
           });
         } else {
           setIsDragOver(false);
