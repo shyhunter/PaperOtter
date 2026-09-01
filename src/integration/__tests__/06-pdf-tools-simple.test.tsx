@@ -8,11 +8,14 @@
  *
  * NOTE: No fake timers — user-event v14 deadlocks with fake timers active.
  */
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
+import { readFile } from '@tauri-apps/plugin-fs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import App from '@/App';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -256,6 +259,36 @@ describe('Suite 06a — Protect PDF', () => {
 // Unlock PDF
 // ══════════════════════════════════════════════════════════════════════════════
 describe('Suite 06b — Unlock PDF', () => {
+  // Unlock now refuses a PDF that has no password on it, so these must hand it
+  // one that does. locked.pdf is a real encrypted file (Ghostscript, RC4-128,
+  // user password `papercut`), not the shared %PDF- stub -- which is exactly
+  // the unprotected input the tool is now right to turn away.
+  const LOCKED = new Uint8Array(
+    readFileSync(join(process.cwd(), 'test-fixtures', 'locked.pdf')),
+  );
+  beforeEach(() => {
+    vi.mocked(readFile).mockResolvedValue(LOCKED);
+  });
+
+  // UP-08 ─────────────────────────────────────────────────────────────────────
+  it('UP-08 — refuses a PDF that has no password on it', async () => {
+    // Reported from a real build: Unlock accepted any PDF at all. An
+    // unprotected document went straight to the password screen, where nothing
+    // typed could be right, and unlocking it produced a second identical file.
+    const { user } = await navigateToTool(/unlock pdf/i);
+    vi.mocked(readFile).mockResolvedValue(
+      new Uint8Array(readFileSync(join(process.cwd(), 'test-fixtures', 'warnock_camelot.pdf'))),
+    );
+
+    await selectPdfFile(user, '/test/plain.pdf');
+
+    await screen.findByText(/not password-protected/i, {}, { timeout: 2000 });
+    expect(
+      screen.queryByText('Enter the PDF password'),
+      'an unprotected PDF must not reach the password screen',
+    ).not.toBeInTheDocument();
+  });
+
   // UP-01 ─────────────────────────────────────────────────────────────────────
   it('UP-01 — navigating to Unlock PDF shows landing page', async () => {
     await navigateToTool(/unlock pdf/i);

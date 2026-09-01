@@ -77,6 +77,9 @@ vi.mock('@/lib/pdfMerge', () => ({
 vi.mock('pdf-lib', () => ({
   PDFDocument: {
     load: vi.fn().mockResolvedValue({
+      // Unlock asks this before it will take a file. The suite drops a document
+      // that is meant to be accepted, so it has to read as protected.
+      isEncrypted: true,
       getPageCount: vi.fn().mockReturnValue(3),
       // Crop reads the first page's size to seed its crop box.
       getPage: vi.fn().mockReturnValue({ getSize: () => ({ width: 595, height: 842 }) }),

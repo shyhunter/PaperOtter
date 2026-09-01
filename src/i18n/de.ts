@@ -333,6 +333,7 @@ export const de: Dictionary = {
   'unlockPdf.pdfPassword': 'PDF-Passwort',
   'unlockPdf.removePasswordProtectionFromA': 'Den Passwortschutz eines PDFs entfernen.',
   'unlockPdf.unlockPdf': 'PDF entsperren',
+  'unlockPdf.notProtected': 'Diese PDF ist nicht passwortgeschützt, es gibt also nichts zu entsperren.',
   'unlockPdf.unlocking': 'Wird entsperrt…',
 
   // ── Watermark ─────────────────────────────────────────────────────────────

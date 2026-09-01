@@ -221,6 +221,7 @@ export const nl: Dictionary = {
   'unlockPdf.enterPassword': 'Wachtwoord invoeren', 'unlockPdf.enterThePdfPassword': 'Voer het PDF-wachtwoord in',
   'unlockPdf.pdfPassword': 'PDF-wachtwoord',
   'unlockPdf.removePasswordProtectionFromA': 'Verwijder de wachtwoordbeveiliging van een PDF.',
+  'unlockPdf.notProtected': 'Deze pdf is niet met een wachtwoord beveiligd, dus er valt niets te ontgrendelen.',
   'unlockPdf.unlockPdf': 'PDF ontgrendelen', 'unlockPdf.unlocking': 'Ontgrendelen…',
   'unlockPdfFlow.incorrectPasswordOrThePdf': 'Onjuist wachtwoord, of de PDF is niet met een wachtwoord beveiligd.',
   'unlockPdfFlow.wrongPassword': 'Onjuist wachtwoord',
