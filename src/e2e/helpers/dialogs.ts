@@ -29,3 +29,31 @@ export async function mockSaveDialog(browser: Browser, outputPath: string): Prom
     (window as any).__E2E_SAVE_PATH__ = path;
   }, outputPath);
 }
+
+/**
+ * Arm SaveStep's capture hook, so the next Save as… records what it *would*
+ * have asked the OS for instead of opening a dialog.
+ *
+ * This is the only way to assert `defaultPath` — the folder and name the dialog
+ * is told to open with. A native dialog cannot be inspected, and bypassing it
+ * with `__E2E_SAVE_PATH__` writes the file but discards the very thing being
+ * checked.
+ */
+export async function captureSaveOptions(browser: Browser): Promise<void> {
+  await browser.execute(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__E2E_CAPTURE_SAVE_OPTS__ = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).__E2E_SAVE_OPTS__;
+  });
+}
+
+/** Read back what the save dialog was asked for. Null until a save is attempted. */
+export async function readCapturedSaveOptions(
+  browser: Browser,
+): Promise<{ defaultPath?: string; filters?: unknown } | null> {
+  return browser.execute(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (window as any).__E2E_SAVE_OPTS__?.options ?? null;
+  });
+}

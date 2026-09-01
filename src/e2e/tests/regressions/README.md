@@ -38,6 +38,20 @@ Individual specs skip themselves where the *behaviour* is platform-bound rather
 than the driver: file modes are POSIX, OCR is macOS-only. A skip is recorded
 with its reason rather than passing quietly.
 
+## What is here
+
+| Spec | Covers | Depends on |
+|---|---|---|
+| `save-file-permissions` | FP-01 – FP-05: read-only, deleted, renamed, retry, and Save as… offered instead of a doomed retry | merged |
+| `locked-pdf` | LOCK-01 across eleven tools, plus Unlock still accepting one | merged |
+| `save-location` | Save as… opens the source folder | **PR #96** |
+| `destinations` | Empty first run, saving a setting, and the verdict on a real result | **PR #94** |
+| `dashboard-drops` | A second drop joins the first, dedupe, type replacement | merged |
+
+Two specs assert behaviour that is not on `main` yet. They will fail until those
+PRs land, which is the correct failure — the spec is right and the code is not
+there.
+
 ## What these cannot cover
 
 Worth stating so a green run is not read as more than it is:

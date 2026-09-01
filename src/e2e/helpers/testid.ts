@@ -177,3 +177,36 @@ export async function waitForStep(browser: Browser, stepIndex: number): Promise<
     { timeout: 15000, interval: 200, timeoutMsg: `Timed out waiting for step ${stepIndex}` },
   );
 }
+
+// ─── Text helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Whether the page currently shows the given text.
+ *
+ * Used where the assertion really is "the user was told", and where marking up
+ * every component that could say it would mean a testid in eleven flows for one
+ * sentence. The message is the user-visible thing; asserting on it directly is
+ * closer to the claim than asserting on a container that holds it.
+ */
+export async function pageContainsText(browser: Browser, needle: RegExp | string): Promise<boolean> {
+  const source = typeof needle === 'string' ? needle : needle.source;
+  const flags = typeof needle === 'string' ? 'i' : needle.flags;
+  return browser.execute(
+    (s: string, f: string) => new RegExp(s, f).test(document.body.innerText ?? ''),
+    source,
+    flags,
+  );
+}
+
+/** Wait until the page shows the given text. */
+export async function waitForText(
+  browser: Browser,
+  needle: RegExp | string,
+  opts: { timeout?: number } = {},
+): Promise<void> {
+  await browser.waitUntil(() => pageContainsText(browser, needle), {
+    timeout: opts.timeout ?? 15000,
+    interval: 200,
+    timeoutMsg: `Timed out waiting for text matching ${needle}`,
+  });
+}
