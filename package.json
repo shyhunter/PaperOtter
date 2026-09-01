@@ -17,7 +17,10 @@
     "test:e2e:pdf": "wdio run src/e2e/wdio.conf.ts --suite pdf",
     "test:e2e:image": "wdio run src/e2e/wdio.conf.ts --suite image",
     "version:check": "node scripts/check-version.mjs",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:regressions": "npm run e2e:build && npm run pretest:e2e && wdio run src/e2e/wdio.conf.ts --suite regressions",
+    "test:regressions:only": "wdio run src/e2e/wdio.conf.ts --suite regressions",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

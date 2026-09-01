@@ -152,7 +152,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
               <RotateCcw className="w-4 h-4 me-1" />
               {t('rotate.allLeft')}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleRotateAll('cw')}>
+            <Button variant="outline" size="sm" data-testid="rotate-all-right-btn" onClick={() => handleRotateAll('cw')}>
               <RotateCw className="w-4 h-4 me-1" />
               {t('rotate.allRight')}
             </Button>
@@ -230,7 +230,7 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
           {t('common.back')}
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}>
+        <Button size="sm" data-testid="apply-rotation-btn" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 me-2 animate-spin" />
