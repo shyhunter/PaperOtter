@@ -121,30 +121,30 @@ describe('checkDestination', () => {
 });
 
 describe('the built-in destinations', () => {
-  it('[DEST-09] make no claim about any institution', () => {
-    // A preset named for a consulate or a university is a factual claim about
-    // someone else's bureaucracy: those limits vary by office, change without
-    // notice, and being confidently wrong gets an application rejected and
-    // blamed on the app. Built-ins stay generic; the user names their own.
+  it('[DEST-09] there are none, because every one of them would be a guess', () => {
+    // Ships empty by decision, 2026-09-01. The first version carried three
+    // "safe" generic ones -- an email limit, "under 2 MB, A4" -- and that was
+    // inconsistent with the reason institutional presets were refused. Naming a
+    // consulate claims to know its rules; naming a web upload limit claims to
+    // know which portal this user is fighting. Both are the app guessing at a
+    // use case it cannot see.
+    //
+    // Everyone's requirement comes from a form only they have read, so they
+    // save their own and name it themselves.
+    expect(BUILT_IN_DESTINATIONS).toEqual([]);
+  });
+
+  it('[DEST-09a] and if one is ever added, it may not name an institution', () => {
+    // Kept as a live guard rather than deleted with the list: the reasoning
+    // above is what has to survive, not the empty array.
     const institutional = /visa|consulate|embassy|schengen|ucas|passport|university|gov|tax|hmrc|irs/i;
     for (const d of BUILT_IN_DESTINATIONS) {
       const name = destinationName(d);
       expect(name, 'a built-in must render a name, not an empty string').not.toBe('');
       expect(institutional.test(name), `"${name}" claims to know an institution's rules`).toBe(false);
-    }
-  });
-
-  it('[DEST-10] each states at least one constraint it can check', () => {
-    expect(BUILT_IN_DESTINATIONS.length).toBeGreaterThan(0);
-    for (const d of BUILT_IN_DESTINATIONS) {
       const stated = [d.maxBytes, d.pageSize, d.maxPages].filter((v) => v !== undefined);
-      expect(stated.length, `"${d.name}" checks nothing`).toBeGreaterThan(0);
+      expect(stated.length, `"${name}" checks nothing`).toBeGreaterThan(0);
     }
-  });
-
-  it('[DEST-11] have stable unique ids, since a saved choice refers to one', () => {
-    const ids = BUILT_IN_DESTINATIONS.map((d) => d.id);
-    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

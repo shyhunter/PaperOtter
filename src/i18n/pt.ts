@@ -86,13 +86,15 @@ export const pt: Dictionary = {
   'destination.saveCurrent':
     'Guardar estas definições como destino…',
   'destination.namePlaceholder':
-    'ex. visto do consulado',
+    'Dê-lhe um nome para usar mais tarde',
   'destination.nameLabel':
     'Nome do destino',
   'destination.forget':
     'Esquecer “{name}”',
   'destination.label':
     'Está a preparar isto para',
+  'destination.emptyHint':
+    'Defina as opções abaixo e guarde-as com um nome para reutilizar mais tarde — e para verificar documentos futuros.',
   'destination.underSize':
     'Menos de {size}',
   'destination.maxPages':

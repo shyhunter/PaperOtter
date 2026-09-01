@@ -110,13 +110,15 @@ export const de: Dictionary = {
   'destination.saveCurrent':
     'Diese Einstellungen als Ziel speichern…',
   'destination.namePlaceholder':
-    'z. B. Visum türkisches Konsulat',
+    'Vergeben Sie einen Namen für später',
   'destination.nameLabel':
     'Name des Ziels',
   'destination.forget':
     '„{name}“ vergessen',
   'destination.label':
     'Wofür ist das bestimmt',
+  'destination.emptyHint':
+    'Stellen Sie die Optionen unten ein und speichern Sie sie unter einem Namen, um sie später wiederzuverwenden — und künftige Dokumente daran zu prüfen.',
   'destination.underSize':
     'Unter {size}',
   'destination.maxPages':

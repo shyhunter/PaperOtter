@@ -90,13 +90,15 @@ export const en = {
   'destination.saveCurrent':
     'Save these settings as a destination…',
   'destination.namePlaceholder':
-    'e.g. Turkish consulate visa',
+    'Give it a name to use later',
   'destination.nameLabel':
     'Destination name',
   'destination.forget':
     'Forget “{name}”',
   'destination.label':
     'Preparing this for',
+  'destination.emptyHint':
+    'Set the options below, then save them under a name to reuse later — and to check future documents against.',
   'destination.underSize':
     'Under {size}',
   'destination.maxPages':

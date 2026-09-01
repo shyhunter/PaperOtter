@@ -1,9 +1,13 @@
 // Choosing what the document is being prepared *for*.
 //
-// The built-ins are deliberately generic. Naming a preset for a consulate or a
-// university would be this app claiming to know someone else's rules — those
-// vary by office and change without notice, and being confidently wrong gets an
-// application rejected and blamed on us. The user read the form; they name it.
+// There are no built-in choices, by decision. Naming a preset for a consulate
+// claims to know its rules; naming one "web upload — under 2 MB" claims to know
+// which portal this user is fighting. Both are the app guessing at a use case it
+// cannot see, and one is only quieter about it.
+//
+// Everyone's requirement comes from a form only they have read. So the list
+// starts empty and fills with what they save, under names they choose — and
+// nothing here suggests what those names should be, down to the placeholder.
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,9 +40,21 @@ export function DestinationPicker({
 
   return (
     <div className="space-y-2" data-testid="destination-picker">
+      {/* Nothing saved yet -- which is everyone's first run, now the built-in
+          list ships empty. A bare row of one pill does not say what this is
+          for, and there is no example to give without inventing somebody's use
+          case, which is the thing that was removed. */}
+      {destinations.length === 0 && (
+        <p data-testid="destination-empty" className="text-xs text-muted-foreground">
+          {t('destination.emptyHint')}
+        </p>
+      )}
+
+      {destinations.length > 0 && (
       <div className="flex flex-wrap gap-1.5">
         {/* "No destination" is a real choice, not the absence of one: most
-            documents are not going to a portal, and the controls stay manual. */}
+            documents are not going to a portal, and the controls stay manual.
+            It is only meaningful once there is another choice beside it. */}
         <button
           type="button"
           onClick={() => onSelect(null)}
@@ -81,6 +97,7 @@ export function DestinationPicker({
           </span>
         ))}
       </div>
+      )}
 
       {onSaveCurrent && (naming ? (
         <div className="flex items-center gap-2">

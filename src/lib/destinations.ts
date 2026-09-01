@@ -69,8 +69,6 @@ export interface CheckableResult {
   outputPageDimensions: { widthPt: number; heightPt: number } | null;
 }
 
-const MB = 1024 * 1024;
-
 /** Page sizes in PDF points, as pdf-lib's `PageSizes` defines them. */
 const PAGE_POINTS: Record<Exclude<PdfPagePreset, 'custom'>, [number, number]> = {
   A4: [595.28, 841.89],
@@ -180,17 +178,20 @@ export function checkDestination(
 }
 
 /**
- * The ones we can state as fact.
+ * Ships empty, by decision (2026-09-01).
  *
- * Mail servers publish their attachment limits and they are stable; "under
- * 2 MB, A4" is the shape almost every government upload form takes and claims
- * nothing about which one. Anything more specific belongs to the user.
+ * The first version carried three "safe" generic ones -- an email attachment
+ * limit, "under 2 MB, A4" -- and that was inconsistent with the reason
+ * institutional presets were refused in the first place. Naming a consulate
+ * claims to know its rules; naming a web upload limit claims to know which
+ * portal *this* user is fighting. Both are the app guessing at a use case it
+ * cannot see, and one is only quieter about it.
+ *
+ * Everyone's requirement comes from a form only they have read. They save their
+ * own and name it themselves, which is the one version of this that cannot be
+ * wrong about somebody.
  */
-export const BUILT_IN_DESTINATIONS: DestinationRequirement[] = [
-  { id: 'upload-2mb-a4', nameKey: 'destination.webUpload2mbA4', maxBytes: 2 * MB, pageSize: 'A4' },
-  { id: 'email-10mb', nameKey: 'destination.email10mb', maxBytes: 10 * MB },
-  { id: 'email-25mb', nameKey: 'destination.email25mb', maxBytes: 25 * MB },
-];
+export const BUILT_IN_DESTINATIONS: DestinationRequirement[] = [];
 
 /** What to show for a destination, built-in or the user's own. */
 export function destinationName(d: DestinationRequirement): string {
