@@ -285,6 +285,8 @@ export const tr: Dictionary = {
   'unlockPdf.enterPassword': 'Parola gir', 'unlockPdf.enterThePdfPassword': 'PDF parolasını girin',
   'unlockPdf.pdfPassword': 'PDF parolası',
   'unlockPdf.removePasswordProtectionFromA': 'Bir PDF’in parola korumasını kaldırın.',
+  'protectPdf.alreadyProtected': 'Bu PDF zaten parola korumalı. Önce kilidini açın, sonra yeniden koruyun.',
+  'unlockPdf.notProtected': 'Bu PDF parola korumalı değil, dolayısıyla kilidi açılacak bir şey yok.',
   'unlockPdf.unlockPdf': 'PDF kilidini aç', 'unlockPdf.unlocking': 'Kilit açılıyor…',
   'unlockPdfFlow.incorrectPasswordOrThePdf': 'Parola yanlış veya PDF parola korumalı değil.',
   'unlockPdfFlow.wrongPassword': 'Yanlış parola',

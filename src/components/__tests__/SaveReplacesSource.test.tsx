@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { useState } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -180,5 +181,97 @@ describe('Every flow that can replace its source does', () => {
     for (const use of singleFile) {
       expect(/sourcePath=\{/.test(use), 'a Compress save step still writes a copy').toBe(true);
     }
+  });
+});
+
+describe('Save Again repeats the choice that was made', () => {
+  it('[SAVE-02h] after Save as..., Save Again writes the copy, not the original', async () => {
+    // Reported from a real build, in Compress PDF: pick Save as..., name the
+    // copy, and it is written correctly. Then press Save Again on the
+    // confirmation card and it silently overwrites the ORIGINAL instead.
+    //
+    // The card's button was wired `canReplace ? handleReplace : handleSave`,
+    // which asks whether replacing is *possible* and never whether the user
+    // had just declined it. Choosing Save as... is exactly the choice to leave
+    // the original alone, so repeating the save must not touch it.
+    const user = userEvent.setup();
+    const COPY = '/docs/report-compressed.pdf';
+    vi.mocked(saveDialog).mockResolvedValue(COPY);
+
+    // The parent owns savedFilePath and sets it when a save completes, which is
+    // what brings up the confirmation card carrying Save Again.
+    function Harness() {
+      const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
+      return (
+        <SaveStep
+          processedBytes={BYTES}
+          sourceFileName="report.pdf"
+          sourcePath="/docs/report.pdf"
+          savedFilePath={savedFilePath}
+          onDismissSaveConfirmation={() => setSavedFilePath(null)}
+          onSaveComplete={(p) => setSavedFilePath(p)}
+          onCancel={vi.fn()}
+          onBack={vi.fn()}
+        />
+      );
+    }
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: /save as/i }));
+    await waitFor(() => {
+      expect(vi.mocked(writeFile)).toHaveBeenCalledWith(COPY, BYTES);
+    });
+
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(saveDialog).mockClear();
+
+    await user.click(await screen.findByRole('button', { name: /save again/i }));
+
+    await waitFor(() => {
+      expect(vi.mocked(writeFile)).toHaveBeenCalled();
+    });
+    const targets = vi.mocked(writeFile).mock.calls.map((c) => c[0]);
+    expect(targets, 'Save Again overwrote the original the user chose to keep')
+      .not.toContain('/docs/report.pdf');
+    expect(vi.mocked(saveDialog), 'it should ask again where to put the copy')
+      .toHaveBeenCalled();
+  });
+
+  it('[SAVE-02i] after a plain Save, Save Again still replaces the original', async () => {
+    // The mirror of SAVE-02h: repeating must not turn a replace into a copy
+    // either. Both directions have to keep the choice that was made.
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
+      return (
+        <SaveStep
+          processedBytes={BYTES}
+          sourceFileName="report.pdf"
+          sourcePath="/docs/report.pdf"
+          savedFilePath={savedFilePath}
+          onDismissSaveConfirmation={() => setSavedFilePath(null)}
+          onSaveComplete={(p) => setSavedFilePath(p)}
+          onCancel={vi.fn()}
+          onBack={vi.fn()}
+        />
+      );
+    }
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: /^save$/i }));
+    await waitFor(() => {
+      expect(vi.mocked(writeFile)).toHaveBeenCalledWith('/docs/report.pdf', BYTES);
+    });
+
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(saveDialog).mockClear();
+
+    await user.click(await screen.findByRole('button', { name: /save again/i }));
+
+    await waitFor(() => {
+      expect(vi.mocked(writeFile)).toHaveBeenCalledWith('/docs/report.pdf', BYTES);
+    });
+    expect(vi.mocked(saveDialog), 'a repeated Save must not start asking').not.toHaveBeenCalled();
   });
 });

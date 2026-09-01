@@ -467,9 +467,15 @@ function SingleFileSave({
 }: SaveStepProps) {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
+  // Which of the two the user actually chose, so Save Again and Try Again
+  // repeat that instead of falling back to whichever is possible. Choosing
+  // Save as... is the choice to leave the original alone; repeating must not
+  // quietly overwrite it.
+  const [lastMode, setLastMode] = useState<'replace' | 'saveAs' | null>(null);
 
   // ── Single-file save (original behavior) ─────────────────────────────────
   const handleSave = useCallback(async () => {
+    setLastMode('saveAs');
     setSaveState('dialog-open');
     setError(null);
 
@@ -554,6 +560,7 @@ function SingleFileSave({
 
   const handleReplace = useCallback(async () => {
     if (!sourcePath) return;
+    setLastMode('replace');
     setSaveState('writing');
     setError(null);
     try {
@@ -566,6 +573,10 @@ function SingleFileSave({
       setSaveState('error');
     }
   }, [sourcePath, processedBytes, onSaveComplete]);
+
+  // Default to Save as... when nothing has been chosen yet: opening a dialog is
+  // the recoverable direction, overwriting is not.
+  const repeatSave = lastMode === 'replace' ? handleReplace : handleSave;
 
   // Auto-trigger the save dialog on mount (only if no savedFilePath yet).
   //
@@ -592,7 +603,7 @@ function SingleFileSave({
             {t('common.back')}
           </Button>
           <div className="flex-1" />
-          <Button size="sm" onClick={canReplace ? handleReplace : handleSave}>
+          <Button size="sm" onClick={repeatSave}>
             {t('save.again')}
           </Button>
         </div>
@@ -628,7 +639,7 @@ function SingleFileSave({
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
               {t('save.backToCompare')}
             </Button>
-            <Button size="sm" onClick={canReplace ? handleReplace : handleSave} className="flex-1">
+            <Button size="sm" onClick={repeatSave} className="flex-1">
               {t('common.tryAgain')}
             </Button>
           </div>

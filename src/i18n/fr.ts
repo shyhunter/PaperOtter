@@ -349,6 +349,8 @@ export const fr: Dictionary = {
   'unlockPdf.pdfPassword': 'Mot de passe du PDF',
   'unlockPdf.removePasswordProtectionFromA': 'Retirer la protection par mot de passe d’un PDF.',
   'unlockPdf.unlockPdf': 'Déverrouiller le PDF',
+  'protectPdf.alreadyProtected': 'Ce PDF est déjà protégé par mot de passe. Déverrouillez-le d\'abord, puis protégez-le à nouveau.',
+  'unlockPdf.notProtected': 'Ce PDF n\'est pas protégé par mot de passe, il n\'y a donc rien à déverrouiller.',
   'unlockPdf.unlocking': 'Déverrouillage…',
   'unlockPdfFlow.incorrectPasswordOrThePdf':
     'Mot de passe incorrect, ou le PDF n’est pas protégé par mot de passe.',

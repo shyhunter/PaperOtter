@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
+import { pngLevelForQuality } from '@/lib/pngCompression';
 import { t } from '@/i18n';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
@@ -196,7 +197,15 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     }
   }, [filePath, quality, outputFormat, goToStep]);
 
-  const showQualitySlider = outputFormat !== 'png';
+  // PNG used to hide this entirely, which did not stop the quality reaching the
+  // encoder -- it just fixed it at the default with nothing on screen to move
+  // it. PNG is lossless, so the number is a compression level, not a percentage
+  // of image quality; the level comes from the mapping the Rust encoder uses so
+  // the label cannot name one the file was not encoded at.
+  const qualityLabel =
+    outputFormat === 'png'
+      ? t('imageConfigureStep.compressionOutOfNine', { level: pngLevelForQuality(quality) })
+      : `${quality}%`;
   const sourceFormatLabel = filePath ? detectSourceFormatLabel(filePath) : '';
 
   return (
@@ -276,12 +285,14 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   ))}
                 </div>
 
-                {/* Quality slider (JPG/WebP only) */}
-                {showQualitySlider && (
+                {/* Quality for JPEG/WebP, compression level for PNG */}
+                {(
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">{t('common.quality')}</label>
-                      <span className="text-xs font-medium text-foreground tabular-nums">{quality}%</span>
+                      <label className="text-xs text-muted-foreground">
+                        {outputFormat === 'png' ? t('imageConfigureStep.compression') : t('common.quality')}
+                      </label>
+                      <span className="text-xs font-medium text-foreground tabular-nums">{qualityLabel}</span>
                     </div>
                     <input
                       type="range"

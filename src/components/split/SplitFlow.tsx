@@ -90,6 +90,9 @@ export function SplitFlow({ onStepChange }: SplitFlowProps) {
             onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
+              // Clear the result first: the auto-advance above re-fires on the next
+              // render while it is still set, which would bounce us back to Save.
+              splitProcessor.reset();
               goToStep(1);
             }}
           />

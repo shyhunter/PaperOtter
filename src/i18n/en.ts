@@ -332,6 +332,8 @@ export const en = {
   'unlockPdf.pdfPassword': 'PDF Password',
   'unlockPdf.removePasswordProtectionFromA': 'Remove password protection from a PDF file.',
   'unlockPdf.unlockPdf': 'Unlock PDF',
+  'protectPdf.alreadyProtected': 'This PDF is already password-protected. Unlock it first, then protect it again.',
+  'unlockPdf.notProtected': 'This PDF is not password-protected, so there is nothing to unlock.',
   'unlockPdf.unlocking': 'Unlocking…',
 
   // ── watermark ───────────────────────────────────────────────────────────
