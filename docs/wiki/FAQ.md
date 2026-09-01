@@ -32,6 +32,22 @@ Papercut normally.
 Same reason, for Windows code-signing -- it's on the roadmap, not a sign of
 a problem with the installer. Click **More info**, then **Run anyway**.
 
+### I forgot the password on a PDF I protected. Can you recover it?
+
+No. Nobody can.
+
+Papercut never stores the password you set — it is used to encrypt the file and
+then discarded, and it is never written to disk or sent anywhere. There is no
+reset, no recovery code and no back door, and this is a property of PDF
+encryption rather than something Papercut chose.
+
+If you still have the unprotected original, use that — Papercut always writes
+the protected document as a new file and never encrypts your original in place.
+If you do not, the file cannot be opened again.
+
+[Unlock PDF](Unlock-PDF) removes protection from a PDF **you already know the
+password for**. It cannot open a file whose password is lost.
+
 ### Do I need to install anything else?
 
 Ghostscript ships bundled with Papercut. LibreOffice and Calibre are

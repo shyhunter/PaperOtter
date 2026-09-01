@@ -496,7 +496,7 @@ export function Dashboard() {
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                 {t('dashboard.myFavorites')}
               </h2>
-              <p className="text-[10px] text-muted-foreground/50">
+              <p className="text-xs text-muted-foreground">
                 {t('dashboard.clickToReorderMiddotClick')}
               </p>
             </div>

@@ -313,6 +313,34 @@ fn decode_input_image(bytes: &[u8]) -> Result<image::DynamicImage, String> {
     image::load_from_memory(bytes).map_err(|e| format!("Failed to decode image: {}", e))
 }
 
+/// Maps the 1..=100 quality slider to a PNG deflate level, inverted: quality 100
+/// is level 0 (fastest, largest file), quality 1 is level 9 (smallest, slowest).
+///
+/// PNG is lossless, so this changes encode effort and file size, never pixels.
+///
+/// Mirrors `pngLevelForQuality` in `src/lib/pngCompression.ts`, which draws the
+/// slider's label. The two used to be separate formulas — TypeScript rounded and
+/// Rust truncated — so the label named a level the encoder was not using. The
+/// divisor is 99 rather than 100 because the slider's range is 1..=100, which is
+/// 99 steps; dividing by 100 made level 9 unreachable from the bottom of the
+/// slider, so "maximum compression" silently was not.
+fn png_compression_level(quality: u8) -> u8 {
+    let level = ((100.0 - quality as f32) * 9.0 / 99.0).round();
+    level.clamp(0.0, 9.0) as u8
+}
+
+/// The encoder setting for a slider position.
+///
+/// `Level(n)` for 1..=9 rather than the three named constants this used to pick
+/// between: `Fast`/`Default`/`Best` meant levels 1..8 all encoded identically,
+/// so ten labelled steps produced two distinct files.
+fn png_compression_for_quality(quality: u8) -> CompressionType {
+    match png_compression_level(quality) {
+        0 => CompressionType::Fast,
+        n => CompressionType::Level(n),
+    }
+}
+
 /// Core image processing logic — no Tauri dependency.
 /// Called by the `process_image` command and directly by unit tests.
 fn encode_image(
@@ -357,18 +385,9 @@ fn encode_image(
                 .map_err(|e| format!("JPEG encoding failed: {}", e))?;
         }
         "png" => {
-            // Map quality (1-100) inversely to PNG compression level (0-9):
-            //   quality 100 → level 0 (fast deflate, largest file)
-            //   quality 1   → level 9 (best deflate, smallest file)
-            let level = ((100u32 - quality as u32) * 9 / 100) as u8;
-            let compression = match level {
-                0 => CompressionType::Fast,
-                9 => CompressionType::Best,
-                _ => CompressionType::Default,
-            };
             let encoder = PngEncoder::new_with_quality(
                 Cursor::new(&mut output_buf),
-                compression,
+                png_compression_for_quality(quality),
                 image::codecs::png::FilterType::Adaptive,
             );
             img.write_with_encoder(encoder)
@@ -452,15 +471,9 @@ fn rotate_image(
                 .map_err(|e| format!("JPEG encoding failed: {}", e))?;
         }
         "png" => {
-            let level = ((100u32 - quality as u32) * 9 / 100) as u8;
-            let compression = match level {
-                0 => CompressionType::Fast,
-                9 => CompressionType::Best,
-                _ => CompressionType::Default,
-            };
             let encoder = PngEncoder::new_with_quality(
                 Cursor::new(&mut output_buf),
-                compression,
+                png_compression_for_quality(quality),
                 image::codecs::png::FilterType::Adaptive,
             );
             rotated.write_with_encoder(encoder)
@@ -614,6 +627,16 @@ fn cancel_processing(state: tauri::State<ProcessState>) {
     }
 }
 
+/// Ghostscript's pdfwrite defaults to `-dAutoRotatePages=/PageByPage`, which
+/// picks each page's orientation from the direction of its text and discards the
+/// incoming `/Rotate`. Every command here rewrites the whole document, so any
+/// rotation the user applied is silently re-decided unless this says otherwise.
+///
+/// Measured on gs 10.06.0 (the version both bundled sidecars are), on a rotated
+/// text page: the source rendered 421x298 landscape, the default came back
+/// 298x421 portrait, and `/None` came back 421x298 pixel-identical to the source.
+const GS_KEEP_PAGE_ROTATION: &str = "-dAutoRotatePages=/None";
+
 /// Compress a PDF using Ghostscript.
 /// preset: one of "screen" | "ebook" | "printer" | "prepress"
 /// Spawns GS as a child process, stores the child in ProcessState so it can be
@@ -642,6 +665,7 @@ fn build_compress_pdf_args(
 ) -> Vec<String> {
     let mut gs_args = vec![
         "-sDEVICE=pdfwrite".to_string(),
+        GS_KEEP_PAGE_ROTATION.to_string(),
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
         "-dQUIET".to_string(),
@@ -831,6 +855,7 @@ async fn protect_pdf(
 
     let (mut rx, _child) = spawn_gs(&app, vec![
         "-sDEVICE=pdfwrite".to_string(),
+        GS_KEEP_PAGE_ROTATION.to_string(),
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
         "-dQUIET".to_string(),
@@ -889,6 +914,7 @@ async fn unlock_pdf(
 
     let (mut rx, _child) = spawn_gs(&app, vec![
         "-sDEVICE=pdfwrite".to_string(),
+        GS_KEEP_PAGE_ROTATION.to_string(),
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
         "-dQUIET".to_string(),
@@ -969,6 +995,7 @@ async fn convert_pdfa(
 
     let (mut rx, _child) = spawn_gs(&app, vec![
         "-sDEVICE=pdfwrite".to_string(),
+        GS_KEEP_PAGE_ROTATION.to_string(),
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
         "-dQUIET".to_string(),
@@ -1030,6 +1057,7 @@ async fn repair_pdf(
 
     let (mut rx, _child) = spawn_gs(&app, vec![
         "-sDEVICE=pdfwrite".to_string(),
+        GS_KEEP_PAGE_ROTATION.to_string(),
         "-dNOPAUSE".to_string(),
         "-dBATCH".to_string(),
         "-dQUIET".to_string(),
@@ -2286,6 +2314,129 @@ mod tests {
     use image::codecs::jpeg::JpegEncoder;
     use image::codecs::png::{PngEncoder, CompressionType};
     use std::io::Cursor;
+
+
+    /// Reported from a real Linux build: rotate page 1 in the editor, then run
+    /// Compress, and the rotation is gone.
+    ///
+    /// Ghostscript's pdfwrite defaults to `-dAutoRotatePages=/PageByPage`, which
+    /// picks each page's orientation from its text direction and discards the
+    /// incoming `/Rotate`. Measured against gs 10.06.0 — the version both bundled
+    /// sidecars are — on a rotated text page:
+    ///
+    ///   source                        renders 421x298 (landscape, rotated)
+    ///   after gs, today's args        renders 298x421 (portrait, rotation undone)
+    ///   after gs, AutoRotatePages/None renders 421x298, pixel-identical to source
+    ///
+    /// It needs real text to misfire, which is why a synthetic fixture does not
+    /// reproduce it: with nothing to analyse, /PageByPage behaves like /None.
+    #[test]
+    fn compress_args_keep_the_page_rotation_the_user_chose() {
+        for preset in ["screen", "ebook", "printer", "prepress"] {
+            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf", true);
+            assert!(
+                args.iter().any(|a| a == "-dAutoRotatePages=/None"),
+                "preset {} would let Ghostscript re-decide page orientation",
+                preset
+            );
+        }
+    }
+
+    /// Every pdfwrite call rewrites the whole document, so every one of them
+    /// destroys rotation the same way — compress, protect, unlock, PDF/A and
+    /// repair alike. Nothing in the type system connects those five argument
+    /// lists, so this enumerates them from source in the shape of the
+    /// TypeScript guards: the next command anyone adds is covered without
+    /// anyone remembering this bug.
+    #[test]
+    fn every_pdfwrite_invocation_keeps_page_rotation() {
+        let source = include_str!("lib.rs");
+        // Only the production half: this test's own doc comment names the flag,
+        // and the fixtures below invoke pdfwrite themselves.
+        let production = &source[..source
+            .find("#[cfg(test)]")
+            .expect("lib.rs has a test module")];
+
+        let sites: Vec<usize> = production
+            .match_indices("-sDEVICE=pdfwrite")
+            .map(|(i, _)| i)
+            .collect();
+        assert!(
+            sites.len() >= 5,
+            "expected the five known pdfwrite commands, found {} — has this moved?",
+            sites.len()
+        );
+
+        for start in sites {
+            // Each argument list ends by naming its output file.
+            let end = production[start..]
+                .find("-sOutputFile")
+                .map(|o| start + o)
+                .unwrap_or(production.len());
+            let line = production[..start].matches('\n').count() + 1;
+            // Either spelling: the constant at the call site, or the literal
+            // it expands to. The invariant is the flag reaching Ghostscript.
+            let window = &production[start..end];
+            assert!(
+                window.contains("-dAutoRotatePages=/None") || window.contains("GS_KEEP_PAGE_ROTATION"),
+                "the pdfwrite call at lib.rs:{} lets Ghostscript re-decide page \
+                 orientation, which silently undoes a rotation the user applied",
+                line
+            );
+        }
+    }
+    /// IC-09: reported from a real Linux build — a 248 KB JPEG converted to PNG
+    /// gave 1.55 MB at "1/9" and 1.45 MB at "8/9". Two outcomes across a ten-step
+    /// control, because levels 1..8 all mapped to CompressionType::Default and
+    /// level 9 was never reachable at all.
+    #[test]
+    fn png_compression_level_reaches_both_ends_of_the_slider() {
+        assert_eq!(
+            super::png_compression_level(1),
+            9,
+            "the bottom of the slider must reach level 9"
+        );
+        assert_eq!(
+            super::png_compression_level(100),
+            0,
+            "the top of the slider must reach level 0"
+        );
+    }
+
+    #[test]
+    fn png_compression_level_covers_every_step() {
+        let mut seen = [false; 10];
+        for quality in 1..=100u8 {
+            seen[super::png_compression_level(quality) as usize] = true;
+        }
+        for (level, reached) in seen.iter().enumerate() {
+            assert!(reached, "level {} is unreachable from the slider", level);
+        }
+    }
+
+    #[test]
+    fn png_compression_uses_real_levels_not_three_named_constants() {
+        assert_eq!(super::png_compression_for_quality(1), CompressionType::Level(9));
+        assert_eq!(super::png_compression_for_quality(50), CompressionType::Level(5));
+        assert_eq!(super::png_compression_for_quality(100), CompressionType::Fast);
+    }
+
+    /// The slider's label is drawn by `pngLevelForQuality` in TypeScript while the
+    /// file is encoded here. Nothing in either language checks the other, so these
+    /// are the five slider positions where the previous two formulas disagreed —
+    /// if they drift apart again, the number shown is not the level used.
+    #[test]
+    fn png_compression_level_matches_the_typescript_label() {
+        for (quality, level) in [(6u8, 9u8), (17, 8), (28, 7), (39, 6), (50, 5)] {
+            assert_eq!(
+                super::png_compression_level(quality),
+                level,
+                "quality {} should map to level {}",
+                quality,
+                level
+            );
+        }
+    }
 
     // ─── Fixtures ─────────────────────────────────────────────────────────────
 
@@ -3660,3 +3811,4 @@ mod tests {
         }
     }
 }
+

@@ -15,7 +15,17 @@
   color-scheme: light;
   --radius: 0.625rem;
   /* shadcn/ui CSS vars will be populated by `npx shadcn init` */
-  --background: oklch(1 0 0);
+
+  /* The light page is off-white, not white, and the surfaces that sat just
+     under white moved down with it. A pure-white page was reported as too
+     bright to read against; leaving --muted/--secondary/--accent at 0.97 while
+     the page moved to 0.97 would have made them the same colour and erased
+     every hover state and filled row. --card stays at 1, so cards now lift off
+     the page instead of dissolving into it.
+     --muted-foreground is 0.48 rather than 0.556: on this background 0.556
+     measures 4.34:1, under the 4.5:1 WCAG AA asks for body text. 0.48 is
+     5.99:1. See UI-07. */
+  --background: oklch(0.97 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -23,15 +33,19 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.93 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --muted: oklch(0.93 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --accent: oklch(0.93 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  /* 0.88, not the 0.922 it was: the muted surfaces moved to 0.93, and a border
+     at 0.922 sitting on one of them is a difference of 0.008 -- no outline at
+     all. This keeps roughly the separation the border had from the old white
+     page. See UI-07e. */
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.88 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

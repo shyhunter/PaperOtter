@@ -8,6 +8,12 @@
 2. **Password** — enter the current password.
 3. **Save** — write the unlocked (unencrypted) PDF to disk.
 
+## If you have forgotten the password
+
+Unlock PDF cannot help you. It needs the correct password, and there is no way
+to recover or reset a lost one — not in Papercut and not anywhere else. See
+[Protect PDF](Protect-PDF) for what this means and how to avoid it.
+
 ## How it works
 
 Papercut runs the file through [Ghostscript](https://ghostscript.com/), supplying your password (`-sPDFPassword=...`) and re-writing the PDF without encryption. This isn't a password-cracking tool — you need to already know the correct password for the file.

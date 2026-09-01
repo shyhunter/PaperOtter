@@ -16,6 +16,7 @@ import App from '@/App';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { processImage } from '@/lib/imageProcessor';
 import { FAKE_IMAGE_RESULT, FAKE_IMAGE_RESULT_RESIZED } from '@/integration/fixtures';
+import { pngLevelForQuality } from '@/lib/pngCompression';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 vi.mock('@tauri-apps/api/webview', () => ({
@@ -140,6 +141,52 @@ describe('Suite 04 — Image Configure Step', () => {
     await navigateToImageConfigure(user, 'jpg');
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByText('Open file')).toBeInTheDocument();
+  });
+
+  // IC-09 ────────────────────────────────────────────────────────────────────
+  it('IC-09 — the PNG label is the level the encoder is actually given', async () => {
+    // Reported from a real Linux build: 1/9 gave 1.55 MB and 8/9 gave 1.45 MB,
+    // because levels 1-8 all collapsed onto one encoder setting and level 9 was
+    // unreachable.
+    //
+    // Asserting the ends of the label is worthless here — the old formula
+    // already printed 9/9 at quality 1 while handing the encoder an 8. These
+    // are the five slider positions where the old label and the shared mapping
+    // disagree, so this fails unless the component reads pngLevelForQuality.
+    const { user } = await setup();
+    await navigateToImageConfigure(user, 'png');
+
+    for (const [quality, level] of [[6, 9], [17, 8], [28, 7], [39, 6], [50, 5]] as const) {
+      fireEvent.change(screen.getByRole('slider'), { target: { value: String(quality) } });
+      expect(pngLevelForQuality(quality), 'the fixture drifted from the mapping').toBe(level);
+      expect(screen.getByText(`Compression: ${level}/9`)).toBeInTheDocument();
+    }
+  });
+
+  // IC-10 ────────────────────────────────────────────────────────────────────
+  it('IC-10 — converting a JPEG to PNG warns that the file will grow', async () => {
+    // A 248 KB JPEG became a 1.55 MB PNG and the app reported "542% larger"
+    // only afterwards. That growth is correct — PNG is lossless, so it stores
+    // the JPEG's artefacts pixel for pixel — but a tool called Compress Image
+    // has to say so before spending the encode, not after.
+    const { user } = await setup();
+    await navigateToImageConfigure(user, 'jpg');
+
+    expect(screen.queryByTestId('lossless-growth-warning')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('format-option-png'));
+    expect(screen.getByTestId('lossless-growth-warning')).toBeInTheDocument();
+
+    // Not a warning when the source was already lossless: PNG to PNG is fine.
+    await user.click(screen.getByTestId('format-option-jpeg'));
+    expect(screen.queryByTestId('lossless-growth-warning')).not.toBeInTheDocument();
+  });
+
+  // IC-11 ────────────────────────────────────────────────────────────────────
+  it('IC-11 — a PNG source converting to PNG is not warned about', async () => {
+    const { user } = await setup();
+    await navigateToImageConfigure(user, 'png');
+    expect(screen.queryByTestId('lossless-growth-warning')).not.toBeInTheDocument();
   });
 });
 

@@ -17,6 +17,7 @@ import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
+import { save as dialogSave } from '@tauri-apps/plugin-dialog';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 import { colorPresets } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
@@ -94,6 +95,14 @@ vi.mock('@/lib/pdfPageNumbers', () => ({
   addPageNumbers: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
   addPageNumbersSinglePage: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
 }));
+
+// The harness's document is a four-byte stand-in, not a parseable PDF, so the
+// real edit-flattening pass cannot run against it. What matters here is which
+// bytes reach the encrypter and where the result is written.
+vi.mock('@/lib/pdfEditor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/pdfEditor')>();
+  return { ...actual, applyAllEdits: vi.fn(async (bytes: Uint8Array) => bytes) };
+});
 
 vi.mock('@/lib/pdfTextSearch', () => ({ findTextMatches: vi.fn().mockResolvedValue([]) }));
 
@@ -882,6 +891,33 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(ctx!.state.watermarkDraft).toBeNull());
   });
 
+  it('TP-03e — Watermark rotation is arrow buttons, not a typed number', async () => {
+    // It was `<input type="number">`, which meant typing to change an angle and
+    // no feedback until you looked at the preview. The Rotate panel next door
+    // already turned by clicking, so the two disagreed about the same gesture.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Watermark'));
+
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-45°$/);
+
+    // Font size is still a spinbutton; rotation must no longer be one.
+    expect(screen.getAllByRole('spinbutton')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /turn right/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^0°$/);
+
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-90°$/);
+  });
+
   // The editor has its own Sign and Redact panels, separate code from the
   // standalone flows of the same name. Both kept private colour lists.
   it('TP-13 — the Sign panel offers the shared colours', async () => {
@@ -1388,7 +1424,10 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-10: Protect Panel
-  it('TP-10 — Protect panel shows password fields and mismatch warning', async () => {
+  it('TP-10 — Protect panel checks the confirmation on Apply, not on every keystroke', async () => {
+    // This panel is separate code from ProtectPdfFlow and had the same defect:
+    // "Passwords do not match" from the first character of the confirmation to
+    // the last, so a correct entry was called wrong while it was being typed.
     const user = userEvent.setup();
 
     render(
@@ -1403,20 +1442,28 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Password')).toBeInTheDocument();
     expect(screen.getByText('Confirm password')).toBeInTheDocument();
 
-    // Type mismatched passwords
     const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
     await user.type(pwField, 'secret123');
     await user.type(confirmField, 'different');
 
-    // Mismatch warning should appear
+    // Silent while typing.
+    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('protect-ack'));
+
+    // And reachable: gating the button on the match meant the check could never run.
+    const applyBtn = screen.getByText(/save protected copy/i).closest('button')!;
+    expect(applyBtn).not.toBeDisabled();
+
+    await user.click(applyBtn);
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
 
-    // Apply should be disabled with mismatched passwords
-    const applyBtn = screen.getByText('Apply');
-    expect(applyBtn.closest('button')).toBeDisabled();
+    // Editing again takes the complaint back down.
+    await user.type(confirmField, 'x');
+    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
   });
 
-  it('TP-10b — Protect panel enables Apply when passwords match', async () => {
+  it('TP-10b — Protect panel enables the button once passwords match and the warning is accepted', async () => {
     const user = userEvent.setup();
 
     render(
@@ -1434,9 +1481,56 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // No mismatch warning
     expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
 
-    // Apply should be enabled
-    const applyBtn = screen.getByText('Apply');
-    expect(applyBtn.closest('button')).not.toBeDisabled();
+    // Matching is not sufficient: the password is unrecoverable, and the user
+    // has to have said they know that.
+    const applyBtn = () => screen.getByText(/save protected copy/i).closest('button')!;
+    expect(applyBtn()).toBeDisabled();
+
+    await user.click(screen.getByTestId('protect-ack'));
+    expect(applyBtn()).not.toBeDisabled();
+  });
+
+  it('TP-10d — protecting writes a separate file and never touches the open document', async () => {
+    // Encrypting in place destroyed the original. The editor's Save runs
+    // applyAllEdits -- pdf-lib load+save -- which cannot write encryption: it
+    // copies the encrypted streams and keeps /Encrypt, producing a file no
+    // reader can open, and then writes it over the path the document came from.
+    // Measured: Ghostscript reports "Couldn't initialise file" on such a file
+    // even given the right password.
+    const user = userEvent.setup();
+    let ctx: EditorCtx | null = null;
+
+    render(
+      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Protect PDF'));
+    const before = ctx!.state.pdfBytes;
+
+    const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
+    await user.type(pwField, 'secret123');
+    await user.type(confirmField, 'secret123');
+    await user.click(screen.getByTestId('protect-ack'));
+
+    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
+    vi.mocked(dialogSave).mockResolvedValueOnce('/tmp/report-protected.pdf');
+
+    await user.click(screen.getByText(/save protected copy/i));
+
+    await waitFor(() => {
+      expect(
+        vi.mocked(writeFile).mock.calls.some(([path]) => path === '/tmp/report-protected.pdf'),
+        'no protected copy was written',
+      ).toBe(true);
+    });
+
+    // The document in the editor is untouched, so Save cannot write encrypted
+    // bytes over the original.
+    expect(ctx!.state.pdfBytes).toBe(before);
+    expect(ctx!.state.isDirty).toBe(false);
   });
 
   // TP-11: Unlock Panel
