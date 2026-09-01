@@ -355,6 +355,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && resultBytes && (
           <SaveStep
+            originPath={filePath}
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName, outputFormat)}

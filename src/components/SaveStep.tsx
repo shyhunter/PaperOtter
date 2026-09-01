@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { plural, t } from '@/i18n';
-import { uniqueOutputPath } from '@/lib/outputPath';
+import { uniqueOutputPath, suggestedSavePath } from '@/lib/outputPath';
 import { toBytes } from '@/lib/zipOutputs';
 import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
@@ -33,6 +33,13 @@ export interface SaveStepProps {
   defaultSaveName?: string;
   /** Optional override for the OS file-type filter (replaces PDF Document filter) */
   saveFilters?: Array<{ name: string; extensions: string[] }>;
+  /**
+   * The file this flow opened, for a flow that cannot replace it — Convert
+   * changes the type, Merge and Split change the count. Only its folder is
+   * used, to start Save as… where the document came from. Flows that *can*
+   * replace need not pass it; `sourcePath` already says the same thing.
+   */
+  originPath?: string | null;
   /** Path of the saved file — when set, shows the confirmation card */
   savedFilePath?: string | null;
   /** Called to dismiss the save confirmation card */
@@ -465,6 +472,7 @@ function SingleFileSave({
   onCancel,
   onBack,
   sourcePath,
+  originPath,
 }: SaveStepProps) {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -494,7 +502,10 @@ function SingleFileSave({
       (window as any).__E2E_SAVE_OPTS__ = {
         options: {
           filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
-          defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
+          defaultPath: suggestedSavePath(
+            originPath ?? sourcePath,
+            defaultSaveName ?? buildDefaultSaveName(sourceFileName),
+          ),
         },
       };
       setSaveState('idle');
@@ -525,7 +536,13 @@ function SingleFileSave({
     try {
       savePath = await save({
         filters: saveFilters ?? [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
-        defaultPath: defaultSaveName ?? buildDefaultSaveName(sourceFileName),
+        // Where the document came from, not just what to call it. A bare name
+        // leaves the folder to the platform, which on Linux can be the process
+        // working directory -- inside the project, under `tauri dev`.
+        defaultPath: suggestedSavePath(
+          originPath ?? sourcePath,
+          defaultSaveName ?? buildDefaultSaveName(sourceFileName),
+        ),
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('saveStep.couldNotOpenSaveDialog');
@@ -554,7 +571,7 @@ function SingleFileSave({
       setError(message);
       setSaveState('error');
     }
-  }, [processedBytes, sourceFileName, defaultSaveName, saveFilters, onSaveComplete, onCancel]);
+  }, [processedBytes, sourceFileName, defaultSaveName, saveFilters, originPath, sourcePath, onSaveComplete, onCancel]);
 
   // Save means the same file, changed -- the meaning it has everywhere else on
   // a desktop, and the one the PDF editor already used. Every tool flow used to

@@ -591,6 +591,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && resultBytes && (
           <SaveStep
+            originPath={images[0]?.filePath ?? null}
             processedBytes={resultBytes}
             sourceFileName="images.pdf"
             defaultSaveName="images.pdf"

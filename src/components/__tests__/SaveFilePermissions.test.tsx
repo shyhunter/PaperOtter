@@ -139,3 +139,73 @@ describe('Save over the source file', () => {
     expect(screen.queryByText(/permission/i)).toBeNull();
   });
 });
+
+// ─── SAVE-DIR-07..09 — Save as… opens where the document came from ───────────
+describe('Where Save as… starts', () => {
+  it('[SAVE-DIR-07] suggests the folder the document was opened from', async () => {
+    // Before this, defaultPath was a bare filename and the dialog decided the
+    // folder for itself. On macOS that is the last-used one, which usually
+    // looks right; on Linux it can be the process working directory, which
+    // under `tauri dev` is inside the project.
+    vi.mocked(saveDialog).mockResolvedValueOnce(null);
+    render(
+      <SaveStep
+        processedBytes={BYTES}
+        sourceFileName="payslip.pdf"
+        sourcePath="/home/me/qa/payslip.pdf"
+        onSaveComplete={vi.fn()}
+        onCancel={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /save as/i }));
+
+    await waitFor(() => expect(vi.mocked(saveDialog)).toHaveBeenCalled());
+    const options = vi.mocked(saveDialog).mock.calls[0][0] as { defaultPath?: string };
+    expect(options.defaultPath).toBe('/home/me/qa/payslip-optimised.pdf');
+  });
+
+  it('[SAVE-DIR-08] a flow with no source path still suggests a name', async () => {
+    // Convert and merge change the type or the count, so they pass no source
+    // path. They keep the old behaviour rather than inventing a folder.
+    vi.mocked(saveDialog).mockResolvedValueOnce(null);
+    render(
+      <SaveStep
+        processedBytes={BYTES}
+        sourceFileName="report.pdf"
+        defaultSaveName="report-converted.docx"
+        onSaveComplete={vi.fn()}
+        onCancel={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(vi.mocked(saveDialog)).toHaveBeenCalled());
+    const options = vi.mocked(saveDialog).mock.calls[0][0] as { defaultPath?: string };
+    expect(options.defaultPath).toBe('report-converted.docx');
+  });
+
+  it('[SAVE-DIR-09] a flow that cannot replace still starts where the file came from', async () => {
+    // Convert changes the type and Merge changes the count, so neither can
+    // replace its source -- but both know where it was, and that is still where
+    // the copy belongs.
+    vi.mocked(saveDialog).mockResolvedValueOnce(null);
+    render(
+      <SaveStep
+        processedBytes={BYTES}
+        sourceFileName="report.pdf"
+        defaultSaveName="report.docx"
+        originPath="/home/me/qa/report.pdf"
+        onSaveComplete={vi.fn()}
+        onCancel={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(vi.mocked(saveDialog)).toHaveBeenCalled());
+    const options = vi.mocked(saveDialog).mock.calls[0][0] as { defaultPath?: string };
+    expect(options.defaultPath).toBe('/home/me/qa/report.docx');
+  });
+});

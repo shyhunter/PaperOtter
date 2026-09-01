@@ -155,6 +155,7 @@ export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
       {/* Step 3: Save */}
       {step === 3 && convertResult && (
         <SaveStep
+          originPath={filePath}
           processedBytes={convertResult.outputBytes}
           sourceFileName={fileName}
           defaultSaveName={buildSaveName(fileName, convertResult.outputFormat, convertResult.archive)}

@@ -215,6 +215,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
         {/* Step 2: Save */}
         {step === 2 && pdfBytes && (
           <SaveStep
+            originPath={filePath}
             processedBytes={pdfBytes}
             sourceFileName={fileName}
             defaultSaveName={fileName.replace(/\.pdf$/i, '') + '-edited.pdf'}
