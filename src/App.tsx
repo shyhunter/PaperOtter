@@ -867,6 +867,7 @@ function StandardToolFlow() {
           <SaveStep
             processedBytes={pdfProcessor.result.bytes}
             sourceFileName={fileEntry.name}
+            sourcePath={fileEntry.path}
             savedFilePath={savedFilePath}
             onDismissSaveConfirmation={() => setSavedFilePath(null)}
             onSaveComplete={(savedPath) => {
@@ -887,6 +888,13 @@ function StandardToolFlow() {
           <SaveStep
             processedBytes={imageProcessor.result.bytes}
             sourceFileName={fileEntry.name}
+            // Only when the format is unchanged: a PNG cannot replace a JPG,
+            // so converting still asks where to put the new file.
+            sourcePath={
+              detectImageFormat(fileEntry.name) === imageProcessor.result.outputFormat
+                ? fileEntry.path
+                : null
+            }
             defaultSaveName={buildImageSaveFileName(fileEntry.name, imageProcessor.result.outputFormat)}
             saveFilters={buildImageSaveFilters(imageProcessor.result.outputFormat)}
             savedFilePath={savedFilePath}

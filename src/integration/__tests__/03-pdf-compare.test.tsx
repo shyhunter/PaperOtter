@@ -154,7 +154,7 @@ describe('Suite 03 — PDF Compare Step', () => {
     await user.click(screen.getByRole('button', { name: /save/i }));
     // Save step auto-triggers the dialog (which never resolves per mock).
     // Verify that Compare step is gone and SaveStep's dialog-open state is shown.
-    await screen.findByText(/choose a save location/i, {}, { timeout: 2000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 2000 });
     expect(screen.queryByText('Before')).not.toBeInTheDocument();
   });
 });

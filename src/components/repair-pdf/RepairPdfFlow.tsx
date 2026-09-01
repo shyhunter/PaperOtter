@@ -235,6 +235,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
             </div>
 
             <SaveStep
+              sourcePath={filePath}
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}

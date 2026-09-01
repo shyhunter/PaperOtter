@@ -117,7 +117,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
     // Step 3: Save — dialog auto-triggers (never resolves per mock)
     await user.click(screen.getByRole('button', { name: /save/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 2000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 2000 });
     expect(screen.queryByText('Before')).not.toBeInTheDocument();
   });
 
@@ -141,7 +141,7 @@ describe('Suite 05 — End-to-End User Flows', () => {
 
     // Step 3: Save — dialog auto-triggers (never resolves per mock)
     await user.click(screen.getByRole('button', { name: /save/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 2000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 2000 });
     expect(screen.queryByText('Before')).not.toBeInTheDocument();
   });
 

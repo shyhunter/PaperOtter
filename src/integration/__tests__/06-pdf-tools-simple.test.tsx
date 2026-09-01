@@ -147,7 +147,7 @@ describe('Suite 06a — Protect PDF', () => {
     await user.click(screen.getByRole('button', { name: /protect pdf/i }));
 
     // SaveStep auto-triggers save dialog which never resolves → "Choose a save location…"
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // PP-07 ─────────────────────────────────────────────────────────────────────
@@ -301,7 +301,7 @@ describe('Suite 06b — Unlock PDF', () => {
     await user.type(screen.getByLabelText('PDF Password'), 'mypassword');
     await user.click(screen.getByRole('button', { name: /unlock pdf/i }));
 
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // UP-06 ─────────────────────────────────────────────────────────────────────
@@ -364,7 +364,7 @@ describe('Suite 06c — Repair PDF', () => {
     vi.mocked(invoke).mockResolvedValueOnce(FAKE_PDF_BYTES);
     await user.click(screen.getByRole('button', { name: /repair pdf/i }));
 
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // RP-05 ─────────────────────────────────────────────────────────────────────
@@ -440,7 +440,7 @@ describe('Suite 06d — PDF/A Convert', () => {
     vi.mocked(invoke).mockResolvedValueOnce(FAKE_PDF_BYTES);
     await user.click(screen.getByRole('button', { name: /^convert$/i }));
 
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // PA-06 ─────────────────────────────────────────────────────────────────────

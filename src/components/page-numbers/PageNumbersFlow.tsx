@@ -25,6 +25,8 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
   const [processedBytes, setProcessedBytes] = useState<Uint8Array | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [fileName, setFileName] = useState('');
+  // The file this flow opened. Save writes back to it; Save as... writes a copy.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -54,6 +56,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       setPdfBytes(bytes);
       setPageCount(pages);
       setFileName(name);
+      setSourcePath(filePath);
       goToStep(1);
     } catch (err) {
       setLoadError(friendlyPdfError(err));
@@ -148,6 +151,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && processedBytes && (
           <SaveStep
+            sourcePath={sourcePath}
             processedBytes={processedBytes}
             sourceFileName={fileName}
             defaultSaveName={fileName.replace(/\.pdf$/i, '') + '-numbered.pdf'}

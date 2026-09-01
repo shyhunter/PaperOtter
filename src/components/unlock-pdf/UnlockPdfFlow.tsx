@@ -232,6 +232,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && resultBytes && (
           <SaveStep
+            sourcePath={filePath}
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}

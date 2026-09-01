@@ -216,7 +216,7 @@ describe('Suite 09a — Merge PDF', () => {
     await screen.findByRole('button', { name: /merge & save/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /merge & save/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // MP-06 ─────────────────────────────────────────────────────────────────────
@@ -359,7 +359,7 @@ describe('Suite 09c — Crop PDF', () => {
 
     await user.click(screen.getByRole('button', { name: /^small$/i }));
     await user.click(screen.getByRole('button', { name: /apply crop/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 });
 
@@ -408,6 +408,6 @@ describe('Suite 09d — Organize PDF', () => {
     await screen.findByRole('button', { name: /apply.*pages/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /apply.*pages/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 });

@@ -156,7 +156,7 @@ describe('Suite 08a — Rotate Image', () => {
     await screen.findByRole('button', { name: /apply & save/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /apply & save/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // RI-08 ─────────────────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ describe('Suite 08b — Convert Image', () => {
     vi.mocked(invoke).mockResolvedValueOnce(new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
     await user.click(screen.getByRole('button', { name: /convert to/i }));
 
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // CI-07 ─────────────────────────────────────────────────────────────────────

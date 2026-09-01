@@ -41,6 +41,8 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
   }, [onStepChange]);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState('');
+  // The file this flow opened. Save writes back to it; Save as... writes a copy.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [pageWidth, setPageWidth] = useState(0); // in points
   const [pageHeight, setPageHeight] = useState(0);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
@@ -82,6 +84,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       setPdfBytes(bytes);
       setFileName(name);
+      setSourcePath(filePath);
       setPageWidth(width);
       setPageHeight(height);
       goToStep(1);
@@ -323,6 +326,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && processedBytes && (
           <SaveStep
+            sourcePath={sourcePath}
             processedBytes={processedBytes}
             sourceFileName={fileName}
             defaultSaveName={fileName.replace(/\.pdf$/i, '') + '-cropped.pdf'}

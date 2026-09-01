@@ -257,6 +257,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
       {/* Step 3 — save */}
       {step === 3 && result && (
         <SaveStep
+          sourcePath={filePath}
           processedBytes={result.bytes}
           sourceFileName={fileName}
           defaultSaveName={`${fileName.replace(/\.pdf$/i, '')}-searchable.pdf`}

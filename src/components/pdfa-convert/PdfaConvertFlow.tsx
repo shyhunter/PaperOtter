@@ -264,6 +264,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
             </div>
 
             <SaveStep
+              sourcePath={filePath}
               processedBytes={resultBytes}
               sourceFileName={fileName}
               defaultSaveName={buildSaveName(fileName)}
