@@ -20,7 +20,9 @@
     "lint": "eslint .",
     "test:regressions": "npm run e2e:build && npm run pretest:e2e && wdio run src/e2e/wdio.conf.ts --suite regressions",
     "test:regressions:only": "wdio run src/e2e/wdio.conf.ts --suite regressions",
-    "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit"
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit",
+    "test:browser": "playwright test",
+    "test:browser:ui": "playwright test --ui"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -50,6 +52,7 @@
     "@crabnebula/tauri-driver": "^2.0.9",
     "@crabnebula/test-runner-backend": "^0.2.6",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.2.0",
     "@tauri-apps/cli": "^2.11.4",
     "@testing-library/dom": "^10.4.1",
