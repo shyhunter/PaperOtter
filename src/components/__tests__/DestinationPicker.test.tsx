@@ -2,21 +2,28 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DestinationPicker } from '@/components/destinations/DestinationPicker';
+import { SavedSettingsRow, SaveSettingAs } from '@/components/destinations/DestinationPicker';
 import type { DestinationRequirement } from '@/lib/destinations';
 
-/** [DEST-PICK] Choosing what the document is being prepared for. */
+/**
+ * [DEST-PICK] Saved settings: applying one, and saving one.
+ *
+ * Split into two components because the halves belong in opposite places.
+ * Applying is an input — a click rewrites the quality, target size and page size
+ * below it — so it sits above the controls it moves, where the change can be
+ * watched. Saving is an output of those controls, so it sits under them.
+ */
 
 const BUILT_IN: DestinationRequirement = { id: 'b1', nameKey: 'destination.email10mb', maxBytes: 10 * 1024 * 1024 };
 const MINE: DestinationRequirement = { id: 'u1', name: 'Turkish consulate', maxBytes: 1024 * 1024, userDefined: true };
 
 afterEach(cleanup);
 
-describe('DestinationPicker', () => {
+describe('SavedSettingsRow — applying', () => {
   it('[DEST-PICK-01] offers no-destination as a real choice, selected by default', async () => {
     // Most documents are not going to a portal. Not choosing one has to be a
     // state the user can see and return to, not the absence of a state.
-    render(<DestinationPicker destinations={[BUILT_IN]} selectedId={null} onSelect={vi.fn()} />);
+    render(<SavedSettingsRow destinations={[BUILT_IN]} selectedId={null} onSelect={vi.fn()} />);
     expect(screen.getByRole('button', { name: /no destination/i })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -25,7 +32,7 @@ describe('DestinationPicker', () => {
     // would make every call site look the destination up again.
     const onSelect = vi.fn();
     const user = userEvent.setup();
-    render(<DestinationPicker destinations={[BUILT_IN]} selectedId={null} onSelect={onSelect} />);
+    render(<SavedSettingsRow destinations={[BUILT_IN]} selectedId={null} onSelect={onSelect} />);
 
     await user.click(screen.getByRole('button', { name: /email attachment/i }));
     expect(onSelect).toHaveBeenCalledWith(BUILT_IN);
@@ -34,14 +41,14 @@ describe('DestinationPicker', () => {
   it('[DEST-PICK-03] deselecting returns null rather than a sentinel', async () => {
     const onSelect = vi.fn();
     const user = userEvent.setup();
-    render(<DestinationPicker destinations={[BUILT_IN]} selectedId="b1" onSelect={onSelect} />);
+    render(<SavedSettingsRow destinations={[BUILT_IN]} selectedId="b1" onSelect={onSelect} />);
 
     await user.click(screen.getByRole('button', { name: /no destination/i }));
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 
   it('[DEST-PICK-04] only the user’s own can be forgotten', () => {
-    render(<DestinationPicker destinations={[BUILT_IN, MINE]} selectedId={null} onSelect={vi.fn()} onRemove={vi.fn()} />);
+    render(<SavedSettingsRow destinations={[BUILT_IN, MINE]} selectedId={null} onSelect={vi.fn()} onRemove={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /forget.*Turkish consulate/i })).toBeInTheDocument();
     expect(
@@ -53,7 +60,7 @@ describe('DestinationPicker', () => {
   it('[DEST-PICK-05] saving asks for a name and will not accept an empty one', async () => {
     const onSaveCurrent = vi.fn();
     const user = userEvent.setup();
-    render(<DestinationPicker destinations={[BUILT_IN]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={onSaveCurrent} />);
+    render(<SaveSettingAs onSave={onSaveCurrent} hasSaved={true} />);
 
     await user.click(screen.getByRole('button', { name: /save these settings/i }));
     const field = screen.getByLabelText(/destination name/i);
@@ -71,7 +78,7 @@ describe('DestinationPicker', () => {
   it('[DEST-PICK-06] Enter saves and Escape abandons', async () => {
     const onSaveCurrent = vi.fn();
     const user = userEvent.setup();
-    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={onSaveCurrent} />);
+    render(<SaveSettingAs onSave={onSaveCurrent} hasSaved={false} />);
 
     await user.click(screen.getByRole('button', { name: /save these settings/i }));
     await user.type(screen.getByLabelText(/destination name/i), 'Consulate{Enter}');
@@ -89,7 +96,7 @@ describe('with nothing saved yet', () => {
     // for everyone. A bare "No destination" pill with nothing beside it does not
     // say what the feature is, and there is no example to show without inventing
     // somebody's use case -- which is the thing that was removed.
-    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
+    render(<SaveSettingAs onSave={vi.fn()} hasSaved={false} />);
 
     expect(screen.getByTestId('destination-empty')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save these settings/i })).toBeInTheDocument();
@@ -100,7 +107,7 @@ describe('with nothing saved yet', () => {
     // presets because they assume a use case, while leaving an example that
     // assumes one, would have kept the same mistake in a smaller font.
     const user = userEvent.setup();
-    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
+    render(<SaveSettingAs onSave={vi.fn()} hasSaved={false} />);
 
     await user.click(screen.getByRole('button', { name: /save these settings/i }));
     const field = screen.getByLabelText(/name/i) as HTMLInputElement;
@@ -109,9 +116,15 @@ describe('with nothing saved yet', () => {
     expect(field.placeholder.length, 'it still has to say what to type').toBeGreaterThan(0);
   });
 
-  it('[DEST-PICK-09] the row of choices is hidden entirely when there is nothing to choose', () => {
-    // "No destination" is only a meaningful choice when there is another one.
-    render(<DestinationPicker destinations={[]} selectedId={null} onSelect={vi.fn()} onSaveCurrent={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /no destination/i })).toBeNull();
+  it('[DEST-PICK-09] the row renders nothing at all when there is nothing to choose', () => {
+    // Every first run, now the list ships empty. "None" is only a meaningful
+    // choice once there is another one beside it — a heading over a single dead
+    // pill is a control that does nothing, permanently, for anyone who never
+    // saves one.
+    const { container } = render(
+      <SavedSettingsRow destinations={[]} selectedId={null} onSelect={vi.fn()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole('button', { name: /none/i })).toBeNull();
   });
 });

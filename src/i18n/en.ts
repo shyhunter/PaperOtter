@@ -96,9 +96,11 @@ export const en = {
   'destination.forget':
     'Forget “{name}”',
   'destination.label':
-    'Preparing this for',
+    'Save as a setting to use later',
   'destination.emptyHint':
     'Set the options below, then save them under a name to reuse later — and to check future documents against.',
+  'destination.savedLabel':
+    'Saved settings',
   'destination.underSize':
     'Under {size}',
   'destination.maxPages':
