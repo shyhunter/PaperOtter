@@ -12,7 +12,7 @@
 // vary by office, change without notice, and being confidently wrong gets an
 // application rejected and blamed on the app. Users name their own — they are
 // the ones who read the form.
-import type { PdfPagePreset } from '@/types/file';
+import type { PdfPagePreset, PdfQualityLevel } from '@/types/file';
 import { formatBytes } from '@/lib/pdfUtils';
 import { formatNumber } from '@/i18n';
 import { offersKbUnit, type SizeUnit } from '@/lib/compressTargetSize';
@@ -33,6 +33,15 @@ export interface DestinationRequirement {
   /** Required page size. Orientation is not part of it. */
   pageSize?: Exclude<PdfPagePreset, 'custom'>;
   maxPages?: number;
+  /**
+   * The compression setting this was saved with.
+   *
+   * Not a requirement — no portal asks for "Web" — so it never produces a row
+   * in the verdict. It is restored to the controls, because a saved setting
+   * that puts back the size limit but leaves the quality on whatever was there
+   * before is not the setting that was saved.
+   */
+  qualityLevel?: Exclude<PdfQualityLevel, 'custom'>;
   /** Absent on built-ins; set on anything the user saved themselves. */
   userDefined?: boolean;
 }

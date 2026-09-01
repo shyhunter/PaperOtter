@@ -1,13 +1,16 @@
-// Choosing what the document is being prepared *for*.
+// Saved settings: applying one, and saving one.
 //
-// There are no built-in choices, by decision. Naming a preset for a consulate
-// claims to know its rules; naming one "web upload — under 2 MB" claims to know
-// which portal this user is fighting. Both are the app guessing at a use case it
-// cannot see, and one is only quieter about it.
+// Two components, because the two halves belong in opposite places. Applying is
+// an *input* — a click rewrites the quality, the target size and the page size
+// below it — so it sits above the controls it moves, where the user can watch it
+// happen. Saving is an *output* of those controls, so it sits under them, where
+// you arrive once you are happy with what you set.
 //
-// Everyone's requirement comes from a form only they have read. So the list
-// starts empty and fills with what they save, under names they choose — and
-// nothing here suggests what those names should be, down to the placeholder.
+// Nothing is shipped in the list. Naming a preset for a consulate claims to know
+// its rules; naming one "web upload, under 2 MB" claims to know which portal
+// this user is fighting. Everyone's requirement comes from a form only they have
+// read, so they save their own and name it themselves — and nothing here
+// suggests what those names should be, down to the placeholder.
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,46 +18,35 @@ import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 import { destinationName, type DestinationRequirement } from '@/lib/destinations';
 
-export interface DestinationPickerProps {
+export interface SavedSettingsRowProps {
   destinations: DestinationRequirement[];
   selectedId: string | null;
   onSelect: (destination: DestinationRequirement | null) => void;
-  /** Absent while there is nothing worth saving yet. */
-  onSaveCurrent?: (name: string) => void;
   onRemove?: (id: string) => void;
 }
 
-export function DestinationPicker({
-  destinations, selectedId, onSelect, onSaveCurrent, onRemove,
-}: DestinationPickerProps) {
-  const [naming, setNaming] = useState(false);
-  const [draftName, setDraftName] = useState('');
-
-  const commit = () => {
-    const name = draftName.trim();
-    if (!name || !onSaveCurrent) return;
-    onSaveCurrent(name);
-    setDraftName('');
-    setNaming(false);
-  };
+/**
+ * The saved settings, above the controls they rewrite.
+ *
+ * Renders nothing at all when there are none — which is every first run, now
+ * that the list ships empty. A heading over a single dead "None" pill would be
+ * a control that does nothing, permanently, for anyone who never saves one.
+ */
+export function SavedSettingsRow({
+  destinations, selectedId, onSelect, onRemove,
+}: SavedSettingsRowProps) {
+  if (destinations.length === 0) return null;
 
   return (
-    <div className="space-y-2" data-testid="destination-picker">
-      {/* Nothing saved yet -- which is everyone's first run, now the built-in
-          list ships empty. A bare row of one pill does not say what this is
-          for, and there is no example to give without inventing somebody's use
-          case, which is the thing that was removed. */}
-      {destinations.length === 0 && (
-        <p data-testid="destination-empty" className="text-xs text-muted-foreground">
-          {t('destination.emptyHint')}
-        </p>
-      )}
-
-      {destinations.length > 0 && (
+    <div className="space-y-2" data-testid="saved-settings-row">
+      <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">
+        {t('destination.savedLabel')}
+      </h2>
       <div className="flex flex-wrap gap-1.5">
-        {/* "No destination" is a real choice, not the absence of one: most
-            documents are not going to a portal, and the controls stay manual.
-            It is only meaningful once there is another choice beside it. */}
+        {/* "None" is a real choice, not the absence of one: most documents are
+            not going to a portal, and the controls then stay as the user left
+            them. It only means anything once there is another choice beside it,
+            which is why the whole row is hidden when the list is empty. */}
         <button
           type="button"
           onClick={() => onSelect(null)}
@@ -97,9 +89,40 @@ export function DestinationPicker({
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+export interface SaveSettingAsProps {
+  onSave: (name: string) => void;
+  /** Whether anything has been saved yet — first run gets the one-line reason. */
+  hasSaved: boolean;
+}
+
+/** Keeping the current controls under a name, below the controls being kept. */
+export function SaveSettingAs({ onSave, hasSaved }: SaveSettingAsProps) {
+  const [naming, setNaming] = useState(false);
+  const [draftName, setDraftName] = useState('');
+
+  const commit = () => {
+    const name = draftName.trim();
+    if (!name) return;
+    onSave(name);
+    setDraftName('');
+    setNaming(false);
+  };
+
+  return (
+    <div className="space-y-2" data-testid="save-setting-as">
+      {/* Only before anything is saved. Once the row above exists, the feature
+          has demonstrated itself and the sentence is just noise on every file. */}
+      {!hasSaved && (
+        <p data-testid="destination-empty" className="text-xs text-muted-foreground">
+          {t('destination.emptyHint')}
+        </p>
       )}
 
-      {onSaveCurrent && (naming ? (
+      {naming ? (
         <div className="flex items-center gap-2">
           <input
             autoFocus
@@ -122,7 +145,7 @@ export function DestinationPicker({
         >
           {t('destination.saveCurrent')}
         </button>
-      ))}
+      )}
     </div>
   );
 }

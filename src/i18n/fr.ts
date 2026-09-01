@@ -142,9 +142,11 @@ export const fr: Dictionary = {
   'destination.forget':
     'Oublier « {name} »',
   'destination.label':
-    'Vous préparez ceci pour',
+    'Enregistrer comme réglage pour plus tard',
   'destination.emptyHint':
     'Réglez les options ci-dessous, puis enregistrez-les sous un nom pour les réutiliser — et pour y comparer vos prochains documents.',
+  'destination.savedLabel':
+    'Réglages enregistrés',
   'destination.underSize':
     'Moins de {size}',
   'destination.maxPages':
