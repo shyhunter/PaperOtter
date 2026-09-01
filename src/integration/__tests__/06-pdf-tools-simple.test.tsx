@@ -83,6 +83,39 @@ async function selectPdfFile(user: ReturnType<typeof userEvent.setup>, filePath:
 // Protect PDF
 // ══════════════════════════════════════════════════════════════════════════════
 describe('Suite 06a — Protect PDF', () => {
+  // Protect now refuses a PDF that is already encrypted, so every case that is
+  // meant to get through has to be handed one that is not. Set per test rather
+  // than left to the shared stub: PP-10 swaps in a locked file, and a
+  // mockResolvedValue outlives the test that set it.
+  const PLAIN = new Uint8Array(
+    readFileSync(join(process.cwd(), 'test-fixtures', 'warnock_camelot.pdf')),
+  );
+  beforeEach(() => {
+    vi.mocked(readFile).mockResolvedValue(PLAIN);
+  });
+
+  // PP-10 ─────────────────────────────────────────────────────────────────────
+  it('PP-10 — refuses a PDF that is already password-protected', async () => {
+    // The mirror of UP-08, found while fixing it. Nothing stopped you
+    // encrypting an already-encrypted document. Ghostscript cannot open one
+    // without its existing password, so it refused with a raw
+    // "User password is specified. Need an Owner password or both." and left a
+    // zero-byte file behind — after the password had been typed twice and the
+    // acknowledgement ticked.
+    const { user } = await navigateToTool(/protect pdf/i);
+    vi.mocked(readFile).mockResolvedValue(
+      new Uint8Array(readFileSync(join(process.cwd(), 'test-fixtures', 'locked.pdf'))),
+    );
+
+    await selectPdfFile(user, '/test/locked.pdf');
+
+    await screen.findByText(/already password-protected/i, {}, { timeout: 2000 });
+    expect(
+      screen.queryByLabelText(/^password$/i),
+      'an already-protected PDF must not reach the password screen',
+    ).not.toBeInTheDocument();
+  });
+
   // PP-01 ─────────────────────────────────────────────────────────────────────
   it('PP-01 — navigating to Protect PDF shows landing page with select button', async () => {
     await navigateToTool(/protect pdf/i);

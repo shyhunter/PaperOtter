@@ -234,6 +234,7 @@ export const pl: Dictionary = {
   'unlockPdf.enterPassword': 'Wpisz hasło', 'unlockPdf.enterThePdfPassword': 'Wpisz hasło do pliku PDF',
   'unlockPdf.pdfPassword': 'Hasło do PDF',
   'unlockPdf.removePasswordProtectionFromA': 'Usuń zabezpieczenie hasłem z pliku PDF.',
+  'protectPdf.alreadyProtected': 'Ten plik PDF jest już chroniony hasłem. Najpierw go odblokuj, a potem zabezpiecz ponownie.',
   'unlockPdf.notProtected': 'Ten plik PDF nie jest chroniony hasłem, więc nie ma czego odblokowywać.',
   'unlockPdf.unlockPdf': 'Odblokuj PDF', 'unlockPdf.unlocking': 'Odblokowywanie…',
   'unlockPdfFlow.incorrectPasswordOrThePdf': 'Nieprawidłowe hasło lub plik PDF nie jest zabezpieczony hasłem.',

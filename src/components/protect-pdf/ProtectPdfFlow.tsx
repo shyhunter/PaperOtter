@@ -1,11 +1,13 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { FileUp, Loader2, Eye, EyeOff, Lock } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
+import { isPdfEncrypted } from '@/lib/pdfEncryption';
 import { t } from '@/i18n';
 
 const PDF_EXTENSIONS = ['pdf'];
@@ -42,17 +44,42 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
   // StrictMode guard
   const consumedPending = useRef(false);
 
-  // Consume pending file on mount
+  // Consume pending file on mount. A dropped file gets the same check as a
+  // picked one -- it used to walk straight past it into the password screen.
+  const [pendingFile, setPendingFile] = useState<string | null>(null);
   if (!consumedPending.current && pendingFiles.length > 0) {
-    const file = pendingFiles[0];
     consumedPending.current = true;
+    const file = pendingFiles[0];
     setPendingFiles([]);
-    // Load the file immediately
-    const name = file.split('/').pop() ?? file.split('\\').pop() ?? file;
-    setFilePath(file);
-    setFileName(name);
-    goToStep(1);
+    setPendingFile(file);
   }
+
+  // Ghostscript cannot open an encrypted PDF without its existing password: it
+  // refuses with "User password is specified. Need an Owner password or both."
+  // and leaves a zero-byte file. Better to say so than to spend two password
+  // entries and an acknowledgement first.
+  const acceptFile = useCallback(async (path: string): Promise<boolean> => {
+    const bytes = await readFile(path);
+    if (await isPdfEncrypted(bytes)) {
+      setLoadError(t('protectPdf.alreadyProtected'));
+      return false;
+    }
+    const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
+    setFilePath(path);
+    setFileName(name);
+    setLoadError(null);
+    goToStep(1);
+    return true;
+  }, [goToStep]);
+
+  useEffect(() => {
+    if (!pendingFile) return;
+    setPendingFile(null);
+    setIsLoadingFile(true);
+    acceptFile(pendingFile)
+      .catch((err) => setLoadError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setIsLoadingFile(false));
+  }, [pendingFile, acceptFile]);
 
   const handleSelectFile = useCallback(async () => {
     setIsLoadingFile(true);
@@ -66,17 +93,14 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
         setIsLoadingFile(false);
         return;
       }
-      const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
-      setFilePath(result);
-      setFileName(name);
-      goToStep(1);
+      await acceptFile(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setLoadError(message);
     } finally {
       setIsLoadingFile(false);
     }
-  }, [goToStep]);
+  }, [acceptFile]);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 

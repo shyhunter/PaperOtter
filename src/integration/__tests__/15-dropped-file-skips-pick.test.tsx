@@ -74,17 +74,20 @@ vi.mock('@/lib/pdfMerge', () => ({
 // These flows parse the PDF before advancing, and the globally-mocked readFile
 // bytes are not a real document. Stub the parse the way suite 07 does, so a
 // failure here means the handoff broke — not that the fixture is fake.
+// Unlock and Protect both ask whether the dropped document is encrypted, and
+// they want opposite answers: Unlock accepts only a locked file, Protect only an
+// unlocked one. Neither can be served by a fixed stub, so the tests set it.
+const pdfState = vi.hoisted(() => ({ isEncrypted: false }));
+
 vi.mock('pdf-lib', () => ({
   PDFDocument: {
-    load: vi.fn().mockResolvedValue({
-      // Unlock asks this before it will take a file. The suite drops a document
-      // that is meant to be accepted, so it has to read as protected.
-      isEncrypted: true,
+    load: vi.fn().mockImplementation(async () => ({
+      get isEncrypted() { return pdfState.isEncrypted; },
       getPageCount: vi.fn().mockReturnValue(3),
       // Crop reads the first page's size to seed its crop box.
       getPage: vi.fn().mockReturnValue({ getSize: () => ({ width: 595, height: 842 }) }),
       getPages: vi.fn().mockReturnValue([{ getSize: () => ({ width: 595, height: 842 }) }]),
-    }),
+    })),
     create: vi.fn().mockResolvedValue({
       addPage: vi.fn(),
       save: vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
@@ -222,6 +225,8 @@ describe('Suite 15 — dropped files skip the pick step', () => {
   ];
 
   it.each(PDF_TOOLS)('[PENDING-06] %s uses the dropped PDF instead of asking again', async (_name, label) => {
+    // Unlock takes only a locked document; Protect only an unlocked one.
+    pdfState.isEncrypted = _name === 'Unlock PDF';
     renderApp();
     await waitFor(() => expect(dropHandlers.length).toBeGreaterThan(0));
 

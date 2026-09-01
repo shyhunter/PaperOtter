@@ -325,6 +325,7 @@ export const es: Dictionary = {
   'unlockPdf.pdfPassword': 'Contraseña del PDF',
   'unlockPdf.removePasswordProtectionFromA': 'Quitar la protección por contraseña de un PDF.',
   'unlockPdf.unlockPdf': 'Desbloquear PDF',
+  'protectPdf.alreadyProtected': 'Este PDF ya está protegido con contraseña. Desbloquéalo primero y vuelve a protegerlo.',
   'unlockPdf.notProtected': 'Este PDF no está protegido con contraseña, así que no hay nada que desbloquear.',
   'unlockPdf.unlocking': 'Desbloqueando…',
   'unlockPdfFlow.incorrectPasswordOrThePdf':
