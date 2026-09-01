@@ -95,6 +95,34 @@ export const de: Dictionary = {
   'save.success': 'Datei erfolgreich gespeichert',
   'pdfEncryption.lockedUseUnlock':
     'Dieses PDF ist passwortgeschützt und kann hier nicht geöffnet werden. Heben Sie den Schutz zuerst mit dem Werkzeug „PDF entsperren“ auf und versuchen Sie es dann erneut.',
+  'destination.webUpload2mbA4':
+    'Web-Upload — unter 2 MB, A4',
+  'destination.email10mb':
+    'E-Mail-Anhang — unter 10 MB',
+  'destination.email25mb':
+    'E-Mail-Anhang — unter 25 MB',
+  'destination.meets':
+    'Erfüllt „{name}“',
+  'destination.doesNotMeet':
+    'Erfüllt „{name}“ nicht',
+  'destination.none':
+    'Kein Ziel',
+  'destination.saveCurrent':
+    'Diese Einstellungen als Ziel speichern…',
+  'destination.namePlaceholder':
+    'z. B. Visum türkisches Konsulat',
+  'destination.nameLabel':
+    'Name des Ziels',
+  'destination.forget':
+    '„{name}“ vergessen',
+  'destination.label':
+    'Wofür ist das bestimmt',
+  'destination.underSize':
+    'Unter {size}',
+  'destination.maxPages':
+    'Höchstens {count} Seiten',
+  'destination.notChecked':
+    'nicht geprüft',
   'save.failedReadOnly':
     '„{name}“ ist schreibgeschützt, es wurde nichts hineingeschrieben. Ihre Änderungen sind noch da — ändern Sie die Berechtigung der Datei und versuchen Sie es erneut, oder verwenden Sie Speichern unter…, um eine Kopie zu schreiben.',
   'save.failedGone':

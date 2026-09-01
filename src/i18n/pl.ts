@@ -83,6 +83,34 @@ export const pl: Dictionary = {
   'save.showInFinder': 'Pokaż w Finderze', 'save.success': 'Plik zapisany',
   'pdfEncryption.lockedUseUnlock':
     'Ten PDF jest chroniony hasłem, więc nie można go tutaj otworzyć. Najpierw odblokuj go narzędziem „Odblokuj PDF”, a potem spróbuj ponownie.',
+  'destination.webUpload2mbA4':
+    'Przesyłanie w sieci — poniżej 2 MB, A4',
+  'destination.email10mb':
+    'Załącznik e-mail — poniżej 10 MB',
+  'destination.email25mb':
+    'Załącznik e-mail — poniżej 25 MB',
+  'destination.meets':
+    'Spełnia „{name}”',
+  'destination.doesNotMeet':
+    'Nie spełnia „{name}”',
+  'destination.none':
+    'Bez miejsca docelowego',
+  'destination.saveCurrent':
+    'Zapisz te ustawienia jako miejsce docelowe…',
+  'destination.namePlaceholder':
+    'np. wiza konsulat',
+  'destination.nameLabel':
+    'Nazwa miejsca docelowego',
+  'destination.forget':
+    'Zapomnij „{name}”',
+  'destination.label':
+    'Przygotowujesz to do',
+  'destination.underSize':
+    'Poniżej {size}',
+  'destination.maxPages':
+    'Najwyżej {count} stron',
+  'destination.notChecked':
+    'niesprawdzone',
   'save.failedReadOnly':
     '„{name}” jest tylko do odczytu, więc nic do niego nie zapisano. Twoje zmiany nadal tu są — zmień uprawnienia pliku i spróbuj ponownie albo użyj Zapisz jako…, aby zapisać kopię.',
   'save.failedGone':

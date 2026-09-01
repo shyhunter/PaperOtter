@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { parsePageRange, formatBytes } from '@/lib/pdfUtils';
+import { DestinationPicker } from '@/components/destinations/DestinationPicker';
+import { targetSizeInput, type DestinationRequirement } from '@/lib/destinations';
+import { useDestinations } from '@/hooks/useDestinations';
 import {
   recommendQualityForTarget,
   estimateOutputSizeBytes,
@@ -27,6 +30,14 @@ export interface ConfigureStepProps {
   progress: { current: number; total: number } | null;
   error: string | null;
   onGeneratePreview: (options: Omit<PdfProcessingOptions, 'onProgress'>) => void;
+  /**
+   * What the document is being prepared for. Held by the caller because the
+   * verdict on the Compare step needs the same answer — the point of a
+   * destination is the check at the end, not the settings at the start.
+   */
+  destination?: DestinationRequirement | null;
+  /** Absent for a flow that does not offer destinations; the picker is then hidden. */
+  onDestinationChange?: (destination: DestinationRequirement | null) => void;
   onBack: () => void;
   onCancel?: () => void;    // fires immediately when Cancel clicked during processing
 }
@@ -109,6 +120,8 @@ export function ConfigureStep({
   progress,
   error,
   onGeneratePreview,
+  destination,
+  onDestinationChange,
   onBack,
   onCancel,
 }: ConfigureStepProps) {
@@ -153,6 +166,44 @@ export function ConfigureStep({
   const [customWidthMm, setCustomWidthMm] = useState<string>('210');
   const [customHeightMm, setCustomHeightMm] = useState<string>('297');
   const [pageRangeInput, setPageRangeInput] = useState('');
+
+  const { destinations, save: saveDestination, remove: removeDestination } = useDestinations();
+
+  /**
+   * Apply a destination by moving the ordinary controls, not by overriding them.
+   *
+   * The user can see exactly what was set and change any of it, which matters
+   * because a destination is a starting point for their document rather than a
+   * mode the app enters.
+   */
+  function applyDestination(d: DestinationRequirement | null) {
+    onDestinationChange?.(d);
+    if (!d) return;
+    if (d.maxBytes !== undefined) {
+      const { value, unit: u } = targetSizeInput(d.maxBytes);
+      setCustomMode(true);
+      setCustomSizeValue(value);
+      setCustomUnit(u);
+      setCustomError(null);
+    }
+    if (d.pageSize !== undefined) {
+      setResizeEnabled(true);
+      setPagePreset(d.pageSize);
+    }
+  }
+
+  /** Save what the controls currently say, under the user's own name. */
+  function saveCurrentAsDestination(name: string) {
+    const parsed = parseInt(customSizeValue, 10);
+    const maxBytes = customMode && !isNaN(parsed) && parsed > 0
+      ? parsed * (unit === 'MB' ? 1024 * 1024 : 1024)
+      : undefined;
+    void saveDestination({
+      name,
+      maxBytes,
+      pageSize: resizeEnabled && pagePreset !== 'custom' ? pagePreset : undefined,
+    });
+  }
 
   // Derived: selected page indices (empty = all pages)
   const selectedPageIndices =
@@ -227,6 +278,24 @@ export function ConfigureStep({
             )}
           </p>
         </div>
+
+        {/* Destination — above the controls it moves, because it is the question
+            the user came with. Choosing one sets the ordinary controls below, so
+            what it did stays visible and every part of it stays overridable. */}
+        {onDestinationChange && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">
+              {t('destination.label')}
+            </h2>
+            <DestinationPicker
+              destinations={destinations}
+              selectedId={destination?.id ?? null}
+              onSelect={applyDestination}
+              onSaveCurrent={saveCurrentAsDestination}
+              onRemove={(id) => void removeDestination(id)}
+            />
+          </div>
+        )}
 
         {/* Compression section */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-4">

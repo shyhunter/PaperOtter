@@ -64,6 +64,34 @@ export const it: Dictionary = {
   'save.showInFinder': 'Mostra nel Finder', 'save.success': 'File salvato',
   'pdfEncryption.lockedUseUnlock':
     'Questo PDF è protetto da password e non può essere aperto qui. Lo sblocchi prima con lo strumento «Sblocca PDF», poi riprovi.',
+  'destination.webUpload2mbA4':
+    'Caricamento web — meno di 2 MB, A4',
+  'destination.email10mb':
+    'Allegato e-mail — meno di 10 MB',
+  'destination.email25mb':
+    'Allegato e-mail — meno di 25 MB',
+  'destination.meets':
+    'Soddisfa «{name}»',
+  'destination.doesNotMeet':
+    'Non soddisfa «{name}»',
+  'destination.none':
+    'Nessuna destinazione',
+  'destination.saveCurrent':
+    'Salva queste impostazioni come destinazione…',
+  'destination.namePlaceholder':
+    'es. visto consolato',
+  'destination.nameLabel':
+    'Nome della destinazione',
+  'destination.forget':
+    'Dimentica «{name}»',
+  'destination.label':
+    'Lo sta preparando per',
+  'destination.underSize':
+    'Meno di {size}',
+  'destination.maxPages':
+    'Al massimo {count} pagine',
+  'destination.notChecked':
+    'non verificato',
   'save.failedReadOnly':
     '«{name}» è di sola lettura, quindi non vi è stato scritto nulla. Le sue modifiche sono ancora qui: cambi i permessi del file e riprovi, oppure usi Salva con nome… per scrivere una copia.',
   'save.failedGone':

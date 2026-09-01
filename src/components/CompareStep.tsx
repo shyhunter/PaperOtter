@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
+import { DestinationVerdict } from '@/components/destinations/DestinationVerdict';
+import type { DestinationRequirement } from '@/lib/destinations';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
 import { plural, t } from '@/i18n';
 
@@ -16,6 +18,12 @@ const DEFAULT_PAGE_ASPECT_RATIO = 841.89 / 595.28;
 
 export interface CompareStepProps {
   result?: PdfProcessingResult;    // optional — not present when isCancelled=true
+  /**
+   * What the document is being prepared for, when the user said. This is the
+   * half of destination presets that answers the question they actually have:
+   * not "what settings do I need" but "will the portal take this".
+   */
+  destination?: DestinationRequirement | null;
   qualityLevel?: PdfQualityLevel;  // used to derive render scale for After panel
   isCancelled?: boolean;           // when true, show cancelled state instead of previews
   onSave: () => void;
@@ -202,7 +210,7 @@ function PreviewPanel({
   );
 }
 
-export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack, onStartOver, onRetry }: CompareStepProps) {
+export function CompareStep({ result, destination, qualityLevel, isCancelled, onSave, onBack, onStartOver, onRetry }: CompareStepProps) {
   const [originalHandle, setOriginalHandle] = useState<LazyPdfHandle | null>(null);
   const [processedHandle, setProcessedHandle] = useState<LazyPdfHandle | null>(null);
   const [originalRendering, setOriginalRendering] = useState(true);
@@ -402,6 +410,21 @@ export function CompareStep({ result, qualityLevel, isCancelled, onSave, onBack,
           <span>{copiedStats ? t('imageCompareStep.copied') : t('imageCompareStep.copyStats')}</span>
         </button>
       </div>
+
+      {/* Directly under the size line: the numbers above only imply the answer,
+          and the user is one click from saving and going back to the portal. */}
+      {destination && (
+        <div className="px-1 pb-2">
+          <DestinationVerdict
+            destination={destination}
+            result={{
+              outputSizeBytes: result.outputSizeBytes,
+              pageCount: result.pageCount,
+              outputPageDimensions: result.outputPageDimensions,
+            }}
+          />
+        </div>
+      )}
 
       {/* Side-by-side preview panels with floating zoom toolbar */}
       <div className="relative flex flex-1 gap-4 p-4 overflow-hidden min-h-0">

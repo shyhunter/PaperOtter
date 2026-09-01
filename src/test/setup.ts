@@ -75,12 +75,18 @@ vi.mock('@tauri-apps/api/window', () => ({
 }));
 
 // Mock @tauri-apps/plugin-store — persistent key-value store used by favorites/recents/signatures.
+// A real class, not `vi.fn().mockImplementation(() => ({...}))`. Several modules
+// construct their store at module scope (`const store = new LazyStore(...)`), and
+// `new` on a mock whose implementation is an arrow function throws "is not a
+// constructor" — which fails the whole file at *import*, so its tests never run
+// while the summary line still reports everything else as passing. The suites
+// that override this mock already spell it as a class for the same reason.
 vi.mock('@tauri-apps/plugin-store', () => ({
-  LazyStore: vi.fn().mockImplementation(() => ({
-    get: vi.fn().mockResolvedValue(undefined),
-    set: vi.fn().mockResolvedValue(undefined),
-    save: vi.fn().mockResolvedValue(undefined),
-  })),
+  LazyStore: class {
+    get() { return Promise.resolve(undefined); }
+    set() { return Promise.resolve(undefined); }
+    save() { return Promise.resolve(undefined); }
+  },
 }));
 
 // Mock @tauri-apps/plugin-dialog — file open/save dialogs.

@@ -7,6 +7,7 @@ import { ToolHeader } from '@/components/ToolHeader';
 import { AppChrome } from '@/components/AppChrome';
 import { ConfigureStep } from '@/components/ConfigureStep';
 import { CompareStep } from '@/components/CompareStep';
+import type { DestinationRequirement } from '@/lib/destinations';
 import { SaveStep } from '@/components/SaveStep';
 import { ImageConfigureStep } from '@/components/ImageConfigureStep';
 import { ImageCompareStep } from '@/components/ImageCompareStep';
@@ -367,6 +368,9 @@ function StandardToolFlow() {
   const [sourcePdfPageCount, setSourcePdfPageCount] = useState<number>(1);
   const [sourcePdfFileSizeBytes, setSourcePdfFileSizeBytes] = useState<number>(0);
   const [lastPdfQualityLevel, setLastPdfQualityLevel] = useState<PdfQualityLevel>('screen');
+  // What the document is being prepared for. Held here because both steps need
+  // it: Configure applies it to the controls, Compare checks the result against it.
+  const [destination, setDestination] = useState<DestinationRequirement | null>(null);
   const [pdfCompressibility, setPdfCompressibility] = useState<{ imageCount: number; compressibilityScore: number; jpxByteShare: number }>({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
 
   const pdfProcessor = usePdfProcessor();
@@ -763,6 +767,8 @@ function StandardToolFlow() {
             progress={pdfProcessor.progress}
             error={pdfProcessor.error}
             onGeneratePreview={handleGeneratePreview}
+            destination={destination}
+            onDestinationChange={setDestination}
             onBack={handleBackFromConfigure}
             onCancel={pdfProcessor.cancel}
           />
@@ -820,6 +826,7 @@ function StandardToolFlow() {
         {currentStep === 2 && (pdfProcessor.result || pdfProcessor.isCancelled) && fileEntry?.format === 'pdf' && (
           <CompareStep
             result={pdfProcessor.result ?? undefined}
+            destination={destination}
             qualityLevel={lastPdfQualityLevel}
             isCancelled={pdfProcessor.isCancelled}
             onSave={handleSave}

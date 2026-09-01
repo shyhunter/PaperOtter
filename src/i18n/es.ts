@@ -112,6 +112,34 @@ export const es: Dictionary = {
   'save.success': 'Archivo guardado correctamente',
   'pdfEncryption.lockedUseUnlock':
     'Este PDF está protegido con contraseña, así que no se puede abrir aquí. Desbloquéelo primero con la herramienta «Desbloquear PDF» y vuelva a intentarlo.',
+  'destination.webUpload2mbA4':
+    'Subida web — menos de 2 MB, A4',
+  'destination.email10mb':
+    'Adjunto de correo — menos de 10 MB',
+  'destination.email25mb':
+    'Adjunto de correo — menos de 25 MB',
+  'destination.meets':
+    'Cumple «{name}»',
+  'destination.doesNotMeet':
+    'No cumple «{name}»',
+  'destination.none':
+    'Sin destino',
+  'destination.saveCurrent':
+    'Guardar estos ajustes como destino…',
+  'destination.namePlaceholder':
+    'p. ej. visado del consulado',
+  'destination.nameLabel':
+    'Nombre del destino',
+  'destination.forget':
+    'Olvidar «{name}»',
+  'destination.label':
+    'Está preparando esto para',
+  'destination.underSize':
+    'Menos de {size}',
+  'destination.maxPages':
+    'Como máximo {count} páginas',
+  'destination.notChecked':
+    'sin comprobar',
   'save.failedReadOnly':
     '«{name}» es de solo lectura, así que no se escribió nada en él. Sus cambios siguen aquí: cambie los permisos del archivo y vuelva a intentarlo, o use Guardar como… para escribir una copia.',
   'save.failedGone':

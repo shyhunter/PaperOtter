@@ -75,6 +75,34 @@ export const en = {
   'save.success': 'File saved successfully',
   'pdfEncryption.lockedUseUnlock':
     'This PDF is password-protected, so it cannot be opened here. Unlock it with the Unlock PDF tool first, then try again.',
+  'destination.webUpload2mbA4':
+    'Web upload — under 2 MB, A4',
+  'destination.email10mb':
+    'Email attachment — under 10 MB',
+  'destination.email25mb':
+    'Email attachment — under 25 MB',
+  'destination.meets':
+    'Meets “{name}”',
+  'destination.doesNotMeet':
+    'Does not meet “{name}”',
+  'destination.none':
+    'No destination',
+  'destination.saveCurrent':
+    'Save these settings as a destination…',
+  'destination.namePlaceholder':
+    'e.g. Turkish consulate visa',
+  'destination.nameLabel':
+    'Destination name',
+  'destination.forget':
+    'Forget “{name}”',
+  'destination.label':
+    'Preparing this for',
+  'destination.underSize':
+    'Under {size}',
+  'destination.maxPages':
+    'At most {count} pages',
+  'destination.notChecked':
+    'not checked',
   'save.failedReadOnly':
     '“{name}” is read-only, so nothing was written to it. Your changes are still here — change the file’s permission and try again, or use Save as… to write a copy.',
   'save.failedGone':
