@@ -125,10 +125,13 @@ export function RedactOverlay({
             y={toSvg(r.y, height)}
             width={toSvg(r.width, width)}
             height={toSvg(r.height, height)}
-            // Shown in the colour the output will actually carry, at a slight
-            // transparency so what is being covered stays checkable until Apply.
+            // Opaque, in the colour the output will actually carry. It was 0.85
+            // so the covered text stayed checkable until Apply, but leaving the
+            // words readable through a redaction gives no way to confirm the
+            // job and reads as a tool that did not work. The box being dragged
+            // out is still see-through -- that is where aiming happens.
             fill={color}
-            fillOpacity={0.85}
+            fillOpacity={1}
             stroke="rgba(200, 0, 0, 0.6)"
             strokeWidth={1}
           />
