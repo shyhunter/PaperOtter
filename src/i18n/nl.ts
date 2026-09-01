@@ -67,6 +67,8 @@ export const nl: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Voer een geldige doelgrootte in',
   'save.toFolder': 'In map opslaan', 'save.asZip': 'Als ZIP opslaan', 'save.again': 'Opnieuw opslaan',
   'save.showInFinder': 'Tonen in Finder', 'save.success': 'Bestand opgeslagen',
+  'pdfEncryption.lockedUseUnlock':
+    'Deze PDF is met een wachtwoord beveiligd en kan hier niet worden geopend. Ontgrendel hem eerst met het hulpmiddel ‘PDF ontgrendelen’ en probeer het opnieuw.',
   'save.failedReadOnly':
     '‘{name}’ is alleen-lezen, er is niets naartoe geschreven. Uw wijzigingen zijn er nog — wijzig de rechten van het bestand en probeer het opnieuw, of gebruik Opslaan als… om een kopie te schrijven.',
   'save.failedGone':

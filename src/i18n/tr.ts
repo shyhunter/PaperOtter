@@ -117,6 +117,8 @@ export const tr: Dictionary = {
   'save.again': 'Yeniden kaydet',
   'save.showInFinder': 'Finder’da göster',
   'save.success': 'Dosya kaydedildi',
+  'pdfEncryption.lockedUseUnlock':
+    'Bu PDF parola korumalı, bu yüzden burada açılamıyor. Önce “PDF kilidini aç” aracıyla kilidini kaldırın, sonra yeniden deneyin.',
   'save.failedReadOnly':
     '“{name}” salt okunur, bu yüzden içine hiçbir şey yazılmadı. Değişiklikleriniz duruyor — dosyanın iznini değiştirip yeniden deneyin ya da Farklı kaydet… ile bir kopya yazın.',
   'save.failedGone':

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { readFile, writeFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { tempDir, join } from '@tauri-apps/api/path';
 import { open } from '@tauri-apps/plugin-dialog';
 import { PDFDocument } from 'pdf-lib';
@@ -216,6 +217,10 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
     setLoadError(null);
     try {
       const bytes = await readFile(path);
+      // A locked PDF loads fine under `ignoreEncryption` and reports its real
+      // page count, so without this the tool opens and then renders nothing.
+      const refusal = await encryptedPdfRefusal(bytes);
+      if (refusal) { setLoadError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pages = doc.getPageCount();
 

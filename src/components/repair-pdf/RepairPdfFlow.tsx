@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { FileUp, Loader2, Wrench, Info } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
@@ -33,6 +34,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
   const [fileName, setFileName] = useState('');
   const [isLoadingFile, setIsLoadingFile] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<string | null>(null);
 
   // Repair step
   const [isProcessing, setIsProcessing] = useState(false);
@@ -51,11 +53,30 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     const file = pendingFiles[0];
     consumedPending.current = true;
     setPendingFiles([]);
-    const name = file.split('/').pop() ?? file.split('\\').pop() ?? file;
-    setFilePath(file);
-    setFileName(name);
-    goToStep(1);
+    setPendingFile(file);
   }
+
+  // A dropped file gets the same check as a picked one -- it used to walk
+  // straight past it into the repair step.
+  useEffect(() => {
+    if (!pendingFile) return;
+    const file = pendingFile;
+    setPendingFile(null);
+    setIsLoadingFile(true);
+    (async () => {
+      try {
+        const refusal = await encryptedPdfRefusal(await readFile(file));
+        if (refusal) { setLoadError(refusal); return; }
+        setFilePath(file);
+        setFileName(file.split('/').pop() ?? file.split('\\').pop() ?? file);
+        goToStep(1);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsLoadingFile(false);
+      }
+    })();
+  }, [pendingFile, goToStep]);
 
   const handleSelectFile = useCallback(async () => {
     setIsLoadingFile(true);
@@ -70,6 +91,10 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
         return;
       }
       const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
+      // Repair cannot help a locked document either: Ghostscript needs the
+      // password before it can rewrite anything.
+      const refusal = await encryptedPdfRefusal(await readFile(result));
+      if (refusal) { setLoadError(refusal); return; }
       setFilePath(result);
       setFileName(name);
       goToStep(1);

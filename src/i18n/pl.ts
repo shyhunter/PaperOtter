@@ -81,6 +81,8 @@ export const pl: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Podaj prawidłowy rozmiar docelowy',
   'save.toFolder': 'Zapisz w folderze', 'save.asZip': 'Zapisz jako ZIP', 'save.again': 'Zapisz ponownie',
   'save.showInFinder': 'Pokaż w Finderze', 'save.success': 'Plik zapisany',
+  'pdfEncryption.lockedUseUnlock':
+    'Ten PDF jest chroniony hasłem, więc nie można go tutaj otworzyć. Najpierw odblokuj go narzędziem „Odblokuj PDF”, a potem spróbuj ponownie.',
   'save.failedReadOnly':
     '„{name}” jest tylko do odczytu, więc nic do niego nie zapisano. Twoje zmiany nadal tu są — zmień uprawnienia pliku i spróbuj ponownie albo użyj Zapisz jako…, aby zapisać kopię.',
   'save.failedGone':

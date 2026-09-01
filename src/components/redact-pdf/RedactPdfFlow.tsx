@@ -1,6 +1,7 @@
 // RedactPdfFlow: Pick PDF → Redact (draw/search) → Save redacted PDF.
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FileUp, Loader2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -53,6 +54,10 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
     setLoadError(null);
     try {
       const bytes = await readFile(filePath);
+      // A locked PDF loads fine under `ignoreEncryption` and reports its real
+      // page count, so without this the tool opens and then renders nothing.
+      const refusal = await encryptedPdfRefusal(bytes);
+      if (refusal) { setLoadError(refusal); return; }
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
       setPdfBytes(bytes);
       setSourcePath(filePath);

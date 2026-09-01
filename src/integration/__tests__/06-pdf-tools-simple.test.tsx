@@ -398,6 +398,18 @@ describe('Suite 06b — Unlock PDF', () => {
 // Repair PDF
 // ══════════════════════════════════════════════════════════════════════════════
 describe('Suite 06c — Repair PDF', () => {
+  // Repair and PDF/A read the file at acceptance now, to refuse a locked
+  // document (LOCK-01), so each has to say what it is being handed. Before the
+  // guard they never read it and could inherit whatever the previous suite left
+  // behind -- and PP-10 leaves `readFile` returning a locked PDF, exactly as
+  // the warning above it says.
+  const PLAIN_PDF = new Uint8Array(
+    readFileSync(join(process.cwd(), 'test-fixtures', 'warnock_camelot.pdf')),
+  );
+  beforeEach(() => {
+    vi.mocked(readFile).mockResolvedValue(PLAIN_PDF);
+  });
+
   // RP-01 ─────────────────────────────────────────────────────────────────────
   it('RP-01 — navigating to Repair PDF shows landing page', async () => {
     await navigateToTool(/repair pdf/i);
@@ -460,6 +472,18 @@ describe('Suite 06c — Repair PDF', () => {
 // PDF/A Convert
 // ══════════════════════════════════════════════════════════════════════════════
 describe('Suite 06d — PDF/A Convert', () => {
+  // Repair and PDF/A read the file at acceptance now, to refuse a locked
+  // document (LOCK-01), so each has to say what it is being handed. Before the
+  // guard they never read it and could inherit whatever the previous suite left
+  // behind -- and PP-10 leaves `readFile` returning a locked PDF, exactly as
+  // the warning above it says.
+  const PLAIN_PDF = new Uint8Array(
+    readFileSync(join(process.cwd(), 'test-fixtures', 'warnock_camelot.pdf')),
+  );
+  beforeEach(() => {
+    vi.mocked(readFile).mockResolvedValue(PLAIN_PDF);
+  });
+
   // PA-01 ─────────────────────────────────────────────────────────────────────
   it('PA-01 — navigating to PDF/A Convert shows landing page', async () => {
     await navigateToTool(/pdf\/a convert/i);

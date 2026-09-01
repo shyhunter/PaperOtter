@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { FileUp, Loader2 } from 'lucide-react';
 import { SignatureCreateStep } from './SignatureCreateStep';
 import { SignaturePlaceStep } from './SignaturePlaceStep';
@@ -53,7 +54,10 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     // Read bytes will happen via effect-like pattern after render
     setIsLoadingFile(true);
     readFile(file)
-      .then((bytes) => {
+      .then(async (bytes) => {
+        // A dropped file gets the same check as a picked one.
+        const refusal = await encryptedPdfRefusal(new Uint8Array(bytes));
+        if (refusal) { setLoadError(refusal); setFilePath(null); return; }
         setPdfBytes(new Uint8Array(bytes));
         goToStep(1);
       })
@@ -79,6 +83,10 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
       }
       const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
       const bytes = await readFile(result);
+      // A locked PDF loads fine under `ignoreEncryption` and reports its real
+      // page count, so without this the tool opens and then renders nothing.
+      const refusal = await encryptedPdfRefusal(bytes);
+      if (refusal) { setLoadError(refusal); return; }
       setFilePath(result);
       setFileName(name);
       setPdfBytes(new Uint8Array(bytes));

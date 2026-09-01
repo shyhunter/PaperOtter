@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { FileUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,10 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
 
     try {
       const bytes = await readFile(filePath);
+      // A locked PDF loads fine under `ignoreEncryption` and reports its real
+      // page count, so without this the tool opens and then renders nothing.
+      const refusal = await encryptedPdfRefusal(bytes);
+      if (refusal) { setError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pageCount = doc.getPageCount();
       const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
