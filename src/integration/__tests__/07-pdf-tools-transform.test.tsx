@@ -417,8 +417,11 @@ describe('Suite 07d — Friendly PDF Load Errors (PR #22)', () => {
   it('WM-ERROR-01 — Watermark flow shows friendly error when PDF has no valid header', async () => {
     const { user } = await navigateToTool(/watermark/i);
 
-    // Override the success mock for this one load call only
-    vi.mocked(PDFDocument.load).mockRejectedValueOnce(new Error('No PDF header found'));
+    // Not `Once`: a file with no header fails *every* load, and the flow now
+    // makes two — the encryption check at the door (LOCK-01) and then its own.
+    // A single rejection was consumed by the first, and the second fell back to
+    // the success mock, so the flow sailed past a file it should have refused.
+    vi.mocked(PDFDocument.load).mockRejectedValue(new Error('No PDF header found'));
 
     await selectPdfFile(user, '/test/not-a-pdf.pdf');
 

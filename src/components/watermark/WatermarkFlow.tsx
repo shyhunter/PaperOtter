@@ -1,6 +1,7 @@
 // WatermarkFlow: Orchestrates the watermark tool — Pick → Configure → Save.
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
@@ -77,6 +78,10 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     setLoadError(null);
     try {
       const bytes = await readFile(filePath);
+      // A locked PDF loads fine under `ignoreEncryption` and reports its real
+      // page count, so without this the tool opens and then renders nothing.
+      const refusal = await encryptedPdfRefusal(bytes);
+      if (refusal) { setLoadError(refusal); return; }
       // Validate it is a real PDF
       await PDFDocument.load(bytes, { ignoreEncryption: true });
       const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;

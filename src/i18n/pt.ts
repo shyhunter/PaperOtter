@@ -69,6 +69,8 @@ export const pt: Dictionary = {
   'save.toFolder': 'Guardar numa pasta', 'save.asZip': 'Guardar como ZIP',
   'save.again': 'Guardar novamente', 'save.showInFinder': 'Mostrar no Finder',
   'save.success': 'Ficheiro guardado com êxito', 'save.failed': 'Não foi possível guardar',
+  'pdfEncryption.lockedUseUnlock':
+    'Este PDF está protegido por palavra-passe, por isso não pode ser aberto aqui. Desbloqueie-o primeiro com a ferramenta “Desbloquear PDF” e tente novamente.',
   'save.failedReadOnly':
     '“{name}” é apenas de leitura, por isso nada foi escrito nele. As suas alterações continuam aqui — altere as permissões do ficheiro e tente novamente, ou use Guardar como… para escrever uma cópia.',
   'save.failedGone':

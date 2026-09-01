@@ -93,6 +93,8 @@ export const de: Dictionary = {
   'save.again': 'Erneut speichern',
   'save.showInFinder': 'Im Finder anzeigen',
   'save.success': 'Datei erfolgreich gespeichert',
+  'pdfEncryption.lockedUseUnlock':
+    'Dieses PDF ist passwortgeschützt und kann hier nicht geöffnet werden. Heben Sie den Schutz zuerst mit dem Werkzeug „PDF entsperren“ auf und versuchen Sie es dann erneut.',
   'save.failedReadOnly':
     '„{name}“ ist schreibgeschützt, es wurde nichts hineingeschrieben. Ihre Änderungen sind noch da — ändern Sie die Berechtigung der Datei und versuchen Sie es erneut, oder verwenden Sie Speichern unter…, um eine Kopie zu schreiben.',
   'save.failedGone':

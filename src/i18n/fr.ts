@@ -119,6 +119,8 @@ export const fr: Dictionary = {
   'save.again': 'Enregistrer à nouveau',
   'save.showInFinder': 'Afficher dans le Finder',
   'save.success': 'Fichier enregistré',
+  'pdfEncryption.lockedUseUnlock':
+    'Ce PDF est protégé par un mot de passe et ne peut pas être ouvert ici. Déverrouillez-le d’abord avec l’outil « Déverrouiller le PDF », puis réessayez.',
   'save.failedReadOnly':
     '« {name} » est en lecture seule ; rien n’y a été écrit. Vos modifications sont toujours là — changez les autorisations du fichier et réessayez, ou utilisez Enregistrer sous… pour écrire une copie.',
   'save.failedGone':

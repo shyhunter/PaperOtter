@@ -62,6 +62,8 @@ export const it: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Inserisca una dimensione valida',
   'save.toFolder': 'Salva in una cartella', 'save.asZip': 'Salva come ZIP', 'save.again': 'Salva di nuovo',
   'save.showInFinder': 'Mostra nel Finder', 'save.success': 'File salvato',
+  'pdfEncryption.lockedUseUnlock':
+    'Questo PDF è protetto da password e non può essere aperto qui. Lo sblocchi prima con lo strumento «Sblocca PDF», poi riprovi.',
   'save.failedReadOnly':
     '«{name}» è di sola lettura, quindi non vi è stato scritto nulla. Le sue modifiche sono ancora qui: cambi i permessi del file e riprovi, oppure usi Salva con nome… per scrivere una copia.',
   'save.failedGone':

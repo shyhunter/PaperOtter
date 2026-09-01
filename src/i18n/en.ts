@@ -73,6 +73,8 @@ export const en = {
   // would be wrong for everyone on Dolphin or Thunar.
   'save.showInFiles': 'Show in file manager',
   'save.success': 'File saved successfully',
+  'pdfEncryption.lockedUseUnlock':
+    'This PDF is password-protected, so it cannot be opened here. Unlock it with the Unlock PDF tool first, then try again.',
   'save.failedReadOnly':
     '“{name}” is read-only, so nothing was written to it. Your changes are still here — change the file’s permission and try again, or use Save as… to write a copy.',
   'save.failedGone':
