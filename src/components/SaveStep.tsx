@@ -16,6 +16,7 @@ import { uniqueOutputPath } from '@/lib/outputPath';
 import { toBytes } from '@/lib/zipOutputs';
 import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
+import { saveOverFile, classifySaveFailure, saveFailureMessage } from '@/lib/saveOverFile';
 import { revealLabelKey } from '@/lib/platform';
 
 export interface MultiFileOutput {
@@ -472,12 +473,17 @@ function SingleFileSave({
   // Save as... is the choice to leave the original alone; repeating must not
   // quietly overwrite it.
   const [lastMode, setLastMode] = useState<'replace' | 'saveAs' | null>(null);
+  // Which fault, not just that there was one. Retrying a replace against a
+  // path that no longer holds the file is the one button certain to fail again,
+  // so that case is offered the dialog instead.
+  const [failure, setFailure] = useState<ReturnType<typeof classifySaveFailure> | null>(null);
 
   // ── Single-file save (original behavior) ─────────────────────────────────
   const handleSave = useCallback(async () => {
     setLastMode('saveAs');
     setSaveState('dialog-open');
     setError(null);
+    setFailure(null);
 
     // E2E test hook: capture save options without opening the OS dialog.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -563,13 +569,19 @@ function SingleFileSave({
     setLastMode('replace');
     setSaveState('writing');
     setError(null);
+    setFailure(null);
     try {
-      await writeFile(sourcePath, processedBytes);
+      // Not writeFile: that opens with O_TRUNC, so the user's only copy is zero
+      // bytes from the moment the file opens until the last byte lands.
+      await saveOverFile(sourcePath, processedBytes);
       setSaveState('idle');
       onSaveComplete(sourcePath);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFileCheck');
-      setError(message);
+      // A Tauri command rejects with a plain string, so `err instanceof Error`
+      // is false for every filesystem failure -- which is how all four of these
+      // paths came to share one sentence about permissions.
+      setFailure(classifySaveFailure(err));
+      setError(saveFailureMessage(err, getFileName(sourcePath)));
       setSaveState('error');
     }
   }, [sourcePath, processedBytes, onSaveComplete]);
@@ -639,9 +651,17 @@ function SingleFileSave({
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
               {t('save.backToCompare')}
             </Button>
-            <Button size="sm" onClick={repeatSave} className="flex-1">
-              {t('common.tryAgain')}
-            </Button>
+            {failure === 'gone' ? (
+              // The document is not where it was. Trying the same write again
+              // is the one action guaranteed to fail; choosing a place is not.
+              <Button size="sm" onClick={handleSave} className="flex-1">
+                {t('saveStep.saveAs')}
+              </Button>
+            ) : (
+              <Button size="sm" onClick={repeatSave} className="flex-1">
+                {t('common.tryAgain')}
+              </Button>
+            )}
           </div>
         </div>
       </div>

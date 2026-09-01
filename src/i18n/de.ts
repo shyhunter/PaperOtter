@@ -93,6 +93,12 @@ export const de: Dictionary = {
   'save.again': 'Erneut speichern',
   'save.showInFinder': 'Im Finder anzeigen',
   'save.success': 'Datei erfolgreich gespeichert',
+  'save.failedReadOnly':
+    '„{name}“ ist schreibgeschützt, es wurde nichts hineingeschrieben. Ihre Änderungen sind noch da — ändern Sie die Berechtigung der Datei und versuchen Sie es erneut, oder verwenden Sie Speichern unter…, um eine Kopie zu schreiben.',
+  'save.failedGone':
+    '„{name}“ ist nicht mehr dort, wo es war — die Datei wurde möglicherweise verschoben, umbenannt oder gelöscht. Es wurde nichts geschrieben und Ihre Änderungen sind nicht verloren: Wählen Sie mit Speichern unter… einen neuen Ort dafür.',
+  'save.failedDiskFull':
+    'Auf dem Datenträger ist nicht genug Platz, um „{name}“ zu speichern. Es wurde nichts geändert — geben Sie Platz frei und versuchen Sie es erneut, oder schreiben Sie mit Speichern unter… auf einen anderen Datenträger.',
   'save.failed': 'Speichern fehlgeschlagen',
   'save.backToCompare': 'Zurück zum Vergleich',
   'save.zipHint': 'Alle Dateien in einem einzigen ZIP-Archiv',

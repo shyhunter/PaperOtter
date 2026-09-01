@@ -117,6 +117,12 @@ export const tr: Dictionary = {
   'save.again': 'Yeniden kaydet',
   'save.showInFinder': 'Finder’da göster',
   'save.success': 'Dosya kaydedildi',
+  'save.failedReadOnly':
+    '“{name}” salt okunur, bu yüzden içine hiçbir şey yazılmadı. Değişiklikleriniz duruyor — dosyanın iznini değiştirip yeniden deneyin ya da Farklı kaydet… ile bir kopya yazın.',
+  'save.failedGone':
+    '“{name}” artık eski yerinde değil — taşınmış, yeniden adlandırılmış ya da silinmiş olabilir. Hiçbir şey yazılmadı ve değişiklikleriniz kaybolmadı: Farklı kaydet… ile onlara yeni bir yer seçin.',
+  'save.failedDiskFull':
+    '“{name}” dosyasını kaydetmek için diskte yeterli yer yok. Hiçbir şey değiştirilmedi — yer açıp yeniden deneyin ya da Farklı kaydet… ile başka bir diske yazın.',
   'save.failed': 'Kaydetme başarısız',
   'save.backToCompare': 'Karşılaştırmaya dön',
   'save.zipHint': 'Tüm dosyalar tek bir ZIP arşivinde',

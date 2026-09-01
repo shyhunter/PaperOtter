@@ -62,6 +62,12 @@ export const it: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Inserisca una dimensione valida',
   'save.toFolder': 'Salva in una cartella', 'save.asZip': 'Salva come ZIP', 'save.again': 'Salva di nuovo',
   'save.showInFinder': 'Mostra nel Finder', 'save.success': 'File salvato',
+  'save.failedReadOnly':
+    '«{name}» è di sola lettura, quindi non vi è stato scritto nulla. Le sue modifiche sono ancora qui: cambi i permessi del file e riprovi, oppure usi Salva con nome… per scrivere una copia.',
+  'save.failedGone':
+    '«{name}» non è più dove si trovava: potrebbe essere stato spostato, rinominato o eliminato. Non è stato scritto nulla e le sue modifiche non sono perse: usi Salva con nome… per scegliere loro un nuovo posto.',
+  'save.failedDiskFull':
+    'Non c’è spazio sufficiente sul disco per salvare «{name}». Non è stato modificato nulla: liberi spazio e riprovi, oppure usi Salva con nome… per scrivere su un altro disco.',
   'save.failed': 'Salvataggio non riuscito', 'save.backToCompare': 'Torna al confronto',
   'save.zipHint': 'Tutti i file in un unico archivio ZIP',
   'save.individualHint': 'Ogni file salvato singolarmente con nome automatico',
