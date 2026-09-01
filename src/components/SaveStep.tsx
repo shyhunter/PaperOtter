@@ -163,7 +163,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
   };
 
   return (
-    <div className="relative rounded-lg border border-border bg-card shadow-sm p-4 mx-4 mt-3 animate-fade-slide-in">
+    <div data-testid="save-confirmation" className="relative rounded-lg border border-border bg-card shadow-sm p-4 mx-4 mt-3 animate-fade-slide-in">
       <button
         type="button"
         onClick={onDismiss}
@@ -672,7 +672,7 @@ function SingleFileSave({
         <div className="w-full max-w-sm space-y-4">
           <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
             <p className="text-xs font-medium text-destructive">{t('save.failed')}</p>
-            <p className="text-xs text-destructive/80 mt-1">{error}</p>
+            <p data-testid="save-error" className="text-xs text-destructive/80 mt-1">{error}</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
@@ -681,11 +681,11 @@ function SingleFileSave({
             {failure === 'gone' ? (
               // The document is not where it was. Trying the same write again
               // is the one action guaranteed to fail; choosing a place is not.
-              <Button size="sm" onClick={handleSave} className="flex-1">
+              <Button size="sm" data-testid="save-as-btn" onClick={handleSave} className="flex-1">
                 {t('saveStep.saveAs')}
               </Button>
             ) : (
-              <Button size="sm" onClick={repeatSave} className="flex-1">
+              <Button size="sm" data-testid="try-again-btn" onClick={repeatSave} className="flex-1">
                 {t('common.tryAgain')}
               </Button>
             )}

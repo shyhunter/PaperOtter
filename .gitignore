@@ -63,3 +63,7 @@ test-fixtures-e2e/large-sparse.jpg
 .aws/credentials
 .npmrc.local
 # --- end security baseline ---
+
+# Regression-run results — evidence about one machine at one moment, not a
+# fact about the repository.
+.e2e-results/

@@ -1,4 +1,5 @@
 import { join, dirname } from 'path';
+import ResultsReporter from './reporters/results-reporter';
 import { fileURLToPath } from 'url';
 import { spawn, spawnSync, type ChildProcess } from 'child_process';
 import { createConnection } from 'net';
@@ -89,6 +90,9 @@ export const config: WebdriverIO.Config = {
   suites: {
     pdf:   [join(__dirname, 'tests/pdf-flows.test.ts')],
     image: [join(__dirname, 'tests/image-flows.test.ts')],
+    // Every defect fixed by hand and then pinned here, so it can be re-checked
+    // without anyone preparing a file first. Each spec builds its own fixtures.
+    regressions: [join(__dirname, 'tests/regressions/**/*.test.ts')],
   },
 
   capabilities: [{ 'tauri:options': { binary: getTauriBinaryPath() } } as unknown as TauriCapability & WebdriverIO.Capabilities],
@@ -110,7 +114,10 @@ export const config: WebdriverIO.Config = {
   connectionRetryCount: 30,
 
   framework: 'mocha',
-  reporters: ['spec'],
+  // 'spec' prints to a terminal that scrolls away; the results reporter leaves a
+  // readable record in .e2e-results/ so a run can be looked at afterwards, and
+  // from a different machine than the one that ran it.
+  reporters: ['spec', [ResultsReporter, {}]],
 
   mochaOpts: {
     ui: 'bdd',
