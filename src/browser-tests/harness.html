@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8" /><title>Papercut browser-test harness</title></head>
+  <body>
+    <!-- Deliberately not the app. These tests exercise the libraries that need a
+         real browser, against real documents, with nothing mocked. Booting the
+         whole app would drag in the Tauri IPC surface and test far more than
+         the thing under test. -->
+    <div id="harness">papercut browser-test harness</div>
+    <script type="module" src="./harness.ts"></script>
+  </body>
+</html>
