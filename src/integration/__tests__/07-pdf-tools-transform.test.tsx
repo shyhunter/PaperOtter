@@ -384,6 +384,27 @@ describe('Suite 07c — Rotate PDF', () => {
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
   });
+
+  // RF-08 ─────────────────────────────────────────────────────────────────────
+  it('RF-08 — Back from the Save step returns to the rotate step', async () => {
+    // Reported on both Ubuntu and macOS: Back on the Save screen did nothing.
+    // The flow advanced to Save from a bare `if (step === 1 && result)` in the
+    // render body, so setting step back to 1 re-ran that same condition on the
+    // very next render — the processor result was still there — and bounced
+    // straight back to Save. The button fired; the screen never changed.
+    const { user } = await navigateToTool(/rotate pdf/i);
+    await selectPdfFile(user, '/test/document.pdf');
+    await screen.findByText('Rotate Pages', {}, { timeout: 2000 });
+
+    await user.click(screen.getByRole('button', { name: /all right/i }));
+    await user.click(screen.getByRole('button', { name: /apply & save/i }));
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
+
+    await user.click(screen.getByRole('button', { name: /^back$/i }));
+
+    await screen.findByText('Rotate Pages', {}, { timeout: 2000 });
+    expect(screen.queryByText(/choose a save location|save changes to/i)).not.toBeInTheDocument();
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

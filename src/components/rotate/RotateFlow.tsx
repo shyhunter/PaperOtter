@@ -157,6 +157,9 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
             onCancel={() => goToStep(1)}
             onBack={() => {
               setSavedFilePath(null);
+              // Clear the result first: the auto-advance above re-fires on the next
+              // render while it is still set, which would bounce us back to Save.
+              rotateProcessor.reset();
               goToStep(1);
             }}
           />
