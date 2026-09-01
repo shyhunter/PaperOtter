@@ -2373,6 +2373,32 @@ async fn save_over_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>)
     .map_err(|e| format!("WRITE_FAILED:{e}"))?
 }
 
+/// Emit a drag-drop payload as though the OS had delivered one. **Test builds only.**
+///
+/// WebDriver cannot synthesise a native drop into a Tauri webview: the event
+/// originates in the window manager, not in the page, and there is no script
+/// path to it. Without this, the one defect that needed the most real-world
+/// evidence -- a second dropped file replacing the first instead of joining it,
+/// reported on both macOS and Ubuntu -- could only ever be covered in jsdom.
+///
+/// Be clear about what a test using this proves: it exercises the real app's
+/// real handler with the payload shape Tauri delivers. It does **not** prove the
+/// OS-to-Tauri boundary, which stays untested by anything we can automate.
+///
+/// Gated behind the `e2e` feature, which is never enabled in a release build.
+#[cfg(feature = "e2e")]
+#[tauri::command]
+fn e2e_emit_drop(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
+    use tauri::Emitter;
+    // The same shape `onDragDropEvent` hands the webview, so the frontend
+    // listener cannot tell this apart from a real drop -- which is the point.
+    app.emit(
+        "tauri://drag-drop",
+        serde_json::json!({ "type": "drop", "paths": paths, "position": { "x": 0, "y": 0 } }),
+    )
+    .map_err(|e| format!("could not emit drop: {e}"))
+}
+
 /// Redact any password values from a Ghostscript error/stderr string.
 /// Replaces the value after password-related flags with [REDACTED].
 fn redact_gs_passwords(stderr: &str) -> String {
@@ -2435,7 +2461,15 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file]);
+        .invoke_handler({
+            // The e2e-only commands are registered in a separate generate_handler!
+            // so the release list stays exactly what it was -- a #[cfg] inside the
+            // macro is easy to misread as shipping.
+            #[cfg(not(feature = "e2e"))]
+            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file] }
+            #[cfg(feature = "e2e")]
+            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file, e2e_emit_drop] }
+        });
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
