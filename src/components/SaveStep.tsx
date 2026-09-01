@@ -4,7 +4,7 @@
 //   - fs:allow-write-file in capabilities/default.json
 //   - shell:allow-open in capabilities/default.json (for opening saved files)
 //   - tauri-plugin-fs registered in lib.rs
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-shell';
@@ -594,8 +594,18 @@ function SingleFileSave({
   //
   // Not when the file can simply be replaced: firing the dialog on arrival is
   // what made every flow a Save As, and there would be no way to reach Save.
+  //
+  // The ref is what keeps it to one dialog. StrictMode mounts, unmounts and
+  // mounts again, so this effect runs twice on the same component instance --
+  // and `saveState` cannot stop the second run, because it is state that has
+  // not re-rendered yet when the second invocation happens. Reported from a real
+  // Ubuntu build as two stacked save dialogs; macOS hid it behind an app-modal
+  // panel that queues the second one.
+  const autoSaveFired = useRef(false);
   useEffect(() => {
+    if (autoSaveFired.current) return;
     if (!savedFilePath && !canReplace) {
+      autoSaveFired.current = true;
       handleSave();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
