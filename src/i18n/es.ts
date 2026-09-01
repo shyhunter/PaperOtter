@@ -110,6 +110,12 @@ export const es: Dictionary = {
   'save.again': 'Guardar de nuevo',
   'save.showInFinder': 'Mostrar en el Finder',
   'save.success': 'Archivo guardado correctamente',
+  'save.failedReadOnly':
+    '«{name}» es de solo lectura, así que no se escribió nada en él. Sus cambios siguen aquí: cambie los permisos del archivo y vuelva a intentarlo, o use Guardar como… para escribir una copia.',
+  'save.failedGone':
+    '«{name}» ya no está donde estaba: puede que se haya movido, renombrado o eliminado. No se escribió nada y sus cambios no se han perdido: use Guardar como… para elegirles un nuevo lugar.',
+  'save.failedDiskFull':
+    'No hay espacio suficiente en el disco para guardar «{name}». No se ha modificado nada: libere espacio y vuelva a intentarlo, o use Guardar como… para escribir en otro disco.',
   'save.failed': 'Error al guardar',
   'save.backToCompare': 'Volver a la comparación',
   'save.zipHint': 'Todos los archivos en un único archivo ZIP',

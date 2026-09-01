@@ -81,6 +81,12 @@ export const pl: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Podaj prawidłowy rozmiar docelowy',
   'save.toFolder': 'Zapisz w folderze', 'save.asZip': 'Zapisz jako ZIP', 'save.again': 'Zapisz ponownie',
   'save.showInFinder': 'Pokaż w Finderze', 'save.success': 'Plik zapisany',
+  'save.failedReadOnly':
+    '„{name}” jest tylko do odczytu, więc nic do niego nie zapisano. Twoje zmiany nadal tu są — zmień uprawnienia pliku i spróbuj ponownie albo użyj Zapisz jako…, aby zapisać kopię.',
+  'save.failedGone':
+    '„{name}” nie ma już tam, gdzie był — mógł zostać przeniesiony, zmieniono jego nazwę albo go usunięto. Nic nie zapisano, a Twoje zmiany nie przepadły: użyj Zapisz jako…, aby wybrać dla nich nowe miejsce.',
+  'save.failedDiskFull':
+    'Na dysku nie ma dość miejsca, aby zapisać „{name}”. Nic nie zmieniono — zwolnij miejsce i spróbuj ponownie albo użyj Zapisz jako…, aby zapisać na innym dysku.',
   'save.failed': 'Zapisywanie nie powiodło się', 'save.backToCompare': 'Wróć do porównania',
   'save.zipHint': 'Wszystkie pliki w jednym archiwum ZIP',
   'save.individualHint': 'Każdy plik zapisany osobno z automatyczną nazwą',

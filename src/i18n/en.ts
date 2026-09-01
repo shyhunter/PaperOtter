@@ -73,6 +73,12 @@ export const en = {
   // would be wrong for everyone on Dolphin or Thunar.
   'save.showInFiles': 'Show in file manager',
   'save.success': 'File saved successfully',
+  'save.failedReadOnly':
+    '“{name}” is read-only, so nothing was written to it. Your changes are still here — change the file’s permission and try again, or use Save as… to write a copy.',
+  'save.failedGone':
+    '“{name}” is no longer where it was — it may have been moved, renamed or deleted. Nothing was written and your changes are not lost: use Save as… to choose a new place for them.',
+  'save.failedDiskFull':
+    'There is not enough space on the disk to save “{name}”. Nothing was changed — free some space and try again, or use Save as… to write to another disk.',
   'save.failed': 'Save failed',
   'common.tryAgain': 'Try Again',
   'common.dismiss': 'Dismiss',

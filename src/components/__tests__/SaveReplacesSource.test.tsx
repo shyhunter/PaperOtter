@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
 import { SaveStep } from '@/components/SaveStep';
 
 /**
@@ -34,6 +35,22 @@ vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), succe
 
 const BYTES = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
 
+/**
+ * Replacing the source does not go through `writeFile`.
+ *
+ * The plugin opens with O_TRUNC, so the user's only copy is zero bytes from the
+ * moment the file opens until the last byte lands. Save goes through the
+ * `save_over_file` command, which writes a sibling temporary file and renames
+ * it over the target. See FP-00 in SaveFilePermissions.test.tsx.
+ */
+function expectReplaced(path: string) {
+  expect(vi.mocked(invoke)).toHaveBeenCalledWith(
+    'save_over_file',
+    BYTES,
+    { headers: { path: encodeURIComponent(path) } },
+  );
+}
+
 function renderSaveStep(sourcePath: string | null) {
   return render(
     <SaveStep
@@ -50,6 +67,7 @@ function renderSaveStep(sourcePath: string | null) {
 beforeEach(() => {
   vi.mocked(writeFile).mockClear();
   vi.mocked(saveDialog).mockClear();
+  vi.mocked(invoke).mockReset().mockResolvedValue(undefined);
 });
 afterEach(cleanup);
 
@@ -69,9 +87,7 @@ describe('Save replaces the source file', () => {
 
     await user.click(await screen.findByRole('button', { name: /^save$/i }));
 
-    await waitFor(() => {
-      expect(vi.mocked(writeFile)).toHaveBeenCalledWith('/docs/report.pdf', BYTES);
-    });
+    await waitFor(() => expectReplaced('/docs/report.pdf'));
     expect(vi.mocked(saveDialog), 'Save must not ask where to put it').not.toHaveBeenCalled();
   });
 
@@ -260,18 +276,14 @@ describe('Save Again repeats the choice that was made', () => {
     render(<Harness />);
 
     await user.click(await screen.findByRole('button', { name: /^save$/i }));
-    await waitFor(() => {
-      expect(vi.mocked(writeFile)).toHaveBeenCalledWith('/docs/report.pdf', BYTES);
-    });
+    await waitFor(() => expectReplaced('/docs/report.pdf'));
 
-    vi.mocked(writeFile).mockClear();
+    vi.mocked(invoke).mockClear();
     vi.mocked(saveDialog).mockClear();
 
     await user.click(await screen.findByRole('button', { name: /save again/i }));
 
-    await waitFor(() => {
-      expect(vi.mocked(writeFile)).toHaveBeenCalledWith('/docs/report.pdf', BYTES);
-    });
+    await waitFor(() => expectReplaced('/docs/report.pdf'));
     expect(vi.mocked(saveDialog), 'a repeated Save must not start asking').not.toHaveBeenCalled();
   });
 });

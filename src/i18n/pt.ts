@@ -69,6 +69,12 @@ export const pt: Dictionary = {
   'save.toFolder': 'Guardar numa pasta', 'save.asZip': 'Guardar como ZIP',
   'save.again': 'Guardar novamente', 'save.showInFinder': 'Mostrar no Finder',
   'save.success': 'Ficheiro guardado com êxito', 'save.failed': 'Não foi possível guardar',
+  'save.failedReadOnly':
+    '“{name}” é apenas de leitura, por isso nada foi escrito nele. As suas alterações continuam aqui — altere as permissões do ficheiro e tente novamente, ou use Guardar como… para escrever uma cópia.',
+  'save.failedGone':
+    '“{name}” já não está onde estava — pode ter sido movido, mudado de nome ou eliminado. Nada foi escrito e as suas alterações não se perderam: use Guardar como… para lhes escolher um novo lugar.',
+  'save.failedDiskFull':
+    'Não há espaço suficiente no disco para guardar “{name}”. Nada foi alterado — liberte espaço e tente novamente, ou use Guardar como… para escrever noutro disco.',
   'save.backToCompare': 'Voltar à comparação',
   'save.zipHint': 'Todos os ficheiros reunidos num único arquivo ZIP',
   'save.individualHint': 'Cada ficheiro guardado em separado, com nome automático',

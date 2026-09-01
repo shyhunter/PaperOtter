@@ -67,6 +67,12 @@ export const nl: Dictionary = {
   'configureStep.enterAValidTargetSize': 'Voer een geldige doelgrootte in',
   'save.toFolder': 'In map opslaan', 'save.asZip': 'Als ZIP opslaan', 'save.again': 'Opnieuw opslaan',
   'save.showInFinder': 'Tonen in Finder', 'save.success': 'Bestand opgeslagen',
+  'save.failedReadOnly':
+    '‘{name}’ is alleen-lezen, er is niets naartoe geschreven. Uw wijzigingen zijn er nog — wijzig de rechten van het bestand en probeer het opnieuw, of gebruik Opslaan als… om een kopie te schrijven.',
+  'save.failedGone':
+    '‘{name}’ staat niet meer waar het stond — het is mogelijk verplaatst, hernoemd of verwijderd. Er is niets geschreven en uw wijzigingen zijn niet verloren: kies er met Opslaan als… een nieuwe plek voor.',
+  'save.failedDiskFull':
+    'Er is niet genoeg ruimte op de schijf om ‘{name}’ op te slaan. Er is niets gewijzigd — maak ruimte vrij en probeer het opnieuw, of schrijf met Opslaan als… naar een andere schijf.',
   'save.failed': 'Opslaan mislukt', 'save.backToCompare': 'Terug naar de vergelijking',
   'save.zipHint': 'Alle bestanden in één ZIP-archief',
   'save.individualHint': 'Elk bestand apart opgeslagen met automatische naamgeving',

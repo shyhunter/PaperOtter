@@ -2159,6 +2159,220 @@ async fn reveal_in_finder(path: String) -> Result<(), String> {
     Ok(())
 }
 
+// ─── Saving over the file the user opened ────────────────────────────────────
+
+/// Replace `target`'s contents without ever truncating `target` itself.
+///
+/// Since PR #85, Save writes back over the document the flow was opened with,
+/// so this runs against the user's only copy. `tauri-plugin-fs`'s `writeFile`
+/// opens with `O_TRUNC | O_CREAT`, which means two things that are wrong for
+/// that job:
+///
+///   - the original is zero bytes from the moment the file opens until the
+///     last byte lands. Measured on a 50,000-byte file: 0 bytes after open,
+///     before a single byte of the replacement is written. A full disk, an I/O
+///     error, or a crash inside that window leaves a truncated scan and no
+///     copy of what it replaced.
+///   - `create: true` means a document deleted or renamed while the tool was
+///     open is silently recreated at its old path, and the save reports success.
+///
+/// So: write a sibling temporary file, fsync it, then `rename` it over the
+/// target. `rename(2)` (and `MoveFileEx` with `REPLACE_EXISTING`) is atomic, so
+/// a reader sees either the whole old file or the whole new one and never a
+/// partial write. The temporary has to be a *sibling* rather than live in the
+/// system temp directory, because a rename across filesystems fails and the
+/// copy it would fall back to is exactly the non-atomic write being avoided.
+///
+/// Errors are returned with a machine-readable prefix rather than a sentence,
+/// because the interface has to tell these apart: every one of them used to
+/// reach the user as "Could not write file. Check that you have permission to
+/// write to the selected location." — which named the wrong cause for three of
+/// the four, and named a location the user never selected.
+fn atomic_replace(target: &std::path::Path, data: &[u8]) -> Result<(), String> {
+    use std::io::Write;
+
+    let parent = target
+        .parent()
+        .ok_or_else(|| format!("NO_DIR:{}", target.display()))?;
+    let file_name = target
+        .file_name()
+        .ok_or_else(|| format!("NO_DIR:{}", target.display()))?
+        .to_string_lossy()
+        .to_string();
+    if !parent.is_dir() {
+        return Err(format!("NO_DIR:{}", parent.display()));
+    }
+
+    // Pre-flight the target's own write permission, and do it by opening the
+    // file the way a direct write would — without O_TRUNC, so the probe cannot
+    // itself destroy anything.
+    //
+    // This check is not optional dressing: rename(2) needs write permission on
+    // the *directory*, not on the file, so an atomic replace would happily
+    // overwrite a 0444 file that a direct write correctly refuses. Making the
+    // save safe would otherwise have made it ignore a read-only flag.
+    let permissions = match std::fs::metadata(target) {
+        Ok(meta) => {
+            std::fs::OpenOptions::new()
+                .write(true)
+                .open(target)
+                .map_err(|e| match e.kind() {
+                    std::io::ErrorKind::PermissionDenied => format!("READ_ONLY:{file_name}"),
+                    _ => format!("WRITE_FAILED:{e}"),
+                })?;
+            Some(meta.permissions())
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Err(format!("TARGET_GONE:{file_name}"));
+        }
+        Err(e) => return Err(format!("WRITE_FAILED:{e}")),
+    };
+
+    let tmp = parent.join(format!(
+        ".papercut_save_{}_{}.tmp",
+        std::process::id(),
+        Uuid::new_v4().simple()
+    ));
+
+    let written = (|| -> std::io::Result<()> {
+        let mut file = std::fs::File::create(&tmp)?;
+        file.write_all(data)?;
+        // Without this the rename can be durable while the contents are not,
+        // which trades a truncated file for an empty one after a power loss.
+        file.sync_all()
+    })();
+
+    if let Err(e) = written {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(match e.kind() {
+            std::io::ErrorKind::PermissionDenied => format!("FOLDER_READ_ONLY:{file_name}"),
+            _ if e.raw_os_error() == Some(28) => format!("DISK_FULL:{file_name}"),
+            _ => format!("WRITE_FAILED:{e}"),
+        });
+    }
+
+    // A fresh inode carries the umask, not the user's own mode, so a document
+    // they had set to 0600 would quietly come back 0644.
+    if let Some(mode) = permissions {
+        let _ = std::fs::set_permissions(&tmp, mode);
+    }
+
+    std::fs::rename(&tmp, target).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        format!("REPLACE_FAILED:{e}")
+    })
+}
+
+/// Decode the `encodeURIComponent` form a path arrives in.
+///
+/// An IPC header is ASCII, and a document called `Ödeme Planı.pdf` is not, so
+/// the webview percent-encodes it. Written here rather than pulled in as a
+/// crate: this is the whole of what is needed, and a dependency for it would
+/// need agreement under rule R012.
+fn percent_decode_utf8(input: &[u8]) -> Option<String> {
+    let mut out = Vec::with_capacity(input.len());
+    let mut i = 0;
+    while i < input.len() {
+        if input[i] == b'%' {
+            let hex = input.get(i + 1..i + 3)?;
+            let byte = u8::from_str_radix(std::str::from_utf8(hex).ok()?, 16).ok()?;
+            out.push(byte);
+            i += 3;
+        } else {
+            out.push(input[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).ok()
+}
+
+/// Whether `target` sits inside one of the roots the app is allowed to write to.
+///
+/// `save_over_file` is a first-party command, so it does not get the scope check
+/// `tauri-plugin-fs` applies to `writeFile` -- and the write it performs is the
+/// most destructive one in the app. This puts the same boundary back.
+///
+/// Both halves are needed and neither is sufficient. `roots` mirrors the static
+/// `fs:allow-write-file` allow-list in `capabilities/default.json`, which is
+/// what lets a file opened through a file association work -- that path never
+/// grants anything at runtime. `granted` is the runtime scope, which is where a
+/// file picked in a dialog or dropped on the window lands (the dialog plugin
+/// calls `allow_file` itself; drops go through `allow_dropped_paths`), and is
+/// the only thing that covers a document outside all four roots.
+fn is_writable_target(target: &std::path::Path, roots: &[std::path::PathBuf], granted: bool) -> bool {
+    if granted {
+        return true;
+    }
+    // Compare against the parent: the target itself may have been deleted, and
+    // canonicalize fails on a path that is not there.
+    let parent = match target.parent().and_then(|p| p.canonicalize().ok()) {
+        Some(p) => p,
+        None => return false,
+    };
+    roots
+        .iter()
+        .filter_map(|r| r.canonicalize().ok())
+        .any(|root| parent.starts_with(&root))
+}
+
+/// Save over an existing document, atomically. See `atomic_replace`.
+///
+/// Bytes arrive as a raw IPC body rather than a command argument: a JSON array
+/// of 30 million numbers is not a reasonable way to move a scan across the
+/// bridge. This is the shape `tauri-plugin-fs` uses for the same reason.
+///
+/// `validate_source_path`'s filename allow-list is deliberately not applied.
+/// It exists to keep shell-hostile characters out of the Ghostscript command
+/// line; nothing here reaches a shell, and rejecting an `&` in a filename would
+/// refuse to save a document the app had just opened.
+#[tauri::command]
+async fn save_over_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<(), String> {
+    let raw = request
+        .headers()
+        .get("path")
+        .ok_or_else(|| "WRITE_FAILED:missing file path".to_string())?;
+    let path = percent_decode_utf8(raw.as_bytes())
+        .ok_or_else(|| "WRITE_FAILED:path is not valid UTF-8".to_string())?;
+
+    if path.is_empty() || path.contains('\0') || path.len() > 4096 {
+        return Err("WRITE_FAILED:invalid file path".to_string());
+    }
+
+    let data = match request.body() {
+        tauri::ipc::InvokeBody::Raw(data) => data.clone(),
+        _ => return Err("WRITE_FAILED:unexpected request body".to_string()),
+    };
+
+    {
+        use tauri::Manager;
+        use tauri_plugin_fs::FsExt;
+        let target = std::path::Path::new(&path);
+        let granted = app
+            .try_fs_scope()
+            .map(|scope| scope.is_allowed(target))
+            .unwrap_or(false);
+        let resolver = app.path();
+        let roots: Vec<std::path::PathBuf> = [
+            resolver.document_dir(),
+            resolver.download_dir(),
+            resolver.desktop_dir(),
+            resolver.temp_dir(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        if !is_writable_target(target, &roots, granted) {
+            return Err("FORBIDDEN:not a location Papercut may write to".to_string());
+        }
+    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        atomic_replace(std::path::Path::new(&path), &data)
+    })
+    .await
+    .map_err(|e| format!("WRITE_FAILED:{e}"))?
+}
+
 /// Redact any password values from a Ghostscript error/stderr string.
 /// Replaces the value after password-related flags with [REDACTED].
 fn redact_gs_passwords(stderr: &str) -> String {
@@ -2221,7 +2435,7 @@ pub fn run_with_file(open_file: Option<String>) {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths]);
+        .invoke_handler(tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file]);
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
     // deterministically included only when explicitly requested (e.g.
@@ -3857,6 +4071,260 @@ mod tests {
             );
 
             let _ = std::fs::remove_file(&output); // cleanup
+        }
+    }
+
+    // ─── Save must never leave a half-written file over the original ──────────
+
+    /// [SAVE-ATOMIC] Fixtures for the four file-permission paths (FP-01 – FP-04).
+    ///
+    /// Since Save writes back over the file it was given, every one of these
+    /// runs against the user's only copy. The failure that matters is not a bad
+    /// error message, it is a 30 MB scan replaced by 4 KB of a 30 MB scan.
+    #[cfg(test)]
+    mod atomic_save {
+        use crate::atomic_replace;
+        use std::fs;
+        use std::path::PathBuf;
+
+        fn scratch(name: &str) -> PathBuf {
+            let dir = std::env::temp_dir().join(format!("papercut_atomic_{}_{}", name, std::process::id()));
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(&dir).expect("scratch dir");
+            dir
+        }
+
+        #[cfg(unix)]
+        fn chmod(path: &std::path::Path, mode: u32) {
+            use std::os::unix::fs::PermissionsExt;
+            let mut p = fs::metadata(path).expect("metadata").permissions();
+            p.set_mode(mode);
+            fs::set_permissions(path, p).expect("set_permissions");
+        }
+
+        /// [FP-01] A read-only source is refused, and refused by name.
+        ///
+        /// The direct write this replaces got this right by accident: open(2)
+        /// with O_TRUNC fails on a 0444 file before it can truncate anything.
+        /// An atomic replace does NOT inherit that safety -- rename(2) needs
+        /// write permission on the *directory*, not on the file -- so without
+        /// an explicit pre-flight the fix for FP-02 would silently overwrite a
+        /// file the user had deliberately marked read-only.
+        #[test]
+        #[cfg(unix)]
+        fn a_read_only_file_is_refused_and_left_intact() {
+            let dir = scratch("readonly");
+            let target = dir.join("ro.pdf");
+            fs::write(&target, b"ORIGINAL").expect("write");
+            chmod(&target, 0o444);
+
+            let err = atomic_replace(&target, &vec![b'X'; 4096]).expect_err("must refuse");
+
+            assert!(
+                err.starts_with("READ_ONLY:"),
+                "a read-only target must be named as such, got: {err}"
+            );
+            assert_eq!(
+                fs::read(&target).expect("read"),
+                b"ORIGINAL",
+                "the original must be byte-for-byte untouched"
+            );
+            chmod(&target, 0o644);
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// [FP-04] The same file saves once the permission is restored.
+        #[test]
+        #[cfg(unix)]
+        fn the_retry_after_chmod_succeeds() {
+            let dir = scratch("retry");
+            let target = dir.join("ro.pdf");
+            fs::write(&target, b"ORIGINAL").expect("write");
+            chmod(&target, 0o444);
+            atomic_replace(&target, b"NEW").expect_err("must refuse while read-only");
+
+            chmod(&target, 0o644);
+            atomic_replace(&target, b"NEW").expect("must write once writable");
+
+            assert_eq!(fs::read(&target).expect("read"), b"NEW");
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// [FP-02] A source deleted while the tool was open is not silently
+        /// recreated by the backend -- it is reported as gone, so the interface
+        /// can offer Save as... rather than resurrecting a file at a path the
+        /// user removed on purpose.
+        #[test]
+        fn a_vanished_target_is_reported_not_recreated() {
+            let dir = scratch("vanished");
+            let target = dir.join("gone.pdf");
+            fs::write(&target, b"ORIGINAL").expect("write");
+            fs::remove_file(&target).expect("remove");
+
+            let err = atomic_replace(&target, b"NEW").expect_err("must refuse");
+
+            assert!(
+                err.starts_with("TARGET_GONE:"),
+                "a missing target must be named as such, got: {err}"
+            );
+            assert!(!target.exists(), "the file the user deleted must stay deleted");
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// [FP-03] Renaming is the same fact as deleting, from the old path's
+        /// point of view -- and worse to get wrong: recreating the old name
+        /// leaves the user holding two files and looking at an undone rename.
+        #[test]
+        fn a_renamed_target_leaves_both_paths_alone() {
+            let dir = scratch("renamed");
+            let from = dir.join("before.pdf");
+            let to = dir.join("after.pdf");
+            fs::write(&from, b"ORIGINAL").expect("write");
+            fs::rename(&from, &to).expect("rename");
+
+            let err = atomic_replace(&from, b"NEW").expect_err("must refuse");
+
+            assert!(err.starts_with("TARGET_GONE:"), "got: {err}");
+            assert!(!from.exists(), "the old name must not come back");
+            assert_eq!(
+                fs::read(&to).expect("read"),
+                b"ORIGINAL",
+                "the file the user renamed to must be untouched"
+            );
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// The containing directory being gone is a different fault from the
+        /// file being gone, and from a permission problem. All three used to
+        /// reach the user as "check that you have permission".
+        #[test]
+        fn a_missing_directory_is_its_own_fault() {
+            let dir = scratch("nodir");
+            let sub = dir.join("sub");
+            fs::create_dir_all(&sub).expect("mkdir");
+            let target = sub.join("f.pdf");
+            fs::write(&target, b"ORIGINAL").expect("write");
+            fs::remove_dir_all(&sub).expect("rmdir");
+
+            let err = atomic_replace(&target, b"NEW").expect_err("must refuse");
+
+            assert!(err.starts_with("NO_DIR:"), "got: {err}");
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// The point of the whole exercise: the original is never the file
+        /// being written to, so no failure can leave it half-written.
+        ///
+        /// Measured before the fix: open(O_TRUNC) on a 50,000-byte file leaves
+        /// it at 0 bytes before a single byte of the replacement is written.
+        /// Every byte written after that point is a race against the original.
+        #[test]
+        fn the_original_is_never_the_file_being_written() {
+            let dir = scratch("neverdirect");
+            let target = dir.join("big.pdf");
+            fs::write(&target, vec![b'A'; 50_000]).expect("write");
+
+            // A replacement large enough that a direct write would be partial
+            // for a long time, and a directory watched for what appears in it.
+            let payload = vec![b'B'; 200_000];
+            atomic_replace(&target, &payload).expect("must write");
+
+            assert_eq!(fs::read(&target).expect("read"), payload);
+            let leftovers: Vec<_> = fs::read_dir(&dir)
+                .expect("read_dir")
+                .flatten()
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| n != "big.pdf")
+                .collect();
+            assert!(
+                leftovers.is_empty(),
+                "the temporary file must not survive a successful save: {leftovers:?}"
+            );
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// A saved file keeps the mode it had. Writing through a temporary file
+        /// creates a fresh inode, so without this the user's own permissions
+        /// are quietly replaced by whatever the process umask says.
+        #[test]
+        #[cfg(unix)]
+        fn the_replacement_keeps_the_original_permissions() {
+            use std::os::unix::fs::PermissionsExt;
+            let dir = scratch("mode");
+            let target = dir.join("f.pdf");
+            fs::write(&target, b"ORIGINAL").expect("write");
+            chmod(&target, 0o600);
+
+            atomic_replace(&target, b"NEW").expect("must write");
+
+            let mode = fs::metadata(&target).expect("metadata").permissions().mode() & 0o777;
+            assert_eq!(mode, 0o600, "the file's own permissions must survive the save");
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// A path only reaches the backend if it survives the trip through an
+        /// ASCII IPC header. Turkish and German filenames are the ordinary case
+        /// for this app's users, not an edge one.
+        #[test]
+        fn a_non_ascii_path_survives_the_header() {
+            use crate::percent_decode_utf8;
+            assert_eq!(
+                percent_decode_utf8(b"/Users/a/%C3%96deme%20Plan%C4%B1.pdf").as_deref(),
+                Some("/Users/a/Ödeme Planı.pdf")
+            );
+            assert_eq!(
+                percent_decode_utf8(b"/plain/report.pdf").as_deref(),
+                Some("/plain/report.pdf")
+            );
+            // Truncated and non-hex escapes must decline, not panic.
+            assert_eq!(percent_decode_utf8(b"/a/%C3"), None);
+            assert_eq!(percent_decode_utf8(b"/a/%ZZ"), None);
+        }
+
+        /// The scope boundary `writeFile` used to apply, put back by hand.
+        ///
+        /// `save_over_file` is a first-party command and so bypasses
+        /// `tauri-plugin-fs`'s scope check, while performing the single most
+        /// destructive write in the app. Without this it would write anywhere
+        /// the OS allows.
+        #[test]
+        fn a_target_outside_every_root_is_refused() {
+            use crate::is_writable_target;
+            let dir = scratch("scope");
+            let root = dir.join("documents");
+            fs::create_dir_all(&root).expect("mkdir");
+            let outside = dir.join("elsewhere");
+            fs::create_dir_all(&outside).expect("mkdir");
+            let roots = vec![root.clone()];
+
+            assert!(
+                is_writable_target(&root.join("a.pdf"), &roots, false),
+                "a file inside a declared root must be writable"
+            );
+            assert!(
+                is_writable_target(&root.join("sub").join("a.pdf"), &roots, false) == false,
+                "canonicalize fails on a parent that does not exist, so it is refused"
+            );
+            assert!(
+                !is_writable_target(&outside.join("a.pdf"), &roots, false),
+                "a file outside every root must be refused"
+            );
+            assert!(
+                is_writable_target(&outside.join("a.pdf"), &roots, true),
+                "unless the user picked or dropped it, which grants the runtime scope"
+            );
+            assert!(
+                !is_writable_target(&root.join("..").join("elsewhere").join("a.pdf"), &roots, false),
+                "a traversal out of a root must not be read as inside it"
+            );
+            let _ = fs::remove_dir_all(&dir);
+        }
+
+        /// A path with no filename cannot be a save target and must not panic.
+        #[test]
+        fn a_path_with_no_file_name_is_refused() {
+            let err = atomic_replace(std::path::Path::new("/"), b"NEW").expect_err("must refuse");
+            assert!(!err.is_empty());
         }
     }
 }

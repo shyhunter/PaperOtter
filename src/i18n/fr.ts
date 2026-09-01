@@ -119,6 +119,12 @@ export const fr: Dictionary = {
   'save.again': 'Enregistrer à nouveau',
   'save.showInFinder': 'Afficher dans le Finder',
   'save.success': 'Fichier enregistré',
+  'save.failedReadOnly':
+    '« {name} » est en lecture seule ; rien n’y a été écrit. Vos modifications sont toujours là — changez les autorisations du fichier et réessayez, ou utilisez Enregistrer sous… pour écrire une copie.',
+  'save.failedGone':
+    '« {name} » n’est plus là où il était — il a peut-être été déplacé, renommé ou supprimé. Rien n’a été écrit et vos modifications ne sont pas perdues : utilisez Enregistrer sous… pour leur choisir un nouvel emplacement.',
+  'save.failedDiskFull':
+    'Il n’y a pas assez d’espace sur le disque pour enregistrer « {name} ». Rien n’a été modifié — libérez de l’espace et réessayez, ou utilisez Enregistrer sous… pour écrire sur un autre disque.',
   'save.failed': 'Échec de l’enregistrement',
   'save.backToCompare': 'Retour à la comparaison',
   'save.zipHint': 'Tous les fichiers dans une seule archive ZIP',
