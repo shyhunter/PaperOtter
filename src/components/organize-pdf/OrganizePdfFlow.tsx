@@ -42,6 +42,8 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
   const pdfDoc = usePdfDocument(pdfBytes);
   const [originalPageCount, setOriginalPageCount] = useState(0);
   const [fileName, setFileName] = useState('');
+  // The file this flow opened. Save writes back to it; Save as... writes a copy.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<PageEntry[]>([]);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
@@ -70,6 +72,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       setPdfBytes(bytes);
       setOriginalPageCount(count);
       setFileName(name);
+      setSourcePath(filePath);
       setPages(Array.from({ length: count }, (_, i) => ({ sourceIndex: i, id: nextId() })));
       goToStep(1);
     } catch (err) {
@@ -310,6 +313,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && processedBytes && (
           <SaveStep
+            sourcePath={sourcePath}
             processedBytes={processedBytes}
             sourceFileName={fileName}
             defaultSaveName={fileName.replace(/\.pdf$/i, '') + '-organized.pdf'}

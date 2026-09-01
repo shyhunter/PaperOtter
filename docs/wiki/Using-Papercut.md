@@ -17,6 +17,32 @@ already know how to use them all:
 <img src="img/tool-flow.png" alt="Compress PDF tool - pick a file to open or drop" width="70%">
 </p>
 
+## What Save does
+
+**Save replaces the file you opened.** Rotate a PDF and press Save, and that PDF
+is now rotated — one document, in one place, in its new state. This is what Save
+means in every other desktop application, and it is what the PDF editor has
+always done.
+
+**Save as…** is beside it, and writes a copy somewhere else instead. Use it when
+you want to keep the original as it was.
+
+Some tools cannot replace anything and will always ask you where to put the
+result:
+
+- **The file type changes** — Convert Document, Convert Image, PDF to JPG and
+  JPG to PDF. A `.docx` cannot replace a `.pdf`.
+- **The number of files changes** — Merge takes several and produces one; Split
+  takes one and produces many.
+- **Protect PDF**, deliberately. It is the only operation whose result can become
+  permanently unopenable — a forgotten password has no recovery — so it always
+  writes a new file and leaves your readable original alone. See
+  [Protect PDF](Protect-PDF).
+
+Converting an image only replaces the original when the format is unchanged.
+Compressing a JPG as a JPG replaces it; saving that JPG as a PNG writes a new
+file, because a `.png` cannot take the place of a `.jpg`.
+
 ## The dashboard
 
 The dashboard is where every tool lives, organized into three categories:

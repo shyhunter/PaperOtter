@@ -58,6 +58,8 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
   }, [onStepChange]);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
+  // The file this flow opened. Save writes back to it; Save as... writes a copy.
+  const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [rotation, setRotation] = useState<ImageRotation>(90);
   const [outputFormat, setOutputFormat] = useState<ImageOutputFormat>('jpeg');
@@ -107,6 +109,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
       setFilePath(path);
       setFileName(name);
+      setSourcePath(path);
       setPreviewUrl(url);
       setOutputFormat(detectFormatFromPath(path));
       goToStep(1);
@@ -342,6 +345,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
         {/* Step 2: Save */}
         {step === 2 && resultBytes && (
           <SaveStep
+            sourcePath={sourcePath}
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName, outputFormat)}

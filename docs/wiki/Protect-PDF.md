@@ -26,6 +26,10 @@ Before you protect a file:
   opens with the password you set. Papercut always writes the protected document
   as a *new* file and never encrypts your original in place, so keeping it costs
   you nothing.
+
+  This makes Protect the one exception to how [Save works everywhere else](Using-Papercut#what-save-does),
+  where Save replaces the file you opened. Protect does not, because it is the
+  only operation whose result can become permanently unopenable.
 - **Test it.** Close the protected file and reopen it with the password before
   you delete anything.
 

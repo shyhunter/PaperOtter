@@ -42,6 +42,15 @@ export interface SaveStepProps {
   onCancel: () => void;
   /** Called to go back to Compare step without saving */
   onBack: () => void;
+  /**
+   * The file this flow opened, when the result can replace it.
+   *
+   * Set it only when one file goes in and one file of the same type comes out.
+   * Convert and PDF-to-JPG change the type, Merge and Split change the count,
+   * and Protect deliberately writes a copy — all of them leave this null and
+   * keep the Save As dialog.
+   */
+  sourcePath?: string | null;
   /** Multi-file output (e.g., split PDF). If set, enables folder/ZIP save mode. */
   multiFileOutputs?: MultiFileOutput[];
 }
@@ -454,6 +463,7 @@ function SingleFileSave({
   onSaveComplete,
   onCancel,
   onBack,
+  sourcePath,
 }: SaveStepProps) {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -534,9 +544,35 @@ function SingleFileSave({
     }
   }, [processedBytes, sourceFileName, defaultSaveName, saveFilters, onSaveComplete, onCancel]);
 
-  // Auto-trigger the save dialog on mount (only if no savedFilePath yet)
+  // Save means the same file, changed -- the meaning it has everywhere else on
+  // a desktop, and the one the PDF editor already used. Every tool flow used to
+  // open a Save As dialog instead, so unlocking a document left the locked one
+  // in place and added a second file beside it.
+  // Multi-file output never reaches here: SaveStep hands those to MultiFileSave,
+  // which keeps its folder/ZIP save and its collision-safe naming untouched.
+  const canReplace = Boolean(sourcePath);
+
+  const handleReplace = useCallback(async () => {
+    if (!sourcePath) return;
+    setSaveState('writing');
+    setError(null);
+    try {
+      await writeFile(sourcePath, processedBytes);
+      setSaveState('idle');
+      onSaveComplete(sourcePath);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('saveStep.couldNotWriteFileCheck');
+      setError(message);
+      setSaveState('error');
+    }
+  }, [sourcePath, processedBytes, onSaveComplete]);
+
+  // Auto-trigger the save dialog on mount (only if no savedFilePath yet).
+  //
+  // Not when the file can simply be replaced: firing the dialog on arrival is
+  // what made every flow a Save As, and there would be no way to reach Save.
   useEffect(() => {
-    if (!savedFilePath) {
+    if (!savedFilePath && !canReplace) {
       handleSave();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -556,7 +592,7 @@ function SingleFileSave({
             {t('common.back')}
           </Button>
           <div className="flex-1" />
-          <Button size="sm" onClick={handleSave}>
+          <Button size="sm" onClick={canReplace ? handleReplace : handleSave}>
             {t('save.again')}
           </Button>
         </div>
@@ -592,10 +628,39 @@ function SingleFileSave({
             <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
               {t('save.backToCompare')}
             </Button>
-            <Button size="sm" onClick={handleSave} className="flex-1">
+            <Button size="sm" onClick={canReplace ? handleReplace : handleSave} className="flex-1">
               {t('common.tryAgain')}
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (canReplace) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="w-full max-w-sm space-y-2 text-center">
+            <p className="text-sm font-medium text-foreground">
+              {t('saveStep.saveChangesTo', { name: getFileName(sourcePath!) })}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t('saveStep.saveReplacesOriginal')}
+            </p>
+          </div>
+        </div>
+        <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+          <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+            {t('common.back')}
+          </Button>
+          <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={handleSave}>
+            {t('saveStep.saveAs')}
+          </Button>
+          <Button size="sm" onClick={handleReplace}>
+            {t('common.save')}
+          </Button>
         </div>
       </div>
     );

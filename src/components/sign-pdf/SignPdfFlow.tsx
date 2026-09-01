@@ -24,7 +24,9 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     setStep(s);
     onStepChange?.(s);
   }, [onStepChange]);
-  const [, setFilePath] = useState<string | null>(null);
+  // The value was discarded here until Save needed it: the setter was called
+  // in three places and nothing ever read the state back.
+  const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -167,6 +169,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
         {/* Step 3: Save */}
         {step === 3 && resultBytes && (
           <SaveStep
+            sourcePath={filePath}
             processedBytes={resultBytes}
             sourceFileName={fileName}
             defaultSaveName={buildSaveName(fileName)}

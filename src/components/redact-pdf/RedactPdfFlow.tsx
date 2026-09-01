@@ -190,6 +190,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
             </div>
 
             <SaveStep
+              sourcePath={sourcePath}
               processedBytes={processedBytes}
               sourceFileName={fileName}
               defaultSaveName={fileName.replace(/\.pdf$/i, '') + '-redacted.pdf'}

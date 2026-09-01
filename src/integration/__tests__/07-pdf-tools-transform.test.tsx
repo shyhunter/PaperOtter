@@ -207,7 +207,7 @@ describe('Suite 07a — Watermark', () => {
     await user.type(textInput, 'CONFIDENTIAL');
 
     await user.click(screen.getByRole('button', { name: /apply watermark/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // WM-07 ─────────────────────────────────────────────────────────────────────
@@ -301,7 +301,7 @@ describe('Suite 07b — Page Numbers', () => {
     await screen.findByRole('button', { name: /apply page numbers/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /apply page numbers/i }));
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // PN-07 ─────────────────────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ describe('Suite 07c — Rotate PDF', () => {
     await user.click(screen.getByRole('button', { name: /all right/i }));
     await user.click(screen.getByRole('button', { name: /apply & save/i }));
 
-    await screen.findByText(/choose a save location/i, {}, { timeout: 3000 });
+    await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
 
   // RF-07 ─────────────────────────────────────────────────────────────────────
