@@ -371,12 +371,18 @@ export function ImageConfigureStep({
               <div className="space-y-1.5">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label
-                      htmlFor={`${formId}-width`}
-                      className="text-xs text-muted-foreground"
-                    >
-                      {resizeUnit === 'pixels' ? t('imageConfigureStep.widthPx') : t('imageConfigureStep.widthPercent')}
-                    </label>
+                    {/* Same row element as the Height column, at the same fixed
+                        height. The Height row carries the aspect-ratio lock and
+                        this one does not, so without a set height the two label
+                        rows differ and their inputs stop lining up. */}
+                    <div className="flex h-5 items-center justify-between">
+                      <label
+                        htmlFor={`${formId}-width`}
+                        className="text-xs text-muted-foreground"
+                      >
+                        {resizeUnit === 'pixels' ? t('imageConfigureStep.widthPx') : t('imageConfigureStep.widthPercent')}
+                      </label>
+                    </div>
                     <input
                       id={`${formId}-width`}
                       data-testid="resize-width-input"
@@ -390,7 +396,7 @@ export function ImageConfigureStep({
                     />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between">
+                    <div className="flex h-5 items-center justify-between">
                       <label
                         htmlFor={`${formId}-height`}
                         className="text-xs text-muted-foreground"
