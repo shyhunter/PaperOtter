@@ -54,9 +54,12 @@ describe('useDestinations', () => {
     await act(async () => { await result.current.remove('u1'); });
     expect(result.current.destinations.some((d) => d.id === 'u1')).toBe(false);
 
-    // A built-in is not the user's to delete; asking must not thin the list.
+    // An id that is not the user's own -- a built-in, or anything else -- must
+    // not thin the list. Written against BUILT_IN_DESTINATIONS[0] when built-ins
+    // existed; that list now ships empty by decision, so the guard is stated
+    // against an id the hook has never seen, which is the same claim.
     const before = result.current.destinations.length;
-    await act(async () => { await result.current.remove(BUILT_IN_DESTINATIONS[0].id); });
+    await act(async () => { await result.current.remove('not-one-of-theirs'); });
     expect(result.current.destinations.length).toBe(before);
   });
 

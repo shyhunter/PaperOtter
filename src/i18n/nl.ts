@@ -84,13 +84,15 @@ export const nl: Dictionary = {
   'destination.saveCurrent':
     'Deze instellingen als bestemming opslaan…',
   'destination.namePlaceholder':
-    'bijv. visum consulaat',
+    'Geef het een naam voor later',
   'destination.nameLabel':
     'Naam van de bestemming',
   'destination.forget':
     '‘{name}’ vergeten',
   'destination.label':
     'U bereidt dit voor',
+  'destination.emptyHint':
+    'Stel de opties hieronder in en sla ze op onder een naam om ze later opnieuw te gebruiken — en om toekomstige documenten aan te toetsen.',
   'destination.underSize':
     'Onder {size}',
   'destination.maxPages':

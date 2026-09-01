@@ -79,13 +79,15 @@ export const it: Dictionary = {
   'destination.saveCurrent':
     'Salva queste impostazioni come destinazione…',
   'destination.namePlaceholder':
-    'es. visto consolato',
+    'Gli dia un nome da usare in seguito',
   'destination.nameLabel':
     'Nome della destinazione',
   'destination.forget':
     'Dimentica «{name}»',
   'destination.label':
     'Lo sta preparando per',
+  'destination.emptyHint':
+    'Imposti le opzioni qui sotto, poi le salvi con un nome per riusarle in seguito — e per verificarvi i documenti futuri.',
   'destination.underSize':
     'Meno di {size}',
   'destination.maxPages':

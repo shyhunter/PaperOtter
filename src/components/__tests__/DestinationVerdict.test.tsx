@@ -36,10 +36,13 @@ describe('DestinationVerdict', () => {
     expect(verdict).toHaveAttribute('data-meets', 'false');
     // "It failed" sends someone back to guess. The size does not.
     expect(screen.getByText('2.40 MB')).toBeInTheDocument();
-    // "A4" twice on purpose: what was asked for, and what was produced. The
-    // page constraint passed while the size one did not, which is exactly the
-    // distinction the per-constraint report exists to make.
-    expect(screen.getAllByText('A4')).toHaveLength(2);
+    // Once, not twice. This assertion originally required two, which pinned a
+    // redundancy rather than a behaviour: the page row rendered the requirement
+    // and the measurement side by side, and when they match that reads as
+    // "A4  A4". Reported from a real build. The page constraint still passed
+    // while the size one did not, which is the distinction the per-constraint
+    // report exists to make.
+    expect(screen.getAllByText('A4')).toHaveLength(1);
   });
 
   it('[DEST-UI-03] shows what it could not check as unchecked, not as a pass', () => {
