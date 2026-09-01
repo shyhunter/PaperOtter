@@ -179,16 +179,33 @@ export function ConfigureStep({
   function applyDestination(d: DestinationRequirement | null) {
     onDestinationChange?.(d);
     if (!d) return;
+    // Restore the compression mode it was saved in, and only that one. Target
+    // size and quality are alternatives here -- handleSubmit resolves a target
+    // into a quality -- so putting both back would leave the form in a state the
+    // user was never in.
     if (d.maxBytes !== undefined) {
       const { value, unit: u } = targetSizeInput(d.maxBytes);
       setCustomMode(true);
       setCustomSizeValue(value);
       setCustomUnit(u);
       setCustomError(null);
+    } else if (d.qualityLevel !== undefined) {
+      // Reported after first use: choosing a setting saved at Web left the
+      // slider on Print. A setting that restores the size limit but not the
+      // quality is not the setting that was saved.
+      setCustomMode(false);
+      setSliderValue(qualityToSlider(d.qualityLevel));
+      setCustomError(null);
     }
+
     if (d.pageSize !== undefined) {
       setResizeEnabled(true);
       setPagePreset(d.pageSize);
+    } else {
+      // Saved with resizing off, so it goes back off. Leaving a previous
+      // tool's A4 in place would silently resize a document the setting never
+      // asked to resize.
+      setResizeEnabled(false);
     }
   }
 
@@ -201,6 +218,9 @@ export function ConfigureStep({
     void saveDestination({
       name,
       maxBytes,
+      // Only when a target size is not what was chosen: the two are
+      // alternatives, and saving both would restore a form nobody filled in.
+      qualityLevel: !customMode && qualityLevel !== 'custom' ? qualityLevel : undefined,
       pageSize: resizeEnabled && pagePreset !== 'custom' ? pagePreset : undefined,
     });
   }

@@ -140,7 +140,7 @@ export const tr: Dictionary = {
   'destination.forget':
     '“{name}” hedefini unut',
   'destination.label':
-    'Bunu ne için hazırlıyorsunuz',
+    'Sonra kullanmak üzere ayar olarak kaydet',
   'destination.emptyHint':
     'Aşağıdaki seçenekleri ayarlayın, sonra bir adla kaydedin; daha sonra yeniden kullanmak ve belgeleri buna göre denetlemek için.',
   'destination.underSize':

@@ -104,7 +104,7 @@ export const pl: Dictionary = {
   'destination.forget':
     'Zapomnij „{name}”',
   'destination.label':
-    'Przygotowujesz to do',
+    'Zapisz jako ustawienie na później',
   'destination.emptyHint':
     'Ustaw opcje poniżej, a potem zapisz je pod nazwą, aby użyć ich później — i sprawdzać względem nich kolejne dokumenty.',
   'destination.underSize':

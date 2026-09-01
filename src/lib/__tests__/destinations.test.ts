@@ -213,3 +213,30 @@ describe('how a requirement reads', () => {
     expect(page?.actual).toBe('Letter');
   });
 });
+
+describe('a saved setting carries the mode it was saved in', () => {
+  it('[DEST-19] quality is remembered, and is not a checkable requirement', () => {
+    // Reported after first use: "my current optimise file size is Print, but I
+    // choose my saved setting which was Web — clicking it should make it Web."
+    //
+    // Quality is *how* a document was made, not something a portal demands, so
+    // it is restored to the controls and produces no row in the verdict. A
+    // constraint nobody stated cannot be met or missed.
+    const withQuality: DestinationRequirement = {
+      id: 'q', name: 'Mine', qualityLevel: 'web', maxBytes: 2 * 1024 * 1024,
+    };
+    const v = checkDestination(withQuality, {
+      outputSizeBytes: 1024, pageCount: 1, outputPageDimensions: null,
+    });
+    expect(v.constraints.map((c) => c.kind)).toEqual(['size']);
+  });
+
+  it('[DEST-20] a setting with only a quality checks nothing, so it cannot claim a pass', () => {
+    const qualityOnly: DestinationRequirement = { id: 'q', name: 'Mine', qualityLevel: 'archive' };
+    const v = checkDestination(qualityOnly, {
+      outputSizeBytes: 1024, pageCount: 1, outputPageDimensions: null,
+    });
+    expect(v.constraints).toEqual([]);
+    expect(v.meets, 'nothing was checked, so nothing passed').toBe(false);
+  });
+});

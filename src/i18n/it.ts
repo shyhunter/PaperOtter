@@ -85,7 +85,7 @@ export const it: Dictionary = {
   'destination.forget':
     'Dimentica «{name}»',
   'destination.label':
-    'Lo sta preparando per',
+    'Salva come impostazione da usare in seguito',
   'destination.emptyHint':
     'Imposti le opzioni qui sotto, poi le salvi con un nome per riusarle in seguito — e per verificarvi i documenti futuri.',
   'destination.underSize':
