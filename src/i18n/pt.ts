@@ -95,6 +95,8 @@ export const pt: Dictionary = {
     'Guardar como definição para usar mais tarde',
   'destination.emptyHint':
     'Defina as opções abaixo e guarde-as com um nome para reutilizar mais tarde — e para verificar documentos futuros.',
+  'destination.savedLabel':
+    'Definições guardadas',
   'destination.underSize':
     'Menos de {size}',
   'destination.maxPages':

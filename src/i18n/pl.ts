@@ -107,6 +107,8 @@ export const pl: Dictionary = {
     'Zapisz jako ustawienie na później',
   'destination.emptyHint':
     'Ustaw opcje poniżej, a potem zapisz je pod nazwą, aby użyć ich później — i sprawdzać względem nich kolejne dokumenty.',
+  'destination.savedLabel':
+    'Zapisane ustawienia',
   'destination.underSize':
     'Poniżej {size}',
   'destination.maxPages':

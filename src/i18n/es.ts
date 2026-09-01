@@ -136,6 +136,8 @@ export const es: Dictionary = {
     'Guardar como ajuste para usarlo después',
   'destination.emptyHint':
     'Configure las opciones de abajo y guárdelas con un nombre para reutilizarlas más adelante, y para comprobar futuros documentos.',
+  'destination.savedLabel':
+    'Ajustes guardados',
   'destination.underSize':
     'Menos de {size}',
   'destination.maxPages':

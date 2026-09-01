@@ -93,6 +93,8 @@ export const nl: Dictionary = {
     'Opslaan als instelling voor later',
   'destination.emptyHint':
     'Stel de opties hieronder in en sla ze op onder een naam om ze later opnieuw te gebruiken — en om toekomstige documenten aan te toetsen.',
+  'destination.savedLabel':
+    'Opgeslagen instellingen',
   'destination.underSize':
     'Onder {size}',
   'destination.maxPages':

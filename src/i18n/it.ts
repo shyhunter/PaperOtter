@@ -88,6 +88,8 @@ export const it: Dictionary = {
     'Salva come impostazione da usare in seguito',
   'destination.emptyHint':
     'Imposti le opzioni qui sotto, poi le salvi con un nome per riusarle in seguito — e per verificarvi i documenti futuri.',
+  'destination.savedLabel':
+    'Impostazioni salvate',
   'destination.underSize':
     'Meno di {size}',
   'destination.maxPages':

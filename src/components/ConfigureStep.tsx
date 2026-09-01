@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { parsePageRange, formatBytes } from '@/lib/pdfUtils';
-import { DestinationPicker } from '@/components/destinations/DestinationPicker';
+import { SavedSettingsRow, SaveSettingAs } from '@/components/destinations/DestinationPicker';
 import { targetSizeInput, type DestinationRequirement } from '@/lib/destinations';
 import { useDestinations } from '@/hooks/useDestinations';
 import {
@@ -299,20 +299,17 @@ export function ConfigureStep({
           </p>
         </div>
 
-        {/* Destination — above the controls it moves, because it is the question
-            the user came with. Choosing one sets the ordinary controls below, so
-            what it did stays visible and every part of it stays overridable. */}
-        {onDestinationChange && (
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">
-              {t('destination.label')}
-            </h2>
-            <DestinationPicker
+        {/* Applying a saved setting sits *above* the controls it rewrites: a
+            click moves the quality, the target size and the page size, and the
+            user should be able to watch that happen rather than scroll up to
+            find out. Renders nothing until something has been saved. */}
+        {onDestinationChange && destinations.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <SavedSettingsRow
               destinations={destinations}
               selectedId={destination?.id ?? null}
               onSelect={applyDestination}
-              onSaveCurrent={saveCurrentAsDestination}
-              onRemove={(id) => void removeDestination(id)}
+              onRemove={(id: string) => void removeDestination(id)}
             />
           </div>
         )}
@@ -646,6 +643,17 @@ export function ConfigureStep({
           </p>
         )}
 
+        {/* Saving sits *under* the controls being saved. It is the last thing
+            you do -- configure, like it, keep it -- and putting a save
+            affordance above the thing it saves is backwards. */}
+        {onDestinationChange && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="text-[clamp(0.8rem,1vw,1rem)] font-semibold text-foreground">
+              {t('destination.label')}
+            </h2>
+            <SaveSettingAs onSave={saveCurrentAsDestination} hasSaved={destinations.length > 0} />
+          </div>
+        )}
 
       </div>
       </div>

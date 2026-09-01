@@ -119,6 +119,8 @@ export const de: Dictionary = {
     'Als Einstellung für später speichern',
   'destination.emptyHint':
     'Stellen Sie die Optionen unten ein und speichern Sie sie unter einem Namen, um sie später wiederzuverwenden — und künftige Dokumente daran zu prüfen.',
+  'destination.savedLabel':
+    'Gespeicherte Einstellungen',
   'destination.underSize':
     'Unter {size}',
   'destination.maxPages':
