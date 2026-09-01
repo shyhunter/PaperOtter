@@ -2019,11 +2019,13 @@ function RepairPanel() {
 // ── Protect Panel ────────────────────────────────────────────────────
 
 function ProtectPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
+  const { state } = useEditorContext();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acknowledged, setAcknowledged] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
+  const [savedTo, setSavedTo] = useState<string | null>(null);
+  const [protectError, setProtectError] = useState<string | null>(null);
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
@@ -2034,9 +2036,23 @@ function ProtectPanel() {
   // condition, or the only control that could report the problem is disabled
   // by it. Same fix as ProtectPdfFlow; these two panels are separate code.
   const [showMismatch, setShowMismatch] = useState(false);
-  const canSubmit = password.length > 0 && confirmPassword.length > 0;
+  const canSubmit = password.length > 0 && confirmPassword.length > 0 && acknowledged;
 
-  const handleApply = useCallback(async () => {
+  // This panel writes a separate protected file rather than encrypting the
+  // document open in the editor, and that is not a stylistic choice.
+  //
+  // Saving in the editor runs `applyAllEdits`, which is pdf-lib
+  // `load({ ignoreEncryption: true })` followed by `save()`. pdf-lib cannot
+  // write encryption: it copies the encrypted streams verbatim and keeps the
+  // /Encrypt dictionary, producing a file that no reader can open — measured,
+  // Ghostscript reports "Couldn't initialise file" on the result even with the
+  // correct password. And the editor's Save writes to the path the document was
+  // opened from, with no dialog. So encrypting in place and saving destroyed the
+  // user's original outright: not "locked and the password forgotten", but gone.
+  //
+  // Writing a copy also avoids leaving the editor holding bytes it cannot
+  // render or hand to any other tool.
+  const handleProtect = useCallback(async () => {
     if (!canSubmit) return;
     if (!passwordsMatch) {
       setShowMismatch(true);
@@ -2044,14 +2060,22 @@ function ProtectPanel() {
     }
     setShowMismatch(false);
     setIsProcessing(true);
+    setProtectError(null);
+    setSavedTo(null);
+
     try {
+      // Pending page edits live in state.pages and are applied at save time.
+      // They have to be baked in before encryption, because nothing can apply
+      // them afterwards.
+      const { applyAllEdits } = await import('@/lib/pdfEditor');
+      const flattened = await applyAllEdits(state.pdfBytes, state.pages);
+
       const { tempDir, join } = await import('@tauri-apps/api/path');
       const tmpBase = await tempDir();
-      const ts = Date.now();
-      const tempInputPath = await join(tmpBase, `papercut_protect_${ts}.pdf`);
+      const tempInputPath = await join(tmpBase, `papercut_protect_${Date.now()}.pdf`);
 
       const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      await writeFile(tempInputPath, state.pdfBytes);
+      await writeFile(tempInputPath, flattened);
 
       const bytes: Uint8Array = await invoke('protect_pdf', {
         sourcePath: tempInputPath,
@@ -2061,14 +2085,22 @@ function ProtectPanel() {
 
       await remove(tempInputPath).catch(() => {});
 
-      const result = new Uint8Array(bytes);
-      setIsProcessing(false);
-      await apply(() => Promise.resolve(result));
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const base = (state.fileName || 'document.pdf').replace(/\.pdf$/i, '');
+      const target = await save({
+        defaultPath: `${base}-protected.pdf`,
+        filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
+      });
+      if (!target) return;
+
+      await writeFile(target, new Uint8Array(bytes));
+      setSavedTo(target);
     } catch (err) {
+      setProtectError(err instanceof Error ? err.message : String(err));
+    } finally {
       setIsProcessing(false);
-      await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, password, passwordsMatch, canSubmit, apply]);
+  }, [state.pdfBytes, state.pages, state.fileName, password, passwordsMatch, canSubmit]);
 
   return (
     <div className="space-y-3">
@@ -2098,13 +2130,27 @@ function ProtectPanel() {
         {showMismatch && (
           <p className="text-[10px] text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
         )}
+
+        <label className="flex items-start gap-1.5 cursor-pointer">
+          <input
+            type="checkbox"
+            data-testid="protect-ack"
+            checked={acknowledged}
+            onChange={(e) => setAcknowledged(e.target.checked)}
+            disabled={isProcessing}
+            className="mt-0.5 h-3 w-3 flex-none accent-primary"
+          />
+          <span className="text-[10px] text-muted-foreground leading-snug">
+            {t('protectPdf.acknowledgePassword')}
+          </span>
+        </label>
       </div>
 
-      {success ? (
+      {savedTo ? (
         <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
           <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
             <Check className="h-3 w-3" />
-            {t('pdfEditor.pdfIsNowPasswordProtected')}
+            {t('protectPdf.savedProtectedCopy')}
           </div>
         </div>
       ) : (
@@ -2113,13 +2159,24 @@ function ProtectPanel() {
         </div>
       )}
 
-      <ApplyButton
-        onClick={handleApply}
-        disabled={!canSubmit}
-        isApplying={isApplying || isProcessing}
-        success={success}
-        error={error}
-      />
+      {protectError && (
+        <p className="text-[10px] text-destructive">{protectError}</p>
+      )}
+
+      <button
+        onClick={handleProtect}
+        disabled={!canSubmit || isProcessing}
+        className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin" />
+            {t('common.applying')}
+          </>
+        ) : (
+          t('protectPdf.saveProtectedCopy')
+        )}
+      </button>
     </div>
   );
 }

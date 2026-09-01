@@ -121,13 +121,14 @@ describe('Suite 06a — Protect PDF', () => {
   });
 
   // PP-05 ─────────────────────────────────────────────────────────────────────
-  it('PP-05 — matching passwords enable the Protect PDF button', async () => {
+  it('PP-05 — matching passwords plus the accepted warning enable the button', async () => {
     const { user } = await navigateToTool(/protect pdf/i);
     await selectPdfFile(user, '/test/report.pdf');
     await screen.findByText('Set Password', {}, { timeout: 2000 });
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
     await user.type(screen.getByLabelText('Confirm password'), 'secret123');
+    await user.click(screen.getByTestId('protect-ack'));
 
     const protectBtn = screen.getByRole('button', { name: /protect pdf/i });
     expect(protectBtn).not.toBeDisabled();
@@ -142,6 +143,7 @@ describe('Suite 06a — Protect PDF', () => {
     vi.mocked(invoke).mockResolvedValueOnce(FAKE_PDF_BYTES);
     await user.type(screen.getByLabelText('Password'), 'secret123');
     await user.type(screen.getByLabelText('Confirm password'), 'secret123');
+    await user.click(screen.getByTestId('protect-ack'));
     await user.click(screen.getByRole('button', { name: /protect pdf/i }));
 
     // SaveStep auto-triggers save dialog which never resolves → "Choose a save location…"
@@ -182,6 +184,7 @@ describe('Suite 06a — Protect PDF', () => {
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
     await user.type(screen.getByLabelText('Confirm password'), 'different');
+    await user.click(screen.getByTestId('protect-ack'));
 
     // The button has to be reachable, or "check on click" can never happen:
     // it used to be disabled by the very condition it needed to report.
@@ -208,6 +211,7 @@ describe('Suite 06a — Protect PDF', () => {
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
     await user.type(screen.getByLabelText('Confirm password'), 'different');
+    await user.click(screen.getByTestId('protect-ack'));
     await user.click(screen.getByRole('button', { name: /protect pdf/i }));
     expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
 
@@ -223,6 +227,28 @@ describe('Suite 06a — Protect PDF', () => {
 
     await user.type(screen.getByLabelText('Password'), 'secret123');
     expect(screen.getByRole('button', { name: /protect pdf/i })).toBeDisabled();
+  });
+
+  // PP-12 ─────────────────────────────────────────────────────────────────────
+  it('PP-12 — Protect stays out of reach until the password warning is accepted', async () => {
+    // A lost password cannot be recovered by anyone, so the one thing the app
+    // can do is make sure nobody encrypts a file believing otherwise.
+    const { user } = await navigateToTool(/protect pdf/i);
+    await selectPdfFile(user, '/test/report.pdf');
+    await screen.findByText('Set Password', {}, { timeout: 2000 });
+
+    await user.type(screen.getByLabelText('Password'), 'secret123');
+    await user.type(screen.getByLabelText('Confirm password'), 'secret123');
+
+    const protectBtn = screen.getByRole('button', { name: /protect pdf/i });
+    expect(protectBtn, 'matching passwords alone must not be enough').toBeDisabled();
+
+    await user.click(screen.getByTestId('protect-ack'));
+    expect(protectBtn).not.toBeDisabled();
+
+    // And it can be taken back.
+    await user.click(screen.getByTestId('protect-ack'));
+    expect(protectBtn).toBeDisabled();
   });
 });
 

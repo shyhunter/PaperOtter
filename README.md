@@ -54,8 +54,8 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 - ⬛ **Redact** — Permanently remove sensitive content
 - 🗄️ **PDF/A** — Convert to archival PDF/A format
 - 🛠️ **Repair** — Fix corrupted or damaged PDFs
-- 🔒 **Protect** — Add password encryption to PDFs
-- 🔓 **Unlock** — Remove password protection from PDFs
+- 🔒 **Protect** — Add password encryption to PDFs *(see [A note on passwords](#a-note-on-passwords))*
+- 🔓 **Unlock** — Remove password protection from PDFs *(requires the password — see [A note on passwords](#a-note-on-passwords))*
 - 🖼️ **PDF to JPG** — Export PDF pages as JPEG or PNG images
 - 📄 **JPG to PDF** — Convert images into a single PDF document
 - 🔍 **Make Searchable** — Read the text on a scan so it can be searched and copied *(macOS only — see [Platform support](#platform-support))*
@@ -145,6 +145,30 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
 All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
+
+### A note on passwords
+
+The same applies to the password you set in **Protect PDF** — it never leaves
+your machine, and Papercut never stores it. It exists in memory only long enough
+to encrypt the file: it is not written to a settings file, a log, or disk, and
+it is not sent anywhere.
+
+That has a consequence worth stating plainly. **If you forget the password, the
+file cannot be opened again — by you, by us, or by anyone.** There is no reset,
+no recovery code and no back door. This is how PDF encryption works, not a
+limitation Papercut could lift, and **Unlock PDF** cannot help: it removes
+protection from a file you already know the password for, and is not a
+password-recovery tool.
+
+So, before you protect a document:
+
+- Record the password somewhere you trust, such as a password manager.
+- Keep the unprotected original until you have confirmed the protected copy
+  opens. Papercut always writes the protected file as a **new** file and never
+  encrypts your original in place, so keeping it costs nothing.
+
+Because this loss is permanent, Papercut asks you to confirm you understand it
+before it will encrypt anything.
 
 ---
 

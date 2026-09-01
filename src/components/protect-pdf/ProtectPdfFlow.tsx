@@ -90,7 +90,11 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
   // what the button reports. Gating the button on agreement, as this used to,
   // means the check can never run: the only control that could report the
   // problem is disabled by the problem.
-  const canSubmit = password.length > 0 && confirmPassword.length > 0;
+  // A lost password is unrecoverable by anyone, so the acknowledgement is a
+  // gate rather than a notice: the user's own decision, taken deliberately.
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  const canSubmit = password.length > 0 && confirmPassword.length > 0 && acknowledged;
 
   const handleProtect = useCallback(async () => {
     if (!filePath || !canSubmit) return;
@@ -226,6 +230,20 @@ export function ProtectPdfFlow({ onStepChange }: ProtectPdfFlowProps) {
                     <p className="text-xs text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
                   )}
                 </div>
+
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    data-testid="protect-ack"
+                    checked={acknowledged}
+                    onChange={(e) => setAcknowledged(e.target.checked)}
+                    disabled={isProcessing}
+                    className="mt-0.5 h-4 w-4 flex-none accent-primary"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {t('protectPdf.acknowledgePassword')}
+                  </span>
+                </label>
               </div>
 
               {/* Error */}
