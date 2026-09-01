@@ -882,6 +882,33 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(ctx!.state.watermarkDraft).toBeNull());
   });
 
+  it('TP-03e — Watermark rotation is arrow buttons, not a typed number', async () => {
+    // It was `<input type="number">`, which meant typing to change an angle and
+    // no feedback until you looked at the preview. The Rotate panel next door
+    // already turned by clicking, so the two disagreed about the same gesture.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Watermark'));
+
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-45°$/);
+
+    // Font size is still a spinbutton; rotation must no longer be one.
+    expect(screen.getAllByRole('spinbutton')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /turn right/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^0°$/);
+
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-90°$/);
+  });
+
   // The editor has its own Sign and Redact panels, separate code from the
   // standalone flows of the same name. Both kept private colour lists.
   it('TP-13 — the Sign panel offers the shared colours', async () => {

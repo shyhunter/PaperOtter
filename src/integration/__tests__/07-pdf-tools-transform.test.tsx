@@ -219,6 +219,27 @@ describe('Suite 07a — Watermark', () => {
     await user.click(screen.getByRole('button', { name: /^back$/i }));
     expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
   });
+
+  // WM-08 ─────────────────────────────────────────────────────────────────────
+  it('WM-08 — rotation is arrow buttons that turn by 45 degrees, not three fixed presets', async () => {
+    // The tool offered exactly -45/0/45 and nothing else, so every other angle
+    // the watermark library can render was unreachable from the interface.
+    const { user } = await navigateToTool(/watermark/i);
+    await selectPdfFile(user, '/test/document.pdf');
+    await screen.findByText('Watermark Options', {}, { timeout: 2000 });
+
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-45°$/);
+
+    await user.click(screen.getByRole('button', { name: /turn right/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^0°$/);
+
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    await user.click(screen.getByRole('button', { name: /turn left/i }));
+    expect(screen.getByTestId('watermark-rotation-value')).toHaveTextContent(/^-90°$/);
+
+    // -90 was never offered by the preset row, which is the point of the change.
+    expect(screen.queryByRole('button', { name: /^-45°$/ })).not.toBeInTheDocument();
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -8,6 +8,7 @@ import { TOOL_REGISTRY } from '@/types/tools';
 import { useEditorContext } from '@/context/EditorContext';
 import { ToolSidebarPreview } from './ToolSidebarPreview';
 import { rotatePdf, turnBy, type RotationDegrees } from '@/lib/pdfRotate';
+import { turnWatermarkBy } from '@/lib/watermarkRotation';
 import {
   addWatermark,
   addWatermarkSinglePage,
@@ -941,14 +942,32 @@ function WatermarkPanel() {
           </div>
           <div>
             <label className="text-[10px] font-medium text-muted-foreground">{t('rotateImage.rotation')}</label>
-            <input
-              type="number"
-              value={options.rotation}
-              onChange={(e) => setOptions((o) => ({ ...o, rotation: Number(e.target.value) }))}
-              className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-              min={-180}
-              max={180}
-            />
+            <div className="flex items-center gap-1 mt-0.5">
+              <button
+                type="button"
+                onClick={() => setOptions((o) => ({ ...o, rotation: turnWatermarkBy(o.rotation, 'left') }))}
+                title={t('toolSidebarPanel.turnLeft')}
+                aria-label={t('toolSidebarPanel.turnLeft')}
+                className="px-1.5 py-1 border rounded bg-background hover:bg-accent"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+              <span
+                data-testid="watermark-rotation-value"
+                className="flex-1 text-center text-xs tabular-nums"
+              >
+                {options.rotation}°
+              </span>
+              <button
+                type="button"
+                onClick={() => setOptions((o) => ({ ...o, rotation: turnWatermarkBy(o.rotation, 'right') }))}
+                title={t('toolSidebarPanel.turnRight')}
+                aria-label={t('toolSidebarPanel.turnRight')}
+                className="px-1.5 py-1 border rounded bg-background hover:bg-accent"
+              >
+                <RotateCw className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
 

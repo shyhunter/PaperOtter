@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@tauri-apps/plugin-dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addWatermark, addWatermarkSinglePage, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
+import { turnWatermarkBy } from '@/lib/watermarkRotation';
 import { cn } from '@/lib/utils';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import { ColorPicker } from '@/components/ColorPicker';
@@ -31,12 +32,6 @@ function fontSizes(): { label: string; value: number }[] {
     { label: t('watermarkFlow.large'), value: 72 },
   ];
 }
-
-const ROTATIONS: { label: string; value: number }[] = [
-  { label: '-45\u00B0', value: -45 },
-  { label: '0\u00B0', value: 0 },
-  { label: '45\u00B0', value: 45 },
-];
 
 export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
   const { pendingFiles, setPendingFiles } = useToolContext();
@@ -267,22 +262,33 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                 {/* Rotation */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t('rotateImage.rotation')}</label>
-                  <div className="flex gap-1.5">
-                    {ROTATIONS.map((r) => (
-                      <button
-                        key={r.value}
-                        type="button"
-                        onClick={() => setRotation(r.value)}
-                        className={cn(
-                          'flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
-                          rotation === r.value
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border text-muted-foreground hover:bg-accent',
-                        )}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setRotation((r) => turnWatermarkBy(r, 'left'))}
+                      title={t('toolSidebarPanel.turnLeft')}
+                      aria-label={t('toolSidebarPanel.turnLeft')}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                    <span
+                      data-testid="watermark-rotation-value"
+                      className="w-14 text-center text-xs font-medium tabular-nums"
+                    >
+                      {rotation}°
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setRotation((r) => turnWatermarkBy(r, 'right'))}
+                      title={t('toolSidebarPanel.turnRight')}
+                      aria-label={t('toolSidebarPanel.turnRight')}
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
