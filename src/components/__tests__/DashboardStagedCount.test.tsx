@@ -94,3 +94,67 @@ describe('Dashboard staged-file count', () => {
     expect(await screen.findByText(/scan-diploma\.png/)).toBeInTheDocument();
   });
 });
+
+// ─── BATCH-STAGE-04..07 — a second drop adds to the first ────────────────────
+//
+// Reported from a real build, on macOS and Ubuntu alike: drag one file in, then
+// drag a second, and only the second is staged. The first is gone, with nothing
+// said about it.
+//
+// `setStagedFile` replaced the whole staged object, so every drop discarded
+// whatever was already there. That is precisely the gathering flow Merge and
+// JPG-to-PDF exist for — files come from different folders, or a multi-select is
+// fiddly, so people drop them one at a time. The card even counts them, which
+// made the loss look like a counting bug rather than a discard.
+describe('Dashboard staged files accumulate across drops', () => {
+  it('[BATCH-STAGE-04] a second drop of the same type adds to the first', async () => {
+    render(<StrictMode><Dashboard /></StrictMode>);
+    await waitFor(() => expect(dropHandler).toBeDefined());
+
+    await drop(['/qa/a.pdf']);
+    await drop(['/qa/b.pdf']);
+
+    // Both, and the first one's name still leads: it is the one the user
+    // started from, and re-ordering under them would be its own surprise.
+    expect(await screen.findByText(/2 files/i)).toBeInTheDocument();
+    expect(screen.getByText(/a\.pdf/)).toBeInTheDocument();
+  });
+
+  it('[BATCH-STAGE-05] the same file dropped twice is staged once', async () => {
+    // A duplicate in a merge is silent and almost never intended; the merge step
+    // is where someone would deliberately repeat a document.
+    render(<StrictMode><Dashboard /></StrictMode>);
+    await waitFor(() => expect(dropHandler).toBeDefined());
+
+    await drop(['/qa/a.pdf']);
+    await drop(['/qa/a.pdf']);
+
+    expect(screen.queryByText(/2 files/i)).toBeNull();
+    expect(screen.getByText(/a\.pdf/)).toBeInTheDocument();
+  });
+
+  it('[BATCH-STAGE-06] dropping a different type replaces, rather than mixing', async () => {
+    // A JPEG cannot be merged into a set of PDFs, and a batch of mixed types has
+    // no single operation. Replacing honours the drop; the toast is what keeps
+    // it from being another silent discard.
+    render(<StrictMode><Dashboard /></StrictMode>);
+    await waitFor(() => expect(dropHandler).toBeDefined());
+
+    await drop(['/qa/a.pdf', '/qa/b.pdf']);
+    await drop(['/qa/photo.jpg']);
+
+    expect(screen.getByText(/photo\.jpg/)).toBeInTheDocument();
+    expect(screen.queryByText(/a\.pdf/), 'the PDFs are gone, so they must not still be counted').toBeNull();
+  });
+
+  it('[BATCH-STAGE-07] accumulating several drops keeps every one of them', async () => {
+    render(<StrictMode><Dashboard /></StrictMode>);
+    await waitFor(() => expect(dropHandler).toBeDefined());
+
+    await drop(['/qa/a.pdf']);
+    await drop(['/qa/b.pdf', '/qa/c.pdf']);
+    await drop(['/qa/d.pdf']);
+
+    expect(await screen.findByText(/4 files/i)).toBeInTheDocument();
+  });
+});
