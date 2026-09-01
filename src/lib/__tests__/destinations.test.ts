@@ -165,3 +165,51 @@ describe('targetSizeInput', () => {
     expect(targetSizeInput(10).value).toBe('1');
   });
 });
+
+describe('how a requirement reads', () => {
+  it('[DEST-15] a limit reads as a round number, not a measurement', () => {
+    // Reported from a real build: the row read "Under 2.00 MB". formatBytes is
+    // right for a *measured* size, where the two decimals carry information —
+    // "8.26 MB" is a fact about a file. A limit is a round number somebody wrote
+    // on a form, and rendering it to two decimals makes the app look like it is
+    // guessing at a threshold it was given exactly.
+    const v = checkDestination(
+      { id: 'd', name: 'x', maxBytes: 2 * 1024 * 1024 },
+      { outputSizeBytes: 8.26 * 1024 * 1024, pageCount: 432, outputPageDimensions: null },
+    );
+    expect(v.constraints[0].label).toBe('Under 2 MB');
+    // The measured side keeps its precision — that half is not a threshold.
+    expect(v.constraints[0].actual).toBe('8.26 MB');
+  });
+
+  it('[DEST-16] a fractional limit keeps the digits it needs', () => {
+    const v = checkDestination(
+      { id: 'd', name: 'x', maxBytes: 2.5 * 1024 * 1024 },
+      { outputSizeBytes: 1024, pageCount: 1, outputPageDimensions: null },
+    );
+    expect(v.constraints[0].label).toBe('Under 2.5 MB');
+  });
+
+  it('[DEST-17] a constraint that was met does not repeat itself', () => {
+    // Reported from the same run: the page row rendered "A4" twice, once as the
+    // requirement and once as the measurement. When they are the same string the
+    // repetition carries nothing, and the tick already says it matched.
+    const v = checkDestination(
+      { id: 'd', name: 'x', pageSize: 'A4' },
+      { outputSizeBytes: 1024, pageCount: 1, outputPageDimensions: { widthPt: 595.28, heightPt: 841.89 } },
+    );
+    const page = v.constraints.find((c) => c.kind === 'pageSize');
+    expect(page?.status).toBe('met');
+    expect(page?.actual, 'an actual identical to the label is not worth showing').toBe('');
+  });
+
+  it('[DEST-18] a page size that did NOT match still says what it got', () => {
+    // The suppression above must not hide the one case where the value matters.
+    const v = checkDestination(
+      { id: 'd', name: 'x', pageSize: 'A4' },
+      { outputSizeBytes: 1024, pageCount: 1, outputPageDimensions: { widthPt: 612, heightPt: 792 } },
+    );
+    const page = v.constraints.find((c) => c.kind === 'pageSize');
+    expect(page?.actual).toBe('Letter');
+  });
+});

@@ -14,6 +14,7 @@
 // the ones who read the form.
 import type { PdfPagePreset } from '@/types/file';
 import { formatBytes } from '@/lib/pdfUtils';
+import { formatNumber } from '@/i18n';
 import { offersKbUnit, type SizeUnit } from '@/lib/compressTargetSize';
 import { t } from '@/i18n';
 
@@ -108,6 +109,23 @@ function describePage(dims: { widthPt: number; heightPt: number }): string {
   return `${mm(dims.widthPt)} × ${mm(dims.heightPt)} mm`;
 }
 
+
+/**
+ * A size limit, as a round number rather than a measurement.
+ *
+ * `formatBytes` is right for a size that was *measured* — the two decimals in
+ * "8.26 MB" carry information about a real file. A limit is a round number
+ * somebody wrote on a form, and rendering it as "2.00 MB" makes the app look
+ * like it is guessing at a threshold it was handed exactly.
+ */
+function formatLimit(bytes: number): string {
+  const [value, suffix] = bytes >= 1024 * 1024
+    ? [bytes / (1024 * 1024), 'MB']
+    : [bytes / 1024, 'KB'];
+  // Up to one decimal, and none at all when the limit is whole.
+  return `${formatNumber(value, { maximumFractionDigits: 1 })} ${suffix}`;
+}
+
 /**
  * Check a finished result against what a destination asks for.
  *
@@ -124,7 +142,7 @@ export function checkDestination(
   if (requirement.maxBytes !== undefined) {
     constraints.push({
       kind: 'size',
-      label: t('destination.underSize', { size: formatBytes(requirement.maxBytes) }),
+      label: t('destination.underSize', { size: formatLimit(requirement.maxBytes) }),
       actual: formatBytes(result.outputSizeBytes),
       status: result.outputSizeBytes <= requirement.maxBytes ? 'met' : 'unmet',
     });
@@ -132,10 +150,14 @@ export function checkDestination(
 
   if (requirement.pageSize !== undefined) {
     const dims = result.outputPageDimensions;
+    const got = dims ? describePage(dims) : t('destination.notChecked');
     constraints.push({
       kind: 'pageSize',
       label: requirement.pageSize,
-      actual: dims ? describePage(dims) : t('destination.notChecked'),
+      // Nothing to add when the measurement *is* the requirement: the row would
+      // read "A4  A4", and the tick already says it matched. The value is kept
+      // for the one case where it carries something -- a page that is not A4.
+      actual: got === requirement.pageSize ? '' : got,
       status: dims === null ? 'unknown' : matchesPageSize(dims, requirement.pageSize) ? 'met' : 'unmet',
     });
   }
