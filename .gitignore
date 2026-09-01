@@ -67,3 +67,7 @@ test-fixtures-e2e/large-sparse.jpg
 # Regression-run results — evidence about one machine at one moment, not a
 # fact about the repository.
 .e2e-results/
+
+# Playwright traces from failed runs — local evidence, not repository facts.
+test-results/
+playwright-report/
