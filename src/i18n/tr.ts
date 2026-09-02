@@ -357,7 +357,7 @@ export const tr: Dictionary = {
   'redactionScope.coversOnlyTheFoundText': 'Yalnızca bulunan metni kapatır',
   'redactionScope.justTheMatch': 'Yalnızca eşleşme', 'redactionScope.wholeLine': 'Tüm satır',
   'repairPdf.fixStructuralIssuesInCorrupted': 'Bozuk veya hatalı PDF’lerdeki yapısal sorunları giderin.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Sorun bulunamadı -- dosya sağlam görünüyor',
+  'repairPdf.noIssuesDetectedFileAppears': 'Sorun bulunamadı: dosya sağlam görünüyor',
   'repairPdf.pdfRepair': 'PDF onarımı', 'repairPdf.repairPdf': 'PDF’i onar',
   'repairPdf.repairCompleteIfTheDocument': 'Onarım tamamlandı. Belgede yapısal sorunlar varsa giderildi.',
   'repairPdf.repairing': 'Onarılıyor…',

@@ -1,7 +1,7 @@
 # Common Tasks
 
 Looking for a specific tool by name? See the sidebar. This page is organized
-the other way around -- by what you're trying to *do*.
+the other way around: by what you're trying to *do*.
 
 ## Sharing and sending files
 

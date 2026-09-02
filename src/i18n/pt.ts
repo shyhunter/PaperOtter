@@ -287,7 +287,7 @@ export const pt: Dictionary = {
   'redactionScope.justTheMatch': 'Apenas o resultado', 'redactionScope.wholeLine': 'Toda a linha',
   'repairPdf.fixStructuralIssuesInCorrupted':
     'Corrija problemas de estrutura em ficheiros PDF danificados ou inválidos.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Não foram detetados problemas -- o ficheiro parece estar bem',
+  'repairPdf.noIssuesDetectedFileAppears': 'Não foram detetados problemas: o ficheiro parece estar bem',
   'repairPdf.pdfRepair': 'Reparação de PDF', 'repairPdf.repairPdf': 'Reparar PDF',
   'repairPdf.repairCompleteIfTheDocument':
     'Reparação concluída. Se o documento tinha problemas de estrutura, foram corrigidos.',

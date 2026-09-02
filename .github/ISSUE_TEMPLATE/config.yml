@@ -1,14 +1,23 @@
-# Keeps the issue chooser to the two templates, and routes security reports away
-# from public issues.
+# Keeps the issue chooser to bugs, and routes everything else to a surface that
+# is not a task list.
 #
-# Both links point at things that exist TODAY. Two better destinations are worth
-# adding once the repo is public at MVP:
-#   - GitHub Discussions (currently disabled) for questions
-#   - Security → "Report a vulnerability" (private vulnerability reporting is not
-#     available on a private repository)
-# Revisit this file at the same time as the rest of the visibility flip.
+# Feature ideas go to Discussions → Ideas rather than to Issues. An issue list
+# reads as a queue of commitments with a maintainer's name on the delay; a
+# discussion does not, and the ones worth doing get promoted with GitHub's own
+# "convert to issue". Questions go to Q&A. Nothing reaches roadmap project #9
+# without being put there by hand.
+#
+# These Discussions links 404 until the repo is public — see MVP_SCOPE.md,
+# "The visibility flip", which is also when private vulnerability reporting
+# replaces the SECURITY.md link below.
 blank_issues_enabled: false
 contact_links:
+  - name: Feature idea or suggestion
+    url: https://github.com/shyhunter/Papercut/discussions/new?category=ideas
+    about: Suggest something Papercut should do. Ideas live in Discussions, not in the issue tracker.
+  - name: Question about using Papercut
+    url: https://github.com/shyhunter/Papercut/discussions/new?category=q-a
+    about: Ask how to do something. The wiki may already answer it.
   - name: Security vulnerability
     url: https://github.com/shyhunter/Papercut/blob/main/SECURITY.md
     about: Read this first. Please do not open a public issue for a security problem.

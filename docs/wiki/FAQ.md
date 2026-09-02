@@ -5,7 +5,7 @@
 No. All processing happens locally using native binaries (Ghostscript,
 LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and
 the Rust `image` crate).
-Your files never leave your machine -- see the
+Your files never leave your machine: see the
 [Privacy section](https://github.com/shyhunter/Papercut#privacy) of the
 README for the full statement.
 
@@ -29,7 +29,7 @@ Papercut normally.
 
 ### Why does Windows show a SmartScreen warning?
 
-Same reason, for Windows code-signing -- it's on the roadmap, not a sign of
+Same reason, for Windows code-signing: it's on the roadmap, not a sign of
 a problem with the installer. Click **More info**, then **Run anyway**.
 
 ### I forgot the password on a PDF I protected. Can you recover it?
@@ -60,10 +60,13 @@ Yes, it's open source under the MIT license. If it's useful to you, there's
 an optional way to
 [support development](https://buymeacoffee.com/shyhunter).
 
-### How do I report a bug or request a feature?
+### How do I report a bug or suggest a feature?
 
-[Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) --
-templates are provided for both.
+Bugs go to the
+[issue tracker](https://github.com/shyhunter/Papercut/issues/new/choose). Feature
+ideas go to
+[Discussions](https://github.com/shyhunter/Papercut/discussions/new?category=ideas),
+where they can be talked through before anyone commits to building them.
 
 ---
 

@@ -18,7 +18,7 @@ Papercut falls back to looking for a system copy on your `PATH`:
   and make sure `gswin64c` (or `gs`) is on your `PATH`
 
 If it crashes with a missing-library error even after installing, try
-reinstalling Papercut first -- that usually fixes a corrupted bundled copy.
+reinstalling Papercut first: that usually fixes a corrupted bundled copy.
 
 ## What needs nothing at all
 

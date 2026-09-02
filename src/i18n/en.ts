@@ -302,7 +302,7 @@ export const en = {
 
   // ── repairPdf ───────────────────────────────────────────────────────────
   'repairPdf.fixStructuralIssuesInCorrupted': 'Fix structural issues in corrupted or malformed PDFs.',
-  'repairPdf.noIssuesDetectedFileAppears': 'No issues detected -- file appears healthy',
+  'repairPdf.noIssuesDetectedFileAppears': 'No issues detected: the file appears healthy',
   'repairPdf.pdfRepair': 'PDF Repair',
   'repairPdf.repairPdf': 'Repair PDF',
   'repairPdf.repairCompleteIfTheDocument': 'Repair complete. If the document had structural issues, they have been addressed.',

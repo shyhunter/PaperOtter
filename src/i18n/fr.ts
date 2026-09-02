@@ -436,7 +436,7 @@ export const fr: Dictionary = {
   // ── Repair, rotate ────────────────────────────────────────────────────────
   'repairPdf.fixStructuralIssuesInCorrupted':
     'Corriger les défauts de structure des PDF endommagés ou mal formés.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Aucun problème détecté -- le fichier semble intact',
+  'repairPdf.noIssuesDetectedFileAppears': 'Aucun problème détecté : le fichier semble intact',
   'repairPdf.pdfRepair': 'Réparation PDF',
   'repairPdf.repairPdf': 'Réparer le PDF',
   'repairPdf.repairCompleteIfTheDocument':

@@ -296,7 +296,7 @@ export const nl: Dictionary = {
   'redactionScope.coversOnlyTheFoundText': 'Bedekt alleen de gevonden tekst',
   'redactionScope.justTheMatch': 'Alleen de treffer', 'redactionScope.wholeLine': 'Hele regel',
   'repairPdf.fixStructuralIssuesInCorrupted': 'Herstel structuurfouten in beschadigde of onjuiste PDF’s.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Geen problemen gevonden -- het bestand lijkt in orde',
+  'repairPdf.noIssuesDetectedFileAppears': 'Geen problemen gevonden: het bestand lijkt in orde',
   'repairPdf.pdfRepair': 'PDF-herstel', 'repairPdf.repairPdf': 'PDF herstellen',
   'repairPdf.repairCompleteIfTheDocument':
     'Herstel voltooid. Eventuele structuurfouten in het document zijn verholpen.',

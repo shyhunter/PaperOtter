@@ -15,7 +15,7 @@ with it.
 ## "Windows protected your PC" (SmartScreen warning)
 
 Click **More info**, then **Run anyway**. Same cause as above, but for
-Windows code-signing -- it's on the roadmap, not a sign of a broken
+Windows code-signing: it's on the roadmap, not a sign of a broken
 installer.
 
 ## Ghostscript is missing or crashes
@@ -39,7 +39,7 @@ Try re-exporting the source PDF and protecting it again.
 ## Still stuck?
 
 [Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) and
-include the exact error message -- happy to help.
+include the exact error message. Happy to help.
 
 ---
 

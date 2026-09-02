@@ -28,14 +28,14 @@
   <img src="docs/screenshots/tool-select-pages.png" alt="Split PDF tool - select page ranges from a thumbnail grid" width="49%">
 </p>
 
-Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
+Every tool follows the same four-step flow: Pick, Configure, Compare, Save
 -- and the whole app supports both light and dark mode.
 
 ---
 
 ## Features
 
-Papercut ships with **22 tools** across three categories -- all running locally on your machine.
+Papercut ships with **22 tools** across three categories: all running locally on your machine.
 
 **21 of the 22 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else, Ghostscript included, is bundled.
 
@@ -82,7 +82,7 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 > Italian, Dutch, Polish and European Portuguese. Papercut follows your
 > operating system's language on first run and remembers an explicit choice.
 > The eight translations beyond English are community-quality and still under
-> review -- if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
+> review: if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
 
 ---
 
@@ -128,7 +128,7 @@ offered a tool that cannot work on your machine:
 
 | Feature | macOS | Windows | Linux |
 |---|---|---|---|
-| **Make Searchable** (OCR) | Yes -- Apple Vision | Not yet | Not yet |
+| **Make Searchable** (OCR) | Yes (Apple Vision) | Not yet | Not yet |
 | **HEIC / HEIF input** | Yes | Only with the HEIF extension installed | Only where the distribution ships libheif |
 
 OCR on Windows and Linux is planned. HEIC is bounded by patent licensing rather
@@ -151,7 +151,7 @@ system's where one is licensed.
 | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 
-The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included -- just install and go. Ghostscript is bundled with the app.
+The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go. Ghostscript is bundled with the app.
 
 > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
 > ```
@@ -222,7 +222,7 @@ instead, try:
 - **Windows / manual install:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html), and make sure it's on your PATH
 
 If it still crashes with a missing-library error, try reinstalling Papercut
-first -- that usually fixes a corrupted bundled copy.
+first: that usually fixes a corrupted bundled copy.
 
 ### LibreOffice / Calibre not found
 
@@ -295,7 +295,7 @@ to all their maintainers.
 
 ## License
 
-[MIT](LICENSE) -- see the LICENSE file for details.
+[MIT](LICENSE): see the LICENSE file for details.
 
 ---
 
@@ -305,4 +305,4 @@ Contributions are welcome! Please see the [pull request template](.github/pull_r
 
 ---
 
-If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter) -- it helps keep development going.
+If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter): it helps keep development going.

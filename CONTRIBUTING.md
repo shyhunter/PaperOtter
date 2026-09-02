@@ -2,13 +2,18 @@
 
 Thanks for taking the time. This is a small project, so the process is light.
 
-## Reporting bugs and requesting features
+## Reporting bugs and suggesting features
 
-Use the issue templates: [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) or
-[Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml). For a bug, the two
-things that matter most are **how to reproduce it** and **the file it happened
-with**, if you can share one. Papercut deals with documents, and many bugs only
-appear on a particular file.
+Bugs go to the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) template. The
+two things that matter most are **how to reproduce it** and **the file it
+happened with**, if you can share one. Papercut deals with documents, and many
+bugs only appear on a particular file.
+
+Feature ideas go to
+[Discussions](https://github.com/shyhunter/Papercut/discussions/new?category=ideas)
+instead of the issue tracker. An issue list reads as a queue of promises, and
+an idea deserves somewhere it can be argued about first. The ones worth
+building get turned into issues from there.
 
 If the app crashed, the crash dialog can pre-fill a report for you.
 

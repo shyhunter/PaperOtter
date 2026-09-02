@@ -309,7 +309,7 @@ export const pl: Dictionary = {
   'redactionScope.coversOnlyTheFoundText': 'Zakrywa tylko znaleziony tekst',
   'redactionScope.justTheMatch': 'Tylko dopasowanie', 'redactionScope.wholeLine': 'Cały wiersz',
   'repairPdf.fixStructuralIssuesInCorrupted': 'Napraw błędy struktury w uszkodzonych lub wadliwych plikach PDF.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Nie wykryto problemów -- plik wygląda poprawnie',
+  'repairPdf.noIssuesDetectedFileAppears': 'Nie wykryto problemów: plik wygląda poprawnie',
   'repairPdf.pdfRepair': 'Naprawa PDF', 'repairPdf.repairPdf': 'Napraw PDF',
   'repairPdf.repairCompleteIfTheDocument':
     'Naprawa zakończona. Ewentualne błędy struktury dokumentu zostały usunięte.',
