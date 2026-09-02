@@ -573,7 +573,7 @@ export const en = {
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
   'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. Only the English is written by a native speaker: the rest are machine-assisted and have not been checked by one. If something reads oddly or says the wrong thing, please report it.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. All of them, English included, were written with AI assistance, and none has been checked by a professional translator. If something reads oddly or says the wrong thing, please report it.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',

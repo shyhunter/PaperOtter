@@ -553,7 +553,7 @@ export const nl: Dictionary = {
   'app.pleaseTryAgain': 'Probeer het opnieuw.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Alle verwerking gebeurt lokaal. Er verlaten nooit gegevens uw computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alleen het Engels is door een moedertaalspreker geschreven; de rest is machinaal ondersteund en niet door een moedertaalspreker nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alle zijn met hulp van AI gemaakt, ook het Engels, en geen enkele is door een professionele vertaler nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
   'aboutDialog.sendFeedback': 'Feedback sturen',

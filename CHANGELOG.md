@@ -12,7 +12,7 @@ The first stable release. Since `v1.0.0-beta.9`, 243 commits.
   Polish and Portuguese, picked from the top bar and remembered. Papercut guesses
   from the operating system on first launch. Plural forms are handled properly,
   Polish has three, and several languages have categories English does not.
-  *Only the English is written by a native speaker; see the note at the end.*
+  *All nine are AI-assisted; see the note at the end.*
 - **Read text from scans** (macOS). A scanned PDF becomes searchable and
   copyable, using the text recognition already built into the operating system.
   Every language the OS can read is offered, not a fixed list. The redact tool
@@ -82,8 +82,8 @@ These are the changes that stop Papercut damaging something of yours.
 - **Converting to EPUB or MOBI needs [Calibre](https://calibre-ebook.com/)**, and
   some document formats use [LibreOffice](https://www.libreoffice.org/). The
   other twenty-one tools need nothing installed.
-- **Eight of the nine languages are machine-assisted and have not been reviewed
-  by a native speaker.** Warnings about losing files are translated in every
+- **All nine languages are AI-assisted and have not been reviewed by a
+  professional translator.** Warnings about losing files are translated in every
   language or left in English in every language, never half-done, and a test
   enforces it. Corrections are the most useful contribution this project can
   receive: please [open an issue](https://github.com/shyhunter/Papercut/issues).

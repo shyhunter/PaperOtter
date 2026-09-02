@@ -75,11 +75,10 @@ Nine: English, German, Turkish, French, Spanish, Italian, Dutch, Polish and
 Portuguese. You can switch language from the icon in the top bar; your choice is
 remembered.
 
-**Only the English is written by a native speaker.** The other eight are
-machine-assisted and have not been checked by a native speaker. They ship anyway,
-because for most people a good-enough translation beats an English-only
-interface, but that is a limitation worth stating rather than hoping you do not
-notice.
+**All nine were written with AI assistance, English included, and none has been
+checked by a professional translator.** They ship anyway, because for most people
+a good-enough translation beats an English-only interface, but that is a
+limitation worth stating rather than hoping you do not notice.
 
 One exception is handled strictly. Sentences that warn you about losing data,
 overwriting a file or deleting something are either translated in every language

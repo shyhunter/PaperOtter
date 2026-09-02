@@ -104,11 +104,10 @@ reasoning is there to disagree with.
 Papercut's interface is available in nine languages: English, German, Turkish,
 French, Spanish, Italian, Dutch, Polish and Portuguese.
 
-**Only the English is written by a native speaker.** The other eight are
-machine-assisted and have not been reviewed by a native speaker of that
-language. They are shipped because a good-enough translation beats an English-only
-interface for most people, but "good enough" is a claim worth being honest
-about rather than quietly hoping nobody notices.
+**All nine were written with AI assistance, English included, and none has been
+reviewed by a professional translator.** They are shipped because a good-enough
+translation beats an English-only interface for most people, but "good enough"
+is a claim worth being honest about rather than quietly hoping nobody notices.
 
 Sentences that warn about losing data, overwriting a file or deleting something
 are treated as a special case: they are either translated everywhere or shipped

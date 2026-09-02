@@ -559,7 +559,7 @@ export const pt: Dictionary = {
   'app.pleaseTryAgain': 'Tente novamente.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Todo o processamento é feito localmente. Nenhum dado sai do seu computador.',
-  'aboutDialog.translationsNotNativeReviewed': 'O Papercut fala nove idiomas. Apenas o inglês é escrito por um falante nativo; os restantes são assistidos por máquina e não foram revistos por um. Se algo soar estranho ou disser o que não deve, agradecemos que reporte.',
+  'aboutDialog.translationsNotNativeReviewed': 'O Papercut fala nove idiomas. Todos foram criados com ajuda de IA, incluindo o inglês, e nenhum foi revisto por um tradutor profissional. Se algo soar estranho ou disser o que não deve, agradecemos que reporte.',
   'aboutDialog.roadmap': 'Roteiro',
   'aboutDialog.builtWith': 'Criado com', 'aboutDialog.license': 'Licença',
   'aboutDialog.sendFeedback': 'Enviar comentários',

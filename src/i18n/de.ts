@@ -550,7 +550,7 @@ export const de: Dictionary = {
     'Diese Datei scheint beschädigt zu sein. Bitte versuchen Sie es mit einer anderen Datei.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Die gesamte Verarbeitung findet lokal statt. Es verlassen keinerlei Daten Ihren Computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spricht neun Sprachen. Nur das Englische stammt von einem Muttersprachler – die übrigen sind maschinell erstellt und wurden nicht von einem Muttersprachler geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut spricht neun Sprachen. Alle wurden mit KI-Unterstützung erstellt, auch das Englische, und keine wurde professionell geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
