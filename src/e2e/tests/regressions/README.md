@@ -27,16 +27,41 @@ afterwards.
 - `latest.json` — the same run for tooling, and for diffing one run against
   another.
 
-## Linux and Windows only
+## Where they run
 
-Tauri drives its webview through WebDriver, which means `WebKitWebDriver` on
-Linux and Edge Driver on Windows. **There is no macOS equivalent** — Apple's
-`safaridriver` cannot attach to an app's `WKWebView` — so these specs cannot run
-on a Mac at all. On macOS the unit suite (`npx vitest run`) is the whole story.
+**Everywhere the app runs: macOS, Linux and Windows.**
 
-Individual specs skip themselves where the *behaviour* is platform-bound rather
-than the driver: file modes are POSIX, OCR is macOS-only. A skip is recorded
-with its reason rather than passing quietly.
+This used to say the opposite, and the correction is worth keeping. The old
+approach drove the webview through an external WebDriver — `WebKitWebDriver` on
+Linux, Edge Driver on Windows — and Apple ships no equivalent, because
+`safaridriver` cannot attach to an app's `WKWebView`. On that stack the suite
+genuinely could not run on a Mac.
+
+`tauri-webdriver-automation` removed that constraint by embedding the driver in
+the app itself, under the `e2e` feature. The note stayed behind and said the
+suite was impossible on the one machine most of this project's development
+happens on. A stale doc costs as much as a stale test: it stops work that would
+have succeeded, and nobody finds out because nobody tries.
+
+One command, whichever platform you are on:
+
+```
+npm run test:regressions
+```
+
+The build flag is not portable and the script handles it: macOS needs
+`--bundles app`, because the session launches
+`Papercut.app/Contents/MacOS/tauri-app` with the Ghostscript sidecar beside it
+inside the bundle; Linux and Windows launch the plain binary from
+`target/debug/` and bundling there is wasted work that also fails.
+
+On Linux you need `tauri-wd` once — `cargo install tauri-webdriver-automation` —
+and a display. A desktop session is enough; headless wants `xvfb-run`.
+
+Individual specs still skip themselves where the *behaviour* is platform-bound
+rather than the driver: file modes are POSIX, OCR is macOS-only, and the
+Ghostscript process check needs `pgrep`. A skip is recorded with its reason
+rather than passing quietly.
 
 ## What is here
 

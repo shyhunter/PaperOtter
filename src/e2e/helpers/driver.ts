@@ -367,13 +367,17 @@ export async function captureFailure(browser: Browser, testTitle: string): Promi
  * a temp file, with no window left to stop it from.
  */
 export function ghostscriptPids(): number[] {
-  const sidecar = join(
-    process.cwd(),
-    process.platform === 'darwin'
-      ? 'src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/gs'
-      : 'src-tauri/target/debug/gs',
-  );
-  const found = spawnSync('pgrep', ['-f', sidecar], { encoding: 'utf8' });
+  // Both layouts, because the build differs by platform: macOS bundles the
+  // sidecar inside the .app beside the binary, Linux and Windows leave it next
+  // to the plain binary in target/debug. Checking both means this helper does
+  // not silently return an empty list — and therefore a passing test — on the
+  // platform whose build shape it did not anticipate.
+  const candidates = [
+    'src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/gs',
+    'src-tauri/target/debug/gs',
+  ].map((rel) => join(process.cwd(), rel));
+
+  const found = spawnSync('pgrep', ['-f', candidates.join('|')], { encoding: 'utf8' });
   // pgrep exits 1 when nothing matches, which is the common case, not an error.
   return (found.stdout ?? '')
     .split('\n')
