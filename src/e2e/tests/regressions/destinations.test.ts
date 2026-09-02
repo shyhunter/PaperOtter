@@ -12,10 +12,10 @@
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import { mockOpenDialog } from '../../helpers/dialogs';
-import { selectToolOnDashboard, resetAppState, waitForProcessingComplete } from '../../helpers/driver';
+import { resetAppState, waitForProcessingComplete, captureFailure } from '../../helpers/driver';
 import {
   clickTestId, waitForTestId, waitForStep, testIdExists,
-  getTestIdAttr, getTestIdText, setSliderValue,
+  getTestIdAttr, getTestIdText, setTestIdValue,
 } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
@@ -26,7 +26,6 @@ after(() => ws.cleanup());
 /** Open a PDF in Compress and stop on Configure. */
 async function openInCompress(pdf: string): Promise<void> {
   await resetAppState(browser, 'Compress PDF');
-  await selectToolOnDashboard(browser, 'Compress PDF');
   await waitForTestId(browser, 'open-file-btn');
   await mockOpenDialog(browser, pdf);
   await clickTestId(browser, 'open-file-btn');
@@ -47,6 +46,32 @@ async function saveSettingAs(name: string): Promise<void> {
     const save = Array.from(panel?.querySelectorAll('button') ?? [])
       .find((b) => /save/i.test(b.textContent ?? '')) as HTMLElement | undefined;
     save?.click();
+  }, name);
+}
+
+// A one-line timeout says which element was missing, never what was on screen
+// instead. Capture both, so a red run can be read from its artefacts.
+afterEach(async function (this: Mocha.Context) {
+  if (this.currentTest?.state === 'failed') {
+    await captureFailure(browser, this.currentTest.fullTitle());
+  }
+});
+
+/**
+ * Apply a saved setting, which saving it does not do.
+ *
+ * The verdict is gated on the destination the user has *chosen*, and choosing
+ * is a separate click on the row above the controls. A test that only saves
+ * gets no verdict and no error either — the panel simply renders nothing.
+ */
+async function selectSavedSetting(name: string): Promise<void> {
+  await waitForTestId(browser, 'saved-settings-row');
+  await browser.execute((n: string) => {
+    const row = document.querySelector('[data-testid="saved-settings-row"]');
+    const pill = Array.from(row?.querySelectorAll('button') ?? [])
+      .find((b) => (b.textContent ?? '').trim() === n) as HTMLElement | undefined;
+    if (!pill) throw new Error(`no saved setting named "${n}"`);
+    pill.click();
   }, name);
 }
 
@@ -76,10 +101,20 @@ describe('Saved settings and the verdict', () => {
     const pdf = ws.fixture('photo_heavy.pdf', 'verdict.pdf');
     await openInCompress(pdf);
 
-    // A limit this document cannot meet, so the failing branch is exercised —
-    // the one that has to name the size rather than just refuse.
-    await setSliderValue(browser, 'compression-slider', 10);
+    // A target size, not a quality level. Quality is a setting to restore and
+    // carries nothing a finished document can be checked against, so a setting
+    // saved from the slider produces zero constraints and the panel correctly
+    // renders nothing at all. Only a limit yields a verdict.
+    await clickTestId(browser, 'custom-target-toggle');
+    // The field's own minimum is the smallest size this document can reach, so
+    // it is always a valid entry; the assertions below do not care whether the
+    // document meets the limit, only that a real number is reported.
+    const min = await getTestIdAttr(browser, 'custom-target-size', 'min');
+    await setTestIdValue(browser, 'custom-target-size', min ?? '1');
     await saveSettingAs('E2E tiny');
+
+    // Saving is not choosing.
+    await selectSavedSetting('E2E tiny');
 
     await clickTestId(browser, 'generate-preview-btn');
     await waitForProcessingComplete(browser);

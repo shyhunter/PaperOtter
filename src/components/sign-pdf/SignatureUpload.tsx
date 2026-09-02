@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { t } from '@/i18n';
 

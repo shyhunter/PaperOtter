@@ -13,7 +13,7 @@ import {
   FileText,
   File,
 } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { useEditorContext } from '@/context/EditorContext';
 import { PagePanelThumbnail } from './PagePanelThumbnail';

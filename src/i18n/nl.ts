@@ -18,6 +18,9 @@ import type { Dictionary } from '@/i18n/en';
  */
 export const nl: Dictionary = {
   'common.cancel': 'Annuleren', 'common.save': 'Opslaan', 'common.back': 'Terug',
+  'app.unsavedChangesGoBackToDashboard': 'U hebt niet-opgeslagen wijzigingen. Weet u zeker dat u terug wilt naar het overzicht? Uw bewerkingen gaan verloren.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'U hebt niet-opgeslagen wijzigingen. Sluiten zonder opslaan?',
+  'editorToolbar.discardAllChangesAndRestore': 'Alle wijzigingen verwerpen en dit document herstellen zoals het geopend werd?',
   'common.close': 'Sluiten', 'common.retry': 'Opnieuw proberen', 'common.tryAgain': 'Opnieuw proberen',
   'common.dismiss': 'Sluiten', 'common.loading': 'Laden…',
   'common.processing': 'Bezig…', 'common.preview': 'Voorbeeld', 'common.quality': 'Kwaliteit',
@@ -550,6 +553,7 @@ export const nl: Dictionary = {
   'app.pleaseTryAgain': 'Probeer het opnieuw.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Alle verwerking gebeurt lokaal. Er verlaten nooit gegevens uw computer.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alleen het Engels is door een moedertaalspreker geschreven; de rest is machinaal ondersteund en niet door een moedertaalspreker nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
   'aboutDialog.sendFeedback': 'Feedback sturen',
   'buyMeAcoffeeButton.buyMeACoffee': 'Trakteer me op een koffie',
@@ -745,4 +749,10 @@ export const nl: Dictionary = {
   'search.noMatches': 'Geen resultaten voor “{query}”.',
   'search.noMatchesInScan': 'Geen resultaten voor “{query}” in de tekst die uit deze scan is gelezen.',
   'search.readScanHint': 'Deze pagina bevat geen doorzoekbare tekst. Bij lezen wordt een onzichtbare tekstlaag toegevoegd; de pagina blijft er precies hetzelfde uitzien.',
+  'convertDoc.formatMayNeed': 'Mogelijk is {requirement} nodig. Papercut kon dit niet vinden, maar de detectie is niet altijd juist — probeer het gerust toch.',
+  'convertDoc.kindEbookConverter': 'een e-bookconverter zoals {tools}',
+  'convertDoc.kindWordProcessor': 'een tekstverwerker zoals {tools}',
+  'dashboard.andMoreFiles': '+{count} meer',
+  'deps.ghostscriptMac': 'Voor het comprimeren van PDF’s is Ghostscript nodig; Papercut levert dit mee. De meegeleverde versie kon niet starten — Papercut opnieuw installeren zou dit moeten herstellen.',
+  'editorToolbar.courierNewMonospace': 'Courier New (monospace)',
 };

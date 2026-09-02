@@ -73,8 +73,13 @@ function EditorViewInner({ filePath }: EditorViewProps) {
             const { ask } = await import('@tauri-apps/plugin-dialog');
             diagLog('closeRequested.ask.before');
             const confirmed = await ask(
-              'You have unsaved changes. Close without saving?',
-              { title: t('common.unsavedChanges'), kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' },
+              t('editorView.unsavedChangesCloseWithoutSaving'),
+              {
+                title: t('common.unsavedChanges'),
+                kind: 'warning',
+                okLabel: t('common.close'),
+                cancelLabel: t('common.cancel'),
+              },
             );
             diagLog(`closeRequested.ask.after confirmed=${confirmed}`);
             if (confirmed) {

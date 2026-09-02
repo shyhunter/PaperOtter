@@ -299,7 +299,7 @@ export function SplitSelectStep({
           {t('common.back')}
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
+        <Button data-testid="apply-btn" size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 me-2 animate-spin" />

@@ -407,6 +407,7 @@ export function ConfigureStep({
           <div className="space-y-2">
             <button
               type="button"
+              data-testid="custom-target-toggle"
               onClick={() => setCustomMode((v) => !v)}
               disabled={isProcessing || isNonCompressible}
               className={cn(

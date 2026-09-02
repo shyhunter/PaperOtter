@@ -146,9 +146,7 @@ function DedicatedToolFlow() {
   // Guards back-navigation with a confirm dialog when Edit PDF has unsaved edits.
   const handleEditPdfBackToDashboard = useCallback(() => {
     if (editPdfIsDirtyRef.current && dedicatedFlowStep === 1) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to go back to the dashboard? Your edits will be lost.',
-      );
+      const confirmed = window.confirm(t('app.unsavedChangesGoBackToDashboard'));
       if (!confirmed) return;
     }
     handleBackToDashboard();

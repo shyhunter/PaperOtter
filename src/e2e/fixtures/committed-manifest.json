@@ -1,0 +1,66 @@
+{
+  "locked.pdf": {
+    "sha256": "78db480de73f8a59c83cb0c651ab3d910e8057c7f2764e42d4435a9c239a07cf",
+    "bytes": 44827
+  },
+  "pexels-pixabay-459225.jpg": {
+    "sha256": "2c4313a5833de480944ead47429181f9393040705f00f836d219cbeec0beaf76",
+    "bytes": 2385146
+  },
+  "photo_heavy.pdf": {
+    "sha256": "3e713a72f14c8dab761e015f902e817c7cbd47cc4bbb1c9e81e5676a4b0c1f2d",
+    "bytes": 2386407
+  },
+  "rotated.heic": {
+    "sha256": "85971af3e21332226f9b3489785bc0fa0824ba4e6af04596cdfabf7601824c40",
+    "bytes": 676
+  },
+  "sample-multi.heic": {
+    "sha256": "e3d4a9e75c3ec4d346e38a98b9c8f42b78457dd3309a0fa798da2ee05e3066a3",
+    "bytes": 721
+  },
+  "sample.bmp": {
+    "sha256": "6ce7061de3595da77975e268a979f9dd0e1f187b7ebdbb42a88ac211a79aa3aa",
+    "bytes": 58
+  },
+  "sample.docx": {
+    "sha256": "b9fc505a6a385409dc0e84ee116b67e9e66cbb4f9d4d00cce0dc9ff1a13dbb1d",
+    "bytes": 1648
+  },
+  "sample.gif": {
+    "sha256": "d2437ddf45aa84303d14cc4569941c1ae58e8accca92216349c1332794015c6f",
+    "bytes": 43
+  },
+  "sample.heic": {
+    "sha256": "b102e2302b72a395f490ec139ff03e10b36db61ed1330cac234bea139fbc4f57",
+    "bytes": 1310
+  },
+  "sample.html": {
+    "sha256": "9a32ac46fd30139dc811855412035fdf78eceb7c0e1aac5d3c366f956361a686",
+    "bytes": 1316
+  },
+  "sample.jpg": {
+    "sha256": "d711b8cfb1ac6419c1780d674efcb253c495ed049c9ceb50a94367d5a402ebde",
+    "bytes": 3582
+  },
+  "sample.pdf": {
+    "sha256": "445bbaf86fee571c554bb620bd52a124b23c0ba6f8c7782ef4c20548ba4eb344",
+    "bytes": 2285
+  },
+  "sample.png": {
+    "sha256": "63404538d2b4c4856b3a128941e9f8fe75dc709197b559bf069b134a3b58a2db",
+    "bytes": 13850
+  },
+  "sample.tiff": {
+    "sha256": "f90969134f840c55b14792b122d5af10eee9b66c498f9c6a7a21a059fe6f513a",
+    "bytes": 119
+  },
+  "scanned.pdf": {
+    "sha256": "7d735a1ed5250f869cba7aeaaa774366027bcc942ad99887cd1da5f6e90f569d",
+    "bytes": 127220
+  },
+  "warnock_camelot.pdf": {
+    "sha256": "cdd169d7a5c10c60f8996a6d369e76709cd649840ead21f2647194106a37db01",
+    "bytes": 16691
+  }
+}

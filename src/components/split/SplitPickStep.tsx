@@ -1,6 +1,6 @@
 // SplitPickStep: Single-file PDF picker for the split tool.
 import { useState, useCallback, useEffect } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -74,7 +74,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
           </div>
         )}
 
-        <Button onClick={handleSelectFile} disabled={isLoading} className="w-full">
+        <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 me-2 animate-spin" />

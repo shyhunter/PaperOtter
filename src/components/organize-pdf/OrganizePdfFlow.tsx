@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { FileUp, Loader2, ArrowUp, ArrowDown, Trash2, Copy, RotateCcw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
@@ -176,7 +176,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                   <p className="text-xs text-destructive">{loadError}</p>
                 </div>
               )}
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
                 ) : (
@@ -304,7 +304,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
                 {t('common.back')}
               </Button>
               <div className="flex-1" />
-              <Button size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
+              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
                 {isProcessing ? (
                   <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.processing')}</>
                 ) : (

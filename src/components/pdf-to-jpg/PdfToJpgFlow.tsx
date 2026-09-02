@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { tempDir, join } from '@tauri-apps/api/path';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { FileUp, Loader2, CheckSquare, Square } from 'lucide-react';
@@ -377,7 +377,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 </div>
               )}
 
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
@@ -513,6 +513,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                 </Button>
                 <Button
                   size="sm"
+                  data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing || selectedPages.size === 0 || !!engineUnavailable}
                   className="flex-1"

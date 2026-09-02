@@ -12,13 +12,16 @@ import type { Dictionary } from '@/i18n/en';
  */
 export const it: Dictionary = {
   'common.cancel': 'Annulla', 'common.save': 'Salva', 'common.back': 'Indietro',
+  'app.unsavedChangesGoBackToDashboard': 'Ci sono modifiche non salvate. Vuole davvero tornare alla schermata principale? Le sue modifiche andranno perse.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Ci sono modifiche non salvate. Chiudere senza salvare?',
+  'editorToolbar.discardAllChangesAndRestore': 'Annullare tutte le modifiche e ripristinare questo documento come era stato aperto?',
   'common.close': 'Chiudi', 'common.retry': 'Riprova', 'common.tryAgain': 'Riprova',
   'common.dismiss': 'Ignora', 'common.loading': 'Caricamento…',
   'common.processing': 'Elaborazione…', 'common.preview': 'Anteprima', 'common.quality': 'Qualità',
   'common.width': 'Larghezza', 'common.height': 'Altezza', 'common.zoomIn': 'Ingrandisci',
   'common.zoomOut': 'Riduci', 'common.startOver': 'Ricomincia', 'common.saveEllipsis': 'Salva…',
   'common.selectImage': 'Seleziona immagine', 'common.moveUp': 'Sposta su', 'common.moveDown': 'Sposta giù',
-  'common.reset': 'Reimposta', 'common.applying': 'Applicazione…', 'common.fontSize': 'Corpo del testo',
+  'common.reset': 'Reimposta', 'common.applying': 'Applicazione in corso…', 'common.fontSize': 'Corpo del testo',
   'common.generatingPreview': 'Creazione dell’anteprima…',
   'common.previewWillAppearHere': 'L’anteprima apparirà qui', 'common.rotatePages': 'Ruota le pagine',
   'common.useThisSignature': 'Usa questa firma', 'common.undo': 'Annulla', 'common.redo': 'Ripristina',
@@ -546,6 +549,7 @@ export const it: Dictionary = {
   'app.pleaseTryAgain': 'Riprovi.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tutta l’elaborazione avviene localmente. Nessun dato lascia mai il suo computer.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut parla nove lingue. Solo l’inglese è scritto da un madrelingua; le altre sono assistite da una macchina e non sono state riviste da un madrelingua. Se qualcosa suona strano o dice la cosa sbagliata, la preghiamo di segnalarlo.',
   'aboutDialog.builtWith': 'Sviluppato con', 'aboutDialog.license': 'Licenza',
   'aboutDialog.sendFeedback': 'Invia un commento',
   'buyMeAcoffeeButton.buyMeACoffee': 'Mi offra un caffè', 'support.buyMeACoffee': 'Mi offra un caffè',
@@ -742,4 +746,10 @@ export const it: Dictionary = {
   'search.noMatches': 'Nessun risultato per «{query}».',
   'search.noMatchesInScan': 'Nessun risultato per «{query}» nel testo letto da questa scansione.',
   'search.readScanHint': 'Questa pagina non ha testo da cercare. La lettura aggiunge un livello di testo invisibile e l’aspetto della pagina resta identico.',
+  'convertDoc.formatMayNeed': 'Potrebbe richiedere {requirement}. Papercut non è riuscito a rilevarlo, ma il rilevamento non è sempre accurato — provi comunque.',
+  'convertDoc.kindEbookConverter': 'un convertitore di e-book come {tools}',
+  'convertDoc.kindWordProcessor': 'un elaboratore di testi come {tools}',
+  'dashboard.andMoreFiles': '+{count} in più',
+  'deps.ghostscriptMac': 'La compressione PDF richiede Ghostscript, incluso in Papercut. La copia inclusa non è riuscita ad avviarsi — reinstallare Papercut dovrebbe ripristinarla.',
+  'editorToolbar.courierNewMonospace': 'Courier New (monospazio)',
 };

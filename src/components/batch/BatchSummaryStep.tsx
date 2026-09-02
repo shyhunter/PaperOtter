@@ -36,7 +36,13 @@ export function BatchSummaryStep({
   const savedBytes = inputTotal - outputTotal;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div
+      data-testid="batch-summary-step"
+      data-cancelled={cancelled ? 'true' : 'false'}
+      data-succeeded={succeeded.length}
+      data-failed={failed.length}
+      className="flex flex-1 flex-col overflow-hidden"
+    >
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto w-full max-w-lg space-y-4">
 

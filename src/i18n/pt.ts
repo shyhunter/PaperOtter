@@ -29,6 +29,9 @@ export const pt: Dictionary = {
   'count.image_one': '{count} imagem',
   'count.image_other': '{count} imagens',
 
+  'app.unsavedChangesGoBackToDashboard': 'Tem alterações por guardar. Tem a certeza de que quer voltar ao painel? As suas edições serão perdidas.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Tem alterações por guardar. Fechar sem guardar?',
+  'editorToolbar.discardAllChangesAndRestore': 'Descartar todas as alterações e restaurar este documento tal como foi aberto?',
   'common.cancel': 'Cancelar', 'common.save': 'Guardar', 'common.saveEllipsis': 'Guardar…',
   'common.back': 'Voltar', 'common.close': 'Fechar', 'common.retry': 'Tentar novamente',
   'common.tryAgain': 'Tentar novamente', 'common.dismiss': 'Ignorar',
@@ -556,6 +559,7 @@ export const pt: Dictionary = {
   'app.pleaseTryAgain': 'Tente novamente.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Todo o processamento é feito localmente. Nenhum dado sai do seu computador.',
+  'aboutDialog.translationsNotNativeReviewed': 'O Papercut fala nove idiomas. Apenas o inglês é escrito por um falante nativo; os restantes são assistidos por máquina e não foram revistos por um. Se algo soar estranho ou disser o que não deve, agradecemos que reporte.',
   'aboutDialog.builtWith': 'Criado com', 'aboutDialog.license': 'Licença',
   'aboutDialog.sendFeedback': 'Enviar comentários',
   'buyMeAcoffeeButton.buyMeACoffee': 'Pague-me um café', 'support.buyMeACoffee': 'Pague-me um café',
@@ -806,4 +810,10 @@ export const pt: Dictionary = {
   'search.noMatches': 'Sem resultados para «{query}».',
   'search.noMatchesInScan': 'Sem resultados para «{query}» no texto lido desta digitalização.',
   'search.readScanHint': 'Esta página não tem texto para procurar. Ao lê-la é acrescentada uma camada de texto invisível, e o aspeto da página mantém-se igual.',
+  'convertDoc.formatMayNeed': 'Poderá ser necessário {requirement}. O Papercut não o conseguiu detetar, mas a deteção nem sempre acerta — experimente na mesma.',
+  'convertDoc.kindEbookConverter': 'um conversor de livros digitais como {tools}',
+  'convertDoc.kindWordProcessor': 'um processador de texto como {tools}',
+  'dashboard.andMoreFiles': '+{count} mais',
+  'deps.ghostscriptMac': 'A compressão de PDF requer o Ghostscript, que já vem incluído no Papercut. Não foi possível iniciar a cópia incluída — reinstalar o Papercut deverá restaurá-la.',
+  'editorToolbar.courierNewMonospace': 'Courier New (monoespaçada)',
 };

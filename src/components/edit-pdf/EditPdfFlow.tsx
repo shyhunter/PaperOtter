@@ -4,7 +4,7 @@
 // Step 2: Save edited PDF
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { readFile } from '@tauri-apps/plugin-fs';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { FileUp, Loader2, Save } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { SaveStep } from '@/components/SaveStep';
@@ -162,7 +162,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
                   <p className="text-xs text-destructive">{loadError}</p>
                 </div>
               )}
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />

@@ -1,7 +1,7 @@
 // JpgToPdfFlow: Pick images -> Configure page layout -> Create & Save PDF.
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
 import { FilePlus, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -570,6 +570,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                 </Button>
                 <Button
                   size="sm"
+                  data-testid="apply-btn"
                   onClick={handleCreatePdf}
                   disabled={isProcessing}
                   className="flex-1"

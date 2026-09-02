@@ -431,6 +431,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
         <div className="flex-1" />
         <Button
           size="sm"
+          data-testid="apply-btn"
           onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
         >

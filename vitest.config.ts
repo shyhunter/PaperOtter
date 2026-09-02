@@ -11,7 +11,12 @@ export default defineConfig({
       ['src/integration/**/*.test.tsx', 'jsdom'], // integration tests need DOM
     ],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: ['src/e2e/**'], // E2E tests run via wdio, not vitest
+    // The E2E specs run under wdio, not vitest. The helpers they lean on are a
+    // different matter: the output verifier decides whether every future tool
+    // test means anything, and a verifier that silently returns nothing turns
+    // the whole suite green. It gets covered by the fast suite, against real
+    // fixture bytes.
+    exclude: ['src/e2e/tests/**', 'src/e2e/wdio.conf.ts'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',

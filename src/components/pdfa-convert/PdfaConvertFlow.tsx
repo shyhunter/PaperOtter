@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
@@ -173,7 +173,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                 </div>
               )}
 
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
@@ -260,6 +260,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
                 </Button>
                 <Button
                   size="sm"
+                  data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing}
                   className="flex-1"

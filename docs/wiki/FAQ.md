@@ -68,3 +68,26 @@ templates are provided for both.
 ---
 
 See also: [Troubleshooting](Troubleshooting) · [Using Papercut](Using-Papercut)
+
+### What languages does Papercut speak, and how good are the translations?
+
+Nine: English, German, Turkish, French, Spanish, Italian, Dutch, Polish and
+Portuguese. You can switch language from the icon in the top bar; your choice is
+remembered.
+
+**Only the English is written by a native speaker.** The other eight are
+machine-assisted and have not been checked by a native speaker. They ship anyway,
+because for most people a good-enough translation beats an English-only
+interface — but that is a limitation worth stating rather than hoping you do not
+notice.
+
+One exception is handled strictly. Sentences that warn you about losing data,
+overwriting a file or deleting something are either translated in every language
+or left in English in every language — never half-done. A test enforces it. A
+warning you half-understand is more dangerous than one in a language you do not
+speak at all.
+
+If something reads oddly, says the wrong thing, or is missing, please
+[open an issue](https://github.com/shyhunter/Papercut/issues). Corrections from
+native speakers are genuinely the most useful thing anyone can send this project.
+

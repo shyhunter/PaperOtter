@@ -1,6 +1,6 @@
 // MergePickStep: Multi-file PDF selector with thumbnails, page counts, and "Add More".
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { FilePlus, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { loadPdfForMerge } from '@/lib/pdfMerge';

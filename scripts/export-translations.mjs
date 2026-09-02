@@ -10,10 +10,16 @@
 // whole set at once and gaps are visible as empty cells rather than as absences.
 //
 //   node scripts/export-translations.mjs [outfile]
+//   node scripts/export-translations.mjs --split <dir>
 //
-// Default output: .planning/translations.csv (git-ignored; regenerate at will).
+// Default output: .planning/translations.csv, which IS tracked in git.
+//
+// --split writes one file per language instead, each carrying the key, the
+// English source and that language alone. One reviewer — or one model — reads
+// better with two columns to compare than with nine to scan across, and each
+// file can go to whichever model is strongest in that language.
 import { build } from 'esbuild';
-import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -61,6 +67,40 @@ const csvCell = (value) => {
 
 const placeholdersOf = (s) => [...new Set((s.match(/\{(\w+)\}/g) ?? []))].sort().join(' ');
 
+/**
+ * One CSV per language: key, context, English, and that language.
+ *
+ * `missing` is a plain yes/no here rather than the master file's list of
+ * language codes, because in a single-language file the list could only ever
+ * name that one language.
+ */
+function writePerLanguage(dicts, keys, dir) {
+  mkdirSync(dir, { recursive: true });
+  const written = [];
+
+  for (const locale of LOCALES.filter((l) => l !== 'en')) {
+    const header = ['key', 'placeholders', 'safety_critical', 'missing', 'en', locale];
+    const rows = keys.map((key) => {
+      const source = dicts.en[key];
+      return [
+        key,
+        placeholdersOf(source),
+        SAFETY.test(source) ? 'yes' : '',
+        key in dicts[locale] ? '' : 'yes',
+        source,
+        dicts[locale][key] ?? '',
+      ].map(csvCell).join(',');
+    });
+
+    const outfile = join(dir, `papercut-translations-${locale}.csv`);
+    writeFileSync(outfile, '\ufeff' + [header.map(csvCell).join(','), ...rows].join('\n') + '\n', 'utf8');
+    const missing = keys.filter((k) => !(k in dicts[locale])).length;
+    written.push([locale, outfile, missing]);
+  }
+
+  return written;
+}
+
 async function main() {
   const dicts = await loadDictionaries();
   const en = dicts.en;
@@ -85,6 +125,21 @@ async function main() {
       ...LOCALES.map((l) => dicts[l][key] ?? ''),
     ].map(csvCell).join(',');
   });
+
+  if (process.argv[2] === '--split') {
+    const dir = process.argv[3];
+    if (!dir) {
+      console.error('--split needs a directory: node scripts/export-translations.mjs --split <dir>');
+      process.exit(2);
+    }
+    const written = writePerLanguage(dicts, keys, dir);
+    console.log(`${keys.length} keys, one file per language, in ${dir}`);
+    for (const [locale, file, missing] of written) {
+      console.log(`  ${locale}  ${file.split('/').pop()}` + (missing ? `  (${missing} untranslated)` : ''));
+    }
+    console.log(`${keys.filter((k) => SAFETY.test(en[k])).length} safety-critical strings are marked in every file`);
+    return;
+  }
 
   const outfile = process.argv[2] ?? join(ROOT, '.planning', 'translations.csv');
   // A BOM, so Excel opens UTF-8 correctly. Without it every ö, ı and — is mojibake

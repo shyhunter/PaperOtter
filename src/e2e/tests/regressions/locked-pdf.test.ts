@@ -18,7 +18,7 @@
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import { mockOpenDialog } from '../../helpers/dialogs';
-import { selectToolOnDashboard, resetAppState } from '../../helpers/driver';
+import { resetAppState, captureFailure } from '../../helpers/driver';
 import { clickTestId, waitForTestId, waitForText, pageContainsText } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
@@ -31,11 +31,19 @@ const ws = new Workspace('locked-pdf');
  * refuses for its own reason — it cannot re-encrypt what it cannot open.
  */
 const TOOLS = [
-  'Rotate PDF', 'Crop PDF', 'Organize PDF', 'Page Numbers', 'Watermark',
+  'Rotate PDF', 'Crop PDF', 'Organise PDF', 'Page Numbers', 'Watermark',
   'Split PDF', 'PDF to JPG', 'Sign PDF', 'Redact PDF', 'Repair PDF', 'PDF/A',
 ];
 
 after(() => ws.cleanup());
+
+// A one-line timeout says which element was missing, never what was on screen
+// instead. Capture both, so a red run can be read from its artefacts.
+afterEach(async function (this: Mocha.Context) {
+  if (this.currentTest?.state === 'failed') {
+    await captureFailure(browser, this.currentTest.fullTitle());
+  }
+});
 
 describe('A locked PDF is refused, not silently emptied', () => {
   for (const tool of TOOLS) {
@@ -45,7 +53,6 @@ describe('A locked PDF is refused, not silently emptied', () => {
       const locked = ws.fixture('locked.pdf', `locked-${tool.replace(/[^a-z]/gi, '')}.pdf`);
 
       await resetAppState(browser, tool);
-      await selectToolOnDashboard(browser, tool);
       await waitForTestId(browser, 'open-file-btn');
       await mockOpenDialog(browser, locked);
       await clickTestId(browser, 'open-file-btn');
@@ -61,7 +68,6 @@ describe('A locked PDF is refused, not silently emptied', () => {
     const locked = ws.fixture('locked.pdf', 'locked-for-unlock.pdf');
 
     await resetAppState(browser, 'Unlock PDF');
-    await selectToolOnDashboard(browser, 'Unlock PDF');
     await waitForTestId(browser, 'open-file-btn');
     await mockOpenDialog(browser, locked);
     await clickTestId(browser, 'open-file-btn');

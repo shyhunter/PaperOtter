@@ -82,6 +82,13 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           </p>
         </div>
 
+        {/* Translation honesty. Sits with the privacy statement deliberately:
+            both are claims about what this app is, and one of them is a
+            limitation. Burying it would be the wrong kind of polish. */}
+        <p className="px-1 text-[11px] text-muted-foreground leading-relaxed text-center">
+          {t('aboutDialog.translationsNotNativeReviewed')}
+        </p>
+
         {/* Details */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">

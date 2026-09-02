@@ -16,8 +16,8 @@
  */
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
-import { resetAppState } from '../../helpers/driver';
-import { waitForText, pageContainsText } from '../../helpers/testid';
+import { goToDashboard, captureFailure } from '../../helpers/driver';
+import { waitForText, pageContainsText, testIdExists, clickTestId } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
 const ws = new Workspace('dashboard-drops');
@@ -35,13 +35,63 @@ async function drop(paths: string[]): Promise<void> {
 }
 
 after(() => ws.cleanup());
+before(async () => {
+  await goToDashboard(browser);
+
+  // Wait for the drag-drop listener to actually exist.
+  //
+  // Tauri registers it with an async `listen()` call from an effect, so the
+  // dashboard is on screen and interactive for a short window during which a
+  // drop is delivered to nobody at all. A person cannot drop a file in the
+  // few hundred milliseconds after launch; `e2e_emit_drop` can, and did — this
+  // spec's first test failed on a cold start and passed on a warm one.
+  //
+  // Polling here rather than retrying inside `drop()` keeps each test honest:
+  // below this point a drop that goes missing is a failure, not something the
+  // helper quietly papers over.
+  const probe = ws.fixture('sample.pdf', 'listener-warmup.pdf');
+  await browser.waitUntil(
+    async () => {
+      await drop([probe]);
+      return testIdExists(browser, 'staged-file');
+    },
+    { timeout: 20000, interval: 500, timeoutMsg: 'the drag-drop listener never came up' },
+  );
+  await clickTestId(browser, 'staged-file-dismiss');
+});
+
+
+/**
+ * The dashboard, with nothing staged.
+ *
+ * These test the dashboard's own drop handler, so they must be ON the dashboard
+ * — resetAppState navigates into a tool by design, and the handler is not
+ * mounted there. Staging also survives between tests, and a set left over from
+ * the previous one is indistinguishable from the accumulation being tested.
+ */
+async function startOnEmptyDashboard(): Promise<void> {
+  await goToDashboard(browser);
+  if (await testIdExists(browser, 'staged-file')) {
+    await clickTestId(browser, 'staged-file-dismiss');
+  }
+}
+
+
+
+// A one-line timeout says which element was missing, never what was on screen
+// instead. Capture both, so a red run can be read from its artefacts.
+afterEach(async function (this: Mocha.Context) {
+  if (this.currentTest?.state === 'failed') {
+    await captureFailure(browser, this.currentTest.fullTitle());
+  }
+});
 
 describe('Dropping files onto the dashboard', () => {
   it('[E2E-DROP-01] a second drop of the same type adds to the first', async () => {
     const a = ws.fixture('warnock_camelot.pdf', 'drop-a.pdf');
     const b = ws.fixture('sample.pdf', 'drop-b.pdf');
 
-    await resetAppState(browser, 'Merge PDF');
+    await startOnEmptyDashboard();
     await drop([a]);
     await waitForText(browser, /drop-a\.pdf/);
 
@@ -55,7 +105,7 @@ describe('Dropping files onto the dashboard', () => {
   it('[E2E-DROP-02] the same file dropped twice is staged once', async () => {
     const a = ws.fixture('warnock_camelot.pdf', 'dup.pdf');
 
-    await resetAppState(browser, 'Merge PDF');
+    await startOnEmptyDashboard();
     await drop([a]);
     await drop([a]);
 
@@ -70,7 +120,7 @@ describe('Dropping files onto the dashboard', () => {
     const pdf = ws.fixture('warnock_camelot.pdf', 'mixed.pdf');
     const jpg = ws.fixture('sample.jpg', 'mixed.jpg');
 
-    await resetAppState(browser, 'Merge PDF');
+    await startOnEmptyDashboard();
     await drop([pdf]);
     await waitForText(browser, /mixed\.pdf/);
 
@@ -84,7 +134,7 @@ describe('Dropping files onto the dashboard', () => {
     const b = ws.fixture('sample.pdf', 'acc-b.pdf');
     const c = ws.fixture('photo_heavy.pdf', 'acc-c.pdf');
 
-    await resetAppState(browser, 'Merge PDF');
+    await startOnEmptyDashboard();
     await drop([a]);
     await drop([b, c]);
 

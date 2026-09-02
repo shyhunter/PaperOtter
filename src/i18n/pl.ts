@@ -31,6 +31,9 @@ export const pl: Dictionary = {
   'count.word_many': '{count} słów', 'count.word_other': '{count} słowa',
 
   'common.cancel': 'Anuluj', 'common.save': 'Zapisz', 'common.back': 'Wstecz',
+  'app.unsavedChangesGoBackToDashboard': 'Masz niezapisane zmiany. Czy na pewno chcesz wrócić do pulpitu? Twoje zmiany zostaną utracone.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Masz niezapisane zmiany. Zamknąć bez zapisywania?',
+  'editorToolbar.discardAllChangesAndRestore': 'Odrzucić wszystkie zmiany i przywrócić ten dokument do stanu z chwili otwarcia?',
   'common.close': 'Zamknij', 'common.retry': 'Spróbuj ponownie', 'common.tryAgain': 'Spróbuj ponownie',
   'common.dismiss': 'Zamknij', 'common.loading': 'Wczytywanie…',
   'common.processing': 'Przetwarzanie…', 'common.preview': 'Podgląd', 'common.quality': 'Jakość',
@@ -553,6 +556,7 @@ export const pl: Dictionary = {
   'app.pleaseTryAgain': 'Spróbuj ponownie.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Całe przetwarzanie odbywa się lokalnie. Żadne dane nigdy nie opuszczają Twojego komputera.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut mówi w dziewięciu językach. Tylko angielski napisał native speaker; pozostałe powstały z pomocą maszyny i nie zostały przez niego sprawdzone. Jeśli coś brzmi dziwnie lub mówi co innego, prosimy o zgłoszenie.',
   'aboutDialog.builtWith': 'Zbudowano przy użyciu', 'aboutDialog.license': 'Licencja',
   'aboutDialog.sendFeedback': 'Wyślij opinię',
   'buyMeAcoffeeButton.buyMeACoffee': 'Postaw mi kawę', 'support.buyMeACoffee': 'Postaw mi kawę',
@@ -752,4 +756,10 @@ export const pl: Dictionary = {
   'search.noMatches': 'Brak wyników dla „{query}”.',
   'search.noMatchesInScan': 'Brak wyników dla „{query}” w tekście odczytanym z tego skanu.',
   'search.readScanHint': 'Ta strona nie zawiera tekstu do przeszukania. Odczytanie dodaje niewidoczną warstwę tekstu, a wygląd strony pozostaje bez zmian.',
+  'convertDoc.formatMayNeed': 'Może być potrzebny: {requirement}. Papercut go nie wykrył, ale wykrywanie nie zawsze jest trafne — spróbuj mimo to.',
+  'convertDoc.kindEbookConverter': 'konwerter e-booków, taki jak {tools}',
+  'convertDoc.kindWordProcessor': 'edytor tekstu, taki jak {tools}',
+  'dashboard.andMoreFiles': '+{count} więcej',
+  'deps.ghostscriptMac': 'Kompresja PDF wymaga Ghostscript, który jest dołączony do Papercut. Dołączonej kopii nie udało się uruchomić — ponowna instalacja Papercut powinna to naprawić.',
+  'editorToolbar.courierNewMonospace': 'Courier New (stała szerokość)',
 };

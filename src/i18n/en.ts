@@ -573,6 +573,7 @@ export const en = {
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
   'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. Only the English is written by a native speaker — the rest are machine-assisted and have not been checked by one. If something reads oddly or says the wrong thing, please report it.',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',
   'aboutDialog.sendFeedback': 'Send Feedback',
@@ -782,6 +783,9 @@ export const en = {
   // ── Messages and toasts ─────────────────────────────────────────────────
   'app.thisFileIsEmptyPlease': 'This file is empty. Please try a different file.',
   'app.pleaseTryAgain': 'Please try again.',
+  'app.unsavedChangesGoBackToDashboard': 'You have unsaved changes. Are you sure you want to go back to the dashboard? Your edits will be lost.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'You have unsaved changes. Close without saving?',
+  'editorToolbar.discardAllChangesAndRestore': 'Discard all changes and restore this document as it was opened?',
   'crashReporter.previewWhatWillBeSent': 'Preview what will be sent',
   'crashReporter.hideReportPreview': 'Hide report preview',
   'crashReporter.hideErrorDetails': 'Hide error details',

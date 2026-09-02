@@ -16,6 +16,9 @@ export const es: Dictionary = {
   'common.cancel': 'Cancelar',
   'common.save': 'Guardar',
   'common.back': 'Atrás',
+  'app.unsavedChangesGoBackToDashboard': 'Tiene cambios sin guardar. ¿Seguro que quiere volver al panel? Sus ediciones se perderán.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Tiene cambios sin guardar. ¿Cerrar sin guardar?',
+  'editorToolbar.discardAllChangesAndRestore': '¿Descartar todos los cambios y restaurar este documento tal como se abrió?',
   'common.close': 'Cerrar',
   'common.retry': 'Reintentar',
   'common.tryAgain': 'Reintentar',
@@ -673,6 +676,7 @@ export const es: Dictionary = {
   'app.pleaseTryAgain': 'Inténtelo de nuevo.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Todo el procesamiento es local. Ningún dato sale nunca de su ordenador.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut habla nueve idiomas. Solo el inglés está escrito por un hablante nativo; el resto son asistidos por máquina y no han sido revisados por uno. Si algo suena raro o dice lo que no debe, por favor comuníquelo.',
   'aboutDialog.builtWith': 'Desarrollado con', 'aboutDialog.license': 'Licencia',
   'aboutDialog.sendFeedback': 'Enviar comentarios',
   'buyMeAcoffeeButton.buyMeACoffee': 'Invítame a un café', 'support.buyMeACoffee': 'Invítame a un café',
@@ -869,4 +873,10 @@ export const es: Dictionary = {
   'search.noMatches': 'Ninguna coincidencia con «{query}».',
   'search.noMatchesInScan': 'Ninguna coincidencia con «{query}» en el texto leído de este escaneo.',
   'search.readScanHint': 'Esta página no tiene texto que buscar. Al leerla se añade una capa de texto invisible y el aspecto de la página no cambia.',
+  'convertDoc.formatMayNeed': 'Puede requerir {requirement}. Papercut no ha podido detectarlo, pero la detección no siempre acierta; pruébelo igualmente.',
+  'convertDoc.kindEbookConverter': 'un conversor de libros electrónicos como {tools}',
+  'convertDoc.kindWordProcessor': 'un procesador de textos como {tools}',
+  'dashboard.andMoreFiles': '+{count} más',
+  'deps.ghostscriptMac': 'La compresión de PDF requiere Ghostscript, que Papercut incluye. La copia incluida no se pudo iniciar; reinstalar Papercut debería restaurarla.',
+  'editorToolbar.courierNewMonospace': 'Courier New (monoespaciada)',
 };
