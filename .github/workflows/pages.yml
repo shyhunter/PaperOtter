@@ -32,6 +32,14 @@ concurrency:
 
 jobs:
   deploy:
+    # Dormant until the repo is public. Pages serving publicly from a private
+    # repo needs a paid plan, so `configure-pages` fails with "Get Pages site
+    # failed" and leaves a red X on every push that touches the site. Like the
+    # CodeQL gate, this removes itself at the visibility flip.
+    #
+    # An expression rather than a guard job: this workflow runs only on `push`
+    # and `workflow_dispatch`, and both populate `github.event.repository`.
+    if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
