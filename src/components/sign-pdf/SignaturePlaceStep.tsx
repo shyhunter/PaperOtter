@@ -405,6 +405,7 @@ export function SignaturePlaceStep({
         {/* Actions */}
         <div className="space-y-2">
           <Button
+            data-testid="apply-btn"
             onClick={handleApply}
             disabled={isProcessing || !pageDims}
             className="w-full"

@@ -290,7 +290,7 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
   // ── Cancelled state ─────────────────────────────────────────────────────────
   if (isCancelled) {
     return (
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div data-testid="cancelled-step" className="flex flex-1 flex-col overflow-hidden">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
           <Ban className="h-10 w-10 text-muted-foreground" />
           <div className="text-center space-y-1">

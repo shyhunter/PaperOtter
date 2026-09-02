@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { stripImageExtension } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
@@ -193,7 +193,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 </div>
               )}
 
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
@@ -324,6 +324,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                 </Button>
                 <Button
                   size="sm"
+                  data-testid="apply-btn"
                   onClick={handleApply}
                   disabled={isProcessing}
                   className="flex-1"

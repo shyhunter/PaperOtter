@@ -21,7 +21,12 @@ export function BatchRunStep({ progress, onCancel }: BatchRunStepProps) {
   const pct = total > 0 ? Math.round(((current - 1) / total) * 100) : 0;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
+    <div
+      data-testid="batch-run-step"
+      data-batch-index={progress?.index ?? -1}
+      data-batch-total={total}
+      className="flex flex-1 flex-col items-center justify-center p-6"
+    >
       <div className="w-full max-w-sm space-y-4">
         <p className="text-sm font-medium text-foreground text-center">
           {progress
@@ -45,7 +50,7 @@ export function BatchRunStep({ progress, onCancel }: BatchRunStepProps) {
         </div>
 
         <div className="flex justify-center">
-          <Button variant="outline" size="sm" onClick={onCancel}>
+          <Button variant="outline" size="sm" data-testid="batch-cancel-btn" onClick={onCancel}>
             {t('common.cancel')}
           </Button>
         </div>

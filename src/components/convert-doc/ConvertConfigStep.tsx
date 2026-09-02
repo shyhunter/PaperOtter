@@ -456,6 +456,7 @@ export function ConvertConfigStep({
         <div className="flex-1" />
         <Button
           size="sm"
+          data-testid="apply-btn"
           onClick={handleConvert}
           disabled={isProcessing || !canConvert || availableFormats.length === 0}
         >

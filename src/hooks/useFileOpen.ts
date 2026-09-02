@@ -1,6 +1,6 @@
 // Uses @tauri-apps/plugin-dialog (Tauri 2 — NOT @tauri-apps/api/dialog which is Tauri 1)
 // Requires "dialog:allow-open" in src-tauri/capabilities/default.json (added in plan 01-01)
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { isSupportedFile } from '@/lib/fileValidation';
 import { t } from '@/i18n';
 

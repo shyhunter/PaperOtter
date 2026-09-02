@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { stripImageExtension } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { FileUp, Loader2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -224,7 +224,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 </div>
               )}
 
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />
@@ -334,6 +334,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                 </Button>
                 <Button
                   size="sm"
+                  data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing}
                   className="flex-1"

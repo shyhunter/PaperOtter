@@ -179,7 +179,7 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
           {t('common.back')}
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={handleMerge} disabled={isMerging}>
+        <Button data-testid="apply-btn" size="sm" onClick={handleMerge} disabled={isMerging}>
           {isMerging ? (
             <>
               <Loader2 className="w-4 h-4 me-2 animate-spin" />

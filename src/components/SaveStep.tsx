@@ -713,10 +713,10 @@ function SingleFileSave({
             {t('common.back')}
           </Button>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={handleSave}>
+          <Button variant="outline" size="sm" data-testid="save-as-btn" onClick={handleSave}>
             {t('saveStep.saveAs')}
           </Button>
-          <Button size="sm" onClick={handleReplace}>
+          <Button size="sm" data-testid="replace-btn" onClick={handleReplace}>
             {t('common.save')}
           </Button>
         </div>

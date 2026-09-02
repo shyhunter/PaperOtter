@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { FileUp, Loader2 } from 'lucide-react';
@@ -130,7 +130,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
                 </div>
               )}
 
-              <Button onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
+              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 me-2 animate-spin" />

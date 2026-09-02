@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '@/lib/dialog';
 import { listen } from '@tauri-apps/api/event';
 import { FileUp, Loader2, ScanText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
@@ -132,7 +132,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
               </div>
             )}
 
-            <Button onClick={handleSelectFile} className="w-full">
+            <Button data-testid="open-file-btn" onClick={handleSelectFile} className="w-full">
               <FileUp className="w-4 h-4 me-2" />
               {t('ocr.selectPdf')}
             </Button>
@@ -179,7 +179,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
                 </p>
               </div>
             ) : (
-              <Button onClick={handleRecognise} className="w-full">
+              <Button data-testid="apply-btn" onClick={handleRecognise} className="w-full">
                 <ScanText className="w-4 h-4 me-2" />
                 {t('ocr.start')}
               </Button>

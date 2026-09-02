@@ -147,6 +147,9 @@ export function ToolCard({
     <div className="relative group/card h-full">
       <button
         type="button"
+        data-testid="tool-card"
+        data-tool-id={tool.id}
+        data-disabled={disabled ? 'true' : 'false'}
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
@@ -211,6 +214,9 @@ function FavoriteCard({
     >
       <button
         type="button"
+        data-testid="tool-card"
+        data-tool-id={tool.id}
+        data-disabled={disabled ? 'true' : 'false'}
         onClick={disabled ? undefined : (isTarget ? () => onSwapTarget(index) : onClick)}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
@@ -426,7 +432,7 @@ export function Dashboard() {
   const stagedCount = stagedFile ? 1 + (stagedFile.alsoDropped?.length ?? 0) : 0;
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
+    <div data-testid="dashboard" className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
       <div className="max-w-5xl mx-auto w-full space-y-8">
         {/* Header with search */}
         <div className="space-y-4">
@@ -480,7 +486,7 @@ export function Dashboard() {
 
         {/* Staged file banner */}
         {stagedFile && (
-          <div className="flex items-center gap-3 border border-primary/30 bg-primary/5 rounded-lg px-4 py-3">
+          <div data-testid="staged-file" className="flex items-center gap-3 border border-primary/30 bg-primary/5 rounded-lg px-4 py-3">
             {(() => { const FormatIcon = FORMAT_ICONS[stagedFile.format]; return <FormatIcon className="h-5 w-5 text-primary flex-shrink-0" />; })()}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
@@ -502,6 +508,7 @@ export function Dashboard() {
             </div>
             <button
               type="button"
+              data-testid="staged-file-dismiss"
               onClick={() => setStagedFile(null)}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
               title={t('common.dismiss')}
