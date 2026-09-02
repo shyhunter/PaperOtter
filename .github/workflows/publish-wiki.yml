@@ -1,0 +1,66 @@
+name: Publish wiki
+
+# The wiki has thirty pages in docs/wiki/, kept current in the repo, and has
+# never once been pushed — the README links to a wiki with nothing in it. The
+# reason is that pushing it is a manual step nobody remembers, so this removes
+# the step rather than the forgetting.
+#
+# Costs nothing on any push that does not touch those files.
+#
+# One-time setup: GitHub does not create the underlying .wiki.git repository
+# until a first page exists. Create any page in the web UI — it will be
+# overwritten — or this job fails with "repository not found", which reads like
+# a permissions problem and is not.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/wiki/**'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Copy docs/wiki into the wiki repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          test -f docs/wiki/Home.md || { echo "docs/wiki/Home.md is missing — it is the landing page"; exit 1; }
+
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+
+          # Mirror rather than merge: a page deleted from docs/wiki should
+          # disappear from the wiki too, or the published copy accumulates
+          # documentation for features that no longer exist.
+          find wiki -maxdepth 1 -name '*.md' -delete
+          rm -rf wiki/img
+          cp docs/wiki/*.md wiki/
+          if [ -d docs/wiki/img ]; then cp -R docs/wiki/img wiki/; fi
+
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "wiki already matches docs/wiki — nothing to publish"
+            exit 0
+          fi
+
+          git commit -m "Publish wiki from docs/wiki@${GITHUB_SHA}"
+          git push
+          echo "wiki updated"

@@ -5,6 +5,8 @@ import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfi
 import { t } from '@/i18n';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
+/** The public roadmap: what is planned, and what was decided against. */
+const ROADMAP_URL = 'https://github.com/users/shyhunter/projects/9';
 
 const APP_VERSION_FALLBACK = '1.0.0';
 
@@ -110,6 +112,14 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           >
             <ExternalLink className="h-3 w-3" />
             GitHub
+          </button>
+          <button
+            type="button"
+            onClick={() => openUrl(ROADMAP_URL).catch(() => {})}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            {t('aboutDialog.roadmap')}
           </button>
           <button
             type="button"

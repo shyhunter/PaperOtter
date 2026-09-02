@@ -25,6 +25,7 @@ import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import {
   goToDashboard, goToToolById, captureFailure, ghostscriptPids, isAlive,
+  emitDrop, warmUpDropListener,
 } from '../../helpers/driver';
 import {
   clickTestId, waitForTestId, testIdExists, getTestIdAttr,
@@ -36,21 +37,24 @@ const ws = new Workspace('batch-cancel');
 
 after(() => ws.cleanup());
 
+before(async () => {
+  await goToDashboard(browser);
+  await warmUpDropListener(browser, ws.fixture('sample.pdf', 'listener-warmup.pdf'));
+});
+
+
 afterEach(async function (this: Mocha.Context) {
   if (this.currentTest?.state === 'failed') {
     await captureFailure(browser, this.currentTest.fullTitle());
   }
 });
 
-/** Emit a drop of several files, the way the dashboard receives one. */
+/** Emit a drop and wait for it to land. */
 async function drop(paths: string[]): Promise<void> {
-  await browser.execute(async (dropped: string[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
-    if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
-    await invoke('e2e_emit_drop', { paths: dropped });
-  }, paths);
-  await browser.pause(400);
+  await emitDrop(browser, paths);
+  // The banner is the observable outcome; a fixed pause is a guess about how
+  // long staging takes on someone else's machine.
+  await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 
 describe('Cancelling a batch stops Ghostscript', () => {
@@ -80,17 +84,26 @@ describe('Cancelling a batch stops Ghostscript', () => {
 
     // A batch configures once for the whole set, then runs. The run step only
     // exists after that, so the settings screen has to be cleared first.
-    await waitForTestId(browser, 'configure-step', { timeout: 20000 });
+    //
+    // Generous, and deliberately so. Reaching the starting line is not what
+    // this test measures: it is three 2.3 MB documents being read and thumbnailed
+    // before anything interesting happens, and how long that takes is a fact
+    // about the machine. Twenty seconds was a number picked on a fast Mac and it
+    // failed on an old Ubuntu box that ran the rest of the suite perfectly.
+    //
+    // The assertions after the cancel stay tight, because those are the claim.
+    // Setup waits should be forgiving; the thing being proved should not be.
+    await waitForTestId(browser, 'configure-step', { timeout: 90000 });
     await clickTestId(browser, 'generate-preview-btn');
 
-    await waitForTestId(browser, 'batch-run-step', { timeout: 20000 });
+    await waitForTestId(browser, 'batch-run-step', { timeout: 90000 });
 
     // Wait for Ghostscript to actually be running. Cancelling before it starts
     // would prove nothing at all, and would pass every time.
     let running: number[] = [];
     await browser.waitUntil(
       async () => { running = ghostscriptPids(); return running.length > 0; },
-      { timeout: 30000, interval: 100, timeoutMsg: 'Ghostscript never started, so there was nothing to cancel' },
+      { timeout: 60000, interval: 100, timeoutMsg: 'Ghostscript never started, so there was nothing to cancel' },
     );
 
     const indexAtCancel = Number(await getTestIdAttr(browser, 'batch-run-step', 'data-batch-index'));

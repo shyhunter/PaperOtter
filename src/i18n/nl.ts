@@ -3,12 +3,12 @@ import type { Dictionary } from '@/i18n/en';
 /**
  * Dutch translation.
  *
- * ⚠️ UNREVIEWED — see LOCALE_REVIEW in i18n/index.ts.
+ * ⚠️ UNREVIEWED: see LOCALE_REVIEW in i18n/index.ts.
  *
  * Terminology follows established apps, with one deliberate departure worth a
  * reviewer's attention:
  * - "Zwartlakken" for redact, not Adobe's "Redigeren". In Dutch "redigeren" also
- *   means to edit copy, which would understate that content is destroyed — the
+ *   means to edit copy, which would understate that content is destroyed: the
  *   opposite of what this text has to convey. "Zwartlakken" is the term Dutch
  *   journalism and government use for blacked-out documents. If a reviewer
  *   prefers matching Adobe exactly, this is the one string to change.
@@ -34,11 +34,11 @@ export const nl: Dictionary = {
   'common.size': 'Grootte', 'common.style': 'Stijl', 'common.bold': 'Vet', 'common.italic': 'Cursief',
   'common.underline': 'Onderstreept', 'common.nextPage': 'Volgende pagina',
   'common.previousPage': 'Vorige pagina', 'common.unsavedChanges': 'Niet-opgeslagen wijzigingen',
-  'common.yourLocalDocumentToolkitPrivate': 'Uw lokale documentgereedschap — privé, snel, offline.',
+  'common.yourLocalDocumentToolkitPrivate': 'Uw lokale documentgereedschap: privé, snel, offline.',
   'file.tooLarge': 'Dit bestand is te groot: {size}',
-  'file.unsupported': 'Niet-ondersteund bestandstype — gebruik PDF, JPG, PNG of WebP.',
+  'file.unsupported': 'Niet-ondersteund bestandstype: gebruik PDF, JPG, PNG of WebP.',
   'file.heicNeedsMacos':
-    'HEIC-foto’s kunnen voorlopig alleen op macOS worden geopend — zet de foto eerst om naar JPEG.',
+    'HEIC-foto’s kunnen voorlopig alleen op macOS worden geopend: zet de foto eerst om naar JPEG.',
   'file.unsafeName':
     'Deze bestandsnaam bevat tekens die niet worden ondersteund. Hernoem het bestand en probeer het opnieuw.',
   'imageCompare.before': 'Voor', 'imageCompare.after': 'Na', 'imageCompare.original': 'Origineel',
@@ -56,7 +56,7 @@ export const nl: Dictionary = {
   'configure.customTargetSize': 'Eigen doelgrootte', 'configure.resizePages': 'Paginagrootte wijzigen',
   'configure.enablePageResize': 'Paginagrootte wijzigen inschakelen',
   'configure.enablePageResizeHint':
-    'Schakel in om de pagina-afmetingen te wijzigen — A4, A3, Letter of een eigen formaat.',
+    'Schakel in om de pagina-afmetingen te wijzigen: A4, A3, Letter of een eigen formaat.',
   'configure.pageSize': 'Paginagrootte', 'configure.widthMm': 'Breedte (mm)', 'configure.heightMm': 'Hoogte (mm)',
   'configure.pagesToResize': 'Te wijzigen pagina’s (leeg voor alle)',
   'configure.pagesPlaceholder': 'bijv. 1-3, 5, 7-9',
@@ -73,11 +73,11 @@ export const nl: Dictionary = {
   'pdfEncryption.lockedUseUnlock':
     'Deze PDF is met een wachtwoord beveiligd en kan hier niet worden geopend. Ontgrendel hem eerst met het hulpmiddel ‘PDF ontgrendelen’ en probeer het opnieuw.',
   'destination.webUpload2mbA4':
-    'Webupload — onder 2 MB, A4',
+    'Webupload: onder 2 MB, A4',
   'destination.email10mb':
-    'E-mailbijlage — onder 10 MB',
+    'E-mailbijlage: onder 10 MB',
   'destination.email25mb':
-    'E-mailbijlage — onder 25 MB',
+    'E-mailbijlage: onder 25 MB',
   'destination.meets':
     'Voldoet aan ‘{name}’',
   'destination.doesNotMeet':
@@ -95,7 +95,7 @@ export const nl: Dictionary = {
   'destination.label':
     'Opslaan als instelling voor later',
   'destination.emptyHint':
-    'Stel de opties hieronder in en sla ze op onder een naam om ze later opnieuw te gebruiken — en om toekomstige documenten aan te toetsen.',
+    'Stel de opties hieronder in en sla ze op onder een naam om ze later opnieuw te gebruiken: en om toekomstige documenten aan te toetsen.',
   'destination.savedLabel':
     'Opgeslagen instellingen',
   'destination.underSize':
@@ -105,11 +105,11 @@ export const nl: Dictionary = {
   'destination.notChecked':
     'niet gecontroleerd',
   'save.failedReadOnly':
-    '‘{name}’ is alleen-lezen, er is niets naartoe geschreven. Uw wijzigingen zijn er nog — wijzig de rechten van het bestand en probeer het opnieuw, of gebruik Opslaan als… om een kopie te schrijven.',
+    '‘{name}’ is alleen-lezen, er is niets naartoe geschreven. Uw wijzigingen zijn er nog: wijzig de rechten van het bestand en probeer het opnieuw, of gebruik Opslaan als… om een kopie te schrijven.',
   'save.failedGone':
-    '‘{name}’ staat niet meer waar het stond — het is mogelijk verplaatst, hernoemd of verwijderd. Er is niets geschreven en uw wijzigingen zijn niet verloren: kies er met Opslaan als… een nieuwe plek voor.',
+    '‘{name}’ staat niet meer waar het stond: het is mogelijk verplaatst, hernoemd of verwijderd. Er is niets geschreven en uw wijzigingen zijn niet verloren: kies er met Opslaan als… een nieuwe plek voor.',
   'save.failedDiskFull':
-    'Er is niet genoeg ruimte op de schijf om ‘{name}’ op te slaan. Er is niets gewijzigd — maak ruimte vrij en probeer het opnieuw, of schrijf met Opslaan als… naar een andere schijf.',
+    'Er is niet genoeg ruimte op de schijf om ‘{name}’ op te slaan. Er is niets gewijzigd: maak ruimte vrij en probeer het opnieuw, of schrijf met Opslaan als… naar een andere schijf.',
   'save.failed': 'Opslaan mislukt', 'save.backToCompare': 'Terug naar de vergelijking',
   'save.zipHint': 'Alle bestanden in één ZIP-archief',
   'save.individualHint': 'Elk bestand apart opgeslagen met automatische naamgeving',
@@ -131,7 +131,7 @@ export const nl: Dictionary = {
   'imageConfigure.presets': 'Voorinstellingen', 'imageConfigure.resize': 'Formaat wijzigen',
   'imageConfigure.enableResize': 'Formaat wijzigen inschakelen',
   'imageConfigure.enableResizeHint':
-    'Schakel in om de afmetingen van de afbeelding te wijzigen — in pixels of procenten.',
+    'Schakel in om de afmetingen van de afbeelding te wijzigen: in pixels of procenten.',
   'imageConfigureStep.widthAndHeightMustBe': 'Breedte en hoogte moeten positieve getallen zijn',
   'imageConfigureStep.aspectRatioUnlocked': 'Beeldverhouding ontgrendeld',
   'imageConfigureStep.aspectRatioLocked': 'Beeldverhouding vergrendeld',
@@ -144,7 +144,7 @@ export const nl: Dictionary = {
   'privacy.title': 'Uw privacy', 'privacy.headline': 'Uw bestanden verlaten uw apparaat nooit.',
   'privacy.body':
     'Papercut verwerkt alles lokaal op uw computer. Geen uploads, geen cloudopslag, geen tracking.',
-  'privacy.zeroData': 'Wij verzamelen geen gegevens — geen analyse, geen telemetrie, geen crashrapporten.',
+  'privacy.zeroData': 'Wij verzamelen geen gegevens: geen analyse, geen telemetrie, geen crashrapporten.',
   'privacy.technicalDetails': 'Technische details',
   'privacy.detailLocal':
     'Alle bestandsverwerking gebeurt lokaal via Rust, Ghostscript, LibreOffice en Calibre',
@@ -290,13 +290,13 @@ export const nl: Dictionary = {
   'redactPdf.readScanAndSearch': 'Tekst lezen en opnieuw zoeken',
   'redactPdf.readingScan': 'Scan lezen…',
   'redactPdf.scanBoxesApproximate':
-    'Deze vlakken komen uit tekst die uit een scan is gelezen en zijn daarom bij benadering. Controleer de plaatsing voordat u toepast — zwartlakken kan niet ongedaan worden gemaakt.',
+    'Deze vlakken komen uit tekst die uit een scan is gelezen en zijn daarom bij benadering. Controleer de plaatsing voordat u toepast: zwartlakken kan niet ongedaan worden gemaakt.',
   'redactPdfFlow.redactionFailed': 'Zwartlakken mislukt.',
   'redactionScope.coversTheWholeLineIt': 'Bedekt de hele regel waarin het staat',
   'redactionScope.coversOnlyTheFoundText': 'Bedekt alleen de gevonden tekst',
   'redactionScope.justTheMatch': 'Alleen de treffer', 'redactionScope.wholeLine': 'Hele regel',
   'repairPdf.fixStructuralIssuesInCorrupted': 'Herstel structuurfouten in beschadigde of onjuiste PDF’s.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Geen problemen gevonden -- het bestand lijkt in orde',
+  'repairPdf.noIssuesDetectedFileAppears': 'Geen problemen gevonden: het bestand lijkt in orde',
   'repairPdf.pdfRepair': 'PDF-herstel', 'repairPdf.repairPdf': 'PDF herstellen',
   'repairPdf.repairCompleteIfTheDocument':
     'Herstel voltooid. Eventuele structuurfouten in het document zijn verholpen.',
@@ -336,7 +336,7 @@ export const nl: Dictionary = {
   'step.signature': 'Handtekening', 'step.repair': 'Herstellen', 'step.edit': 'Bewerken',
   'step.crop': 'Bijsnijden', 'step.organize': 'Ordenen', 'step.place': 'Plaatsen',
   'step.redact': 'Zwartlakken', 'step.recognise': 'Herkennen',
-  'stepBar.lockedHint': '{step} — voltooi eerst de vorige stappen',
+  'stepBar.lockedHint': '{step}: voltooi eerst de vorige stappen',
 
   'tool.compressPdf.name': 'PDF comprimeren',
   'tool.compressPdf.desc': 'Verklein een PDF met kwaliteitsvoorinstellingen',
@@ -419,22 +419,22 @@ export const nl: Dictionary = {
     'De tekst is toegevoegd, maar reken op fouten. Een scherpere, rechte en beter belichte scan geeft een veel beter resultaat.',
   'ocr.alreadySearchable': 'Deze PDF bevat al een tekstlaag.',
   'ocr.alreadySearchableHint':
-    'U kunt dit toch uitvoeren, maar meestal is het overbodig — de tekst is al doorzoekbaar.',
+    'U kunt dit toch uitvoeren, maar meestal is het overbodig: de tekst is al doorzoekbaar.',
   'ocr.saveSearchable': 'Doorzoekbare PDF opslaan',
   'ocr.needsMacos': 'Tekstherkenning is voorlopig alleen op macOS beschikbaar.',
   'batch.stoppedEarly': 'Deze bewerking is gestopt voordat alle bestanden waren verwerkt.',
   'batch.filesReady': '{files} klaar om op te slaan',
-  'batch.totalSaving': 'In totaal {saved} bespaard — {output} te schrijven.',
+  'batch.totalSaving': 'In totaal {saved} bespaard: {output} te schrijven.',
   'batch.couldNotBeProcessed': '{files} konden niet worden verwerkt',
-  'batch.processingFile': 'Bestand {current} van {total} verwerken — {name}',
+  'batch.processingFile': 'Bestand {current} van {total} verwerken: {name}',
   'batch.skippedDifferentType':
-    '{count} bestand(en) van een ander type overgeslagen — een reeks moet uit één type bestaan.',
+    '{count} bestand(en) van een ander type overgeslagen: een reeks moet uit één type bestaan.',
   'deps.ghostscriptWindows':
     'PDF comprimeren vereist Ghostscript. Download het van ghostscript.com/releases/gsdnld.html en zorg dat het in het PATH staat.',
   'deps.ghostscriptLinux':
     'PDF comprimeren vereist Ghostscript. Installeer het met uw pakketbeheerder, bijv. sudo apt install ghostscript',
-  'deps.calibre': 'Installeer Calibre voor e-bookondersteuning — calibre-ebook.com/download',
-  'deps.libreoffice': 'Installeer LibreOffice voor documentconversie — libreoffice.org/download',
+  'deps.calibre': 'Installeer Calibre voor e-bookondersteuning: calibre-ebook.com/download',
+  'deps.libreoffice': 'Installeer LibreOffice voor documentconversie: libreoffice.org/download',
   'filter.jpegImage': 'JPEG-afbeelding', 'filter.pngImage': 'PNG-afbeelding', 'filter.webpImage': 'WebP-afbeelding',
   'filter.pdfFiles': 'PDF-bestanden', 'filter.zipArchive': 'ZIP-archief', 'filter.pdfDocument': 'PDF-document',
   'filter.supportedFiles': 'Ondersteunde bestanden', 'filter.documentsImages': 'Documenten en afbeeldingen',
@@ -494,7 +494,7 @@ export const nl: Dictionary = {
   'pdfEditor.yourName': 'Uw naam', 'pdfEditor.fullComparisonView': 'Volledige vergelijkingsweergave',
   'pdfEditor.pending': 'In afwachting', 'pdfEditor.dragToMove': 'Sleep om te verplaatsen',
   'pdfEditor.dragToResize': 'Sleep om het formaat te wijzigen',
-  'pdfEditor.dragToRotateHoldShift': 'Sleep om te draaien — houd Shift ingedrukt om uit te lijnen',
+  'pdfEditor.dragToRotateHoldShift': 'Sleep om te draaien: houd Shift ingedrukt om uit te lijnen',
   'pdfEditor.zoomInCmd': 'Inzoomen (Cmd+=)', 'pdfEditor.zoomOutCmd': 'Uitzoomen (Cmd+-)',
   'pdfEditor.zoomPresets': 'Zoomvoorinstellingen',
   'editPdf.editPdf': 'PDF bewerken', 'editPdf.saveChanges': 'Wijzigingen opslaan',
@@ -538,7 +538,7 @@ export const nl: Dictionary = {
   'toolSidebarPanel.redacting': 'Zwartlakken…', 'toolSidebarPanel.apply': 'Toepassen',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Kon de handtekening niet tekenen. Probeer een andere stijl of een kortere naam.',
-  'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste bestand — het beste voor op het scherm',
+  'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste bestand: het beste voor op het scherm',
   'toolSidebarPanel.goodForReadingOnDevices': 'Goed om op apparaten te lezen',
   'toolSidebarPanel.suitableForPrinting': 'Geschikt om af te drukken',
   'toolSidebarPanel.noPreviewAvailable': 'Geen voorbeeld beschikbaar',
@@ -553,7 +553,8 @@ export const nl: Dictionary = {
   'app.pleaseTryAgain': 'Probeer het opnieuw.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Alle verwerking gebeurt lokaal. Er verlaten nooit gegevens uw computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alleen het Engels is door een moedertaalspreker geschreven; de rest is machinaal ondersteund en niet door een moedertaalspreker nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alle zijn met hulp van AI gemaakt, ook het Engels, en geen enkele is door een professionele vertaler nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
+  'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
   'aboutDialog.sendFeedback': 'Feedback sturen',
   'buyMeAcoffeeButton.buyMeACoffee': 'Trakteer me op een koffie',
@@ -570,7 +571,7 @@ export const nl: Dictionary = {
   'crashReporter.showErrorDetails': 'Foutdetails tonen', 'crashReporter.unknownError': 'Onbekende fout',
   'dashboard.dropFileToGetStarted': 'Sleep een bestand hierheen om te beginnen',
   'dashboard.myFavorites': 'Mijn favorieten',
-  'dashboard.readyToProcessChooseA': 'Klaar — kies hieronder een gereedschap',
+  'dashboard.readyToProcessChooseA': 'Klaar: kies hieronder een gereedschap',
   'dashboard.removeFromFavorites': 'Uit favorieten verwijderen', 'dashboard.addToFavorites': 'Aan favorieten toevoegen',
   'dashboard.searchTools': 'Gereedschap zoeken…', 'dashboard.swapHere': 'Hier verwisselen',
   'dashboard.clickAnotherCardToSwap': 'Klik op een andere kaart om te verwisselen',
@@ -581,7 +582,7 @@ export const nl: Dictionary = {
   'firstLaunchBanner.dismissPrivacyBanner': 'Privacymelding sluiten',
   'firstLaunchBanner.learnMore': 'Meer informatie',
   'landingCard.compressResizeConvertStaysOn':
-    'Comprimeren, verkleinen, omzetten — blijft op uw apparaat',
+    'Comprimeren, verkleinen, omzetten: blijft op uw apparaat',
   'landingCard.damagedOrInvalidPdf': 'Beschadigde of ongeldige PDF', 'landingCard.fileTooLarge': 'Bestand te groot',
   'landingCard.loadingFile': 'Bestand laden…', 'landingCard.openFile': 'Bestand openen',
   'landingCard.pickADifferentFile': 'Ander bestand kiezen',
@@ -594,9 +595,9 @@ export const nl: Dictionary = {
   'updateChecker.dismissUpdateBanner': 'Updatemelding sluiten', 'updateChecker.download': 'Downloaden',
   'themeToggle.system': 'Systeem', 'themeToggle.light': 'Licht',
   'docModel.thisDocumentHasNoExtractable':
-    'Dit document bevat geen uitleesbare tekst — het lijkt gescand of alleen uit afbeeldingen te bestaan.',
+    'Dit document bevat geen uitleesbare tekst: het lijkt gescand of alleen uit afbeeldingen te bestaan.',
   'pdfProcessor.thisFileIsMostlyText':
-    'Dit bestand bestaat vrijwel geheel uit tekst zonder ingesloten afbeeldingen — bij documenten met alleen tekst heeft compressie nauwelijks effect.',
+    'Dit bestand bestaat vrijwel geheel uit tekst zonder ingesloten afbeeldingen: bij documenten met alleen tekst heeft compressie nauwelijks effect.',
   'pdfProcessor.customPageSizeRequiresBoth': 'Een eigen paginagrootte vereist breedte en hoogte in mm',
   'pdfUtils.thisFileAppearsToBe':
     'Dit bestand lijkt beschadigd of is geen geldige PDF. Probeer een ander bestand.',
@@ -615,7 +616,7 @@ export const nl: Dictionary = {
   'format.document': 'Document',
   'configureStep.balanced': 'Gebalanceerd',
   'configureStep.letter': 'Letter',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Prepress / archief — geen hercompressie',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Prepress / archief: geen hercompressie',
   'jpgToPdfFlow.autoFit': 'Automatisch passend',
   'jpgToPdfFlow.portrait': 'Staand',
   'jpgToPdfFlow.landscape': 'Liggend',
@@ -633,24 +634,24 @@ export const nl: Dictionary = {
   'compareOverlay.beforePage': 'Voor, pagina {page}',
   'compareOverlay.afterPage': 'Na, pagina {page}',
   'compareOverlay.labelledPage': '{label}, pagina {page}',
-  'compareStep.targetSizeNotAchievable': 'Doelgrootte niet haalbaar —',
+  'compareStep.targetSizeNotAchievable': 'Doelgrootte niet haalbaar , ',
   'compareStep.bestResult': 'beste resultaat: {size}.',
-  'configureStep.canCompressToAboutMax': 'Kan in het beste geval tot ongeveer {size} worden gecomprimeerd. Maximale bestandsgrootte — de beste compressie-instelling wordt automatisch gekozen.',
-  'configureStep.containsImagesHighSavings': 'Deze pdf bevat {images} — compressie verkleint het bestand aanzienlijk.',
-  'configureStep.containsImagesModerateSavings': 'Deze pdf bevat {images} — een matige besparing wordt verwacht.',
+  'configureStep.canCompressToAboutMax': 'Kan in het beste geval tot ongeveer {size} worden gecomprimeerd. Maximale bestandsgrootte: de beste compressie-instelling wordt automatisch gekozen.',
+  'configureStep.containsImagesHighSavings': 'Deze pdf bevat {images}: compressie verkleint het bestand aanzienlijk.',
+  'configureStep.containsImagesModerateSavings': 'Deze pdf bevat {images}: een matige besparing wordt verwacht.',
   'configureStep.processingPageOf': 'Pagina {current} van {total} wordt verwerkt…',
-  'configureStep.targetMayNotBeAchievable': 'Doel is mogelijk niet haalbaar — het geschatte minimum is ~{size}.',
+  'configureStep.targetMayNotBeAchievable': 'Doel is mogelijk niet haalbaar: het geschatte minimum is ~{size}.',
   'configureStep.targetMustBeSmaller': 'Het doel moet kleiner zijn dan het origineel ({size})',
   'convertConfigStep.formatNamed': '{format}-indeling',
   'convertConfigStep.zipOneFilePerHeading': '.zip, één bestand per kop',
   'convertImageFlow.convertToFormat': 'Converteren naar {format}',
-  'crashReporter.noDataSentAutomatically': 'Er worden geen gegevens automatisch verzonden. Het rapport opent als concept-e-mail in uw mailprogramma — u bepaalt of u het verstuurt.',
+  'crashReporter.noDataSentAutomatically': 'Er worden geen gegevens automatisch verzonden. Het rapport opent als concept-e-mail in uw mailprogramma: u bepaalt of u het verstuurt.',
   'cropPdfFlow.pageSizeMm': 'Paginaformaat: {width} × {height} mm',
   'dashboard.noToolsMatch': 'Geen gereedschap komt overeen met “{query}”',
   'editorContext.failedToAddPages': 'Kan pagina’s niet toevoegen: {error}',
   'editorContext.failedToReorderPages': 'Kan paginavolgorde niet wijzigen: {error}',
   'editorToolbar.alignNamed': 'Uitlijning: {alignment}',
-  'editorToolbar.colourRightClickToRemove': '{colour} — rechtsklik om te verwijderen',
+  'editorToolbar.colourRightClickToRemove': '{colour}: rechtsklik om te verwijderen',
   'exportPanel.exportAsFormat': 'Exporteren als {format}',
   'exportPanel.savedAsFormat': 'Opgeslagen als {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-opties',
@@ -664,7 +665,7 @@ export const nl: Dictionary = {
   'jpgToPdfFlow.imagesSelected': '{images} geselecteerd',
   'jpgToPdfFlow.moveUpNamed': '{name} omhoog verplaatsen',
   'jpgToPdfFlow.moveDownNamed': '{name} omlaag verplaatsen',
-  'landingCard.couldNotBeOpened': '“{name}” kon niet worden geopend — het bestand lijkt beschadigd of is geen geldige pdf. Het gereedschap “Pdf repareren” kan het misschien herstellen.',
+  'landingCard.couldNotBeOpened': '“{name}” kon niet worden geopend: het bestand lijkt beschadigd of is geen geldige pdf. Het gereedschap “Pdf repareren” kan het misschien herstellen.',
   'landingCard.fileTooLargeDetail': 'Dit bestand is {size}. Bestanden groter dan 100 MB worden niet ondersteund. Gebruik een kleiner bestand.',
   'merge.pageOneOf': 'Pagina 1 van {name}',
   'mergeOrderStep.dragToReorderTotal': 'Sleep om de volgorde te wijzigen. Totaal: {pages} uit {files}.',
@@ -680,7 +681,7 @@ export const nl: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} geselecteerd)',
   'pdfToJpgFlow.renderingPageOf': 'Pagina {current} van {total} wordt weergegeven…',
   'pdfaConvert.originalToPdfa': 'Origineel: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Netwerktoegang is beperkt tot precies twee alleen-lezen eindpunten — controleren op updates en het ophalen van het feedback-contactadres — afgedwongen door de Tauri-capability-configuratie. Andere netwerktoegang is niet mogelijk.',
+  'privacy.detailNetworkScope': 'Netwerktoegang is beperkt tot precies twee alleen-lezen eindpunten (controleren op updates en het ophalen van het feedback-contactadres), afgedwongen door de Tauri-capability-configuratie. Andere netwerktoegang is niet mogelijk.',
   'redactPdf.appliedAcross': '{redactions} toegepast op {pages}',
   'redactPdf.applyRedactions': 'Zwartingen toepassen ({count})',
   'redactPdf.matchesFound': '{matches} gevonden',
@@ -707,10 +708,10 @@ export const nl: Dictionary = {
   'toolSidebarPanel.appliedSuccessfully': '{tool} is toegepast',
   'toolSidebarPanel.canCompressToAbout': 'Kan in het beste geval tot ongeveer {size} worden gecomprimeerd.',
   'toolSidebarPanel.dragOnThePageToCover': 'Sleep over de pagina om iets af te dekken. Bij toepassen worden die pagina’s afgevlakt tot een afbeelding, zodat de inhoud eronder uit het bestand wordt verwijderd en niet alleen verborgen.',
-  'toolSidebarPanel.imagesStillReEncoded': 'Afbeeldingen worden nog steeds opnieuw gecodeerd, alleen niet verkleind. De schattingen gaan uit van downsampling — de werkelijke groottes zullen groter zijn.',
+  'toolSidebarPanel.imagesStillReEncoded': 'Afbeeldingen worden nog steeds opnieuw gecodeerd, alleen niet verkleind. De schattingen gaan uit van downsampling: de werkelijke groottes zullen groter zijn.',
   'toolSidebarPanel.marginMm': 'Marge {side} (mm)',
   'toolSidebarPanel.markAll': 'Alle {count} markeren',
-  'toolSidebarPanel.noMatchesNoSelectableText': 'Geen resultaten. Pagina’s zonder selecteerbare tekst — bijvoorbeeld een scan — kunnen niet worden doorzocht.',
+  'toolSidebarPanel.noMatchesNoSelectableText': 'Geen resultaten. Pagina’s zonder selecteerbare tekst (bijvoorbeeld een scan), kunnen niet worden doorzocht.',
   'toolSidebarPanel.opacity': 'Dekking: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Een vak dat zo bleek is, valt op een witte pagina nauwelijks op. De inhoud eronder wordt hoe dan ook permanent verwijderd.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-conversie',
@@ -718,7 +719,7 @@ export const nl: Dictionary = {
   'toolSidebarPanel.rotatingPage': 'Pagina {page} wordt gedraaid',
   'toolSidebarPanel.rotatingSelectedPages': '{count} geselecteerde pagina’s worden gedraaid',
   'toolSidebarPanel.savedSignaturesCount': 'Opgeslagen handtekeningen ({count})',
-  'toolSidebarPanel.smallestAchievable': 'Het kleinst haalbare is ongeveer {size} — verder comprimeren kan dit bestand niet.',
+  'toolSidebarPanel.smallestAchievable': 'Het kleinst haalbare is ongeveer {size}: verder comprimeren kan dit bestand niet.',
   'toolSidebarPanel.targetMet': 'gehaald',
   'toolSidebarPanel.targetNotMet': 'niet gehaald ({size})',
   'count.match_one': '{count} overeenkomst',
@@ -733,11 +734,11 @@ export const nl: Dictionary = {
   'common.find': 'Zoeken',
   'common.percentLarger': '{percent}% groter',
   'common.percentSmaller': '{percent}% kleiner',
-  'compareStep.jpxAlreadyEncoded': 'Afbeeldingen zijn al JPEG2000-gecodeerd — verder comprimeren kan niet',
+  'compareStep.jpxAlreadyEncoded': 'Afbeeldingen zijn al JPEG2000-gecodeerd: verder comprimeren kan niet',
   'configureStep.enableResizeToStillProcess': 'Schakel hieronder paginaformaat wijzigen in om dit bestand toch te verwerken.',
   'merge.mergeAndSave': 'Samenvoegen en opslaan',
   'pdfEditor.untitledPdf': 'Naamloos.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Deze pdf bevat {images}, al JPEG2000-gecodeerd — Ghostscript kan ze niet verder comprimeren.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Deze pdf bevat {images}, al JPEG2000-gecodeerd: Ghostscript kan ze niet verder comprimeren.',
   'split.split': 'Splitsen',
   'toolSidebarPanel.clickToPlaceMode': 'Klik-om-te-plaatsen-modus',
   'unsavedChangesDialog.dontSave': 'Niet opslaan',
@@ -749,10 +750,10 @@ export const nl: Dictionary = {
   'search.noMatches': 'Geen resultaten voor “{query}”.',
   'search.noMatchesInScan': 'Geen resultaten voor “{query}” in de tekst die uit deze scan is gelezen.',
   'search.readScanHint': 'Deze pagina bevat geen doorzoekbare tekst. Bij lezen wordt een onzichtbare tekstlaag toegevoegd; de pagina blijft er precies hetzelfde uitzien.',
-  'convertDoc.formatMayNeed': 'Mogelijk is {requirement} nodig. Papercut kon dit niet vinden, maar de detectie is niet altijd juist — probeer het gerust toch.',
+  'convertDoc.formatMayNeed': 'Mogelijk is {requirement} nodig. Papercut kon dit niet vinden, maar de detectie is niet altijd juist: probeer het gerust toch.',
   'convertDoc.kindEbookConverter': 'een e-bookconverter zoals {tools}',
   'convertDoc.kindWordProcessor': 'een tekstverwerker zoals {tools}',
   'dashboard.andMoreFiles': '+{count} meer',
-  'deps.ghostscriptMac': 'Voor het comprimeren van PDF’s is Ghostscript nodig; Papercut levert dit mee. De meegeleverde versie kon niet starten — Papercut opnieuw installeren zou dit moeten herstellen.',
+  'deps.ghostscriptMac': 'Voor het comprimeren van PDF’s is Ghostscript nodig; Papercut levert dit mee. De meegeleverde versie kon niet starten: Papercut opnieuw installeren zou dit moeten herstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (monospace)',
 };

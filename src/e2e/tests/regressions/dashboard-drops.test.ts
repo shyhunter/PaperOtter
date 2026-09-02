@@ -16,48 +16,24 @@
  */
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
-import { goToDashboard, captureFailure } from '../../helpers/driver';
-import { waitForText, pageContainsText, testIdExists, clickTestId } from '../../helpers/testid';
+import { goToDashboard, captureFailure, emitDrop, warmUpDropListener } from '../../helpers/driver';
+import { waitForText, pageContainsText, testIdExists, clickTestId, waitForTestId } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
 const ws = new Workspace('dashboard-drops');
 
-/** Emit a drop through the e2e-only backend command. */
+/** Emit a drop and wait for it to land. */
 async function drop(paths: string[]): Promise<void> {
-  await browser.execute(async (dropped: string[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
-    if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
-    await invoke('e2e_emit_drop', { paths: dropped });
-  }, paths);
-  // The handler grants filesystem scope before staging, which is a round trip.
-  await browser.pause(400);
+  await emitDrop(browser, paths);
+  // The banner is the observable outcome; a fixed pause is a guess about how
+  // long staging takes on someone else's machine.
+  await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 
 after(() => ws.cleanup());
 before(async () => {
   await goToDashboard(browser);
-
-  // Wait for the drag-drop listener to actually exist.
-  //
-  // Tauri registers it with an async `listen()` call from an effect, so the
-  // dashboard is on screen and interactive for a short window during which a
-  // drop is delivered to nobody at all. A person cannot drop a file in the
-  // few hundred milliseconds after launch; `e2e_emit_drop` can, and did — this
-  // spec's first test failed on a cold start and passed on a warm one.
-  //
-  // Polling here rather than retrying inside `drop()` keeps each test honest:
-  // below this point a drop that goes missing is a failure, not something the
-  // helper quietly papers over.
-  const probe = ws.fixture('sample.pdf', 'listener-warmup.pdf');
-  await browser.waitUntil(
-    async () => {
-      await drop([probe]);
-      return testIdExists(browser, 'staged-file');
-    },
-    { timeout: 20000, interval: 500, timeoutMsg: 'the drag-drop listener never came up' },
-  );
-  await clickTestId(browser, 'staged-file-dismiss');
+  await warmUpDropListener(browser, ws.fixture('sample.pdf', 'listener-warmup.pdf'));
 });
 
 
@@ -105,12 +81,25 @@ describe('Dropping files onto the dashboard', () => {
   it('[E2E-DROP-02] the same file dropped twice is staged once', async () => {
     const a = ws.fixture('warnock_camelot.pdf', 'dup.pdf');
 
+    const other = ws.fixture('sample.pdf', 'dup-other.pdf');
+
     await startOnEmptyDashboard();
     await drop([a]);
     await drop([a]);
 
-    // A duplicate in a merge is silent and almost never intended.
-    expect(await pageContainsText(browser, /2 files/i)).toBe(false);
+    // A third, distinct file, to turn a negative claim into a positive one.
+    //
+    // Asserting only that "2 files" is absent passes just as happily when the
+    // second drop was never processed at all — which is precisely what a slow
+    // machine does — and it would pass with deduplication entirely broken.
+    // Dropping something different forces a count that can only come out one
+    // way: deduplicated this is two files, not deduplicated it is three.
+    //
+    // A duplicate in a merge is silent and almost never intended, which is why
+    // it is worth proving rather than assuming.
+    await drop([other]);
+    await waitForText(browser, /2 files/i);
+    expect(await pageContainsText(browser, /3 files/i)).toBe(false);
   });
 
   it('[E2E-DROP-03] dropping a different type replaces rather than mixing', async () => {

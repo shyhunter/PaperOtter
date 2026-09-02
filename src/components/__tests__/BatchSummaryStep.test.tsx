@@ -69,9 +69,9 @@ describe('BatchSummaryStep', () => {
   it('[BATCH-04f] reports the space actually saved across the batch', () => {
     renderSummary();
     // 6,000,000 bytes in, 2,000,000 out. formatBytes is 1024-based, so that is
-    // 3.81 MB saved with 1.91 MB left to write — not 4 MB and 2 MB. Matched as
+    // 3.81 MB saved with 1.91 MB left to write, not 4 MB and 2 MB. Matched as
     // the whole sentence: those figures also appear in the per-file rows.
-    expect(screen.getByText(/Saved 3\.81 MB in total — 1\.91 MB to write\./))
+    expect(screen.getByText(/Saved 3\.81 MB in total: 1\.91 MB to write\./))
       .toBeInTheDocument();
   });
 

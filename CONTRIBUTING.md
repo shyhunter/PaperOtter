@@ -2,17 +2,22 @@
 
 Thanks for taking the time. This is a small project, so the process is light.
 
-## Reporting bugs and requesting features
+## Reporting bugs and suggesting features
 
-Use the issue templates — [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) or
-[Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml). For a bug, the two
-things that matter most are **how to reproduce it** and **the file it happened
-with**, if you can share one. Papercut deals with documents, and many bugs only
-appear on a particular file.
+Bugs go to the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) template. The
+two things that matter most are **how to reproduce it** and **the file it
+happened with**, if you can share one. Papercut deals with documents, and many
+bugs only appear on a particular file.
+
+Feature ideas go to
+[Discussions](https://github.com/shyhunter/Papercut/discussions/new?category=ideas)
+instead of the issue tracker. An issue list reads as a queue of promises, and
+an idea deserves somewhere it can be argued about first. The ones worth
+building get turned into issues from there.
 
 If the app crashed, the crash dialog can pre-fill a report for you.
 
-For anything security-related, do not open an issue — see [SECURITY.md](SECURITY.md).
+For anything security-related, do not open an issue: see [SECURITY.md](SECURITY.md).
 
 ## Getting set up
 
@@ -26,7 +31,7 @@ npm run tauri dev
 ## Before opening a pull request
 
 ```bash
-npm run test          # Vitest — the whole suite
+npm run test          # Vitest: the whole suite
 npx tsc --noEmit      # type check
 npm run lint
 cd src-tauri && cargo clippy -- -D warnings && cargo test --lib
@@ -55,5 +60,5 @@ because they are enforced in review:
 
 ## Commit messages
 
-Conventional commits — `fix(editor): …`, `feat(convert): …`, `chore(ci): …`.
+Conventional commits: `fix(editor): …`, `feat(convert): …`, `chore(ci): …`.
 Explain *why* in the body, not just what; the diff already says what.

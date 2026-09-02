@@ -28,51 +28,51 @@
   <img src="docs/screenshots/tool-select-pages.png" alt="Split PDF tool - select page ranges from a thumbnail grid" width="49%">
 </p>
 
-Every tool follows the same four-step flow -- Pick, Configure, Compare, Save
+Every tool follows the same four-step flow: Pick, Configure, Compare, Save
 -- and the whole app supports both light and dark mode.
 
 ---
 
 ## Features
 
-Papercut ships with **22 tools** across three categories -- all running locally on your machine.
+Papercut ships with **22 tools** across three categories: all running locally on your machine.
 
 **21 of the 22 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else, Ghostscript included, is bundled.
 
 ### PDF Tools
 
-- 🗜️ **Compress** — Reduce PDF file size using Ghostscript presets
-- 📐 **Resize** — Scale pages to standard or custom dimensions (part of Compress)
-- 🔗 **Merge** — Combine multiple PDFs into one
-- ✂️ **Split** — Extract page ranges into separate files
-- 🔄 **Rotate** — Rotate individual or all pages
-- 🔢 **Page Numbers** — Add page numbers with position/format control
-- 💧 **Watermark** — Overlay text or image watermarks
-- 🖼️ **Crop** — Trim page margins
-- 🗂️ **Organize** — Reorder, delete, or duplicate pages
-- ✍️ **Sign** — Add handwritten, typed, or drawn signatures
-- ⬛ **Redact** — Permanently remove sensitive content
-- 🗄️ **PDF/A** — Convert to archival PDF/A format
-- 🛠️ **Repair** — Fix corrupted or damaged PDFs
-- 🔒 **Protect** — Add password encryption to PDFs *(see [A note on passwords](#a-note-on-passwords))*
-- 🔓 **Unlock** — Remove password protection from PDFs *(requires the password — see [A note on passwords](#a-note-on-passwords))*
-- 🖼️ **PDF to JPG** — Export PDF pages as JPEG or PNG images
-- 📄 **JPG to PDF** — Convert images into a single PDF document
-- 🔍 **Make Searchable** — Read the text on a scan so it can be searched and copied *(macOS only — see [Platform support](#platform-support))*
+- 🗜️ **Compress**: Reduce PDF file size using Ghostscript presets
+- 📐 **Resize**: Scale pages to standard or custom dimensions (part of Compress)
+- 🔗 **Merge**: Combine multiple PDFs into one
+- ✂️ **Split**: Extract page ranges into separate files
+- 🔄 **Rotate**: Rotate individual or all pages
+- 🔢 **Page Numbers**: Add page numbers with position/format control
+- 💧 **Watermark**: Overlay text or image watermarks
+- 🖼️ **Crop**: Trim page margins
+- 🗂️ **Organize**: Reorder, delete, or duplicate pages
+- ✍️ **Sign**: Add handwritten, typed, or drawn signatures
+- ⬛ **Redact**: Permanently remove sensitive content
+- 🗄️ **PDF/A**: Convert to archival PDF/A format
+- 🛠️ **Repair**: Fix corrupted or damaged PDFs
+- 🔒 **Protect**: Add password encryption to PDFs *(see [A note on passwords](#a-note-on-passwords))*
+- 🔓 **Unlock**: Remove password protection from PDFs *(requires the password: see [A note on passwords](#a-note-on-passwords))*
+- 🖼️ **PDF to JPG**: Export PDF pages as JPEG or PNG images
+- 📄 **JPG to PDF**: Convert images into a single PDF document
+- 🔍 **Make Searchable**: Read the text on a scan so it can be searched and copied *(macOS only: see [Platform support](#platform-support))*
 
 ### Image Tools
 
-- 🗜️ **Compress** — Reduce image file size with quality control
-- 📐 **Resize** — Scale images to specific dimensions
-- 🔁 **Convert** — Convert between JPG, PNG, and WebP formats
-- 🔄 **Rotate** — Rotate images by any angle
+- 🗜️ **Compress**: Reduce image file size with quality control
+- 📐 **Resize**: Scale images to specific dimensions
+- 🔁 **Convert**: Convert between JPG, PNG, and WebP formats
+- 🔄 **Rotate**: Rotate images by any angle
 
 ### Document Tools
 
-- 🔀 **Convert** — Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline) — plus PDF, EPUB, MOBI and more
-- 📝 **Edit PDF** — Annotate and modify PDF content
+- 🔀 **Convert**: Turn PDF & DOCX into **Markdown, HTML, JSON, plain text, or DOCX** (structure-preserving, fully offline), plus PDF, EPUB, MOBI and more
+- 📝 **Edit PDF**: Annotate and modify PDF content
 
-> **New in beta.9 — structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device — no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
+> **New in beta.9: structure-preserving conversion.** Turn PDFs and Word documents into clean **Markdown, HTML, JSON, plain text, or DOCX** entirely on-device: no external tools required. Headings, paragraphs, and lists are preserved. Long documents can be split **by chapter** into a `.zip` with one file per chapter, using the PDF's own bookmarks/outline when available (falling back to detected headings).
 
 > **Batch processing.** Drop several files of the same type and run one tool
 > across all of them, with per-file progress and a running total of what was
@@ -82,7 +82,20 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 > Italian, Dutch, Polish and European Portuguese. Papercut follows your
 > operating system's language on first run and remembers an explicit choice.
 > The eight translations beyond English are community-quality and still under
-> review -- if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
+> review: if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
+
+---
+
+## Roadmap
+
+**[The roadmap is public.](https://github.com/users/shyhunter/projects/9)** What is
+being worked on, what is agreed for later, and what has been decided against,
+with the reasoning, not just the verdict.
+
+Items carry the argument that produced them. Named presets say why Protect will
+never get one; the AI-preparation work says which parts are deliberately out of
+scope and what promise they would break. If you disagree with a call, the
+reasoning is there to disagree with.
 
 ---
 
@@ -91,11 +104,10 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 Papercut's interface is available in nine languages: English, German, Turkish,
 French, Spanish, Italian, Dutch, Polish and Portuguese.
 
-**Only the English is written by a native speaker.** The other eight are
-machine-assisted and have not been reviewed by a native speaker of that
-language. They are shipped because a good-enough translation beats an English-only
-interface for most people — but "good enough" is a claim worth being honest
-about rather than quietly hoping nobody notices.
+**All nine were written with AI assistance, English included, and none has been
+reviewed by a professional translator.** They are shipped because a good-enough
+translation beats an English-only interface for most people, but "good enough"
+is a claim worth being honest about rather than quietly hoping nobody notices.
 
 Sentences that warn about losing data, overwriting a file or deleting something
 are treated as a special case: they are either translated everywhere or shipped
@@ -116,7 +128,7 @@ offered a tool that cannot work on your machine:
 
 | Feature | macOS | Windows | Linux |
 |---|---|---|---|
-| **Make Searchable** (OCR) | Yes -- Apple Vision | Not yet | Not yet |
+| **Make Searchable** (OCR) | Yes (Apple Vision) | Not yet | Not yet |
 | **HEIC / HEIF input** | Yes | Only with the HEIF extension installed | Only where the distribution ships libheif |
 
 OCR on Windows and Linux is planned. HEIC is bounded by patent licensing rather
@@ -139,7 +151,7 @@ system's where one is licensed.
 | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 
-The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included -- just install and go. Ghostscript is bundled with the app.
+The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go. Ghostscript is bundled with the app.
 
 > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
 > ```
@@ -147,7 +159,7 @@ The links above always point to the latest release on [GitHub Releases](https://
 > ```
 > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate.
 
-> **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate — it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
+> **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
 
 ### Optional Dependencies
 
@@ -158,7 +170,7 @@ Most tools work out of the box. These are only needed for specific features:
 | [LibreOffice](https://www.libreoffice.org/) | DOC, ODT, RTF & PDF-output document conversion | [Download](https://www.libreoffice.org/download/) |
 | [Calibre](https://calibre-ebook.com/) | EPUB/MOBI ebook formats | [Download](https://calibre-ebook.com/download) |
 
-Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app and needs none of these. The optional tools are only used for the other document formats above — without them, those specific formats simply aren't offered.
+Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app and needs none of these. The optional tools are only used for the other document formats above: without them, those specific formats simply aren't offered.
 
 ---
 
@@ -166,17 +178,17 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
+All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ### A note on passwords
 
-The same applies to the password you set in **Protect PDF** — it never leaves
+The same applies to the password you set in **Protect PDF**: it never leaves
 your machine, and Papercut never stores it. It exists in memory only long enough
 to encrypt the file: it is not written to a settings file, a log, or disk, and
 it is not sent anywhere.
 
 That has a consequence worth stating plainly. **If you forget the password, the
-file cannot be opened again — by you, by us, or by anyone.** There is no reset,
+file cannot be opened again: by you, by us, or by anyone.** There is no reset,
 no recovery code and no back door. This is how PDF encryption works, not a
 limitation Papercut could lift, and **Unlock PDF** cannot help: it removes
 protection from a file you already know the password for, and is not a
@@ -207,10 +219,10 @@ instead, try:
 
 - **macOS:** `brew install ghostscript`
 - **Linux:** `sudo apt install ghostscript` (or your package manager's equivalent)
-- **Windows / manual install:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html) and make sure it's on your PATH
+- **Windows / manual install:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html), and make sure it's on your PATH
 
 If it still crashes with a missing-library error, try reinstalling Papercut
-first -- that usually fixes a corrupted bundled copy.
+first: that usually fixes a corrupted bundled copy.
 
 ### LibreOffice / Calibre not found
 
@@ -283,7 +295,7 @@ to all their maintainers.
 
 ## License
 
-[MIT](LICENSE) -- see the LICENSE file for details.
+[MIT](LICENSE): see the LICENSE file for details.
 
 ---
 
@@ -293,4 +305,4 @@ Contributions are welcome! Please see the [pull request template](.github/pull_r
 
 ---
 
-If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter) -- it helps keep development going.
+If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter): it helps keep development going.

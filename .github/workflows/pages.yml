@@ -1,0 +1,64 @@
+name: Pages
+
+# The landing page. A README is documentation for people who already found the
+# project; this is for the ones who have not, and a desktop app needs somewhere
+# to download it from that is not a source-code repository.
+#
+# Built from `site/`, with the screenshots copied in at publish time rather than
+# duplicated in the repo — they are 2 MB and already live in docs/screenshots/
+# for the README to use.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/screenshots/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# Least privilege: read the tree, write only Pages, and prove the deployment
+# came from this workflow.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight — a half-finished
+# publish is a broken site rather than a stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Assemble the site
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp -R site/. _site/
+          mkdir -p _site/screenshots
+          cp docs/screenshots/*.png _site/screenshots/
+          # A missing image on a download page reads as a broken product, so
+          # fail the build here rather than ship one.
+          for f in hero-logo.png dashboard-light.png dashboard-dark.png tool-configure-step.png; do
+            test -f "_site/screenshots/$f" || { echo "missing screenshot: $f"; exit 1; }
+          done
+          test -f _site/index.html || { echo "no index.html"; exit 1; }
+          echo "assembled:"; find _site -type f | sort
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

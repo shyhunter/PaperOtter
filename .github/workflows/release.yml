@@ -186,24 +186,24 @@ jobs:
             | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
             | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
 
-            Everything you need is included — just install and go.
+            Everything you need is included: just install and go.
 
             > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
             > ```
             > xattr -cr /Applications/Papercut.app
             > ```
-            > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate — it is safe to use.
+            > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
 
-            > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate — it is safe to use.
+            > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it is safe to use.
 
-            > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download) — most users won't need this.
+            > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download): most users won't need this.
 
             ---
 
             <details>
             <summary>What are the Assets below?</summary>
 
-            The **Assets** section below is GitHub's automatic list of the same installer files from the table above. You don't need to use it — the download links in the table are the same files. The `Source code` entries are the raw project code and are only useful for developers.
+            The **Assets** section below is GitHub's automatic list of the same installer files from the table above. You don't need to use it: the download links in the table are the same files. The `Source code` entries are the raw project code and are only useful for developers.
             </details>
           releaseDraft: true
           prerelease: ${{ steps.version.outputs.is_prerelease }}
@@ -365,6 +365,45 @@ jobs:
 
           Stop-Process -Id $proc.Id -Force
           Write-Host "=== Windows smoke test PASSED ==="
+
+      # ── REL-01: ask the installed app whether Ghostscript actually resolves ──
+      #
+      # This is the check the Pre-Release Gate asked a person with a Windows
+      # machine to make by hand. It never happened, because there is no Windows
+      # machine. The app can answer for itself: --selftest resolves
+      # resource_dir() exactly as the app does, runs the bundled Ghostscript
+      # through the same sidecar and the same with_windows_dll_path wrapper, and
+      # makes it write a real PDF with pdfwrite — the device every compress in
+      # the app depends on.
+      #
+      # It runs here rather than in the build job on purpose: there the exe and
+      # gsdll64.dll sit in one folder and Ghostscript runs whatever happens. Only
+      # the installed layout separates them, and only the installed layout can
+      # fail the way this is guarding against.
+      #
+      # What it still does not cover: the webview. If Ghostscript resolves but
+      # the UI never reaches it, this passes and the app is broken. Smaller and
+      # different risk; worth stating rather than papering over.
+      - name: Windows — self-test the installed app (REL-01)
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $binary = $null
+          $roots = @("$env:LOCALAPPDATA\Papercut", "$env:ProgramFiles\Papercut")
+          foreach ($root in $roots) {
+            $found = Get-ChildItem -Path $root -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
+            if ($found) { $binary = $found.FullName; break }
+          }
+          if (-Not $binary) { Write-Host "FAIL: no installed Papercut.exe to self-test"; exit 1 }
+
+          Write-Host "Running: $binary --selftest"
+          $p = Start-Process -FilePath $binary -ArgumentList "--selftest" -PassThru -Wait -NoNewWindow
+          Write-Host "self-test exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) {
+            Write-Host "FAIL: the installed app cannot run its bundled Ghostscript."
+            exit 1
+          }
+          Write-Host "PASS: REL-01 — bundled Ghostscript resolves and writes a PDF in the installed layout"
 
       # ── Windows: the bundled Ghostscript must actually load and compress ──
       #

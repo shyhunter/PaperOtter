@@ -4,15 +4,15 @@
 
 ## How to convert an image
 
-1. **Pick** — open an image file.
-2. **Configure** — choose the output format (and quality, for JPG/WebP).
-3. **Save** — write the converted image to disk.
+1. **Pick**: open an image file.
+2. **Configure**: choose the output format (and quality, for JPG/WebP).
+3. **Save**: write the converted image to disk.
 
 ## How the formats differ
 
-- **JPG** — lossy, no transparency support, generally smallest for photos.
-- **PNG** — lossless, supports transparency, generally larger.
-- **WebP** — supports both lossy and lossless modes plus transparency, usually smaller than an equivalent-quality JPG or PNG.
+- **JPG**: lossy, no transparency support, generally smallest for photos.
+- **PNG**: lossless, supports transparency, generally larger.
+- **WebP**: supports both lossy and lossless modes plus transparency, usually smaller than an equivalent-quality JPG or PNG.
 
 Quality (default 80) applies to JPG and WebP output; PNG is always lossless regardless of the slider.
 

@@ -5,8 +5,8 @@ import { availableLocales } from '@/i18n';
  * Created on first use rather than at import.
  *
  * A module-scope `new LazyStore(...)` runs the moment anything imports this
- * file, which makes every test that mocks the store loosely — a plain object
- * factory rather than a class — fail to even load the module. It also means an
+ * file, which makes every test that mocks the store loosely: a plain object
+ * factory rather than a class: fail to even load the module. It also means an
  * import can throw, which nothing importing a preference helper expects.
  */
 let store: LazyStore | undefined;
@@ -32,7 +32,7 @@ function matchAvailable(tag: string): string | undefined {
  *
  * An explicit choice wins over the OS: someone who picked English on a German
  * Mac should not be overruled at every launch. Absent a choice, the OS decides,
- * walking the user's full preference order rather than only the first entry —
+ * walking the user's full preference order rather than only the first entry,
  * macOS lets people rank languages, and someone with Japanese first and German
  * second should get German rather than English.
  */

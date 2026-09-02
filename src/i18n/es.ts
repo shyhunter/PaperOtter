@@ -3,7 +3,7 @@ import type { Dictionary } from '@/i18n/en';
 /**
  * Spanish translation.
  *
- * ⚠️ UNREVIEWED — see LOCALE_REVIEW in i18n/index.ts.
+ * ⚠️ UNREVIEWED: see LOCALE_REVIEW in i18n/index.ts.
  *
  * Terminology follows what established apps already use, so checking this is a
  * comparison rather than a translation review:
@@ -116,11 +116,11 @@ export const es: Dictionary = {
   'pdfEncryption.lockedUseUnlock':
     'Este PDF está protegido con contraseña, así que no se puede abrir aquí. Desbloquéelo primero con la herramienta «Desbloquear PDF» y vuelva a intentarlo.',
   'destination.webUpload2mbA4':
-    'Subida web — menos de 2 MB, A4',
+    'Subida web: menos de 2 MB, A4',
   'destination.email10mb':
-    'Adjunto de correo — menos de 10 MB',
+    'Adjunto de correo: menos de 10 MB',
   'destination.email25mb':
-    'Adjunto de correo — menos de 25 MB',
+    'Adjunto de correo: menos de 25 MB',
   'destination.meets':
     'Cumple «{name}»',
   'destination.doesNotMeet':
@@ -676,7 +676,8 @@ export const es: Dictionary = {
   'app.pleaseTryAgain': 'Inténtelo de nuevo.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Todo el procesamiento es local. Ningún dato sale nunca de su ordenador.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut habla nueve idiomas. Solo el inglés está escrito por un hablante nativo; el resto son asistidos por máquina y no han sido revisados por uno. Si algo suena raro o dice lo que no debe, por favor comuníquelo.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut habla nueve idiomas. Todos se han creado con ayuda de IA, incluido el inglés, y ninguno ha sido revisado por un traductor profesional. Si algo suena raro o dice lo que no debe, por favor comuníquelo.',
+  'aboutDialog.roadmap': 'Hoja de ruta',
   'aboutDialog.builtWith': 'Desarrollado con', 'aboutDialog.license': 'Licencia',
   'aboutDialog.sendFeedback': 'Enviar comentarios',
   'buyMeAcoffeeButton.buyMeACoffee': 'Invítame a un café', 'support.buyMeACoffee': 'Invítame a un café',
@@ -739,7 +740,7 @@ export const es: Dictionary = {
   'format.document': 'Documento',
   'configureStep.balanced': 'Equilibrado',
   'configureStep.letter': 'Carta',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Preimpresión / archivo — sin recompresión',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Preimpresión / archivo: sin recompresión',
   'jpgToPdfFlow.autoFit': 'Ajuste automático',
   'jpgToPdfFlow.portrait': 'Vertical',
   'jpgToPdfFlow.landscape': 'Horizontal',
@@ -757,7 +758,7 @@ export const es: Dictionary = {
   'compareOverlay.beforePage': 'Antes, página {page}',
   'compareOverlay.afterPage': 'Después, página {page}',
   'compareOverlay.labelledPage': '{label}, página {page}',
-  'compareStep.targetSizeNotAchievable': 'Tamaño objetivo inalcanzable —',
+  'compareStep.targetSizeNotAchievable': 'Tamaño objetivo inalcanzable , ',
   'compareStep.bestResult': 'mejor resultado: {size}.',
   'configureStep.canCompressToAboutMax': 'Se puede comprimir hasta unos {size} como máximo. Tamaño máximo del archivo: se elegirá automáticamente el mejor ajuste de compresión.',
   'configureStep.containsImagesHighSavings': 'Este PDF contiene {images}: la compresión reducirá el tamaño considerablemente.',

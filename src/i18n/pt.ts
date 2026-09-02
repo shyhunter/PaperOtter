@@ -3,7 +3,7 @@ import type { Dictionary } from '@/i18n/en';
 /**
  * European Portuguese (pt-PT).
  *
- * ⚠️ UNREVIEWED — see LOCALE_REVIEW in i18n/index.ts.
+ * ⚠️ UNREVIEWED: see LOCALE_REVIEW in i18n/index.ts.
  *
  * pt-PT, not pt-BR, and the difference is visible in almost every screen:
  * ficheiro not arquivo, ecrã not tela, guardar not salvar, palavra-passe not
@@ -41,7 +41,7 @@ export const pt: Dictionary = {
   'common.quality': 'Qualidade', 'common.width': 'Largura', 'common.height': 'Altura',
   'common.selectImage': 'Selecionar imagem',
   'file.tooLarge': 'Este ficheiro é demasiado grande: {size}',
-  'file.unsupported': 'Tipo de ficheiro não suportado — utilize PDF, JPG, PNG ou WebP.',
+  'file.unsupported': 'Tipo de ficheiro não suportado: utilize PDF, JPG, PNG ou WebP.',
   'file.heicNeedsMacos':
     'As fotografias HEIC do iPhone só podem ser abertas no macOS, por enquanto. No iPhone, em Definições › Câmara › Formatos, escolha «Mais compatível» para tirar fotografias em JPEG.',
   'file.unsafeName':
@@ -63,7 +63,7 @@ export const pt: Dictionary = {
   'configure.resizePages': 'Redimensionar páginas',
   'configure.enablePageResize': 'Ativar o redimensionamento de páginas',
   'configure.enablePageResizeHint':
-    'Ative para alterar as dimensões das páginas — A4, A3, Carta ou um tamanho personalizado.',
+    'Ative para alterar as dimensões das páginas: A4, A3, Carta ou um tamanho personalizado.',
   'configure.pageSize': 'Tamanho da página', 'configure.widthMm': 'Largura (mm)',
   'configure.heightMm': 'Altura (mm)',
   'configure.pagesToResize': 'Páginas a redimensionar (deixe em branco para todas)',
@@ -75,11 +75,11 @@ export const pt: Dictionary = {
   'pdfEncryption.lockedUseUnlock':
     'Este PDF está protegido por palavra-passe, por isso não pode ser aberto aqui. Desbloqueie-o primeiro com a ferramenta “Desbloquear PDF” e tente novamente.',
   'destination.webUpload2mbA4':
-    'Carregamento web — menos de 2 MB, A4',
+    'Carregamento web: menos de 2 MB, A4',
   'destination.email10mb':
-    'Anexo de e-mail — menos de 10 MB',
+    'Anexo de e-mail: menos de 10 MB',
   'destination.email25mb':
-    'Anexo de e-mail — menos de 25 MB',
+    'Anexo de e-mail: menos de 25 MB',
   'destination.meets':
     'Cumpre “{name}”',
   'destination.doesNotMeet':
@@ -97,7 +97,7 @@ export const pt: Dictionary = {
   'destination.label':
     'Guardar como definição para usar mais tarde',
   'destination.emptyHint':
-    'Defina as opções abaixo e guarde-as com um nome para reutilizar mais tarde — e para verificar documentos futuros.',
+    'Defina as opções abaixo e guarde-as com um nome para reutilizar mais tarde: e para verificar documentos futuros.',
   'destination.savedLabel':
     'Definições guardadas',
   'destination.underSize':
@@ -107,11 +107,11 @@ export const pt: Dictionary = {
   'destination.notChecked':
     'não verificado',
   'save.failedReadOnly':
-    '“{name}” é apenas de leitura, por isso nada foi escrito nele. As suas alterações continuam aqui — altere as permissões do ficheiro e tente novamente, ou use Guardar como… para escrever uma cópia.',
+    '“{name}” é apenas de leitura, por isso nada foi escrito nele. As suas alterações continuam aqui: altere as permissões do ficheiro e tente novamente, ou use Guardar como… para escrever uma cópia.',
   'save.failedGone':
-    '“{name}” já não está onde estava — pode ter sido movido, mudado de nome ou eliminado. Nada foi escrito e as suas alterações não se perderam: use Guardar como… para lhes escolher um novo lugar.',
+    '“{name}” já não está onde estava: pode ter sido movido, mudado de nome ou eliminado. Nada foi escrito e as suas alterações não se perderam: use Guardar como… para lhes escolher um novo lugar.',
   'save.failedDiskFull':
-    'Não há espaço suficiente no disco para guardar “{name}”. Nada foi alterado — liberte espaço e tente novamente, ou use Guardar como… para escrever noutro disco.',
+    'Não há espaço suficiente no disco para guardar “{name}”. Nada foi alterado: liberte espaço e tente novamente, ou use Guardar como… para escrever noutro disco.',
   'save.backToCompare': 'Voltar à comparação',
   'save.zipHint': 'Todos os ficheiros reunidos num único arquivo ZIP',
   'save.individualHint': 'Cada ficheiro guardado em separado, com nome automático',
@@ -119,13 +119,13 @@ export const pt: Dictionary = {
   'imageConfigure.presets': 'Predefinições', 'imageConfigure.resize': 'Redimensionar',
   'imageConfigure.enableResize': 'Ativar o redimensionamento',
   'imageConfigure.enableResizeHint':
-    'Ative para alterar as dimensões da imagem — em píxeis ou em percentagem.',
+    'Ative para alterar as dimensões da imagem: em píxeis ou em percentagem.',
   'privacy.title': 'A sua privacidade',
   'privacy.headline': 'Os seus ficheiros nunca saem do seu dispositivo.',
   'privacy.body':
     'O Papercut processa tudo localmente no seu computador. Sem envios, sem armazenamento na nuvem, sem rastreio.',
   'privacy.zeroData':
-    'Não recolhemos qualquer dado — sem análises, sem telemetria, sem relatórios de erros.',
+    'Não recolhemos qualquer dado: sem análises, sem telemetria, sem relatórios de erros.',
   'privacy.technicalDetails': 'Detalhes técnicos',
   'privacy.detailLocal':
     'Todo o processamento de ficheiros é executado localmente através de Rust, Ghostscript, LibreOffice e Calibre',
@@ -280,14 +280,14 @@ export const pt: Dictionary = {
   'redactPdf.readScanAndSearch': 'Ler o texto e pesquisar de novo',
   'redactPdf.readingScan': 'A ler a digitalização…',
   'redactPdf.scanBoxesApproximate':
-    'Estas zonas provêm do texto lido da digitalização, pelo que são aproximadas. Confirme a sua posição antes de aplicar — a ocultação não pode ser anulada.',
+    'Estas zonas provêm do texto lido da digitalização, pelo que são aproximadas. Confirme a sua posição antes de aplicar: a ocultação não pode ser anulada.',
   'redactPdfFlow.redactionFailed': 'Não foi possível ocultar o conteúdo.',
   'redactionScope.coversTheWholeLineIt': 'Cobre toda a linha onde se encontra',
   'redactionScope.coversOnlyTheFoundText': 'Cobre apenas o texto encontrado',
   'redactionScope.justTheMatch': 'Apenas o resultado', 'redactionScope.wholeLine': 'Toda a linha',
   'repairPdf.fixStructuralIssuesInCorrupted':
     'Corrija problemas de estrutura em ficheiros PDF danificados ou inválidos.',
-  'repairPdf.noIssuesDetectedFileAppears': 'Não foram detetados problemas -- o ficheiro parece estar bem',
+  'repairPdf.noIssuesDetectedFileAppears': 'Não foram detetados problemas: o ficheiro parece estar bem',
   'repairPdf.pdfRepair': 'Reparação de PDF', 'repairPdf.repairPdf': 'Reparar PDF',
   'repairPdf.repairCompleteIfTheDocument':
     'Reparação concluída. Se o documento tinha problemas de estrutura, foram corrigidos.',
@@ -323,7 +323,7 @@ export const pt: Dictionary = {
   'step.password': 'Palavra-passe', 'step.signature': 'Assinatura', 'step.repair': 'Reparar',
   'step.edit': 'Editar', 'step.crop': 'Recortar', 'step.organize': 'Organizar',
   'step.place': 'Posicionar', 'step.redact': 'Ocultar', 'step.recognise': 'Reconhecer',
-  'stepBar.lockedHint': '{step} — conclua primeiro os passos anteriores',
+  'stepBar.lockedHint': '{step}: conclua primeiro os passos anteriores',
 
   'tool.compressPdf.name': 'Comprimir PDF',
   'tool.compressPdf.desc': 'Reduza o tamanho de ficheiros PDF com controlo da qualidade',
@@ -419,22 +419,22 @@ export const pt: Dictionary = {
     'Foi acrescentado, mas é de esperar que contenha erros. Uma digitalização mais nítida, direita e bem iluminada dá um resultado bastante melhor.',
   'ocr.alreadySearchable': 'Este PDF já tem uma camada de texto.',
   'ocr.alreadySearchableHint':
-    'Pode ainda assim executar esta operação, mas normalmente não é necessária — o texto já é pesquisável.',
+    'Pode ainda assim executar esta operação, mas normalmente não é necessária: o texto já é pesquisável.',
   'ocr.saveSearchable': 'Guardar o PDF pesquisável',
   'ocr.needsMacos': 'O reconhecimento de texto só está disponível no macOS, por enquanto.',
   'batch.stoppedEarly': 'Este processamento foi interrompido antes de todos os ficheiros serem tratados.',
   'batch.filesReady': '{files} prontos a guardar',
-  'batch.totalSaving': 'Poupou {saved} no total — {output} a guardar.',
+  'batch.totalSaving': 'Poupou {saved} no total: {output} a guardar.',
   'batch.couldNotBeProcessed': 'Não foi possível processar: {files}',
-  'batch.processingFile': 'A processar o ficheiro {current} de {total} — {name}',
+  'batch.processingFile': 'A processar o ficheiro {current} de {total}: {name}',
   'batch.skippedDifferentType':
-    '{count} ficheiro(s) de outro tipo foram ignorados — um lote tem de ser de um só tipo.',
+    '{count} ficheiro(s) de outro tipo foram ignorados: um lote tem de ser de um só tipo.',
   'deps.ghostscriptWindows':
     'A compressão de PDF requer o Ghostscript. Transfira-o em ghostscript.com/releases/gsdnld.html e certifique-se de que está no PATH.',
   'deps.ghostscriptLinux':
     'A compressão de PDF requer o Ghostscript. Instale-o com o gestor de pacotes, p. ex. sudo apt install ghostscript',
-  'deps.calibre': 'Instale o Calibre para trabalhar com livros digitais — calibre-ebook.com/download',
-  'deps.libreoffice': 'Instale o LibreOffice para converter documentos — libreoffice.org/download',
+  'deps.calibre': 'Instale o Calibre para trabalhar com livros digitais: calibre-ebook.com/download',
+  'deps.libreoffice': 'Instale o LibreOffice para converter documentos: libreoffice.org/download',
   'filter.jpegImage': 'Imagem JPEG', 'filter.pngImage': 'Imagem PNG', 'filter.webpImage': 'Imagem WebP',
   'filter.pdfFiles': 'Ficheiros PDF', 'filter.zipArchive': 'Arquivo ZIP', 'filter.pdfDocument': 'Documento PDF',
   'filter.supportedFiles': 'Ficheiros suportados', 'filter.documentsImages': 'Documentos e imagens',
@@ -498,7 +498,7 @@ export const pt: Dictionary = {
   'pdfEditor.yourName': 'O seu nome', 'pdfEditor.fullComparisonView': 'Vista de comparação completa',
   'pdfEditor.pending': 'Pendente', 'pdfEditor.dragToMove': 'Arraste para mover',
   'pdfEditor.dragToResize': 'Arraste para redimensionar',
-  'pdfEditor.dragToRotateHoldShift': 'Arraste para rodar — mantenha Shift para ajustar em incrementos',
+  'pdfEditor.dragToRotateHoldShift': 'Arraste para rodar: mantenha Shift para ajustar em incrementos',
   'pdfEditor.zoomInCmd': 'Ampliar (Cmd+=)', 'pdfEditor.zoomOutCmd': 'Reduzir (Cmd+-)',
   'pdfEditor.zoomPresets': 'Níveis de ampliação',
   'editPdf.editPdf': 'Editar PDF', 'editPdf.saveChanges': 'Guardar alterações',
@@ -544,7 +544,7 @@ export const pt: Dictionary = {
   'toolSidebarPanel.redacting': 'A ocultar…', 'toolSidebarPanel.apply': 'Aplicar',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Não foi possível desenhar a assinatura. Experimente outro estilo ou um nome mais curto.',
-  'toolSidebarPanel.smallestFileBestForScreen': 'Ficheiro mais pequeno — ideal para ver no ecrã',
+  'toolSidebarPanel.smallestFileBestForScreen': 'Ficheiro mais pequeno: ideal para ver no ecrã',
   'toolSidebarPanel.goodForReadingOnDevices': 'Bom para leitura em dispositivos',
   'toolSidebarPanel.suitableForPrinting': 'Adequado para impressão',
   'toolSidebarPanel.noPreviewAvailable': 'Pré-visualização indisponível',
@@ -559,7 +559,8 @@ export const pt: Dictionary = {
   'app.pleaseTryAgain': 'Tente novamente.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Todo o processamento é feito localmente. Nenhum dado sai do seu computador.',
-  'aboutDialog.translationsNotNativeReviewed': 'O Papercut fala nove idiomas. Apenas o inglês é escrito por um falante nativo; os restantes são assistidos por máquina e não foram revistos por um. Se algo soar estranho ou disser o que não deve, agradecemos que reporte.',
+  'aboutDialog.translationsNotNativeReviewed': 'O Papercut fala nove idiomas. Todos foram criados com ajuda de IA, incluindo o inglês, e nenhum foi revisto por um tradutor profissional. Se algo soar estranho ou disser o que não deve, agradecemos que reporte.',
+  'aboutDialog.roadmap': 'Roteiro',
   'aboutDialog.builtWith': 'Criado com', 'aboutDialog.license': 'Licença',
   'aboutDialog.sendFeedback': 'Enviar comentários',
   'buyMeAcoffeeButton.buyMeACoffee': 'Pague-me um café', 'support.buyMeACoffee': 'Pague-me um café',
@@ -577,7 +578,7 @@ export const pt: Dictionary = {
   'crashReporter.unknownError': 'Erro desconhecido',
   'dashboard.dropFileToGetStarted': 'Largue um ficheiro para começar',
   'dashboard.myFavorites': 'Os meus favoritos',
-  'dashboard.readyToProcessChooseA': 'Tudo pronto — escolha uma ferramenta abaixo',
+  'dashboard.readyToProcessChooseA': 'Tudo pronto: escolha uma ferramenta abaixo',
   'dashboard.removeFromFavorites': 'Remover dos favoritos',
   'dashboard.addToFavorites': 'Adicionar aos favoritos',
   'dashboard.searchTools': 'Pesquisar ferramentas…', 'dashboard.swapHere': 'Trocar aqui',
@@ -589,7 +590,7 @@ export const pt: Dictionary = {
   'firstLaunchBanner.dismissPrivacyBanner': 'Fechar o aviso de privacidade',
   'firstLaunchBanner.learnMore': 'Saber mais',
   'landingCard.compressResizeConvertStaysOn':
-    'Comprima, redimensione, converta — tudo fica no seu dispositivo',
+    'Comprima, redimensione, converta: tudo fica no seu dispositivo',
   'landingCard.damagedOrInvalidPdf': 'PDF danificado ou inválido',
   'landingCard.fileTooLarge': 'Ficheiro demasiado grande', 'landingCard.loadingFile': 'A carregar o ficheiro…',
   'landingCard.openFile': 'Abrir ficheiro', 'landingCard.pickADifferentFile': 'Escolher outro ficheiro',
@@ -603,9 +604,9 @@ export const pt: Dictionary = {
   'updateChecker.download': 'Transferir',
   'themeToggle.system': 'Sistema', 'themeToggle.light': 'Claro',
   'docModel.thisDocumentHasNoExtractable':
-    'Este documento não tem texto que possa ser extraído — parece ser digitalizado ou composto apenas por imagens.',
+    'Este documento não tem texto que possa ser extraído: parece ser digitalizado ou composto apenas por imagens.',
   'pdfProcessor.thisFileIsMostlyText':
-    'Este ficheiro é sobretudo texto, sem imagens incorporadas — a compressão tem pouco efeito em documentos só de texto.',
+    'Este ficheiro é sobretudo texto, sem imagens incorporadas: a compressão tem pouco efeito em documentos só de texto.',
   'pdfProcessor.customPageSizeRequiresBoth':
     'Um tamanho de página personalizado exige a largura e a altura em mm',
   'pdfUtils.thisFileAppearsToBe':
@@ -632,7 +633,7 @@ export const pt: Dictionary = {
   'common.unsavedChanges': 'Alterações por guardar',
   'common.useThisSignature': 'Utilizar esta assinatura',
   'common.yourLocalDocumentToolkitPrivate':
-    'As suas ferramentas de documentos locais — privadas, rápidas, offline.',
+    'As suas ferramentas de documentos locais: privadas, rápidas, offline.',
   'compareStep.fileAlreadyOptimal': 'O ficheiro já está otimizado',
   'compareStep.thisFileIsAlreadyAt':
     'Este ficheiro já está no máximo de compressão para todas as definições de qualidade.',
@@ -676,7 +677,7 @@ export const pt: Dictionary = {
   'format.document': 'Documento',
   'configureStep.balanced': 'Equilibrado',
   'configureStep.letter': 'Carta',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Pré-impressão / arquivo — sem recompressão',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Pré-impressão / arquivo: sem recompressão',
   'jpgToPdfFlow.autoFit': 'Ajuste automático',
   'jpgToPdfFlow.portrait': 'Vertical',
   'jpgToPdfFlow.landscape': 'Horizontal',
@@ -694,24 +695,24 @@ export const pt: Dictionary = {
   'compareOverlay.beforePage': 'Antes, página {page}',
   'compareOverlay.afterPage': 'Depois, página {page}',
   'compareOverlay.labelledPage': '{label}, página {page}',
-  'compareStep.targetSizeNotAchievable': 'Tamanho pretendido inatingível —',
+  'compareStep.targetSizeNotAchievable': 'Tamanho pretendido inatingível , ',
   'compareStep.bestResult': 'melhor resultado: {size}.',
-  'configureStep.canCompressToAboutMax': 'No melhor dos casos comprime para cerca de {size}. Tamanho máximo do ficheiro — a melhor predefinição de compressão é escolhida automaticamente.',
-  'configureStep.containsImagesHighSavings': 'Este PDF contém {images} — a compressão vai reduzir bastante o tamanho do ficheiro.',
-  'configureStep.containsImagesModerateSavings': 'Este PDF contém {images} — espera-se uma poupança moderada.',
+  'configureStep.canCompressToAboutMax': 'No melhor dos casos comprime para cerca de {size}. Tamanho máximo do ficheiro: a melhor predefinição de compressão é escolhida automaticamente.',
+  'configureStep.containsImagesHighSavings': 'Este PDF contém {images}: a compressão vai reduzir bastante o tamanho do ficheiro.',
+  'configureStep.containsImagesModerateSavings': 'Este PDF contém {images}: espera-se uma poupança moderada.',
   'configureStep.processingPageOf': 'A processar a página {current} de {total}…',
-  'configureStep.targetMayNotBeAchievable': 'O objetivo pode não ser atingível — o mínimo estimado é cerca de {size}.',
+  'configureStep.targetMayNotBeAchievable': 'O objetivo pode não ser atingível: o mínimo estimado é cerca de {size}.',
   'configureStep.targetMustBeSmaller': 'O objetivo tem de ser menor do que o original ({size})',
   'convertConfigStep.formatNamed': 'Formato {format}',
   'convertConfigStep.zipOneFilePerHeading': '.zip, um ficheiro por título',
   'convertImageFlow.convertToFormat': 'Converter para {format}',
-  'crashReporter.noDataSentAutomatically': 'Nenhum dado é enviado automaticamente. O relatório abre como rascunho de e-mail na sua aplicação de correio — é você que decide se o envia.',
+  'crashReporter.noDataSentAutomatically': 'Nenhum dado é enviado automaticamente. O relatório abre como rascunho de e-mail na sua aplicação de correio: é você que decide se o envia.',
   'cropPdfFlow.pageSizeMm': 'Tamanho da página: {width} × {height} mm',
   'dashboard.noToolsMatch': 'Nenhuma ferramenta corresponde a «{query}»',
   'editorContext.failedToAddPages': 'Não foi possível adicionar as páginas: {error}',
   'editorContext.failedToReorderPages': 'Não foi possível reordenar as páginas: {error}',
   'editorToolbar.alignNamed': 'Alinhamento: {alignment}',
-  'editorToolbar.colourRightClickToRemove': '{colour} — clique com o botão direito para remover',
+  'editorToolbar.colourRightClickToRemove': '{colour}: clique com o botão direito para remover',
   'exportPanel.exportAsFormat': 'Exportar como {format}',
   'exportPanel.savedAsFormat': 'Guardado como {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opções de tipografia',
@@ -725,7 +726,7 @@ export const pt: Dictionary = {
   'jpgToPdfFlow.imagesSelected': '{images} selecionadas',
   'jpgToPdfFlow.moveUpNamed': 'Mover {name} para cima',
   'jpgToPdfFlow.moveDownNamed': 'Mover {name} para baixo',
-  'landingCard.couldNotBeOpened': 'Não foi possível abrir «{name}» — parece danificado ou não é um PDF válido. A ferramenta «Reparar PDF» poderá recuperá-lo.',
+  'landingCard.couldNotBeOpened': 'Não foi possível abrir «{name}»: parece danificado ou não é um PDF válido. A ferramenta «Reparar PDF» poderá recuperá-lo.',
   'landingCard.fileTooLargeDetail': 'Este ficheiro tem {size}. Ficheiros com mais de 100 MB não são suportados. Utilize um ficheiro mais pequeno.',
   'merge.pageOneOf': 'Página 1 de {name}',
   'mergeOrderStep.dragToReorderTotal': 'Arraste para reordenar. Total: {pages} de {files}.',
@@ -741,7 +742,7 @@ export const pt: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} selecionadas)',
   'pdfToJpgFlow.renderingPageOf': 'A desenhar a página {current} de {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'O acesso à rede está limitado a exatamente dois pontos de leitura — procurar atualizações da aplicação e obter o endereço de contacto para comentários — imposto pela configuração de capacidades do Tauri. Nenhum outro acesso à rede é possível.',
+  'privacy.detailNetworkScope': 'O acesso à rede está limitado a exatamente dois pontos de leitura (procurar atualizações da aplicação e obter o endereço de contacto para comentários), imposto pela configuração de capacidades do Tauri. Nenhum outro acesso à rede é possível.',
   'redactPdf.appliedAcross': '{redactions} aplicadas em {pages}',
   'redactPdf.applyRedactions': 'Aplicar ocultações ({count})',
   'redactPdf.matchesFound': '{matches} encontradas',
@@ -768,10 +769,10 @@ export const pt: Dictionary = {
   'toolSidebarPanel.appliedSuccessfully': '{tool} aplicado com êxito',
   'toolSidebarPanel.canCompressToAbout': 'No melhor dos casos comprime para cerca de {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Arraste sobre a página para tapar algo. Ao aplicar, essas páginas são convertidas numa imagem, pelo que o conteúdo por baixo é removido do ficheiro e não apenas escondido.',
-  'toolSidebarPanel.imagesStillReEncoded': 'As imagens continuam a ser recodificadas, apenas não são reduzidas. As estimativas pressupõem redução da resolução — os tamanhos reais serão maiores.',
+  'toolSidebarPanel.imagesStillReEncoded': 'As imagens continuam a ser recodificadas, apenas não são reduzidas. As estimativas pressupõem redução da resolução: os tamanhos reais serão maiores.',
   'toolSidebarPanel.marginMm': 'Margem {side} (mm)',
   'toolSidebarPanel.markAll': 'Marcar todos ({count})',
-  'toolSidebarPanel.noMatchesNoSelectableText': 'Sem resultados. Páginas sem texto selecionável — uma digitalização, por exemplo — não podem ser pesquisadas.',
+  'toolSidebarPanel.noMatchesNoSelectableText': 'Sem resultados. Páginas sem texto selecionável (uma digitalização, por exemplo), não podem ser pesquisadas.',
   'toolSidebarPanel.opacity': 'Opacidade: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Um retângulo tão claro é difícil de ver numa página branca. O conteúdo por baixo é removido permanentemente na mesma.',
   'toolSidebarPanel.pdfaConversion': 'Conversão PDF/A-{level}',
@@ -779,7 +780,7 @@ export const pt: Dictionary = {
   'toolSidebarPanel.rotatingPage': 'A rodar a página {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'A rodar {count} páginas selecionadas',
   'toolSidebarPanel.savedSignaturesCount': 'Assinaturas guardadas ({count})',
-  'toolSidebarPanel.smallestAchievable': 'O mínimo possível é cerca de {size} — a compressão não desce abaixo disto para este ficheiro.',
+  'toolSidebarPanel.smallestAchievable': 'O mínimo possível é cerca de {size}: a compressão não desce abaixo disto para este ficheiro.',
   'toolSidebarPanel.targetMet': 'atingido',
   'toolSidebarPanel.targetNotMet': 'não atingido ({size})',
   'count.match_one': '{count} correspondência',
@@ -794,11 +795,11 @@ export const pt: Dictionary = {
   'common.find': 'Procurar',
   'common.percentLarger': '{percent}% maior',
   'common.percentSmaller': '{percent}% mais pequeno',
-  'compareStep.jpxAlreadyEncoded': 'Imagens já codificadas em JPEG2000 — não é possível comprimir mais',
+  'compareStep.jpxAlreadyEncoded': 'Imagens já codificadas em JPEG2000: não é possível comprimir mais',
   'configureStep.enableResizeToStillProcess': 'Ative em baixo o redimensionamento de páginas para processar mesmo assim este ficheiro.',
   'merge.mergeAndSave': 'Juntar e guardar',
   'pdfEditor.untitledPdf': 'Sem título.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Este PDF contém {images}, já codificadas em JPEG2000 — o Ghostscript não as consegue comprimir mais.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Este PDF contém {images}, já codificadas em JPEG2000: o Ghostscript não as consegue comprimir mais.',
   'split.split': 'Dividir',
   'toolSidebarPanel.clickToPlaceMode': 'Modo clicar para colocar',
   'unsavedChangesDialog.dontSave': 'Não guardar',
@@ -810,10 +811,10 @@ export const pt: Dictionary = {
   'search.noMatches': 'Sem resultados para «{query}».',
   'search.noMatchesInScan': 'Sem resultados para «{query}» no texto lido desta digitalização.',
   'search.readScanHint': 'Esta página não tem texto para procurar. Ao lê-la é acrescentada uma camada de texto invisível, e o aspeto da página mantém-se igual.',
-  'convertDoc.formatMayNeed': 'Poderá ser necessário {requirement}. O Papercut não o conseguiu detetar, mas a deteção nem sempre acerta — experimente na mesma.',
+  'convertDoc.formatMayNeed': 'Poderá ser necessário {requirement}. O Papercut não o conseguiu detetar, mas a deteção nem sempre acerta: experimente na mesma.',
   'convertDoc.kindEbookConverter': 'um conversor de livros digitais como {tools}',
   'convertDoc.kindWordProcessor': 'um processador de texto como {tools}',
   'dashboard.andMoreFiles': '+{count} mais',
-  'deps.ghostscriptMac': 'A compressão de PDF requer o Ghostscript, que já vem incluído no Papercut. Não foi possível iniciar a cópia incluída — reinstalar o Papercut deverá restaurá-la.',
+  'deps.ghostscriptMac': 'A compressão de PDF requer o Ghostscript, que já vem incluído no Papercut. Não foi possível iniciar a cópia incluída: reinstalar o Papercut deverá restaurá-la.',
   'editorToolbar.courierNewMonospace': 'Courier New (monoespaçada)',
 };

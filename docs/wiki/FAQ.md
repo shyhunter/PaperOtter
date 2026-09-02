@@ -3,9 +3,9 @@
 ### Does Papercut send my files anywhere?
 
 No. All processing happens locally using native binaries (Ghostscript,
-LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, and
+LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and
 the Rust `image` crate).
-Your files never leave your machine -- see the
+Your files never leave your machine: see the
 [Privacy section](https://github.com/shyhunter/Papercut#privacy) of the
 README for the full statement.
 
@@ -29,19 +29,19 @@ Papercut normally.
 
 ### Why does Windows show a SmartScreen warning?
 
-Same reason, for Windows code-signing -- it's on the roadmap, not a sign of
+Same reason, for Windows code-signing: it's on the roadmap, not a sign of
 a problem with the installer. Click **More info**, then **Run anyway**.
 
 ### I forgot the password on a PDF I protected. Can you recover it?
 
 No. Nobody can.
 
-Papercut never stores the password you set — it is used to encrypt the file and
+Papercut never stores the password you set: it is used to encrypt the file and
 then discarded, and it is never written to disk or sent anywhere. There is no
 reset, no recovery code and no back door, and this is a property of PDF
 encryption rather than something Papercut chose.
 
-If you still have the unprotected original, use that — Papercut always writes
+If you still have the unprotected original, use that. Papercut always writes
 the protected document as a new file and never encrypts your original in place.
 If you do not, the file cannot be opened again.
 
@@ -60,10 +60,13 @@ Yes, it's open source under the MIT license. If it's useful to you, there's
 an optional way to
 [support development](https://buymeacoffee.com/shyhunter).
 
-### How do I report a bug or request a feature?
+### How do I report a bug or suggest a feature?
 
-[Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) --
-templates are provided for both.
+Bugs go to the
+[issue tracker](https://github.com/shyhunter/Papercut/issues/new/choose). Feature
+ideas go to
+[Discussions](https://github.com/shyhunter/Papercut/discussions/new?category=ideas),
+where they can be talked through before anyone commits to building them.
 
 ---
 
@@ -75,15 +78,14 @@ Nine: English, German, Turkish, French, Spanish, Italian, Dutch, Polish and
 Portuguese. You can switch language from the icon in the top bar; your choice is
 remembered.
 
-**Only the English is written by a native speaker.** The other eight are
-machine-assisted and have not been checked by a native speaker. They ship anyway,
-because for most people a good-enough translation beats an English-only
-interface — but that is a limitation worth stating rather than hoping you do not
-notice.
+**All nine were written with AI assistance, English included, and none has been
+checked by a professional translator.** They ship anyway, because for most people
+a good-enough translation beats an English-only interface, but that is a
+limitation worth stating rather than hoping you do not notice.
 
 One exception is handled strictly. Sentences that warn you about losing data,
 overwriting a file or deleting something are either translated in every language
-or left in English in every language — never half-done. A test enforces it. A
+or left in English in every language, never half-done. A test enforces it. A
 warning you half-understand is more dangerous than one in a language you do not
 speak at all.
 

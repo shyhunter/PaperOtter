@@ -1,0 +1,68 @@
+name: CodeQL
+
+# Static analysis. The repo has never had any: `gh api .../code-scanning/alerts`
+# returns 403 "Code scanning is not enabled", which is why the 51 Dependabot
+# alerts were the only findings anyone had ever seen here.
+#
+# NOTE: CodeQL needs GitHub Advanced Security on a PRIVATE repo, so this
+# workflow will fail until the repository is public. Do not merge it before the
+# visibility flip. Once public it is free, and so are the Actions minutes it
+# spends — public repos get unlimited minutes, which removes the budget
+# pressure every other workflow here is designed around.
+on:
+  pull_request:
+    branches: ['**']
+  schedule:
+    # Weekly, not per-push: CodeQL finds slow-moving code defects, and a full
+    # scan on every commit buys nothing a Monday scan does not.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      security-events: write   # required to upload results
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # `javascript-typescript` covers src/ and the Vite config.
+        # `rust` covers src-tauri/ and is where a memory-safety or
+        # path-traversal finding would actually surface — validate_source_path
+        # and the Ghostscript argument construction both live there.
+        language: ['javascript-typescript', 'rust']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@486fec2a3ea2626afcd8c7e9208b4f515078dd7e # codeql-bundle-v2.26.4
+        with:
+          languages: ${{ matrix.language }}
+          # security-extended adds lower-confidence rules. Worth it here: this
+          # is a file-handling app that shells out to Ghostscript, so the
+          # injection and path-traversal queries are the point of running it.
+          queries: security-extended
+
+      - name: Install Linux system dependencies
+        if: matrix.language == 'rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@486fec2a3ea2626afcd8c7e9208b4f515078dd7e # codeql-bundle-v2.26.4
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@486fec2a3ea2626afcd8c7e9208b4f515078dd7e # codeql-bundle-v2.26.4
+        with:
+          category: /language:${{ matrix.language }}

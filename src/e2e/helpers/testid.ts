@@ -76,19 +76,48 @@ export async function getTestIdAttr(browser: Browser, testId: string, attr: stri
 // ─── Wait helpers ───────────────────────────────────────────────────────────
 
 /** Wait until an element with the given data-testid exists in the DOM. */
+/**
+ * What is on screen right now, for a failure message.
+ *
+ * Never throws: this runs while a test is already failing, and a diagnostic
+ * that fails would replace the real error with its own.
+ */
+async function visibleTestIds(browser: Browser): Promise<string> {
+  try {
+    const ids = await browser.execute(() =>
+      Array.from(document.querySelectorAll('[data-testid]'))
+        .map((el) => el.getAttribute('data-testid') ?? ''),
+    );
+    const unique = [...new Set(ids)].filter(Boolean).sort();
+    return unique.length > 0 ? unique.join(', ') : '(nothing with a data-testid)';
+  } catch {
+    return '(could not read the page)';
+  }
+}
+
 export async function waitForTestId(
   browser: Browser,
   testId: string,
   opts: { timeout?: number; timeoutMsg?: string } = {},
 ): Promise<void> {
-  await browser.waitUntil(
-    () => testIdExists(browser, testId),
-    {
-      timeout: opts.timeout ?? 15000,
-      interval: 200,
-      timeoutMsg: opts.timeoutMsg ?? `Timed out waiting for [data-testid="${testId}"]`,
-    },
-  );
+  try {
+    await browser.waitUntil(
+      () => testIdExists(browser, testId),
+      {
+        timeout: opts.timeout ?? 15000,
+        interval: 200,
+        timeoutMsg: opts.timeoutMsg ?? `Timed out waiting for [data-testid="${testId}"]`,
+      },
+    );
+  } catch (err) {
+    // Say what WAS there. "Timed out waiting for configure-step" names the
+    // element that is missing and nothing about the screen that is present, so
+    // every such failure costs a round trip to fetch a DOM snapshot before
+    // anyone can even guess. On a slow machine the difference between "still
+    // loading" and "went somewhere else entirely" is the whole diagnosis.
+    const seen = await visibleTestIds(browser);
+    throw new Error(`${(err as Error).message}\n  On screen instead: ${seen}`);
+  }
 }
 
 /** Wait until an element with the given data-testid is visible. */
