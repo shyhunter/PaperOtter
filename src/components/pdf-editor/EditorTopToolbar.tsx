@@ -73,9 +73,7 @@ export function EditorTopToolbar() {
   const handleRevert = useCallback(() => {
     // Offered even when the document is clean: the case this exists for is
     // realising the wrong file was edited *after* saving over it.
-    const confirmed = window.confirm(
-      'Discard all changes and restore this document as it was opened?',
-    );
+    const confirmed = window.confirm(t('editorToolbar.discardAllChangesAndRestore'));
     diagLog(`revert.confirm confirmed=${confirmed}`);
     if (confirmed) revertToOriginal();
   }, [revertToOriginal]);

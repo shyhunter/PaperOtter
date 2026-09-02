@@ -23,6 +23,9 @@ export const tr: Dictionary = {
   'common.cancel': 'İptal',
   'common.save': 'Kaydet',
   'common.back': 'Geri',
+  'app.unsavedChangesGoBackToDashboard': 'Kaydedilmemiş değişiklikleriniz var. Panoya dönmek istediğinizden emin misiniz? Düzenlemeleriniz kaybolacak.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Kaydedilmemiş değişiklikleriniz var. Kaydetmeden kapatılsın mı?',
+  'editorToolbar.discardAllChangesAndRestore': 'Tüm değişiklikler atılsın ve bu belge açıldığı hâline geri döndürülsün mü?',
   'common.close': 'Kapat',
   'common.retry': 'Yeniden dene',
   'common.tryAgain': 'Yeniden dene',
@@ -605,6 +608,7 @@ export const tr: Dictionary = {
   'app.pleaseTryAgain': 'Lütfen yeniden deneyin.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tüm işlemler yerel olarak yapılır. Hiçbir veri bilgisayarınızdan çıkmaz.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut dokuz dil konuşur. Yalnızca İngilizce metinler ana dili konuşan biri tarafından yazılmıştır; diğerleri makine desteğiyle hazırlanmış ve ana dili konuşan biri tarafından denetlenmemiştir. Bir şey tuhaf geliyor ya da yanlış anlatıyorsa lütfen bildirin.',
   'aboutDialog.builtWith': 'Şununla geliştirildi', 'aboutDialog.license': 'Lisans',
   'aboutDialog.sendFeedback': 'Geri bildirim gönder',
   'buyMeAcoffeeButton.buyMeACoffee': 'Bana bir kahve ısmarlayın',
@@ -800,4 +804,5 @@ export const tr: Dictionary = {
   'search.noMatches': '“{query}” için eşleşme yok.',
   'search.noMatchesInScan': 'Bu taramadan okunan metinde “{query}” için eşleşme yok.',
   'search.readScanHint': 'Bu sayfada aranacak metin yok. Sayfayı okumak görünmez bir metin katmanı ekler; sayfanın görünümü aynı kalır.',
+  'editorToolbar.courierNewMonospace': 'Courier New (eş aralıklı)',
 };

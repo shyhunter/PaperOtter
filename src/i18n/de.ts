@@ -19,6 +19,9 @@ export const de: Dictionary = {
   'common.cancel': 'Abbrechen',
   'common.save': 'Speichern',
   'common.back': 'Zurück',
+  'app.unsavedChangesGoBackToDashboard': 'Sie haben nicht gespeicherte Änderungen. Möchten Sie wirklich zur Übersicht zurückkehren? Ihre Bearbeitungen gehen verloren.',
+  'editorView.unsavedChangesCloseWithoutSaving': 'Sie haben nicht gespeicherte Änderungen. Ohne Speichern schließen?',
+  'editorToolbar.discardAllChangesAndRestore': 'Alle Änderungen verwerfen und dieses Dokument in den geöffneten Zustand zurücksetzen?',
   'common.close': 'Schließen',
   'common.retry': 'Erneut versuchen',
   'common.tryAgain': 'Erneut versuchen',
@@ -547,6 +550,7 @@ export const de: Dictionary = {
     'Diese Datei scheint beschädigt zu sein. Bitte versuchen Sie es mit einer anderen Datei.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Die gesamte Verarbeitung findet lokal statt. Es verlassen keinerlei Daten Ihren Computer.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut spricht neun Sprachen. Nur das Englische stammt von einem Muttersprachler – die übrigen sind maschinell erstellt und wurden nicht von einem Muttersprachler geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
   'aboutDialog.sendFeedback': 'Rückmeldung senden',
@@ -1120,4 +1124,10 @@ export const de: Dictionary = {
   'search.noMatches': 'Keine Treffer für „{query}“.',
   'search.noMatchesInScan': 'Keine Treffer für „{query}“ im Text, der aus diesem Scan gelesen wurde.',
   'search.readScanHint': 'Diese Seite enthält keinen durchsuchbaren Text. Beim Lesen wird eine unsichtbare Textebene hinzugefügt; das Aussehen der Seite bleibt unverändert.',
+  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. Papercut konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig — versuchen Sie es einfach.',
+  'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
+  'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
+  'dashboard.andMoreFiles': '+{count} weitere',
+  'deps.ghostscriptMac': 'Zum Komprimieren von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden — eine Neuinstallation von Papercut sollte sie wiederherstellen.',
+  'editorToolbar.courierNewMonospace': 'Courier New (Monospace)',
 };
