@@ -10,7 +10,7 @@ The first stable release. Since `v1.0.0-beta.9`, 243 commits.
 
 - **Nine languages.** English, German, Turkish, French, Spanish, Italian, Dutch,
   Polish and Portuguese, picked from the top bar and remembered. Papercut guesses
-  from the operating system on first launch. Plural forms are handled properly —
+  from the operating system on first launch. Plural forms are handled properly,
   Polish has three, and several languages have categories English does not.
   *Only the English is written by a native speaker; see the note at the end.*
 - **Read text from scans** (macOS). A scanned PDF becomes searchable and
@@ -26,7 +26,7 @@ The first stable release. Since `v1.0.0-beta.9`, 243 commits.
 - **HEIC photos** as input (macOS, and on Windows or Linux where the system has
   a decoder).
 - **Saved settings.** Name the settings you use often and pick them up again
-  later. The list ships empty on purpose — a preset named for a portal would be
+  later. The list ships empty on purpose: a preset named for a portal would be
   Papercut claiming to know which office you are dealing with.
 - **Ghostscript is bundled.** Compression works out of the box on macOS,
   Windows and Linux with nothing to install.
@@ -86,7 +86,7 @@ These are the changes that stop Papercut damaging something of yours.
   by a native speaker.** Warnings about losing files are translated in every
   language or left in English in every language, never half-done, and a test
   enforces it. Corrections are the most useful contribution this project can
-  receive — please [open an issue](https://github.com/shyhunter/Papercut/issues).
+  receive: please [open an issue](https://github.com/shyhunter/Papercut/issues).
 - **The app is not code-signed.** macOS may say it is damaged and Windows may
   show a SmartScreen warning. Both are the absence of a paid certificate, not a
   problem with the download.

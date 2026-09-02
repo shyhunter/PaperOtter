@@ -34,20 +34,20 @@ need.
 
 Not bundled. Needed for converting **to or from DOC, ODT and RTF**, and for
 producing a PDF from a document on Windows and Linux. Install from
-[libreoffice.org](https://www.libreoffice.org/download/) and make sure
+[libreoffice.org](https://www.libreoffice.org/download/), and make sure
 `soffice` is on your `PATH`. Without it, Papercut names the missing program
-rather than failing quietly — and the formats that do not need it stay
+rather than failing quietly, and the formats that do not need it stay
 available.
 
 ## Calibre (optional, used for EPUB/MOBI conversion)
 
 Not bundled. Needed only for ebook formats (EPUB, MOBI). Install from
-[calibre-ebook.com](https://calibre-ebook.com/download) and make sure
+[calibre-ebook.com](https://calibre-ebook.com/download), and make sure
 `ebook-convert` is on your `PATH`. Same fallback behavior as LibreOffice above.
 
 ## Two features depend on the operating system
 
-Not dependencies you can install — they are what the platform does or does not
+Not dependencies you can install: they are what the platform does or does not
 provide, so Papercut hides them where they cannot work rather than offering
 something that will fail.
 

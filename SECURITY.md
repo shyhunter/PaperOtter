@@ -28,7 +28,7 @@ no telemetry, so the interesting surface is narrower than for a web app:
   Documents, Downloads, Desktop and the system temp directory; anything that
   reaches beyond those is a bug.
 - **Anything that makes the app reach the network.** Papercut is offline by
-  design. Two outbound URLs are allow-listed — the GitHub releases endpoint for
+  design. Two outbound URLs are allow-listed: the GitHub releases endpoint for
   the update check and a feedback-config file. Any other outbound request is a
   finding.
 - **Bundled dependencies**, including the Ghostscript sidecar.

@@ -20,7 +20,7 @@ already know how to use them all:
 ## What Save does
 
 **Save replaces the file you opened.** Rotate a PDF and press Save, and that PDF
-is now rotated — one document, in one place, in its new state. This is what Save
+is now rotated: one document, in one place, in its new state. This is what Save
 means in every other desktop application, and it is what the PDF editor has
 always done.
 
@@ -30,12 +30,12 @@ you want to keep the original as it was.
 Some tools cannot replace anything and will always ask you where to put the
 result:
 
-- **The file type changes** — Convert Document, Convert Image, PDF to JPG and
+- **The file type changes**: Convert Document, Convert Image, PDF to JPG and
   JPG to PDF. A `.docx` cannot replace a `.pdf`.
-- **The number of files changes** — Merge takes several and produces one; Split
+- **The number of files changes**: Merge takes several and produces one; Split
   takes one and produces many.
 - **Protect PDF**, deliberately. It is the only operation whose result can become
-  permanently unopenable — a forgotten password has no recovery — so it always
+  permanently unopenable (a forgotten password has no recovery), so it always
   writes a new file and leaves your readable original alone. See
   [Protect PDF](Protect-PDF).
 

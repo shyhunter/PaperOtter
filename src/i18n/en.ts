@@ -1,5 +1,5 @@
 /**
- * The English dictionary — the source of truth for every user-facing string.
+ * The English dictionary: the source of truth for every user-facing string.
  *
  * Flat dotted keys rather than a nested object: they are greppable (searching
  * "compare.before" finds both the key and its use), and `keyof typeof en` gives
@@ -16,9 +16,9 @@ export const en = {
 
   // ── File input ────────────────────────────────────────────────────────────
   'file.tooLarge': 'This file is too large: {size}',
-  'file.unsupported': 'Unsupported file type — please use PDF, JPG, PNG, or WebP.',
+  'file.unsupported': 'Unsupported file type: please use PDF, JPG, PNG, or WebP.',
   'file.heicNeedsMacos':
-    'HEIC photos can only be opened on macOS for now — convert it to JPEG first.',
+    'HEIC photos can only be opened on macOS for now: convert it to JPEG first.',
   'file.unsafeName':
     "This filename contains characters that aren't supported. Please rename the file and try again.",
 
@@ -55,7 +55,7 @@ export const en = {
   'configure.customTargetSize': 'Custom target size',
   'configure.resizePages': 'Resize pages',
   'configure.enablePageResize': 'Enable page resize',
-  'configure.enablePageResizeHint': 'Enable to change page dimensions — A4, A3, Letter, or custom size.',
+  'configure.enablePageResizeHint': 'Enable to change page dimensions: A4, A3, Letter, or custom size.',
   'configure.pageSize': 'Page size',
   'configure.widthMm': 'Width (mm)',
   'configure.heightMm': 'Height (mm)',
@@ -76,11 +76,11 @@ export const en = {
   'pdfEncryption.lockedUseUnlock':
     'This PDF is password-protected, so it cannot be opened here. Unlock it with the Unlock PDF tool first, then try again.',
   'destination.webUpload2mbA4':
-    'Web upload — under 2 MB, A4',
+    'Web upload: under 2 MB, A4',
   'destination.email10mb':
-    'Email attachment — under 10 MB',
+    'Email attachment: under 10 MB',
   'destination.email25mb':
-    'Email attachment — under 25 MB',
+    'Email attachment: under 25 MB',
   'destination.meets':
     'Meets “{name}”',
   'destination.doesNotMeet':
@@ -98,7 +98,7 @@ export const en = {
   'destination.label':
     'Save as a setting to use later',
   'destination.emptyHint':
-    'Set the options below, then save them under a name to reuse later — and to check future documents against.',
+    'Set the options below, then save them under a name to reuse later, and to check future documents against.',
   'destination.savedLabel':
     'Saved settings',
   'destination.underSize':
@@ -108,11 +108,11 @@ export const en = {
   'destination.notChecked':
     'not checked',
   'save.failedReadOnly':
-    '“{name}” is read-only, so nothing was written to it. Your changes are still here — change the file’s permission and try again, or use Save as… to write a copy.',
+    '“{name}” is read-only, so nothing was written to it. Your changes are still here: change the file’s permission and try again, or use Save as… to write a copy.',
   'save.failedGone':
-    '“{name}” is no longer where it was — it may have been moved, renamed or deleted. Nothing was written and your changes are not lost: use Save as… to choose a new place for them.',
+    '“{name}” is no longer where it was: it may have been moved, renamed or deleted. Nothing was written and your changes are not lost: use Save as… to choose a new place for them.',
   'save.failedDiskFull':
-    'There is not enough space on the disk to save “{name}”. Nothing was changed — free some space and try again, or use Save as… to write to another disk.',
+    'There is not enough space on the disk to save “{name}”. Nothing was changed: free some space and try again, or use Save as… to write to another disk.',
   'save.failed': 'Save failed',
   'common.tryAgain': 'Try Again',
   'common.dismiss': 'Dismiss',
@@ -127,7 +127,7 @@ export const en = {
   'imageConfigure.presets': 'Presets',
   'imageConfigure.resize': 'Resize',
   'imageConfigure.enableResize': 'Enable resize',
-  'imageConfigure.enableResizeHint': 'Enable to change image dimensions — pixels or percentage scale.',
+  'imageConfigure.enableResizeHint': 'Enable to change image dimensions: pixels or percentage scale.',
   'common.width': 'Width',
   'common.height': 'Height',
 
@@ -135,7 +135,7 @@ export const en = {
   'privacy.title': 'Your Privacy',
   'privacy.headline': 'Your files never leave your device.',
   'privacy.body': 'Papercut processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
-  'privacy.zeroData': 'We collect zero data — no analytics, no telemetry, no crash reports.',
+  'privacy.zeroData': 'We collect zero data: no analytics, no telemetry, no crash reports.',
   'privacy.technicalDetails': 'Technical details',
   'privacy.detailLocal': 'All file processing runs locally via Rust, Ghostscript, LibreOffice, and Calibre',
   'privacy.detailCsp': 'Content Security Policy blocks all external connections from the app\'s UI',
@@ -560,7 +560,7 @@ export const en = {
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.dragToMove': 'Drag to move',
   'pdfEditor.dragToResize': 'Drag to resize',
-  'pdfEditor.dragToRotateHoldShift': 'Drag to rotate — hold Shift to snap',
+  'pdfEditor.dragToRotateHoldShift': 'Drag to rotate: hold Shift to snap',
 
   // ── pdfEditor ───────────────────────────────────────────────────────────
   'pdfEditor.zoomInCmd': 'Zoom in (Cmd+=)',
@@ -573,12 +573,12 @@ export const en = {
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
   'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. Only the English is written by a native speaker — the rest are machine-assisted and have not been checked by one. If something reads oddly or says the wrong thing, please report it.',
+  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. Only the English is written by a native speaker: the rest are machine-assisted and have not been checked by one. If something reads oddly or says the wrong thing, please report it.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',
   'aboutDialog.sendFeedback': 'Send Feedback',
-  'common.yourLocalDocumentToolkitPrivate': 'Your local document toolkit — private, fast, offline.',
+  'common.yourLocalDocumentToolkitPrivate': 'Your local document toolkit: private, fast, offline.',
 
   // ── buyMeAcoffeeButton ──────────────────────────────────────────────────
   'buyMeAcoffeeButton.buyMeACoffee': 'Buy me a coffee',
@@ -598,7 +598,7 @@ export const en = {
   'dashboard.dropFileToGetStarted': 'Drop file to get started',
   'dashboard.myFavorites': 'My Favourites',
   'dashboard.andMoreFiles': '+{count} more',
-  'dashboard.readyToProcessChooseA': 'Ready to process — choose a tool below',
+  'dashboard.readyToProcessChooseA': 'Ready to process: choose a tool below',
   'dashboard.removeFromFavorites': 'Remove from favourites',
   'dashboard.searchTools': 'Search tools…',
   'dashboard.swapHere': 'Swap here',
@@ -608,7 +608,7 @@ export const en = {
   'firstLaunchBanner.learnMore': 'Learn more',
 
   // ── landingCard ─────────────────────────────────────────────────────────
-  'landingCard.compressResizeConvertStaysOn': 'Compress, resize, convert — stays on your device',
+  'landingCard.compressResizeConvertStaysOn': 'Compress, resize, convert: stays on your device',
   'landingCard.damagedOrInvalidPdf': 'Damaged or Invalid PDF',
   'landingCard.fileTooLarge': 'File too large',
   'landingCard.loadingFile': 'Loading file…',
@@ -765,7 +765,7 @@ export const en = {
   'tool.convertDoc.step4': 'Set conversion options',
   'tool.convertDoc.step5': 'Review output',
   'tool.convertDoc.step6': 'Save converted document',
-  'stepBar.lockedHint': '{step} — complete previous steps first',
+  'stepBar.lockedHint': '{step}: complete previous steps first',
   'tool.compressImage.step4': 'Save to disk',
   'tool.mergePdf.step3': 'Save merged PDF',
   'tool.splitPdf.step3': 'Save extracted pages',
@@ -904,7 +904,7 @@ export const en = {
   'convertDocFlow.plainText': 'Plain Text',
   'unsavedChangesDialog.thisDocument': 'This document',
   'zoomToolbar.fitWidth': 'Fit Width',
-  'toolSidebarPanel.smallestFileBestForScreen': 'Smallest file — best for screen viewing',
+  'toolSidebarPanel.smallestFileBestForScreen': 'Smallest file: best for screen viewing',
   'toolSidebarPanel.goodForReadingOnDevices': 'Good for reading on devices',
   'toolSidebarPanel.suitableForPrinting': 'Suitable for printing',
   'toolSidebarPanel.noPreviewAvailable': 'No preview available',
@@ -917,7 +917,7 @@ export const en = {
   'toolSidebarPanel.upsideDown': 'Upside Down',
   'toolSidebarPanel.turnRight': 'Turn Right',
   'toolSidebarPanel.turnLeft': 'Turn Left',
-  'docModel.thisDocumentHasNoExtractable': 'This document has no extractable text — it looks scanned or image-only.',
+  'docModel.thisDocumentHasNoExtractable': 'This document has no extractable text: it looks scanned or image-only.',
   'pdfUtils.permissionDenied': 'Papercut does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
   'pdfUtils.thisFileAppearsToBe': 'This file appears to be corrupted or is not a valid PDF. Please try a different file.',
   'pdfUtils.failedToLoadPdfThe': 'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
@@ -927,7 +927,7 @@ export const en = {
   'redactionScope.coversOnlyTheFoundText': 'Covers only the found text',
   'redactionScope.justTheMatch': 'Just the match',
   'redactionScope.wholeLine': 'Whole line',
-  'pdfProcessor.thisFileIsMostlyText': 'This file is mostly text with no embedded images — compression has minimal effect on text-only PDFs.',
+  'pdfProcessor.thisFileIsMostlyText': 'This file is mostly text with no embedded images: compression has minimal effect on text-only PDFs.',
   'pdfProcessor.customPageSizeRequiresBoth': 'Custom page size requires both width and height in mm',
   'pdfMerge.atLeast2PdfsAre': 'At least 2 PDFs are required to merge.',
   'documentConverter.noConversionToolsDetected': 'No conversion tools detected.',
@@ -980,22 +980,22 @@ export const en = {
   // ── Batch processing ────────────────────────────────────────────────────
   'batch.stoppedEarly': 'This run was stopped before every file was processed.',
   'batch.filesReady': '{files} ready to save',
-  'batch.totalSaving': 'Saved {saved} in total — {output} to write.',
+  'batch.totalSaving': 'Saved {saved} in total: {output} to write.',
   'batch.couldNotBeProcessed': '{files} could not be processed',
-  'batch.processingFile': 'Processing {current} of {total} — {name}',
-  'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type — a batch has to be one type.',
+  'batch.processingFile': 'Processing {current} of {total}: {name}',
+  'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type: a batch has to be one type.',
 
   // ── Dependency hints ────────────────────────────────────────────────────
-  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start — reinstalling Papercut should restore it.',
+  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start: reinstalling Papercut should restore it.',
   'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
   'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
-  'deps.calibre': 'Install Calibre for ebook support — calibre-ebook.com/download',
+  'deps.calibre': 'Install Calibre for ebook support: calibre-ebook.com/download',
   // The kind of program, not one product's name: several will do, and naming
   // only the paid one is bad advice when a free one works.
   'convertDoc.kindWordProcessor': 'a word processor such as {tools}',
   'convertDoc.kindEbookConverter': 'an ebook converter such as {tools}',
-  'convertDoc.formatMayNeed': 'May need {requirement}. Papercut could not find one, but detection is not always right — try it and see.',
-  'deps.libreoffice': 'Install LibreOffice for document conversion — libreoffice.org/download',
+  'convertDoc.formatMayNeed': 'May need {requirement}. Papercut could not find one, but detection is not always right: try it and see.',
+  'deps.libreoffice': 'Install LibreOffice for document conversion: libreoffice.org/download',
 
   // ── OCR ─────────────────────────────────────────────────────────────────
   'tool.ocrPdf.name': 'Make Searchable',
@@ -1016,7 +1016,7 @@ export const en = {
   'ocr.lowConfidence': 'The text was hard to read on this scan.',
   'ocr.lowConfidenceHint': 'It has been added, but expect mistakes. A sharper, straighter, better-lit scan gives a much better result.',
   'ocr.alreadySearchable': 'This PDF already has a text layer.',
-  'ocr.alreadySearchableHint': 'You can still run this, but it is usually unnecessary — the text can already be searched.',
+  'ocr.alreadySearchableHint': 'You can still run this, but it is usually unnecessary: the text can already be searched.',
   'ocr.saveSearchable': 'Save searchable PDF',
   'ocr.needsMacos': 'Text recognition is only available on macOS for now.',
   'count.word_one': '{count} word',
@@ -1027,7 +1027,7 @@ export const en = {
   'redactPdf.noMatchesInScan': 'No matches for “{query}” in the text read from this scan.',
   'redactPdf.readScanAndSearch': 'Read the text and search again',
   'redactPdf.readingScan': 'Reading the scan…',
-  'redactPdf.scanBoxesApproximate': 'These boxes come from text read off a scan, so they are approximate. Check the placement before applying — redaction cannot be undone.',
+  'redactPdf.scanBoxesApproximate': 'These boxes come from text read off a scan, so they are approximate. Check the placement before applying: redaction cannot be undone.',
   'chrome.language': 'Language',
   'dashboard.pdfTools': 'PDF Tools',
   'dashboard.notCompatibleWith': 'Not compatible with {format} files',
@@ -1036,7 +1036,7 @@ export const en = {
   'format.document': 'Document',
   'configureStep.balanced': 'Balanced',
   'configureStep.letter': 'Letter',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Prepress / archival — no recompression',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Prepress / archival: no recompression',
   'jpgToPdfFlow.autoFit': 'Auto-fit',
   'jpgToPdfFlow.portrait': 'Portrait',
   'jpgToPdfFlow.landscape': 'Landscape',
@@ -1054,33 +1054,33 @@ export const en = {
   'compareOverlay.beforePage': 'Before page {page}',
   'compareOverlay.afterPage': 'After page {page}',
   'compareOverlay.labelledPage': '{label} page {page}',
-  'compareStep.targetSizeNotAchievable': 'Target size not achievable —',
+  'compareStep.targetSizeNotAchievable': 'Target size not achievable , ',
   'compareStep.bestResult': 'best result: {size}.',
-  'configureStep.canCompressToAboutMax': 'Can compress to about {size} at best. Maximum file size — the best compression preset will be chosen automatically.',
-  'configureStep.containsImagesHighSavings': 'This PDF contains {images} — compression will reduce file size significantly.',
-  'configureStep.containsImagesModerateSavings': 'This PDF contains {images} — moderate compression savings expected.',
+  'configureStep.canCompressToAboutMax': 'Can compress to about {size} at best. Maximum file size: the best compression preset will be chosen automatically.',
+  'configureStep.containsImagesHighSavings': 'This PDF contains {images}: compression will reduce file size significantly.',
+  'configureStep.containsImagesModerateSavings': 'This PDF contains {images}: moderate compression savings expected.',
   'configureStep.processingPageOf': 'Processing page {current} of {total}…',
-  'configureStep.targetMayNotBeAchievable': 'Target may not be achievable — estimated minimum is ~{size}.',
+  'configureStep.targetMayNotBeAchievable': 'Target may not be achievable: estimated minimum is ~{size}.',
   'configureStep.targetMustBeSmaller': 'Target must be smaller than original ({size})',
   'convertConfigStep.formatNamed': '{format} format',
   'convertConfigStep.zipOneFilePerHeading': '.zip, one file per heading',
   'convertImageFlow.convertToFormat': 'Convert to {format}',
-  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft email in your mail app — you choose whether to send it.',
+  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft email in your mail app: you choose whether to send it.',
   'cropPdfFlow.pageSizeMm': 'Page size: {width} × {height} mm',
   'dashboard.noToolsMatch': 'No tools match “{query}”',
   'editorContext.failedToAddPages': 'Failed to add pages: {error}',
   'editorContext.failedToReorderPages': 'Failed to reorder pages: {error}',
   'editorToolbar.alignNamed': 'Align {alignment}',
-  'editorToolbar.colourRightClickToRemove': '{colour} — right-click to remove',
+  'editorToolbar.colourRightClickToRemove': '{colour}: right-click to remove',
   'exportPanel.exportAsFormat': 'Export as {format}',
   'exportPanel.savedAsFormat': 'Saved as {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Typography options',
   'imageBlockLayer.resizeFromCorner': 'Resize from {corner}',
   'imageCompareStep.qualityValue': 'Quality: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compression: {level}/9',
-  'imageConfigureStep.pngIsLossless': 'PNG is lossless — a higher level means a smaller file and a slower encode, never a different image.',
+  'imageConfigureStep.pngIsLossless': 'PNG is lossless: a higher level means a smaller file and a slower encode, never a different image.',
   'imageConfigureStep.higherQualityMoreDetail': 'Higher quality preserves more detail; lower quality produces smaller files.',
-  'imageConfigureStep.pngFromLossyGrows': 'PNG is lossless, so it stores every pixel of your {format} exactly — including its compression artefacts. Expect the result to be several times larger, with no gain in image quality.',
+  'imageConfigureStep.pngFromLossyGrows': 'PNG is lossless, so it stores every pixel of your {format} exactly: including its compression artefacts. Expect the result to be several times larger, with no gain in image quality.',
   'imageConfigureStep.widthPx': 'Width (px)',
   'imageConfigureStep.widthPercent': 'Width (%)',
   'imageConfigureStep.heightPx': 'Height (px)',
@@ -1088,7 +1088,7 @@ export const en = {
   'jpgToPdfFlow.imagesSelected': '{images} selected',
   'jpgToPdfFlow.moveUpNamed': 'Move {name} up',
   'jpgToPdfFlow.moveDownNamed': 'Move {name} down',
-  'landingCard.couldNotBeOpened': '“{name}” could not be opened — it appears to be damaged or not a valid PDF. The Repair PDF tool may be able to recover it.',
+  'landingCard.couldNotBeOpened': '“{name}” could not be opened: it appears to be damaged or not a valid PDF. The Repair PDF tool may be able to recover it.',
   'landingCard.fileTooLargeDetail': 'This file is {size}. Files over 100 MB are not supported. Please use a smaller file.',
   'merge.pageOneOf': 'Page 1 of {name}',
   'mergeOrderStep.dragToReorderTotal': 'Drag to reorder. Total: {pages} from {files}.',
@@ -1104,7 +1104,7 @@ export const en = {
   'pdfToJpgFlow.nSelectedParens': '({count} selected)',
   'pdfToJpgFlow.renderingPageOf': 'Rendering page {current} of {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Network access is scoped to exactly two read-only endpoints — checking for app updates and fetching the feedback contact address — enforced by Tauri capability config. No other network access is possible.',
+  'privacy.detailNetworkScope': 'Network access is scoped to exactly two read-only endpoints (checking for app updates and fetching the feedback contact address), enforced by Tauri capability config. No other network access is possible.',
   'redactPdf.appliedAcross': '{redactions} applied across {pages}',
   'redactPdf.applyRedactions': 'Apply Redactions ({count})',
   'redactPdf.matchesFound': '{matches} found',
@@ -1131,10 +1131,10 @@ export const en = {
   'toolSidebarPanel.appliedSuccessfully': '{tool} applied successfully',
   'toolSidebarPanel.canCompressToAbout': 'Can compress to about {size} at best.',
   'toolSidebarPanel.dragOnThePageToCover': 'Drag on the page to cover something. Applying flattens those pages to an image, so the content underneath is removed from the file, not just hidden.',
-  'toolSidebarPanel.imagesStillReEncoded': 'Images are still re-encoded, just not shrunk. Estimates assume downsampling — actual sizes will be larger.',
+  'toolSidebarPanel.imagesStillReEncoded': 'Images are still re-encoded, just not shrunk. Estimates assume downsampling: actual sizes will be larger.',
   'toolSidebarPanel.marginMm': '{side} margin (mm)',
   'toolSidebarPanel.markAll': 'Mark all {count}',
-  'toolSidebarPanel.noMatchesNoSelectableText': 'No matches. Pages with no selectable text — a scan, for instance — cannot be searched.',
+  'toolSidebarPanel.noMatchesNoSelectableText': 'No matches. Pages with no selectable text (a scan, for instance) cannot be searched.',
   'toolSidebarPanel.opacity': 'Opacity: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'A box this pale is hard to see on a white page. The content underneath is still permanently removed.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} conversion',
@@ -1142,7 +1142,7 @@ export const en = {
   'toolSidebarPanel.rotatingPage': 'Rotating page {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotating {count} selected pages',
   'toolSidebarPanel.savedSignaturesCount': 'Saved signatures ({count})',
-  'toolSidebarPanel.smallestAchievable': 'Smallest achievable is about {size} — compression cannot go below this for this file.',
+  'toolSidebarPanel.smallestAchievable': 'Smallest achievable is about {size}: compression cannot go below this for this file.',
   'toolSidebarPanel.targetMet': 'met',
   'toolSidebarPanel.targetNotMet': 'not met ({size})',
   'count.match_one': '{count} match',
@@ -1157,11 +1157,11 @@ export const en = {
   'common.find': 'Find',
   'common.percentLarger': '{percent}% larger',
   'common.percentSmaller': '{percent}% smaller',
-  'compareStep.jpxAlreadyEncoded': 'Images already JPEG2000-encoded — can\'t compress further',
+  'compareStep.jpxAlreadyEncoded': 'Images already JPEG2000-encoded: can\'t compress further',
   'configureStep.enableResizeToStillProcess': 'Enable page resize below to still process this file.',
   'merge.mergeAndSave': 'Merge & save',
   'pdfEditor.untitledPdf': 'Untitled.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded — Ghostscript can\'t compress them further.',
+  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. Ghostscript can\'t compress them further.',
   'split.split': 'Split',
   'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
   'unsavedChangesDialog.dontSave': 'Don\'t save',
@@ -1188,14 +1188,14 @@ type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
  * A translation of English. Partial on purpose: an incomplete language is
  * normal, and every gap falls back to English rather than showing a raw key.
  *
- * Plural stems may carry categories English does not have. Polish needs three —
- * "1 strona", "2 strony", "5 stron" — and typing the dictionary strictly against
+ * Plural stems may carry categories English does not have. Polish needs three,
+ * "1 strona", "2 strony", "5 stron", and typing the dictionary strictly against
  * English keys would make `count.page_few` a compile error, leaving Polish to
  * fall back to _other and render "2 stron", which is wrong. The type therefore
  * admits any Intl category on any stem that has plural forms.
  */
 /**
- * The stems of plural entries — `count.page` for the `count.page_one` /
+ * The stems of plural entries: `count.page` for the `count.page_one` /
  * `count.page_other` pair. Derived from the dictionary, so `plural()` only
  * accepts a key that genuinely has plural forms, and `t()` cannot be used on one
  * by mistake.

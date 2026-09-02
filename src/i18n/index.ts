@@ -43,20 +43,20 @@ const dictionaries = new Map<string, Dictionary>([
  * The brief is blunt about why this is tracked rather than assumed: Papercut's
  * copy resists machine translation, and a subtly wrong redaction warning in a
  * privacy tool is worse than English. An unchecked translation is "a liability
- * that cannot be seen" — so it is written down.
+ * that cannot be seen", so it is written down.
  *
- * 'source'     — the language the copy was written in.
- * 'reviewed'   — a speaker has read it against the interface.
- * 'unreviewed' — produced but not yet checked by a human.
+ * 'source'    : the language the copy was written in.
+ * 'reviewed'  : a speaker has read it against the interface.
+ * 'unreviewed': produced but not yet checked by a human.
  */
 export type ReviewStatus = 'source' | 'reviewed' | 'unreviewed';
 
 export const LOCALE_REVIEW: Record<string, ReviewStatus> = {
   en: 'source',
-  de: 'unreviewed', // maintainer review pending — TEST_PLAN REL-04a
-  fr: 'unreviewed', // no French reviewer yet — TEST_PLAN REL-04b
+  de: 'unreviewed', // maintainer review pending: TEST_PLAN REL-04a
+  fr: 'unreviewed', // no French reviewer yet: TEST_PLAN REL-04b
   es: 'unreviewed',
-  tr: 'unreviewed', // maintainer can verify Turkish — TEST_PLAN REL-04a
+  tr: 'unreviewed', // maintainer can verify Turkish: TEST_PLAN REL-04a
   it: 'unreviewed',
   nl: 'unreviewed',
   pl: 'unreviewed',
@@ -130,7 +130,7 @@ function lookup(key: string): string | undefined {
 
 /**
  * Replaces {name} placeholders. An unmatched placeholder is left as-is rather
- * than rendered as "undefined" — an obvious {size} in the UI is a bug report,
+ * than rendered as "undefined": an obvious {size} in the UI is a bug report,
  * "undefined" is a mystery.
  */
 function interpolate(template: string, vars?: Record<string, string | number>): string {

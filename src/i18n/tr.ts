@@ -6,7 +6,7 @@ import type { Dictionary } from '@/i18n/en';
  * ⚠️ UNREVIEWED in LOCALE_REVIEW, but the maintainer can verify this one.
  *
  * Terminology follows macOS and Adobe Turkish so checking is a comparison:
- * - "Karartma" for redact — the standard Turkish term for blacking out a
+ * - "Karartma" for redact: the standard Turkish term for blacking out a
  *   document. Chosen over the loanword "redaksiyon", which in Turkish more often
  *   means editorial revision and would understate that content is destroyed.
  * - "Parola" for password (Apple/Microsoft Turkish), not the colloquial "şifre".
@@ -14,7 +14,7 @@ import type { Dictionary } from '@/i18n/en';
  * - Buttons take the imperative, as Turkish software does: "Kaydet", not
  *   "Kaydetmek".
  *
- * Note on plurals: Turkish does not pluralise a noun after a number — "1 sayfa"
+ * Note on plurals: Turkish does not pluralise a noun after a number: "1 sayfa"
  * and "5 sayfa" are both correct, and "5 sayfalar" is wrong. The _one and _other
  * forms below are therefore identical on purpose. This is precisely why the
  * plural helper uses Intl.PluralRules rather than an n === 1 test.
@@ -61,12 +61,12 @@ export const tr: Dictionary = {
   'common.nextPage': 'Sonraki sayfa',
   'common.previousPage': 'Önceki sayfa',
   'common.unsavedChanges': 'Kaydedilmemiş değişiklikler',
-  'common.yourLocalDocumentToolkitPrivate': 'Yerel belge araç kutunuz — gizli, hızlı, çevrimdışı.',
+  'common.yourLocalDocumentToolkitPrivate': 'Yerel belge araç kutunuz: gizli, hızlı, çevrimdışı.',
 
   'file.tooLarge': 'Bu dosya çok büyük: {size}',
-  'file.unsupported': 'Desteklenmeyen dosya türü — lütfen PDF, JPG, PNG veya WebP kullanın.',
+  'file.unsupported': 'Desteklenmeyen dosya türü: lütfen PDF, JPG, PNG veya WebP kullanın.',
   'file.heicNeedsMacos':
-    'HEIC fotoğrafları şimdilik yalnızca macOS’ta açılabiliyor — önce JPEG’e dönüştürün.',
+    'HEIC fotoğrafları şimdilik yalnızca macOS’ta açılabiliyor: önce JPEG’e dönüştürün.',
   'file.unsafeName':
     'Bu dosya adı desteklenmeyen karakterler içeriyor. Lütfen dosyayı yeniden adlandırıp tekrar deneyin.',
 
@@ -95,7 +95,7 @@ export const tr: Dictionary = {
   'configure.resizePages': 'Sayfa boyutunu değiştir',
   'configure.enablePageResize': 'Sayfa boyutlandırmayı aç',
   'configure.enablePageResizeHint':
-    'Sayfa ölçülerini değiştirmek için açın — A4, A3, Letter veya özel boyut.',
+    'Sayfa ölçülerini değiştirmek için açın: A4, A3, Letter veya özel boyut.',
   'configure.pageSize': 'Sayfa boyutu',
   'configure.widthMm': 'Genişlik (mm)',
   'configure.heightMm': 'Yükseklik (mm)',
@@ -123,11 +123,11 @@ export const tr: Dictionary = {
   'pdfEncryption.lockedUseUnlock':
     'Bu PDF parola korumalı, bu yüzden burada açılamıyor. Önce “PDF kilidini aç” aracıyla kilidini kaldırın, sonra yeniden deneyin.',
   'destination.webUpload2mbA4':
-    'Web yüklemesi — 2 MB altı, A4',
+    'Web yüklemesi: 2 MB altı, A4',
   'destination.email10mb':
-    'E-posta eki — 10 MB altı',
+    'E-posta eki: 10 MB altı',
   'destination.email25mb':
-    'E-posta eki — 25 MB altı',
+    'E-posta eki: 25 MB altı',
   'destination.meets':
     '“{name}” koşullarını karşılıyor',
   'destination.doesNotMeet':
@@ -155,11 +155,11 @@ export const tr: Dictionary = {
   'destination.notChecked':
     'denetlenmedi',
   'save.failedReadOnly':
-    '“{name}” salt okunur, bu yüzden içine hiçbir şey yazılmadı. Değişiklikleriniz duruyor — dosyanın iznini değiştirip yeniden deneyin ya da Farklı kaydet… ile bir kopya yazın.',
+    '“{name}” salt okunur, bu yüzden içine hiçbir şey yazılmadı. Değişiklikleriniz duruyor: dosyanın iznini değiştirip yeniden deneyin ya da Farklı kaydet… ile bir kopya yazın.',
   'save.failedGone':
-    '“{name}” artık eski yerinde değil — taşınmış, yeniden adlandırılmış ya da silinmiş olabilir. Hiçbir şey yazılmadı ve değişiklikleriniz kaybolmadı: Farklı kaydet… ile onlara yeni bir yer seçin.',
+    '“{name}” artık eski yerinde değil: taşınmış, yeniden adlandırılmış ya da silinmiş olabilir. Hiçbir şey yazılmadı ve değişiklikleriniz kaybolmadı: Farklı kaydet… ile onlara yeni bir yer seçin.',
   'save.failedDiskFull':
-    '“{name}” dosyasını kaydetmek için diskte yeterli yer yok. Hiçbir şey değiştirilmedi — yer açıp yeniden deneyin ya da Farklı kaydet… ile başka bir diske yazın.',
+    '“{name}” dosyasını kaydetmek için diskte yeterli yer yok. Hiçbir şey değiştirilmedi: yer açıp yeniden deneyin ya da Farklı kaydet… ile başka bir diske yazın.',
   'save.failed': 'Kaydetme başarısız',
   'save.backToCompare': 'Karşılaştırmaya dön',
   'save.zipHint': 'Tüm dosyalar tek bir ZIP arşivinde',
@@ -187,7 +187,7 @@ export const tr: Dictionary = {
   'imageConfigure.resize': 'Boyutlandır',
   'imageConfigure.enableResize': 'Boyutlandırmayı aç',
   'imageConfigure.enableResizeHint':
-    'Görüntü ölçülerini değiştirmek için açın — piksel veya yüzde olarak.',
+    'Görüntü ölçülerini değiştirmek için açın: piksel veya yüzde olarak.',
   'imageConfigureStep.widthAndHeightMustBe': 'Genişlik ve yükseklik pozitif sayı olmalıdır',
   'imageConfigureStep.aspectRatioUnlocked': 'En boy oranı serbest',
   'imageConfigureStep.aspectRatioLocked': 'En boy oranı kilitli',
@@ -206,7 +206,7 @@ export const tr: Dictionary = {
   'privacy.body':
     'Papercut her şeyi bilgisayarınızda yerel olarak işler. Yükleme yok, bulut depolama yok, izleme yok.',
   'privacy.zeroData':
-    'Hiçbir veri toplamıyoruz — analiz yok, telemetri yok, çökme raporu yok.',
+    'Hiçbir veri toplamıyoruz: analiz yok, telemetri yok, çökme raporu yok.',
   'privacy.technicalDetails': 'Teknik ayrıntılar',
   'privacy.detailLocal':
     'Tüm dosya işlemleri Rust, Ghostscript, LibreOffice ve Calibre ile yerel olarak çalışır',
@@ -351,7 +351,7 @@ export const tr: Dictionary = {
   'redactPdf.readScanAndSearch': 'Metni oku ve yeniden ara',
   'redactPdf.readingScan': 'Tarama okunuyor…',
   'redactPdf.scanBoxesApproximate':
-    'Bu alanlar bir taramadan okunan metinden geldiği için yaklaşıktır. Uygulamadan önce konumlarını denetleyin — karartma geri alınamaz.',
+    'Bu alanlar bir taramadan okunan metinden geldiği için yaklaşıktır. Uygulamadan önce konumlarını denetleyin: karartma geri alınamaz.',
   'redactPdfFlow.redactionFailed': 'Karartma başarısız oldu.',
   'redactionScope.coversTheWholeLineIt': 'Bulunduğu satırın tamamını kapatır',
   'redactionScope.coversOnlyTheFoundText': 'Yalnızca bulunan metni kapatır',
@@ -398,7 +398,7 @@ export const tr: Dictionary = {
   'step.selectRotate': 'Seç ve döndür', 'step.rotate': 'Döndür', 'step.password': 'Parola',
   'step.signature': 'İmza', 'step.repair': 'Onar', 'step.edit': 'Düzenle', 'step.crop': 'Kırp',
   'step.organize': 'Düzenle', 'step.place': 'Yerleştir', 'step.redact': 'Karart', 'step.recognise': 'Tanı',
-  'stepBar.lockedHint': '{step} — önce önceki adımları tamamlayın',
+  'stepBar.lockedHint': '{step}: önce önceki adımları tamamlayın',
   'tool.compressPdf.name': 'PDF sıkıştır',
   'tool.compressPdf.desc': 'Kalite ayarlarıyla PDF dosya boyutunu küçültün',
   'tool.compressPdf.step1': 'Bir PDF dosyası aç', 'tool.compressPdf.step2': 'Sıkıştırmayı ayarla',
@@ -477,21 +477,21 @@ export const tr: Dictionary = {
     'Metin eklendi, ancak hatalar beklenmelidir. Daha net, düz ve iyi aydınlatılmış bir tarama çok daha iyi sonuç verir.',
   'ocr.alreadySearchable': 'Bu PDF zaten bir metin katmanı içeriyor.',
   'ocr.alreadySearchableHint':
-    'Yine de çalıştırabilirsiniz, ancak genellikle gereksizdir — metin zaten aranabilir durumda.',
+    'Yine de çalıştırabilirsiniz, ancak genellikle gereksizdir: metin zaten aranabilir durumda.',
   'ocr.saveSearchable': 'Aranabilir PDF’i kaydet',
   'ocr.needsMacos': 'Metin tanıma şimdilik yalnızca macOS’ta kullanılabiliyor.',
   'batch.stoppedEarly': 'Bu işlem, tüm dosyalar işlenmeden durduruldu.',
   'batch.filesReady': '{files} kaydedilmeye hazır',
-  'batch.totalSaving': 'Toplam {saved} kazanıldı — yazılacak {output}.',
+  'batch.totalSaving': 'Toplam {saved} kazanıldı: yazılacak {output}.',
   'batch.couldNotBeProcessed': '{files} işlenemedi',
-  'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor — {name}',
-  'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı — bir küme tek türden olmalıdır.',
+  'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor: {name}',
+  'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı: bir küme tek türden olmalıdır.',
   'deps.ghostscriptWindows':
     'PDF sıkıştırmak için Ghostscript gerekir. ghostscript.com/releases/gsdnld.html adresinden indirin ve PATH’te olduğundan emin olun.',
   'deps.ghostscriptLinux':
     'PDF sıkıştırmak için Ghostscript gerekir. Paket yöneticinizle kurun, örn. sudo apt install ghostscript',
-  'deps.calibre': 'E-kitap desteği için Calibre kurun — calibre-ebook.com/download',
-  'deps.libreoffice': 'Belge dönüştürme için LibreOffice kurun — libreoffice.org/download',
+  'deps.calibre': 'E-kitap desteği için Calibre kurun: calibre-ebook.com/download',
+  'deps.libreoffice': 'Belge dönüştürme için LibreOffice kurun: libreoffice.org/download',
   'filter.jpegImage': 'JPEG görüntüsü', 'filter.pngImage': 'PNG görüntüsü', 'filter.webpImage': 'WebP görüntüsü',
   'filter.pdfFiles': 'PDF dosyaları', 'filter.zipArchive': 'ZIP arşivi', 'filter.pdfDocument': 'PDF belgesi',
   'filter.supportedFiles': 'Desteklenen dosyalar', 'filter.documentsImages': 'Belgeler ve görüntüler',
@@ -549,7 +549,7 @@ export const tr: Dictionary = {
   'pdfEditor.typeYourSignature': 'İmzanızı yazın', 'pdfEditor.yourName': 'Adınız',
   'pdfEditor.fullComparisonView': 'Tam karşılaştırma görünümü', 'pdfEditor.pending': 'Bekliyor',
   'pdfEditor.dragToMove': 'Taşımak için sürükleyin', 'pdfEditor.dragToResize': 'Boyutlandırmak için sürükleyin',
-  'pdfEditor.dragToRotateHoldShift': 'Döndürmek için sürükleyin — hizalamak için Shift’i basılı tutun',
+  'pdfEditor.dragToRotateHoldShift': 'Döndürmek için sürükleyin: hizalamak için Shift’i basılı tutun',
   'pdfEditor.zoomInCmd': 'Yakınlaştır (Cmd+=)', 'pdfEditor.zoomOutCmd': 'Uzaklaştır (Cmd+-)',
   'pdfEditor.zoomPresets': 'Yakınlaştırma ayarları',
   'editPdf.editPdf': 'PDF düzenle', 'editPdf.saveChanges': 'Değişiklikleri kaydet',
@@ -593,7 +593,7 @@ export const tr: Dictionary = {
   'toolSidebarPanel.redacting': 'Karartılıyor…', 'toolSidebarPanel.apply': 'Uygula',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'İmza çizilemedi. Başka bir stil veya daha kısa bir ad deneyin.',
-  'toolSidebarPanel.smallestFileBestForScreen': 'En küçük dosya — ekranda görüntülemek için en iyisi',
+  'toolSidebarPanel.smallestFileBestForScreen': 'En küçük dosya: ekranda görüntülemek için en iyisi',
   'toolSidebarPanel.goodForReadingOnDevices': 'Cihazlarda okumak için uygun',
   'toolSidebarPanel.suitableForPrinting': 'Baskı için uygun',
   'toolSidebarPanel.noPreviewAvailable': 'Önizleme yok',
@@ -627,7 +627,7 @@ export const tr: Dictionary = {
   'crashReporter.showErrorDetails': 'Hata ayrıntılarını göster',
   'crashReporter.unknownError': 'Bilinmeyen hata',
   'dashboard.dropFileToGetStarted': 'Başlamak için bir dosya bırakın', 'dashboard.myFavorites': 'Favorilerim',
-  'dashboard.readyToProcessChooseA': 'Hazır — aşağıdan bir araç seçin',
+  'dashboard.readyToProcessChooseA': 'Hazır: aşağıdan bir araç seçin',
   'dashboard.removeFromFavorites': 'Favorilerden çıkar', 'dashboard.addToFavorites': 'Favorilere ekle',
   'dashboard.searchTools': 'Araç ara…', 'dashboard.swapHere': 'Buraya taşı',
   'dashboard.clickAnotherCardToSwap': 'Yer değiştirmek için başka bir karta tıklayın',
@@ -637,7 +637,7 @@ export const tr: Dictionary = {
   'dashboard.documentTools': 'Belge araçları', 'dashboard.imageTools': 'Görüntü araçları',
   'firstLaunchBanner.dismissPrivacyBanner': 'Gizlilik bildirimini kapat',
   'firstLaunchBanner.learnMore': 'Daha fazla bilgi',
-  'landingCard.compressResizeConvertStaysOn': 'Sıkıştır, boyutlandır, dönüştür — cihazınızda kalır',
+  'landingCard.compressResizeConvertStaysOn': 'Sıkıştır, boyutlandır, dönüştür: cihazınızda kalır',
   'landingCard.damagedOrInvalidPdf': 'Bozuk veya geçersiz PDF', 'landingCard.fileTooLarge': 'Dosya çok büyük',
   'landingCard.loadingFile': 'Dosya yükleniyor…', 'landingCard.openFile': 'Dosya aç',
   'landingCard.pickADifferentFile': 'Başka bir dosya seç',
@@ -650,9 +650,9 @@ export const tr: Dictionary = {
   'updateChecker.dismissUpdateBanner': 'Güncelleme bildirimini kapat', 'updateChecker.download': 'İndir',
   'themeToggle.system': 'Sistem', 'themeToggle.light': 'Açık',
   'docModel.thisDocumentHasNoExtractable':
-    'Bu belgede çıkarılabilir metin yok — taranmış veya yalnızca görüntülerden oluşuyor gibi görünüyor.',
+    'Bu belgede çıkarılabilir metin yok: taranmış veya yalnızca görüntülerden oluşuyor gibi görünüyor.',
   'pdfProcessor.thisFileIsMostlyText':
-    'Bu dosya çoğunlukla metinden oluşuyor ve gömülü görüntü içermiyor — yalnızca metin içeren belgelerde sıkıştırmanın etkisi çok azdır.',
+    'Bu dosya çoğunlukla metinden oluşuyor ve gömülü görüntü içermiyor: yalnızca metin içeren belgelerde sıkıştırmanın etkisi çok azdır.',
   'pdfProcessor.customPageSizeRequiresBoth': 'Özel sayfa boyutu için mm cinsinden genişlik ve yükseklik gerekir',
   'pdfUtils.thisFileAppearsToBe':
     'Bu dosya bozuk görünüyor veya geçerli bir PDF değil. Lütfen başka bir dosya deneyin.',
@@ -671,7 +671,7 @@ export const tr: Dictionary = {
   'format.document': 'Belge',
   'configureStep.balanced': 'Dengeli',
   'configureStep.letter': 'Letter',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Baskı öncesi / arşiv — yeniden sıkıştırma yok',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Baskı öncesi / arşiv: yeniden sıkıştırma yok',
   'jpgToPdfFlow.autoFit': 'Otomatik sığdır',
   'jpgToPdfFlow.portrait': 'Dikey',
   'jpgToPdfFlow.landscape': 'Yatay',
@@ -689,24 +689,24 @@ export const tr: Dictionary = {
   'compareOverlay.beforePage': 'Önce, sayfa {page}',
   'compareOverlay.afterPage': 'Sonra, sayfa {page}',
   'compareOverlay.labelledPage': '{label}, sayfa {page}',
-  'compareStep.targetSizeNotAchievable': 'Hedef boyuta ulaşılamıyor —',
+  'compareStep.targetSizeNotAchievable': 'Hedef boyuta ulaşılamıyor , ',
   'compareStep.bestResult': 'en iyi sonuç: {size}.',
-  'configureStep.canCompressToAboutMax': 'En iyi durumda yaklaşık {size} boyutuna sıkıştırılabilir. Azami dosya boyutu — en uygun sıkıştırma ayarı otomatik seçilir.',
-  'configureStep.containsImagesHighSavings': 'Bu PDF {images} içeriyor — sıkıştırma dosya boyutunu belirgin şekilde küçültecek.',
-  'configureStep.containsImagesModerateSavings': 'Bu PDF {images} içeriyor — orta düzeyde kazanç bekleniyor.',
+  'configureStep.canCompressToAboutMax': 'En iyi durumda yaklaşık {size} boyutuna sıkıştırılabilir. Azami dosya boyutu: en uygun sıkıştırma ayarı otomatik seçilir.',
+  'configureStep.containsImagesHighSavings': 'Bu PDF {images} içeriyor: sıkıştırma dosya boyutunu belirgin şekilde küçültecek.',
+  'configureStep.containsImagesModerateSavings': 'Bu PDF {images} içeriyor: orta düzeyde kazanç bekleniyor.',
   'configureStep.processingPageOf': 'Sayfa {current} / {total} işleniyor…',
-  'configureStep.targetMayNotBeAchievable': 'Hedefe ulaşılamayabilir — tahmini en küçük boyut yaklaşık {size}.',
+  'configureStep.targetMayNotBeAchievable': 'Hedefe ulaşılamayabilir: tahmini en küçük boyut yaklaşık {size}.',
   'configureStep.targetMustBeSmaller': 'Hedef, özgün dosyadan küçük olmalı ({size})',
   'convertConfigStep.formatNamed': '{format} biçimi',
   'convertConfigStep.zipOneFilePerHeading': '.zip, her başlık için bir dosya',
   'convertImageFlow.convertToFormat': '{format} biçimine dönüştür',
-  'crashReporter.noDataSentAutomatically': 'Hiçbir veri kendiliğinden gönderilmez. Rapor, e-posta uygulamanızda taslak olarak açılır — göndermeye siz karar verirsiniz.',
+  'crashReporter.noDataSentAutomatically': 'Hiçbir veri kendiliğinden gönderilmez. Rapor, e-posta uygulamanızda taslak olarak açılır: göndermeye siz karar verirsiniz.',
   'cropPdfFlow.pageSizeMm': 'Sayfa boyutu: {width} × {height} mm',
   'dashboard.noToolsMatch': '“{query}” ile eşleşen araç yok',
   'editorContext.failedToAddPages': 'Sayfalar eklenemedi: {error}',
   'editorContext.failedToReorderPages': 'Sayfa sırası değiştirilemedi: {error}',
   'editorToolbar.alignNamed': 'Hizalama: {alignment}',
-  'editorToolbar.colourRightClickToRemove': '{colour} — kaldırmak için sağ tıklayın',
+  'editorToolbar.colourRightClickToRemove': '{colour}: kaldırmak için sağ tıklayın',
   'exportPanel.exportAsFormat': '{format} olarak dışa aktar',
   'exportPanel.savedAsFormat': '{format} olarak kaydedildi ({size} MB)',
   'exportPanel.typographyOptions': 'Tipografi seçenekleri',
@@ -720,7 +720,7 @@ export const tr: Dictionary = {
   'jpgToPdfFlow.imagesSelected': '{images} seçildi',
   'jpgToPdfFlow.moveUpNamed': '{name} yukarı taşı',
   'jpgToPdfFlow.moveDownNamed': '{name} aşağı taşı',
-  'landingCard.couldNotBeOpened': '“{name}” açılamadı — dosya bozuk görünüyor ya da geçerli bir PDF değil. “PDF onar” aracı dosyayı kurtarabilir.',
+  'landingCard.couldNotBeOpened': '“{name}” açılamadı: dosya bozuk görünüyor ya da geçerli bir PDF değil. “PDF onar” aracı dosyayı kurtarabilir.',
   'landingCard.fileTooLargeDetail': 'Bu dosya {size} boyutunda. 100 MB üzerindeki dosyalar desteklenmiyor. Lütfen daha küçük bir dosya kullanın.',
   'merge.pageOneOf': '{name} dosyasının 1. sayfası',
   'mergeOrderStep.dragToReorderTotal': 'Sıralamak için sürükleyin. Toplam: {files} içinden {pages}.',
@@ -736,7 +736,7 @@ export const tr: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} seçildi)',
   'pdfToJpgFlow.renderingPageOf': 'Sayfa {current} / {total} işleniyor…',
   'pdfaConvert.originalToPdfa': 'Özgün: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Ağ erişimi tam olarak iki salt okunur uç noktayla sınırlıdır — uygulama güncellemelerini denetlemek ve geri bildirim iletişim adresini almak — bu sınır Tauri yetenek yapılandırmasıyla zorunlu kılınır. Başka hiçbir ağ erişimi mümkün değildir.',
+  'privacy.detailNetworkScope': 'Ağ erişimi tam olarak iki salt okunur uç noktayla sınırlıdır (uygulama güncellemelerini denetlemek ve geri bildirim iletişim adresini almak). Bu sınır Tauri yetenek yapılandırmasıyla zorunlu kılınır. Başka hiçbir ağ erişimi mümkün değildir.',
   'redactPdf.appliedAcross': '{pages} üzerinde {redactions} uygulandı',
   'redactPdf.applyRedactions': 'Karartmaları uygula ({count})',
   'redactPdf.matchesFound': '{matches} bulundu',
@@ -763,10 +763,10 @@ export const tr: Dictionary = {
   'toolSidebarPanel.appliedSuccessfully': '{tool} başarıyla uygulandı',
   'toolSidebarPanel.canCompressToAbout': 'En iyi durumda yaklaşık {size} boyutuna sıkıştırılabilir.',
   'toolSidebarPanel.dragOnThePageToCover': 'Bir yeri kapatmak için sayfa üzerinde sürükleyin. Uygulandığında bu sayfalar tek bir görüntüye düzleştirilir; altta kalan içerik yalnızca gizlenmez, dosyadan tamamen kaldırılır.',
-  'toolSidebarPanel.imagesStillReEncoded': 'Görüntüler yine de yeniden kodlanır, yalnızca küçültülmez. Tahminler örnek seyreltmeyi varsayar — gerçek boyutlar daha büyük olacaktır.',
+  'toolSidebarPanel.imagesStillReEncoded': 'Görüntüler yine de yeniden kodlanır, yalnızca küçültülmez. Tahminler örnek seyreltmeyi varsayar: gerçek boyutlar daha büyük olacaktır.',
   'toolSidebarPanel.marginMm': '{side} kenar boşluğu (mm)',
   'toolSidebarPanel.markAll': '{count} sonucun tümünü işaretle',
-  'toolSidebarPanel.noMatchesNoSelectableText': 'Sonuç yok. Seçilebilir metni olmayan sayfalar — örneğin bir tarama — aranamaz.',
+  'toolSidebarPanel.noMatchesNoSelectableText': 'Sonuç yok. Seçilebilir metni olmayan sayfalar (örneğin bir tarama) aranamaz.',
   'toolSidebarPanel.opacity': 'Saydamlık: %{percent}',
   'toolSidebarPanel.paleBoxWarning': 'Bu kadar açık renkli bir kutu beyaz sayfada zor görülür. Altındaki içerik yine de kalıcı olarak kaldırılır.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} dönüştürme',
@@ -774,7 +774,7 @@ export const tr: Dictionary = {
   'toolSidebarPanel.rotatingPage': '{page}. sayfa döndürülüyor',
   'toolSidebarPanel.rotatingSelectedPages': 'Seçili {count} sayfa döndürülüyor',
   'toolSidebarPanel.savedSignaturesCount': 'Kayıtlı imzalar ({count})',
-  'toolSidebarPanel.smallestAchievable': 'Ulaşılabilir en küçük boyut yaklaşık {size} — bu dosya için sıkıştırma bunun altına inemez.',
+  'toolSidebarPanel.smallestAchievable': 'Ulaşılabilir en küçük boyut yaklaşık {size}: bu dosya için sıkıştırma bunun altına inemez.',
   'toolSidebarPanel.targetMet': 'ulaşıldı',
   'toolSidebarPanel.targetNotMet': 'ulaşılamadı ({size})',
   'count.match_one': '{count} eşleşme',
@@ -789,11 +789,11 @@ export const tr: Dictionary = {
   'common.find': 'Bul',
   'common.percentLarger': '%{percent} daha büyük',
   'common.percentSmaller': '%{percent} daha küçük',
-  'compareStep.jpxAlreadyEncoded': 'Görüntüler zaten JPEG2000 kodlu — daha fazla sıkıştırılamaz',
+  'compareStep.jpxAlreadyEncoded': 'Görüntüler zaten JPEG2000 kodlu: daha fazla sıkıştırılamaz',
   'configureStep.enableResizeToStillProcess': 'Bu dosyayı yine de işlemek için aşağıdan sayfa yeniden boyutlandırmayı açın.',
   'merge.mergeAndSave': 'Birleştir ve kaydet',
   'pdfEditor.untitledPdf': 'Adsız.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu — Ghostscript bunları daha fazla sıkıştıramaz.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu: Ghostscript bunları daha fazla sıkıştıramaz.',
   'split.split': 'Böl',
   'toolSidebarPanel.clickToPlaceMode': 'Tıkla-yerleştir kipi',
   'unsavedChangesDialog.dontSave': 'Kaydetme',

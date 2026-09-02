@@ -4,7 +4,7 @@ import type { Dictionary } from '@/i18n/en';
  * German translation.
  *
  * Partial by type: every missing key falls back to English, so this file can grow
- * without ever showing a raw key. Reviewed by the maintainer — the brief is
+ * without ever showing a raw key. Reviewed by the maintainer: the brief is
  * explicit that unreviewed machine translation of safety copy is worse than
  * English, because a sentence like "this permanently removes content" has to be
  * exactly right in a privacy tool.
@@ -51,9 +51,9 @@ export const de: Dictionary = {
 
   // ── File input ────────────────────────────────────────────────────────────
   'file.tooLarge': 'Diese Datei ist zu groß: {size}',
-  'file.unsupported': 'Nicht unterstütztes Dateiformat — bitte PDF, JPG, PNG oder WebP verwenden.',
+  'file.unsupported': 'Nicht unterstütztes Dateiformat: bitte PDF, JPG, PNG oder WebP verwenden.',
   'file.heicNeedsMacos':
-    'HEIC-Fotos lassen sich derzeit nur unter macOS öffnen — wandeln Sie das Bild zuerst in JPEG um.',
+    'HEIC-Fotos lassen sich derzeit nur unter macOS öffnen: wandeln Sie das Bild zuerst in JPEG um.',
   'file.unsafeName':
     'Dieser Dateiname enthält Zeichen, die nicht unterstützt werden. Bitte benennen Sie die Datei um und versuchen Sie es erneut.',
 
@@ -82,7 +82,7 @@ export const de: Dictionary = {
   'configure.resizePages': 'Seitengröße ändern',
   'configure.enablePageResize': 'Seitengröße ändern aktivieren',
   'configure.enablePageResizeHint':
-    'Aktivieren, um die Seitenmaße zu ändern — A4, A3, Letter oder eigene Größe.',
+    'Aktivieren, um die Seitenmaße zu ändern: A4, A3, Letter oder eigene Größe.',
   'configure.pageSize': 'Seitengröße',
   'configure.widthMm': 'Breite (mm)',
   'configure.heightMm': 'Höhe (mm)',
@@ -99,11 +99,11 @@ export const de: Dictionary = {
   'pdfEncryption.lockedUseUnlock':
     'Dieses PDF ist passwortgeschützt und kann hier nicht geöffnet werden. Heben Sie den Schutz zuerst mit dem Werkzeug „PDF entsperren“ auf und versuchen Sie es dann erneut.',
   'destination.webUpload2mbA4':
-    'Web-Upload — unter 2 MB, A4',
+    'Web-Upload: unter 2 MB, A4',
   'destination.email10mb':
-    'E-Mail-Anhang — unter 10 MB',
+    'E-Mail-Anhang: unter 10 MB',
   'destination.email25mb':
-    'E-Mail-Anhang — unter 25 MB',
+    'E-Mail-Anhang: unter 25 MB',
   'destination.meets':
     'Erfüllt „{name}“',
   'destination.doesNotMeet':
@@ -121,7 +121,7 @@ export const de: Dictionary = {
   'destination.label':
     'Als Einstellung für später speichern',
   'destination.emptyHint':
-    'Stellen Sie die Optionen unten ein und speichern Sie sie unter einem Namen, um sie später wiederzuverwenden — und künftige Dokumente daran zu prüfen.',
+    'Stellen Sie die Optionen unten ein und speichern Sie sie unter einem Namen, um sie später wiederzuverwenden: und künftige Dokumente daran zu prüfen.',
   'destination.savedLabel':
     'Gespeicherte Einstellungen',
   'destination.underSize':
@@ -131,11 +131,11 @@ export const de: Dictionary = {
   'destination.notChecked':
     'nicht geprüft',
   'save.failedReadOnly':
-    '„{name}“ ist schreibgeschützt, es wurde nichts hineingeschrieben. Ihre Änderungen sind noch da — ändern Sie die Berechtigung der Datei und versuchen Sie es erneut, oder verwenden Sie Speichern unter…, um eine Kopie zu schreiben.',
+    '„{name}“ ist schreibgeschützt, es wurde nichts hineingeschrieben. Ihre Änderungen sind noch da: ändern Sie die Berechtigung der Datei und versuchen Sie es erneut, oder verwenden Sie Speichern unter…, um eine Kopie zu schreiben.',
   'save.failedGone':
-    '„{name}“ ist nicht mehr dort, wo es war — die Datei wurde möglicherweise verschoben, umbenannt oder gelöscht. Es wurde nichts geschrieben und Ihre Änderungen sind nicht verloren: Wählen Sie mit Speichern unter… einen neuen Ort dafür.',
+    '„{name}“ ist nicht mehr dort, wo es war: die Datei wurde möglicherweise verschoben, umbenannt oder gelöscht. Es wurde nichts geschrieben und Ihre Änderungen sind nicht verloren: Wählen Sie mit Speichern unter… einen neuen Ort dafür.',
   'save.failedDiskFull':
-    'Auf dem Datenträger ist nicht genug Platz, um „{name}“ zu speichern. Es wurde nichts geändert — geben Sie Platz frei und versuchen Sie es erneut, oder schreiben Sie mit Speichern unter… auf einen anderen Datenträger.',
+    'Auf dem Datenträger ist nicht genug Platz, um „{name}“ zu speichern. Es wurde nichts geändert: geben Sie Platz frei und versuchen Sie es erneut, oder schreiben Sie mit Speichern unter… auf einen anderen Datenträger.',
   'save.failed': 'Speichern fehlgeschlagen',
   'save.backToCompare': 'Zurück zum Vergleich',
   'save.zipHint': 'Alle Dateien in einem einzigen ZIP-Archiv',
@@ -150,7 +150,7 @@ export const de: Dictionary = {
   'imageConfigure.resize': 'Größe ändern',
   'imageConfigure.enableResize': 'Größenänderung aktivieren',
   'imageConfigure.enableResizeHint':
-    'Aktivieren, um die Bildmaße zu ändern — in Pixeln oder prozentual.',
+    'Aktivieren, um die Bildmaße zu ändern: in Pixeln oder prozentual.',
 
   // ── Privacy ───────────────────────────────────────────────────────────────
   'privacy.title': 'Ihre Privatsphäre',
@@ -158,7 +158,7 @@ export const de: Dictionary = {
   'privacy.body':
     'Papercut verarbeitet alles lokal auf Ihrem Computer. Keine Uploads, kein Cloud-Speicher, kein Tracking.',
   'privacy.zeroData':
-    'Wir erheben keinerlei Daten — keine Analyse, keine Telemetrie, keine Absturzberichte.',
+    'Wir erheben keinerlei Daten: keine Analyse, keine Telemetrie, keine Absturzberichte.',
   'privacy.technicalDetails': 'Technische Details',
   'privacy.detailLocal':
     'Die gesamte Dateiverarbeitung läuft lokal über Rust, Ghostscript, LibreOffice und Calibre',
@@ -291,7 +291,7 @@ export const de: Dictionary = {
 
   // ── Redaction ─────────────────────────────────────────────────────────────
   // Safety copy: these sentences tell the user that content is destroyed and
-  // cannot be recovered. "Unwiderruflich" is deliberate — stronger and less
+  // cannot be recovered. "Unwiderruflich" is deliberate: stronger and less
   // ambiguous than "dauerhaft", which can be read as merely "for a long time".
   'redactPdf.removeRedaction': 'Schwärzung entfernen',
   'redactPdf.applyingRedactions': 'Schwärzungen werden angewendet…',
@@ -317,7 +317,7 @@ export const de: Dictionary = {
   'redactPdf.readScanAndSearch': 'Text erkennen und erneut suchen',
   'redactPdf.readingScan': 'Scan wird gelesen…',
   'redactPdf.scanBoxesApproximate':
-    'Diese Bereiche stammen aus Text, der von einem Scan gelesen wurde, und sind daher ungefähr. Prüfen Sie die Platzierung vor dem Anwenden — eine Schwärzung lässt sich nicht rückgängig machen.',
+    'Diese Bereiche stammen aus Text, der von einem Scan gelesen wurde, und sind daher ungefähr. Prüfen Sie die Platzierung vor dem Anwenden: eine Schwärzung lässt sich nicht rückgängig machen.',
 
   // ── Repair ────────────────────────────────────────────────────────────────
   'repairPdf.fixStructuralIssuesInCorrupted': 'Strukturfehler in beschädigten oder fehlerhaften PDFs beheben.',
@@ -539,7 +539,7 @@ export const de: Dictionary = {
   'pdfEditor.pending': 'Ausstehend',
   'pdfEditor.dragToMove': 'Zum Verschieben ziehen',
   'pdfEditor.dragToResize': 'Zum Ändern der Größe ziehen',
-  'pdfEditor.dragToRotateHoldShift': 'Zum Drehen ziehen — Umschalttaste halten zum Einrasten',
+  'pdfEditor.dragToRotateHoldShift': 'Zum Drehen ziehen: Umschalttaste halten zum Einrasten',
   'pdfEditor.zoomInCmd': 'Vergrößern (Cmd+=)',
   'pdfEditor.zoomOutCmd': 'Verkleinern (Cmd+-)',
   'pdfEditor.zoomPresets': 'Zoom-Voreinstellungen',
@@ -555,7 +555,7 @@ export const de: Dictionary = {
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
   'aboutDialog.sendFeedback': 'Rückmeldung senden',
-  'common.yourLocalDocumentToolkitPrivate': 'Ihr lokales Dokumentwerkzeug — privat, schnell, offline.',
+  'common.yourLocalDocumentToolkitPrivate': 'Ihr lokales Dokumentwerkzeug: privat, schnell, offline.',
   'buyMeAcoffeeButton.buyMeACoffee': 'Spendieren Sie mir einen Kaffee',
   'colorPicker.customColour': 'Eigene Farbe',
   'crashReporter.anUnexpectedErrorOccurredYou':
@@ -567,14 +567,14 @@ export const de: Dictionary = {
   'crashReporter.thisWillOpenInYour': 'Dies wird in Ihrem E-Mail-Programm geöffnet:',
   'dashboard.dropFileToGetStarted': 'Datei ablegen, um zu beginnen',
   'dashboard.myFavorites': 'Meine Favoriten',
-  'dashboard.readyToProcessChooseA': 'Bereit — wählen Sie unten ein Werkzeug',
+  'dashboard.readyToProcessChooseA': 'Bereit: wählen Sie unten ein Werkzeug',
   'dashboard.removeFromFavorites': 'Aus Favoriten entfernen',
   'dashboard.searchTools': 'Werkzeuge durchsuchen…',
   'dashboard.swapHere': 'Hierher tauschen',
   'firstLaunchBanner.dismissPrivacyBanner': 'Datenschutzhinweis ausblenden',
   'firstLaunchBanner.learnMore': 'Mehr erfahren',
   'landingCard.compressResizeConvertStaysOn':
-    'Komprimieren, Größe ändern, umwandeln — bleibt auf Ihrem Gerät',
+    'Komprimieren, Größe ändern, umwandeln: bleibt auf Ihrem Gerät',
   'landingCard.damagedOrInvalidPdf': 'Beschädigtes oder ungültiges PDF',
   'landingCard.fileTooLarge': 'Datei zu groß',
   'landingCard.loadingFile': 'Datei wird geladen…',
@@ -615,7 +615,7 @@ export const de: Dictionary = {
   'step.place': 'Platzieren',
   'step.redact': 'Schwärzen',
   'step.recognise': 'Erkennen',
-  'stepBar.lockedHint': '{step} — schließen Sie zuerst die vorherigen Schritte ab',
+  'stepBar.lockedHint': '{step}: schließen Sie zuerst die vorherigen Schritte ab',
 
   // ── Tool registry ─────────────────────────────────────────────────────────
   'tool.compressPdf.name': 'PDF komprimieren',
@@ -744,26 +744,26 @@ export const de: Dictionary = {
     'Er wurde hinzugefügt, es sind aber Fehler zu erwarten. Ein schärferer, gerader und besser ausgeleuchteter Scan liefert ein deutlich besseres Ergebnis.',
   'ocr.alreadySearchable': 'Dieses PDF enthält bereits eine Textebene.',
   'ocr.alreadySearchableHint':
-    'Sie können den Vorgang trotzdem ausführen, meist ist er aber überflüssig — der Text lässt sich bereits durchsuchen.',
+    'Sie können den Vorgang trotzdem ausführen, meist ist er aber überflüssig: der Text lässt sich bereits durchsuchen.',
   'ocr.saveSearchable': 'Durchsuchbares PDF speichern',
   'ocr.needsMacos': 'Texterkennung ist derzeit nur unter macOS verfügbar.',
 
   // ── Batch ─────────────────────────────────────────────────────────────────
   'batch.stoppedEarly': 'Dieser Durchlauf wurde gestoppt, bevor alle Dateien verarbeitet waren.',
   'batch.filesReady': '{files} bereit zum Speichern',
-  'batch.totalSaving': 'Insgesamt {saved} eingespart — {output} zu schreiben.',
+  'batch.totalSaving': 'Insgesamt {saved} eingespart: {output} zu schreiben.',
   'batch.couldNotBeProcessed': '{files} konnten nicht verarbeitet werden',
-  'batch.processingFile': 'Datei {current} von {total} wird verarbeitet — {name}',
+  'batch.processingFile': 'Datei {current} von {total} wird verarbeitet: {name}',
   'batch.skippedDifferentType':
-    '{count} Datei(en) eines anderen Typs übersprungen — ein Stapel muss aus einem Typ bestehen.',
+    '{count} Datei(en) eines anderen Typs übersprungen: ein Stapel muss aus einem Typ bestehen.',
 
   // ── Dependency hints ──────────────────────────────────────────────────────
   'deps.ghostscriptWindows':
     'Zum Komprimieren von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
   'deps.ghostscriptLinux':
     'Zum Komprimieren von PDFs wird Ghostscript benötigt. Installation über Ihre Paketverwaltung, z. B. sudo apt install ghostscript',
-  'deps.calibre': 'Installieren Sie Calibre für E-Book-Unterstützung — calibre-ebook.com/download',
-  'deps.libreoffice': 'Installieren Sie LibreOffice für die Dokumentumwandlung — libreoffice.org/download',
+  'deps.calibre': 'Installieren Sie Calibre für E-Book-Unterstützung: calibre-ebook.com/download',
+  'deps.libreoffice': 'Installieren Sie LibreOffice für die Dokumentumwandlung: libreoffice.org/download',
 
   // ── File dialog filters ───────────────────────────────────────────────────
   'filter.jpegImage': 'JPEG-Bild',
@@ -877,9 +877,9 @@ export const de: Dictionary = {
   'pdfUtils.thisPdfIsPasswordProtected':
     'Dieses PDF ist passwortgeschützt und konnte nicht geöffnet werden.',
   'docModel.thisDocumentHasNoExtractable':
-    'Dieses Dokument enthält keinen auslesbaren Text — es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
+    'Dieses Dokument enthält keinen auslesbaren Text: es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
   'pdfProcessor.thisFileIsMostlyText':
-    'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder — bei reinen Textdokumenten bringt die Komprimierung kaum etwas.',
+    'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder: bei reinen Textdokumenten bringt die Komprimierung kaum etwas.',
   'pdfProcessor.customPageSizeRequiresBoth':
     'Für eine eigene Seitengröße werden Breite und Höhe in mm benötigt',
   'compareStep.thisFileIsAlreadyAt':
@@ -925,7 +925,7 @@ export const de: Dictionary = {
   'convertDocFlow.plainText': 'Reiner Text',
   'unsavedChangesDialog.thisDocument': 'Dieses Dokument',
   'zoomToolbar.fitWidth': 'Breite anpassen',
-  'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste Datei — am besten für den Bildschirm',
+  'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste Datei: am besten für den Bildschirm',
   'toolSidebarPanel.goodForReadingOnDevices': 'Gut zum Lesen auf Geräten',
   'toolSidebarPanel.suitableForPrinting': 'Für den Druck geeignet',
   'toolSidebarPanel.noPreviewAvailable': 'Keine Vorschau verfügbar',
@@ -979,10 +979,10 @@ export const de: Dictionary = {
   'editorToolbar.timesNewRomanSerif': 'Times New Roman (Serifen)',
 
   // Deliberately NOT translated, so they fall back to English and stay identical:
-  //   pdfToJpgFlow.libreoffice / .calibre / .word / .kindle — product names.
-  //   editorToolbar.courierNewMonospace — "Monospace" is the German term too.
-  //   landingCard.pdfJpgPngWebp — a list of file formats.
-  //   pageNumbersConfigureStep.iIiIii — Roman numerals.
+  //   pdfToJpgFlow.libreoffice / .calibre / .word / .kindle: product names.
+  //   editorToolbar.courierNewMonospace: "Monospace" is the German term too.
+  //   landingCard.pdfJpgPngWebp: a list of file formats.
+  //   pageNumbersConfigureStep.iIiIii: Roman numerals.
   // Translating a product name is a bug, not a gap.
   'dashboard.pdfTools': 'PDF-Werkzeuge',
   'dashboard.notCompatibleWith': 'Nicht mit {format}-Dateien kompatibel',
@@ -991,7 +991,7 @@ export const de: Dictionary = {
   'format.document': 'Dokument',
   'configureStep.balanced': 'Ausgewogen',
   'configureStep.letter': 'Letter',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Druckvorstufe / Archiv — keine Neukomprimierung',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Druckvorstufe / Archiv: keine Neukomprimierung',
   'jpgToPdfFlow.autoFit': 'Automatisch anpassen',
   'jpgToPdfFlow.portrait': 'Hochformat',
   'jpgToPdfFlow.landscape': 'Querformat',
@@ -1009,24 +1009,24 @@ export const de: Dictionary = {
   'compareOverlay.beforePage': 'Vorher, Seite {page}',
   'compareOverlay.afterPage': 'Nachher, Seite {page}',
   'compareOverlay.labelledPage': '{label}, Seite {page}',
-  'compareStep.targetSizeNotAchievable': 'Zielgröße nicht erreichbar —',
+  'compareStep.targetSizeNotAchievable': 'Zielgröße nicht erreichbar , ',
   'compareStep.bestResult': 'bestes Ergebnis: {size}.',
-  'configureStep.canCompressToAboutMax': 'Komprimierbar auf bestenfalls etwa {size}. Maximale Dateigröße — die beste Komprimierungsvorgabe wird automatisch gewählt.',
-  'configureStep.containsImagesHighSavings': 'Dieses PDF enthält {images} — die Komprimierung verringert die Dateigröße deutlich.',
-  'configureStep.containsImagesModerateSavings': 'Dieses PDF enthält {images} — eine mäßige Ersparnis ist zu erwarten.',
+  'configureStep.canCompressToAboutMax': 'Komprimierbar auf bestenfalls etwa {size}. Maximale Dateigröße: die beste Komprimierungsvorgabe wird automatisch gewählt.',
+  'configureStep.containsImagesHighSavings': 'Dieses PDF enthält {images}: die Komprimierung verringert die Dateigröße deutlich.',
+  'configureStep.containsImagesModerateSavings': 'Dieses PDF enthält {images}: eine mäßige Ersparnis ist zu erwarten.',
   'configureStep.processingPageOf': 'Seite {current} von {total} wird verarbeitet…',
-  'configureStep.targetMayNotBeAchievable': 'Ziel möglicherweise nicht erreichbar — geschätztes Minimum ist ca. {size}.',
+  'configureStep.targetMayNotBeAchievable': 'Ziel möglicherweise nicht erreichbar: geschätztes Minimum ist ca. {size}.',
   'configureStep.targetMustBeSmaller': 'Das Ziel muss kleiner als das Original sein ({size})',
   'convertConfigStep.formatNamed': 'Format {format}',
   'convertConfigStep.zipOneFilePerHeading': '.zip, eine Datei je Überschrift',
   'convertImageFlow.convertToFormat': 'In {format} umwandeln',
-  'crashReporter.noDataSentAutomatically': 'Es werden keine Daten automatisch gesendet. Der Bericht öffnet sich als E-Mail-Entwurf in Ihrem Mail-Programm — Sie entscheiden, ob Sie ihn senden.',
+  'crashReporter.noDataSentAutomatically': 'Es werden keine Daten automatisch gesendet. Der Bericht öffnet sich als E-Mail-Entwurf in Ihrem Mail-Programm: Sie entscheiden, ob Sie ihn senden.',
   'cropPdfFlow.pageSizeMm': 'Seitengröße: {width} × {height} mm',
   'dashboard.noToolsMatch': 'Keine Werkzeuge für „{query}“',
   'editorContext.failedToAddPages': 'Seiten konnten nicht hinzugefügt werden: {error}',
   'editorContext.failedToReorderPages': 'Seitenreihenfolge konnte nicht geändert werden: {error}',
   'editorToolbar.alignNamed': 'Ausrichtung: {alignment}',
-  'editorToolbar.colourRightClickToRemove': '{colour} — zum Entfernen rechtsklicken',
+  'editorToolbar.colourRightClickToRemove': '{colour}: zum Entfernen rechtsklicken',
   'exportPanel.exportAsFormat': 'Als {format} exportieren',
   'exportPanel.savedAsFormat': 'Als {format} gespeichert ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-Optionen',
@@ -1040,7 +1040,7 @@ export const de: Dictionary = {
   'jpgToPdfFlow.imagesSelected': '{images} ausgewählt',
   'jpgToPdfFlow.moveUpNamed': '{name} nach oben verschieben',
   'jpgToPdfFlow.moveDownNamed': '{name} nach unten verschieben',
-  'landingCard.couldNotBeOpened': '„{name}“ konnte nicht geöffnet werden — die Datei scheint beschädigt oder kein gültiges PDF zu sein. Das Werkzeug „PDF reparieren“ kann sie möglicherweise retten.',
+  'landingCard.couldNotBeOpened': '„{name}“ konnte nicht geöffnet werden: die Datei scheint beschädigt oder kein gültiges PDF zu sein. Das Werkzeug „PDF reparieren“ kann sie möglicherweise retten.',
   'landingCard.fileTooLargeDetail': 'Diese Datei ist {size} groß. Dateien über 100 MB werden nicht unterstützt. Bitte verwenden Sie eine kleinere Datei.',
   'merge.pageOneOf': 'Seite 1 von {name}',
   'mergeOrderStep.dragToReorderTotal': 'Zum Umsortieren ziehen. Insgesamt: {pages} aus {files}.',
@@ -1056,7 +1056,7 @@ export const de: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} ausgewählt)',
   'pdfToJpgFlow.renderingPageOf': 'Seite {current} von {total} wird gerendert…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt — die Suche nach App-Aktualisierungen und das Abrufen der Feedback-Kontaktadresse — durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
+  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt (die Suche nach App-Aktualisierungen und das Abrufen der Feedback-Kontaktadresse), durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
   'redactPdf.appliedAcross': '{redactions} auf {pages} angewendet',
   'redactPdf.applyRedactions': 'Schwärzungen anwenden ({count})',
   'redactPdf.matchesFound': '{matches} gefunden',
@@ -1083,10 +1083,10 @@ export const de: Dictionary = {
   'toolSidebarPanel.appliedSuccessfully': '{tool} erfolgreich angewendet',
   'toolSidebarPanel.canCompressToAbout': 'Komprimierbar auf bestenfalls etwa {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Ziehen Sie auf der Seite, um etwas abzudecken. Beim Anwenden werden diese Seiten zu einem Bild reduziert, sodass der darunterliegende Inhalt aus der Datei entfernt und nicht nur verborgen wird.',
-  'toolSidebarPanel.imagesStillReEncoded': 'Bilder werden weiterhin neu kodiert, nur nicht verkleinert. Die Schätzungen gehen von einer Verkleinerung aus — die tatsächlichen Größen fallen höher aus.',
+  'toolSidebarPanel.imagesStillReEncoded': 'Bilder werden weiterhin neu kodiert, nur nicht verkleinert. Die Schätzungen gehen von einer Verkleinerung aus: die tatsächlichen Größen fallen höher aus.',
   'toolSidebarPanel.marginMm': 'Rand {side} (mm)',
   'toolSidebarPanel.markAll': 'Alle {count} markieren',
-  'toolSidebarPanel.noMatchesNoSelectableText': 'Keine Treffer. Seiten ohne auswählbaren Text — etwa ein Scan — lassen sich nicht durchsuchen.',
+  'toolSidebarPanel.noMatchesNoSelectableText': 'Keine Treffer. Seiten ohne auswählbaren Text (etwa ein Scan), lassen sich nicht durchsuchen.',
   'toolSidebarPanel.opacity': 'Deckkraft: {percent} %',
   'toolSidebarPanel.paleBoxWarning': 'Ein so blasses Feld ist auf einer weißen Seite kaum zu erkennen. Der darunterliegende Inhalt wird dennoch unwiderruflich entfernt.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-Umwandlung',
@@ -1094,7 +1094,7 @@ export const de: Dictionary = {
   'toolSidebarPanel.rotatingPage': 'Seite {page} wird gedreht',
   'toolSidebarPanel.rotatingSelectedPages': '{count} ausgewählte Seiten werden gedreht',
   'toolSidebarPanel.savedSignaturesCount': 'Gespeicherte Unterschriften ({count})',
-  'toolSidebarPanel.smallestAchievable': 'Kleinstmöglich sind etwa {size} — weiter lässt sich diese Datei nicht komprimieren.',
+  'toolSidebarPanel.smallestAchievable': 'Kleinstmöglich sind etwa {size}: weiter lässt sich diese Datei nicht komprimieren.',
   'toolSidebarPanel.targetMet': 'erreicht',
   'toolSidebarPanel.targetNotMet': 'nicht erreicht ({size})',
   'count.match_one': '{count} Treffer',
@@ -1109,11 +1109,11 @@ export const de: Dictionary = {
   'common.find': 'Suchen',
   'common.percentLarger': '{percent} % größer',
   'common.percentSmaller': '{percent} % kleiner',
-  'compareStep.jpxAlreadyEncoded': 'Bilder bereits JPEG2000-kodiert — keine weitere Komprimierung möglich',
+  'compareStep.jpxAlreadyEncoded': 'Bilder bereits JPEG2000-kodiert: keine weitere Komprimierung möglich',
   'configureStep.enableResizeToStillProcess': 'Aktivieren Sie unten die Seitenskalierung, um diese Datei dennoch zu verarbeiten.',
   'merge.mergeAndSave': 'Zusammenführen und speichern',
   'pdfEditor.untitledPdf': 'Ohne Titel.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert — Ghostscript kann sie nicht weiter komprimieren.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Ghostscript kann sie nicht weiter komprimieren.',
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
@@ -1125,10 +1125,10 @@ export const de: Dictionary = {
   'search.noMatches': 'Keine Treffer für „{query}“.',
   'search.noMatchesInScan': 'Keine Treffer für „{query}“ im Text, der aus diesem Scan gelesen wurde.',
   'search.readScanHint': 'Diese Seite enthält keinen durchsuchbaren Text. Beim Lesen wird eine unsichtbare Textebene hinzugefügt; das Aussehen der Seite bleibt unverändert.',
-  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. Papercut konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig — versuchen Sie es einfach.',
+  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. Papercut konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig: versuchen Sie es einfach.',
   'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
   'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
   'dashboard.andMoreFiles': '+{count} weitere',
-  'deps.ghostscriptMac': 'Zum Komprimieren von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden — eine Neuinstallation von Papercut sollte sie wiederherstellen.',
+  'deps.ghostscriptMac': 'Zum Komprimieren von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden: eine Neuinstallation von Papercut sollte sie wiederherstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (Monospace)',
 };

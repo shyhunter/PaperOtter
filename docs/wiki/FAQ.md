@@ -3,7 +3,7 @@
 ### Does Papercut send my files anywhere?
 
 No. All processing happens locally using native binaries (Ghostscript,
-LibreOffice, Calibre) and in-app libraries (pdf-lib, pdfjs, mammoth, and
+LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and
 the Rust `image` crate).
 Your files never leave your machine -- see the
 [Privacy section](https://github.com/shyhunter/Papercut#privacy) of the
@@ -36,12 +36,12 @@ a problem with the installer. Click **More info**, then **Run anyway**.
 
 No. Nobody can.
 
-Papercut never stores the password you set — it is used to encrypt the file and
+Papercut never stores the password you set: it is used to encrypt the file and
 then discarded, and it is never written to disk or sent anywhere. There is no
 reset, no recovery code and no back door, and this is a property of PDF
 encryption rather than something Papercut chose.
 
-If you still have the unprotected original, use that — Papercut always writes
+If you still have the unprotected original, use that. Papercut always writes
 the protected document as a new file and never encrypts your original in place.
 If you do not, the file cannot be opened again.
 
@@ -78,12 +78,12 @@ remembered.
 **Only the English is written by a native speaker.** The other eight are
 machine-assisted and have not been checked by a native speaker. They ship anyway,
 because for most people a good-enough translation beats an English-only
-interface — but that is a limitation worth stating rather than hoping you do not
+interface, but that is a limitation worth stating rather than hoping you do not
 notice.
 
 One exception is handled strictly. Sentences that warn you about losing data,
 overwriting a file or deleting something are either translated in every language
-or left in English in every language — never half-done. A test enforces it. A
+or left in English in every language, never half-done. A test enforces it. A
 warning you half-understand is more dangerous than one in a language you do not
 speak at all.
 

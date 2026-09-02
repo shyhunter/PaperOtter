@@ -10,7 +10,7 @@ being here means it is agreed and scoped, not that it is scheduled.
 ## Before 1.0
 
 Four things stand between Papercut and its first stable release. None of them
-are new features — they are checks and pages that no automated test can produce.
+are new features: they are checks and pages that no automated test can produce.
 
 | # | Item | What it is |
 |---|------|------------|
@@ -35,13 +35,13 @@ The same idea belongs in the two tools where the settings repeat the most.
 
 A watermark is the clearest case: text, opacity, rotation, position, size and
 colour, set once and then wanted on every document for years. Page numbers are
-the same story — position, format, size and starting number are house style, not
+the same story: position, format, size and starting number are house style, not
 a per-document decision.
 
 Presets will work the same way whether you use the standalone tool or the
 matching panel inside **Edit PDF**. A preset saved in one appears in the other.
 
-**Deliberately not everywhere.** Protect PDF will never get presets — that would
+**Deliberately not everywhere.** Protect PDF will never get presets: that would
 mean saving a password. Tools like Split, Merge, Rotate and Organise are
 per-document decisions, where a saved preset would save a single click. Convert
 Image and PDF to JPG are plausible later, once presets have proved themselves in
@@ -62,13 +62,13 @@ ever leaving your machine.
   chapter, or both.
 
 The point is preparation, not analysis. **Papercut prepares; your own AI
-reasons.** You already have a model you trust — Papercut's job is to hand it the
+reasons.** You already have a model you trust. Papercut's job is to hand it the
 thing it cannot make for itself: a clean, structured, local bundle.
 
 **What this will not do, and why.** Chapter summaries, automatic story bibles and
 continuity-contradiction reports have all been suggested, and all of them need a
-language model. That means either bundling one — breaking the promise that
-Papercut needs no other software installed — or sending your document to a cloud
+language model. That means either bundling one: breaking the promise that
+Papercut needs no other software installed, or sending your document to a cloud
 service, which breaks the more important promise on every screen of this app:
 your files never leave your device. For anyone working on a confidential
 manuscript, that promise is the whole reason to use Papercut. So those steps stay
@@ -85,5 +85,5 @@ out.
 
 ***
 
-Have a use case that is not here? Open an issue — the tools that exist today came
+Have a use case that is not here? Open an issue: the tools that exist today came
 from people describing what they were stuck doing by hand.
