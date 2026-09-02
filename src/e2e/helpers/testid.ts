@@ -17,13 +17,30 @@ export async function testIdExists(browser: Browser, testId: string): Promise<bo
   );
 }
 
-/** Check whether an element with the given data-testid is visible. */
+/**
+ * Whether an element with the given data-testid is visible to a person.
+ *
+ * Measured, not inferred from `offsetParent`. `offsetParent` is null for any
+ * `position: fixed` element by definition — which is every modal, dialog, toast
+ * and popover in this app. The blocking "file is too large" modal covers the
+ * whole window, and this helper called it invisible: the test that exists to
+ * prove users are warned about a 110 MB file failed while the warning was on
+ * screen the entire time.
+ */
 export async function testIdDisplayed(browser: Browser, testId: string): Promise<boolean> {
   return browser.execute((id: string) => {
     const el = document.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
     if (!el) return false;
     const style = getComputedStyle(el);
-    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+    // Deliberately not opacity. Half this app fades in with
+    // `animate-fade-slide-in`, whose first frame is opacity 0, so treating that
+    // as hidden makes every check a race against an animation — lost four
+    // image tests on a loaded machine while the screen they asked about was
+    // plainly there. Display, visibility and a real measured box are the
+    // questions that have stable answers.
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
   }, testId);
 }
 
@@ -122,13 +139,53 @@ export async function selectTestIdByText(browser: Browser, testId: string, text:
     (id: string, t: string) => {
       const sel = document.querySelector(`[data-testid="${id}"]`) as HTMLSelectElement | null;
       if (!sel) throw new Error(`[data-testid="${id}"] not found`);
-      const opt = Array.from(sel.options).find((o) => o.textContent?.trim() === t);
-      if (!opt) throw new Error(`Option "${t}" not found in [data-testid="${id}"]`);
+      const options = Array.from(sel.options);
+      // Exact first, then a prefix. Labels carry their detail — "A3" renders as
+      // "A3 (297 × 420 mm)" and "Custom" as "Custom…" — and matching only
+      // exactly turned a copy change into three failing tests, each reported as
+      // a 120-second timeout because WebdriverIO retried the throw until Mocha
+      // gave up. Listing the real options makes the next one self-diagnosing.
+      const opt = options.find((o) => o.textContent?.trim() === t)
+        ?? options.find((o) => o.textContent?.trim().startsWith(t));
+      if (!opt) {
+        throw new Error(
+          `Option "${t}" not found in [data-testid="${id}"]. Options: ` +
+          options.map((o) => `"${o.textContent?.trim()}" (value=${o.value})`).join(', '),
+        );
+      }
       sel.value = opt.value;
       sel.dispatchEvent(new Event('change', { bubbles: true }));
     },
     testId,
     text,
+  );
+}
+
+/**
+ * Pick a <select> option by its `value`.
+ *
+ * Prefer this over the label wherever a stable value exists. Values are
+ * identifiers the code chose ("A3", "custom"); labels are user-facing copy in
+ * nine languages, and a spec pinned to one of them breaks when somebody
+ * improves the wording.
+ */
+export async function selectTestIdByValue(browser: Browser, testId: string, value: string): Promise<void> {
+  await browser.execute(
+    (id: string, v: string) => {
+      const sel = document.querySelector(`[data-testid="${id}"]`) as HTMLSelectElement | null;
+      if (!sel) throw new Error(`[data-testid="${id}"] not found`);
+      const opt = Array.from(sel.options).find((o) => o.value === v);
+      if (!opt) {
+        throw new Error(
+          `No option with value "${v}" in [data-testid="${id}"]. Values: ` +
+          Array.from(sel.options).map((o) => o.value).join(', '),
+        );
+      }
+      sel.value = v;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    },
+    testId,
+    value,
   );
 }
 

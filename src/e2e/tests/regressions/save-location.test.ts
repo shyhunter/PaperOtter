@@ -15,13 +15,21 @@
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import { mockOpenDialog, captureSaveOptions, readCapturedSaveOptions } from '../../helpers/dialogs';
-import { selectToolOnDashboard, resetAppState, waitForProcessingComplete } from '../../helpers/driver';
+import { resetAppState, captureFailure } from '../../helpers/driver';
 import { clickTestId, waitForTestId, waitForStep } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
 const ws = new Workspace('save-location');
 
 after(() => ws.cleanup());
+
+// A one-line timeout says which element was missing, never what was on screen
+// instead. Capture both, so a red run can be read from its artefacts.
+afterEach(async function (this: Mocha.Context) {
+  if (this.currentTest?.state === 'failed') {
+    await captureFailure(browser, this.currentTest.fullTitle());
+  }
+});
 
 describe('Where Save as… opens', () => {
   it('[E2E-SAVE-DIR-01] suggests the folder the document was opened from', async () => {
@@ -31,15 +39,16 @@ describe('Where Save as… opens', () => {
     const pdf = ws.fixture('warnock_camelot.pdf', 'deep/nested/source.pdf');
 
     await resetAppState(browser, 'Rotate PDF');
-    await selectToolOnDashboard(browser, 'Rotate PDF');
     await waitForTestId(browser, 'open-file-btn');
     await mockOpenDialog(browser, pdf);
     await clickTestId(browser, 'open-file-btn');
     await waitForStep(browser, 1);
 
     await clickTestId(browser, 'rotate-all-right-btn');
-    await clickTestId(browser, 'apply-rotation-btn');
-    await waitForProcessingComplete(browser);
+    await clickTestId(browser, 'apply-btn');
+    // No waitForProcessingComplete here: that waits for `compare-step`, which
+    // the Rotate flow never renders — Pick, Select & Rotate, Save, and nothing
+    // between. The step bar reaching 2 is what says the rotation landed.
     await waitForStep(browser, 2);
 
     await captureSaveOptions(browser);

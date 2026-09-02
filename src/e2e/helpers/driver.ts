@@ -1,7 +1,8 @@
 import type { Browser } from 'webdriverio';
-import { mkdirSync, rmSync, existsSync } from 'fs';
+import { mkdirSync, rmSync, existsSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { testIdDisplayed, clickTestId, waitForTestId } from './testid';
+import { spawnSync } from 'child_process';
+import { testIdDisplayed, testIdExists, clickTestId, waitForTestId, getTestIdText } from './testid';
 
 // Fixture directories — overridable via env vars so CI can place them inside
 // /tmp (within Tauri's $TEMP fs scope, which is required for the frontend
@@ -60,7 +61,8 @@ export async function waitForFileLoaded(browser: Browser): Promise<void> {
         const spinner = document.querySelector('[data-testid="loading-spinner"]') as HTMLElement | null;
         if (!spinner) return true;
         const style = getComputedStyle(spinner);
-        return style.display === 'none' || style.visibility === 'hidden' || spinner.offsetParent === null;
+        const rect = spinner.getBoundingClientRect();
+        return style.display === 'none' || style.visibility === 'hidden' || rect.width === 0 || rect.height === 0;
       }),
     { timeout: 10000, interval: 100, timeoutMsg: 'Timed out waiting for file load' },
   );
@@ -83,7 +85,8 @@ export async function waitForProcessingComplete(
         const el = document.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
         if (!el) return false;
         const style = getComputedStyle(el);
-        return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+        const rect = el.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
       }, compareTestId),
     { timeout: 90000, interval: 500, timeoutMsg: `Timed out waiting for ${compareTestId} to appear` },
   );
@@ -98,49 +101,292 @@ export async function screenshotOnFailure(browser: Browser, testTitle: string): 
 }
 
 /**
- * Reset the app back to the open-file page for the given tool.
+ * Put the app on the dashboard, from wherever it currently is.
  *
- * Handles any state the app might be in after a test:
- *   1. Already on open-file page → no-op
- *   2. On compare step with "Start Over" button → click it
- *   3. Stuck on any other step → refresh the page and re-navigate from Dashboard
+ * NEVER refreshes, and nothing in this suite may. `browser.refresh()` was this
+ * helper's recovery path and it is the most destructive thing the suite could
+ * do: reloading the webview throws away the scripts the automation plugin is
+ * still waiting on, and tauri-plugin-webdriver-automation 0.1.3 meets a result
+ * for an id it no longer holds with `.expect("no pending script with that id")`
+ * — a panic, which poisons the Mutex guarding that map. Every later
+ * `execute/sync` in the session then fails with `lock poisoned`, and so does
+ * the DELETE that ends the session, so the run also hangs on teardown with its
+ * results already written to disk. Observed on 2026-09-02: one refresh, then
+ * nine minutes of `lock poisoned` and a terminal that had to be killed by hand.
  *
- * Guard: if the WebDriver plugin has crashed (browser.execute() throws),
- * we cannot recover — log and return immediately instead of cascading timeouts.
+ * Navigation therefore goes through the app's own controls, the way a person's
+ * would.
+ */
+export async function goToDashboard(browser: Browser): Promise<void> {
+  if (await testIdDisplayed(browser, 'dashboard')) return;
+
+  // Edit PDF guards its back button with a confirm() when there are unsaved
+  // edits. An unanswered native dialog blocks the webview and every command
+  // after it, so answer it before the click rather than after.
+  await browser.execute(() => { window.confirm = () => true; });
+
+  if (await testIdExists(browser, 'back-to-dashboard')) {
+    await clickTestId(browser, 'back-to-dashboard');
+  }
+  await waitForTestId(browser, 'dashboard', { timeout: 10000 });
+}
+
+/**
+ * Dashboard, then into the named tool — and then check that is where we are.
+ *
+ * The check is the point. `selectToolOnDashboard` clicks the first button whose
+ * text contains the name, and a click that lands on nothing, or on the wrong
+ * card, leaves the app somewhere else entirely with no error at all. The
+ * breadcrumb is the app's own statement of which tool is open, so a spec that
+ * silently ran against a different one now fails instead of passing.
+ */
+export async function goToTool(browser: Browser, toolName: string): Promise<void> {
+  await goToDashboard(browser);
+  await selectToolOnDashboard(browser, toolName);
+  await waitForTestId(browser, 'current-tool', { timeout: 10000 });
+
+  const here = (await getTestIdText(browser, 'current-tool')).trim();
+  if (!here.includes(toolName)) {
+    throw new Error(`Asked for "${toolName}" but the app opened "${here}"`);
+  }
+}
+
+
+/** What the dashboard says about a tool right now. */
+export type ToolAvailability = 'ready' | 'unavailable' | 'missing';
+
+/**
+ * Ask the dashboard whether a tool can be opened, by id.
+ *
+ * `unavailable` is the platform gate speaking: Ghostscript, Calibre or
+ * LibreOffice is absent, so the card is disabled with a hint. A suite that
+ * failed on those would be reporting the machine, not the code — and one that
+ * ignored them would report a green run for tools it never opened. Reading the
+ * app's own answer beats a hardcoded list of platforms that goes stale.
+ */
+export async function toolAvailability(browser: Browser, toolId: string): Promise<ToolAvailability> {
+  return browser.execute((id: string) => {
+    const card = document.querySelector(`[data-testid="tool-card"][data-tool-id="${id}"]`);
+    if (!card) return 'missing';
+    return card.getAttribute('data-disabled') === 'true' ? 'unavailable' : 'ready';
+  }, toolId) as Promise<ToolAvailability>;
+}
+
+/**
+ * Dashboard, then into the tool with this id — and confirm that is where we are.
+ *
+ * By id, not by name. The displayed name is copy in nine languages, and a spec
+ * pinned to one of them broke the day "Organize PDF" became "Organise PDF" —
+ * a fifteen-second timeout that said nothing about the cause.
+ */
+export async function goToToolById(browser: Browser, toolId: string): Promise<void> {
+  await goToDashboard(browser);
+
+  const state = await toolAvailability(browser, toolId);
+  if (state !== 'ready') throw new Error(`Tool "${toolId}" is ${state} on this machine`);
+
+  await browser.execute((id: string) => {
+    const card = document.querySelector(`[data-testid="tool-card"][data-tool-id="${id}"]`) as HTMLElement | null;
+    card?.click();
+  }, toolId);
+
+  await waitForTestId(browser, 'current-tool', { timeout: 10000 });
+}
+
+/**
+ * Reset the app to the open-file page of a standard tool (Compress, Rotate…).
+ *
+ * Always leaves through the dashboard and comes back in, which unmounts the
+ * flow and discards its state. That costs a second or two per test and buys the
+ * only thing that matters: the previous test's leftovers cannot be mistaken for
+ * this one's result.
+ *
+ * It used to return early whenever an `open-file-btn` was on screen, without
+ * checking whose. A refused document leaves its flow on step 0 with that button
+ * and an error banner still showing, so on 2026-09-02 a spec that walked eleven
+ * tools in turn never left the first one: every iteration saw the button,
+ * returned, re-tested Rotate PDF, found Rotate's banner and passed. Eleven
+ * green results for one tool tested eleven times, and the only test that failed
+ * was the one that noticed.
+ *
+ * Guard: if the WebDriver plugin has gone (browser.execute() throws), the
+ * session is dead for good — return rather than spend every remaining test's
+ * timeout rediscovering that one at a time.
  */
 export async function resetAppState(browser: Browser, toolName: string): Promise<void> {
-  // Guard: if browser.execute() itself throws, WebDriver plugin is down.
-  // We cannot recover — skip cleanup and return immediately.
-  let browserAlive = true;
   try {
     await browser.execute(() => true); // lightweight ping
   } catch {
-    browserAlive = false;
-  }
-
-  if (!browserAlive) {
     console.warn('[resetAppState] WebDriver plugin unresponsive — skipping reset');
     return;
   }
 
-  // Case 1: already on the open-file page
-  if (await testIdDisplayed(browser, 'open-file-btn')) return;
+  await goToTool(browser, toolName);
+  await waitForTestId(browser, 'open-file-btn', { timeout: 10000 });
+}
 
-  // Case 2: on compare/save step with "Start Over" link
+
+/**
+ * Finish a save, whichever way this flow offers one.
+ *
+ * There are two shapes, and a spec cannot assume either. A flow that knows the
+ * file it opened can overwrite it, so SaveStep waits for the user to choose
+ * between Save and Save as…; a flow that changes the type or the count cannot,
+ * so it opens the dialog the moment the step mounts and, under test, has
+ * already written the file before a spec can look. Compress PDF is the first,
+ * Compress Image the second — and patching the specs for one shape promptly
+ * broke the other.
+ *
+ * `outPath` must already be armed with mockSaveDialog.
+ */
+export async function completeSave(browser: Browser, outPath: string): Promise<void> {
+  const started = (): boolean => existsSync(outPath);
+
+  await browser.waitUntil(
+    async () => started() || (await testIdExists(browser, 'save-as-btn')),
+    { timeout: 30000, interval: 100, timeoutMsg: 'the save step neither saved nor offered a choice' },
+  );
+
+  // Only the choosing shape needs the click; the other has finished already.
+  if (!started()) await clickTestId(browser, 'save-as-btn');
+
+  // Existence is not completion. The file appears the moment the write opens
+  // it, and a spec that reads it then gets whatever has landed so far — on
+  // 2026-09-02 that was zero bytes for a 2.4 MB compress, reported as the
+  // compression producing an empty document. Wait for a non-zero size that has
+  // stopped changing.
+  let previous = -1;
+  await browser.waitUntil(
+    async () => {
+      if (!started()) return false;
+      const size = statSync(outPath).size;
+      const settled = size > 0 && size === previous;
+      previous = size;
+      return settled;
+    },
+    {
+      timeout: 30000,
+      interval: 100,
+      timeoutMsg: `output file never settled at a non-zero size: ${outPath}`,
+    },
+  );
+}
+
+
+/**
+ * Reach the point where the save dialog's options have been captured.
+ *
+ * Same two shapes as completeSave: the capture happens inside handleSave, and
+ * whether handleSave runs on mount or waits for a click depends on whether the
+ * flow could overwrite its source.
+ */
+export async function completeSaveCapture(browser: Browser): Promise<void> {
+  // Arm with captureSaveOptions() before navigating: it clears any previous
+  // result, and the clearing has to happen *then*, not here. A flow whose
+  // output format differs from its input cannot replace the original, so
+  // SaveStep opens the dialog the instant it mounts and the capture is already
+  // finished by the time this runs — clearing here threw that capture away and
+  // then waited for it. A leftover value read here would be worse still: it
+  // reads as "already captured", so this returns without clicking and hands the
+  // spec the previous document's options. That one cost a test that looked
+  // exactly like an app bug, reporting "JPEG Image" for a PNG.
+  const captured = async (): Promise<boolean> =>
+    (await browser.execute(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Boolean((window as any).__E2E_SAVE_OPTS__))) === true;
+
+  await browser.waitUntil(
+    async () => (await captured()) || (await testIdExists(browser, 'save-as-btn')),
+    { timeout: 30000, interval: 100, timeoutMsg: 'the save step neither captured nor offered a choice' },
+  );
+
+  if (!(await captured())) await clickTestId(browser, 'save-as-btn');
+
+  await browser.waitUntil(captured, {
+    timeout: 15000, interval: 100, timeoutMsg: 'the save dialog options were never captured',
+  });
+}
+
+/**
+ * Save everything about the app's current state that a failure message cannot
+ * carry: a screenshot, and a JSON snapshot of the DOM.
+ *
+ * A one-line timeout ("waiting for open-file-btn") says which element was
+ * missing and nothing at all about what was on screen instead — which is the
+ * only question worth asking. The snapshot lists every data-testid present and
+ * every button's label, so the page can be identified from the artefact alone,
+ * afterwards, on a different machine.
+ *
+ * Never throws: this runs in afterEach on an already-failing test, and a
+ * capture that fails must not replace the real failure with its own.
+ */
+export async function captureFailure(browser: Browser, testTitle: string): Promise<void> {
+  const root = join(process.cwd(), '.e2e-artifacts');
+  const stamp = `${testTitle.replace(/[^a-z0-9]/gi, '_').slice(0, 80)}_${Date.now()}`;
+
   try {
-    if (await testIdDisplayed(browser, 'process-another-btn')) {
-      await clickTestId(browser, 'process-another-btn');
-      await waitForTestId(browser, 'open-file-btn', { timeout: 5000 });
-      return;
-    }
-  } catch (_e) {
-    // Ignore click/wait failures — the button may have disappeared during a
-    // page transition or the app may be in a transient state.  Fall through
-    // to the hard-refresh recovery below.
+    mkdirSync(join(root, 'screenshots'), { recursive: true });
+    await browser.saveScreenshot(join(root, 'screenshots', `${stamp}.png`));
+  } catch (e) {
+    console.warn('[captureFailure] screenshot failed:', (e as Error).message);
   }
 
-  // Case 3: stuck in an unknown state — hard refresh resets everything
-  await browser.refresh();
-  await selectToolOnDashboard(browser, toolName);
-  await waitForTestId(browser, 'open-file-btn', { timeout: 5000 }); // tightened from 10s to 5s
+  try {
+    const snapshot = await browser.execute(() => ({
+      url: location.href,
+      testIds: Array.from(document.querySelectorAll('[data-testid]'))
+        .map((el) => el.getAttribute('data-testid')),
+      buttons: Array.from(document.querySelectorAll('button'))
+        .map((b) => (b.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60))
+        .filter(Boolean),
+      text: (document.body.innerText ?? '').replace(/\n{3,}/g, '\n\n').slice(0, 4000),
+      // Whatever the save dialog was told to do, when a spec armed the capture.
+      // A filter assertion that fails says only that a string was missing; this
+      // says what was actually there.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      savedDialogOptions: (window as any).__E2E_SAVE_OPTS__ ?? null,
+    }));
+    mkdirSync(join(root, 'dom'), { recursive: true });
+    writeFileSync(join(root, 'dom', `${stamp}.json`), JSON.stringify(snapshot, null, 2) + '\n');
+  } catch (e) {
+    console.warn('[captureFailure] DOM snapshot failed:', (e as Error).message);
+  }
+}
+
+/**
+ * PIDs of the Ghostscript children belonging to the app under test.
+ *
+ * Matched on the bundled sidecar's full path, never on the name `gs`: the
+ * machine running this may well have its own Ghostscript installed, and a test
+ * that killed — or worse, reported on — someone's unrelated process would be
+ * both wrong and rude.
+ *
+ * Ghostscript is the one subprocess this app can leave behind. Cancelling is
+ * supposed to end it, and until now nothing had ever checked that it does; an
+ * orphan carries on compressing a document the user abandoned, holding CPU and
+ * a temp file, with no window left to stop it from.
+ */
+export function ghostscriptPids(): number[] {
+  const sidecar = join(
+    process.cwd(),
+    process.platform === 'darwin'
+      ? 'src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/gs'
+      : 'src-tauri/target/debug/gs',
+  );
+  const found = spawnSync('pgrep', ['-f', sidecar], { encoding: 'utf8' });
+  // pgrep exits 1 when nothing matches, which is the common case, not an error.
+  return (found.stdout ?? '')
+    .split('\n')
+    .map((line) => Number(line.trim()))
+    .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+/** Whether a process is still alive, without signalling it. */
+export function isAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -20,6 +20,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { REAL_FIXTURES_DIR } from './driver';
 
+/** Where the launcher built the generated fixtures for this run. */
+export const KNOWN_FIXTURES_DIR = process.env.E2E_KNOWN_DIR
+  ?? join(tmpdir(), 'papercut-e2e', 'known');
+
 /** One directory per run, so a crashed run never poisons the next one. */
 const RUN_ID = `${process.pid}-${Date.now().toString(36)}`;
 
@@ -38,6 +42,22 @@ export class Workspace {
     // Always writable to begin with: a fixture inherits the mode of whatever it
     // was copied from, and a previous run's read-only file would make FP-01
     // pass for the wrong reason.
+    chmodSync(target, 0o644);
+    return target;
+  }
+
+  /**
+   * Copy in a generated fixture whose properties are declared in known.ts.
+   *
+   * Use these wherever the assertion is about *which* pages, *what* order, or
+   * *which way round*. The committed documents are real, which is their value,
+   * but nobody knows what is on page seven of any of them — so a test built on
+   * one can only ever check shapes, and shapes pass when a tool takes the wrong
+   * pages.
+   */
+  known(sourceName: string, asName = sourceName): string {
+    const target = join(this.dir, asName);
+    copyFileSync(join(KNOWN_FIXTURES_DIR, sourceName), target);
     chmodSync(target, 0o644);
     return target;
   }

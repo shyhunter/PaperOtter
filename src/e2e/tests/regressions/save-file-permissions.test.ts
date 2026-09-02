@@ -15,7 +15,7 @@
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import { mockOpenDialog } from '../../helpers/dialogs';
-import { selectToolOnDashboard, resetAppState, waitForProcessingComplete } from '../../helpers/driver';
+import { resetAppState, captureFailure } from '../../helpers/driver';
 import { clickTestId, waitForTestId, waitForStep, getTestIdText } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 import { requiresUnixPermissions } from '../../helpers/platform';
@@ -25,15 +25,16 @@ const ws = new Workspace('save-permissions');
 /** Open a PDF in Rotate PDF and reach the Save step with a real edit pending. */
 async function rotateAndReachSave(pdfPath: string): Promise<void> {
   await resetAppState(browser, 'Rotate PDF');
-  await selectToolOnDashboard(browser, 'Rotate PDF');
   await waitForTestId(browser, 'open-file-btn');
   await mockOpenDialog(browser, pdfPath);
   await clickTestId(browser, 'open-file-btn');
   await waitForStep(browser, 1);
   // Any real change: an unmodified document gives Save nothing to write.
   await clickTestId(browser, 'rotate-all-right-btn');
-  await clickTestId(browser, 'apply-rotation-btn');
-  await waitForProcessingComplete(browser);
+  await clickTestId(browser, 'apply-btn');
+  // No waitForProcessingComplete here: that waits for `compare-step`, which
+  // the Rotate flow never renders — Pick, Select & Rotate, Save, and nothing
+  // between. The step bar reaching 2 is what says the rotation landed.
   await waitForStep(browser, 2);
 }
 
@@ -45,6 +46,14 @@ async function saveError(): Promise<string> {
 
 after(() => ws.cleanup());
 
+// A one-line timeout says which element was missing, never what was on screen
+// instead. Capture both, so a red run can be read from its artefacts.
+afterEach(async function (this: Mocha.Context) {
+  if (this.currentTest?.state === 'failed') {
+    await captureFailure(browser, this.currentTest.fullTitle());
+  }
+});
+
 describe('Saving over the source document', () => {
   it('[E2E-FP-01] a read-only source is refused, and left byte-for-byte intact', async function () {
     if (!requiresUnixPermissions(this)) return;
@@ -54,7 +63,7 @@ describe('Saving over the source document', () => {
     await rotateAndReachSave(pdf);
 
     ws.makeReadOnly(pdf);
-    await clickTestId(browser, 'save-btn');
+    await clickTestId(browser, 'replace-btn');
 
     expect(await saveError()).toMatch(/read-only/i);
     // The point of the whole exercise. A message is worth little; the file
@@ -68,7 +77,7 @@ describe('Saving over the source document', () => {
     await rotateAndReachSave(pdf);
 
     ws.remove(pdf);
-    await clickTestId(browser, 'save-btn');
+    await clickTestId(browser, 'replace-btn');
 
     expect(await saveError()).toMatch(/no longer/i);
     // The old code recreated it here and called that success.
@@ -83,7 +92,7 @@ describe('Saving over the source document', () => {
     await rotateAndReachSave(from);
 
     const to = ws.rename(from, 'after-rename.pdf');
-    await clickTestId(browser, 'save-btn');
+    await clickTestId(browser, 'replace-btn');
 
     expect(await saveError()).toMatch(/no longer/i);
     // The old name must not come back, and the renamed file must be untouched.
@@ -99,7 +108,7 @@ describe('Saving over the source document', () => {
     await rotateAndReachSave(pdf);
 
     ws.makeReadOnly(pdf);
-    await clickTestId(browser, 'save-btn');
+    await clickTestId(browser, 'replace-btn');
     expect(await saveError()).toMatch(/read-only/i);
 
     ws.makeWritable(pdf);
@@ -118,7 +127,7 @@ describe('Saving over the source document', () => {
     await rotateAndReachSave(pdf);
 
     ws.remove(pdf);
-    await clickTestId(browser, 'save-btn');
+    await clickTestId(browser, 'replace-btn');
     await saveError();
 
     await waitForTestId(browser, 'save-as-btn');

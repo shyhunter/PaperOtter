@@ -1,15 +1,17 @@
 import { browser } from '@wdio/globals';
 import { existsSync, statSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { mockOpenDialog, mockSaveDialog } from '../helpers/dialogs';
+import { mockOpenDialog, mockSaveDialog, captureSaveOptions } from '../helpers/dialogs';
 import {
   waitForProcessingComplete,
-  screenshotOnFailure,
+  captureFailure,
   prepareOutputPath,
-  selectToolOnDashboard,
+  goToTool,
   resetAppState,
   FIXTURES_DIR,
   REAL_FIXTURES_DIR,
+  completeSave,
+  completeSaveCapture,
 } from '../helpers/driver';
 import {
   clickTestId,
@@ -32,7 +34,7 @@ let toolSelected = false;
 beforeEach(async () => {
   if (toolSelected) return; // already navigated — skip
   try {
-    await selectToolOnDashboard(browser, 'Compress Image');
+    await goToTool(browser, 'Compress Image');
     toolSelected = true;
   } catch {
     // Dashboard navigation failed — plugin may be crashing; test will fail cleanly
@@ -67,7 +69,7 @@ async function navigateToImageCompare(): Promise<void> {
 
 afterEach(async function (this: Mocha.Context) {
   if (this.currentTest?.state === 'failed') {
-    await screenshotOnFailure(browser, this.currentTest.fullTitle());
+    await captureFailure(browser, this.currentTest.fullTitle());
   }
   // Always reset to the open-file page, regardless of which step we're on.
   // This prevents cascading failures when a test leaves the app in an unexpected state.
@@ -88,7 +90,7 @@ describe('Image — quality only', () => {
     await navigateToImageCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('jpeg');
@@ -109,7 +111,7 @@ describe('Image — quality only', () => {
     await navigateToImageCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('jpeg');
@@ -131,7 +133,7 @@ describe('Image — quality + format conversion', () => {
     await navigateToImageCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('png');
@@ -150,7 +152,7 @@ describe('Image — quality + format conversion', () => {
     await navigateToImageCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('webp');
@@ -177,7 +179,7 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
     expect(await testIdDisplayed(browser, 'image-compare-step')).toBe(true);
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('png');
@@ -203,7 +205,7 @@ describe('Image — quality + format + resize (aspect ratio lock)', () => {
     await navigateToImageCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(detectMagicBytes(outPath)).toBe('webp');
@@ -261,14 +263,11 @@ describe('Image save dialog filter', () => {
       await clickTestId(browser, `format-option-${format}`);
 
       // Tell SaveStep.handleSave to capture the dialog options instead of opening the OS dialog.
-      await browser.execute(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__E2E_CAPTURE_SAVE_OPTS__ = true;
-      });
+      await captureSaveOptions(browser);
 
       await navigateToImageCompare();
       await clickTestId(browser, 'save-btn');
-      await browser.pause(500);
+      await completeSaveCapture(browser);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const captured = await browser.execute(() => (window as any).__E2E_SAVE_OPTS__);

@@ -1,15 +1,17 @@
 import { browser } from '@wdio/globals';
 import { existsSync, statSync } from 'fs';
 import { join } from 'path';
-import { mockOpenDialog, mockSaveDialog } from '../helpers/dialogs';
+import { mockOpenDialog, mockSaveDialog, captureSaveOptions } from '../helpers/dialogs';
 import {
   waitForProcessingComplete,
-  screenshotOnFailure,
+  captureFailure,
   prepareOutputPath,
-  selectToolOnDashboard,
+  goToTool,
   resetAppState,
   FIXTURES_DIR,
   REAL_FIXTURES_DIR,
+  completeSave,
+  completeSaveCapture,
 } from '../helpers/driver';
 import {
   clickTestId,
@@ -18,9 +20,10 @@ import {
   waitForTestIdDisplayed,
   waitForStep,
   getTestIdText,
-  selectTestIdByText,
+  selectTestIdByValue,
   clearAndSetTestIdValue,
   setSliderValue,
+  pageContainsText,
 } from '../helpers/testid';
 
 const PHOTO_PDF  = join(REAL_FIXTURES_DIR, 'photo_heavy.pdf');
@@ -30,7 +33,7 @@ const CORRUPT_PDF = join(FIXTURES_DIR, 'corrupt.pdf');
 
 // Navigate from Dashboard to Compress PDF tool once at session start.
 before(async () => {
-  await selectToolOnDashboard(browser, 'Compress PDF');
+  await goToTool(browser, 'Compress PDF');
 });
 
 async function injectFile(filePath: string): Promise<void> {
@@ -52,7 +55,7 @@ async function navigateToCompare(): Promise<void> {
 
 afterEach(async function (this: Mocha.Context) {
   if (this.currentTest?.state === 'failed') {
-    await screenshotOnFailure(browser, this.currentTest.fullTitle());
+    await captureFailure(browser, this.currentTest.fullTitle());
   }
   // Always reset to the open-file page, regardless of which step we're on.
   // This prevents cascading failures when a test leaves the app in an unexpected state.
@@ -79,7 +82,7 @@ describe('PDF compression — quality levels', () => {
       expect(await testIdDisplayed(browser, 'compare-step')).toBe(true);
 
       await clickTestId(browser, 'save-btn');
-      await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+      await completeSave(browser, outPath);
 
       expect(existsSync(outPath)).toBe(true);
       const outSize = statSync(outPath).size;
@@ -106,7 +109,7 @@ describe('PDF resize', () => {
     await waitForStep(browser, 1);
 
     await clickTestId(browser, 'resize-toggle');
-    await selectTestIdByText(browser, 'page-preset-select', 'A3');
+    await selectTestIdByValue(browser, 'page-preset-select', 'A3');
 
     await mockSaveDialog(browser, outPath);
     await navigateToCompare();
@@ -115,7 +118,7 @@ describe('PDF resize', () => {
     expect(statsText).toBeTruthy();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -127,7 +130,7 @@ describe('PDF resize', () => {
     await waitForStep(browser, 1);
 
     await clickTestId(browser, 'resize-toggle');
-    await selectTestIdByText(browser, 'page-preset-select', 'Custom');
+    await selectTestIdByValue(browser, 'page-preset-select', 'custom');
     await clearAndSetTestIdValue(browser, 'custom-width-input', '100');
     await clearAndSetTestIdValue(browser, 'custom-height-input', '150');
 
@@ -137,7 +140,7 @@ describe('PDF resize', () => {
     expect(await testIdDisplayed(browser, 'compare-step')).toBe(true);
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -152,13 +155,13 @@ describe('PDF resize', () => {
     await setSliderValue(browser, 'compression-slider', 12);
 
     await clickTestId(browser, 'resize-toggle');
-    await selectTestIdByText(browser, 'page-preset-select', 'A3');
+    await selectTestIdByValue(browser, 'page-preset-select', 'A3');
 
     await mockSaveDialog(browser, outPath);
     await navigateToCompare();
 
     await clickTestId(browser, 'save-btn');
-    await browser.waitUntil(() => existsSync(outPath), { timeout: 30000, interval: 100, timeoutMsg: `output file not written: ${outPath}` });
+    await completeSave(browser, outPath);
 
     expect(existsSync(outPath)).toBe(true);
     expect(statSync(outPath).size).toBeGreaterThan(0);
@@ -201,8 +204,18 @@ describe('PDF error paths', () => {
 
     const configureVisible = await testIdDisplayed(browser, 'configure-step');
     const compareVisible   = await testIdDisplayed(browser, 'compare-step');
-    // After cancel, app must show either Configure or Compare step (not blank)
-    expect(configureVisible || compareVisible).toBe(true);
+    // Cancelling has its own screen now — "Processing cancelled", with Retry and
+    // Back to Configure. That is a better answer than either of the two this
+    // test was written to accept, and the claim being made is only that the user
+    // is not stranded on a blank one.
+    const cancelledVisible = await testIdDisplayed(browser, 'cancelled-step');
+    expect(configureVisible || compareVisible || cancelledVisible).toBe(true);
+
+    // Stranded is the failure this guards against, so a dead end counts as one:
+    // whichever screen appeared has to offer a way onward.
+    if (cancelledVisible) {
+      expect(await pageContainsText(browser, /retry|configure/i)).toBe(true);
+    }
   });
 });
 
@@ -214,14 +227,11 @@ describe('PDF save dialog filter', () => {
     await waitForStep(browser, 1);
 
     // Tell SaveStep.handleSave to capture the dialog options instead of opening the OS dialog.
-    await browser.execute(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__E2E_CAPTURE_SAVE_OPTS__ = true;
-    });
+    await captureSaveOptions(browser);
 
     await navigateToCompare();
     await clickTestId(browser, 'save-btn');
-    await browser.pause(500);
+    await completeSaveCapture(browser);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const capturedArgs = await browser.execute(() => (window as any).__E2E_SAVE_OPTS__);
