@@ -80,17 +80,26 @@ describe('Cancelling a batch stops Ghostscript', () => {
 
     // A batch configures once for the whole set, then runs. The run step only
     // exists after that, so the settings screen has to be cleared first.
-    await waitForTestId(browser, 'configure-step', { timeout: 20000 });
+    //
+    // Generous, and deliberately so. Reaching the starting line is not what
+    // this test measures: it is three 2.3 MB documents being read and thumbnailed
+    // before anything interesting happens, and how long that takes is a fact
+    // about the machine. Twenty seconds was a number picked on a fast Mac and it
+    // failed on an old Ubuntu box that ran the rest of the suite perfectly.
+    //
+    // The assertions after the cancel stay tight, because those are the claim.
+    // Setup waits should be forgiving; the thing being proved should not be.
+    await waitForTestId(browser, 'configure-step', { timeout: 90000 });
     await clickTestId(browser, 'generate-preview-btn');
 
-    await waitForTestId(browser, 'batch-run-step', { timeout: 20000 });
+    await waitForTestId(browser, 'batch-run-step', { timeout: 90000 });
 
     // Wait for Ghostscript to actually be running. Cancelling before it starts
     // would prove nothing at all, and would pass every time.
     let running: number[] = [];
     await browser.waitUntil(
       async () => { running = ghostscriptPids(); return running.length > 0; },
-      { timeout: 30000, interval: 100, timeoutMsg: 'Ghostscript never started, so there was nothing to cancel' },
+      { timeout: 60000, interval: 100, timeoutMsg: 'Ghostscript never started, so there was nothing to cancel' },
     );
 
     const indexAtCancel = Number(await getTestIdAttr(browser, 'batch-run-step', 'data-batch-index'));
