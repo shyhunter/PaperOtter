@@ -4,11 +4,12 @@ name: CodeQL
 # returns 403 "Code scanning is not enabled", which is why the 51 Dependabot
 # alerts were the only findings anyone had ever seen here.
 #
-# NOTE: CodeQL needs GitHub Advanced Security on a PRIVATE repo, so this
-# workflow will fail until the repository is public. Do not merge it before the
-# visibility flip. Once public it is free, and so are the Actions minutes it
-# spends — public repos get unlimited minutes, which removes the budget
-# pressure every other workflow here is designed around.
+# NOTE: CodeQL needs GitHub Advanced Security on a PRIVATE repo. The analysis
+# itself runs fine; uploading the SARIF is what fails, so the job is gated on
+# visibility below and does not run at all until the flip. Once public it is
+# free, and so are the Actions minutes it spends — public repos get unlimited
+# minutes, which removes the budget pressure every other workflow here is
+# designed around.
 on:
   pull_request:
     branches: ['**']
@@ -23,7 +24,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Two red checks on every pull request is how a team learns to ignore CI, and
+  # these two said nothing about the code: the scan found its files and
+  # exported results, then failed posting them to a dashboard this repo cannot
+  # have while private.
+  #
+  # Gating beats `continue-on-error`, which would swallow a genuine upload
+  # failure forever. This removes itself instead: the day the repo goes public
+  # the analysis starts running, and a real failure goes red again with nothing
+  # to undo.
+  #
+  # A job rather than an `if:` on `analyze`, because this workflow also runs on
+  # `schedule`, where `github.event.repository` is not documented as populated.
+  # Ten seconds on a small runner also skips the whole Rust build behind it.
+  visibility:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      public: ${{ steps.check.outputs.public }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          v=$(gh api "repos/${{ github.repository }}" --jq .visibility)
+          echo "repository is $v"
+          if [ "$v" = public ]; then
+            echo "public=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "public=false" >> "$GITHUB_OUTPUT"
+          fi
+
   analyze:
+    needs: visibility
+    if: needs.visibility.outputs.public == 'true'
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-22.04
     permissions:
