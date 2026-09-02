@@ -16,54 +16,24 @@
  */
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
-import { goToDashboard, captureFailure } from '../../helpers/driver';
+import { goToDashboard, captureFailure, emitDrop, warmUpDropListener } from '../../helpers/driver';
 import { waitForText, pageContainsText, testIdExists, clickTestId, waitForTestId } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
 const ws = new Workspace('dashboard-drops');
 
-/** Emit a drop through the e2e-only backend command. */
+/** Emit a drop and wait for it to land. */
 async function drop(paths: string[]): Promise<void> {
-  await browser.execute(async (dropped: string[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
-    if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
-    await invoke('e2e_emit_drop', { paths: dropped });
-  }, paths);
-
-  // Wait for the banner, rather than guessing how long staging takes.
-  //
-  // The handler grants filesystem scope before staging, which is a round trip,
-  // and this was `browser.pause(400)` — a number that is true on a fast machine
-  // and false on a slow one. When it is false the drop simply has not happened
-  // yet, and anything asserted next is asserted about the wrong state.
+  await emitDrop(browser, paths);
+  // The banner is the observable outcome; a fixed pause is a guess about how
+  // long staging takes on someone else's machine.
   await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 
 after(() => ws.cleanup());
 before(async () => {
   await goToDashboard(browser);
-
-  // Wait for the drag-drop listener to actually exist.
-  //
-  // Tauri registers it with an async `listen()` call from an effect, so the
-  // dashboard is on screen and interactive for a short window during which a
-  // drop is delivered to nobody at all. A person cannot drop a file in the
-  // few hundred milliseconds after launch; `e2e_emit_drop` can, and did — this
-  // spec's first test failed on a cold start and passed on a warm one.
-  //
-  // Polling here rather than retrying inside `drop()` keeps each test honest:
-  // below this point a drop that goes missing is a failure, not something the
-  // helper quietly papers over.
-  const probe = ws.fixture('sample.pdf', 'listener-warmup.pdf');
-  await browser.waitUntil(
-    async () => {
-      await drop([probe]);
-      return testIdExists(browser, 'staged-file');
-    },
-    { timeout: 20000, interval: 500, timeoutMsg: 'the drag-drop listener never came up' },
-  );
-  await clickTestId(browser, 'staged-file-dismiss');
+  await warmUpDropListener(browser, ws.fixture('sample.pdf', 'listener-warmup.pdf'));
 });
 
 

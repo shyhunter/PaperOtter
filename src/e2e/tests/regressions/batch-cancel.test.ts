@@ -25,6 +25,7 @@ import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import {
   goToDashboard, goToToolById, captureFailure, ghostscriptPids, isAlive,
+  emitDrop, warmUpDropListener,
 } from '../../helpers/driver';
 import {
   clickTestId, waitForTestId, testIdExists, getTestIdAttr,
@@ -36,31 +37,23 @@ const ws = new Workspace('batch-cancel');
 
 after(() => ws.cleanup());
 
+before(async () => {
+  await goToDashboard(browser);
+  await warmUpDropListener(browser, ws.fixture('sample.pdf', 'listener-warmup.pdf'));
+});
+
+
 afterEach(async function (this: Mocha.Context) {
   if (this.currentTest?.state === 'failed') {
     await captureFailure(browser, this.currentTest.fullTitle());
   }
 });
 
-/** Emit a drop of several files, the way the dashboard receives one. */
+/** Emit a drop and wait for it to land. */
 async function drop(paths: string[]): Promise<void> {
-  await browser.execute(async (dropped: string[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
-    if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
-    await invoke('e2e_emit_drop', { paths: dropped });
-  }, paths);
-
-  // Wait for the drop to actually land, rather than guessing how long it takes.
-  //
-  // This was `browser.pause(400)`, which is a number that happens to be true on
-  // a fast machine. On an old Ubuntu box it was not: staging had not finished
-  // when the next step clicked into the tool, so `stagedFile` was still null,
-  // no pending files were handed over, and Compress PDF opened on its empty
-  // pick screen. The failure surfaced twenty seconds later as "timed out
-  // waiting for configure-step", which points at the wrong thing entirely.
-  //
-  // The banner is the observable outcome, so wait for that.
+  await emitDrop(browser, paths);
+  // The banner is the observable outcome; a fixed pause is a guess about how
+  // long staging takes on someone else's machine.
   await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 

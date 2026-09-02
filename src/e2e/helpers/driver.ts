@@ -193,6 +193,56 @@ export async function goToToolById(browser: Browser, toolId: string): Promise<vo
   await waitForTestId(browser, 'current-tool', { timeout: 10000 });
 }
 
+
+/**
+ * Emit a drop through the e2e-only backend command. Does not wait for anything.
+ *
+ * The raw form, for the warm-up below. Tests should use a wrapper that waits for
+ * the staged banner: a drop whose effect nobody waited for is a drop asserted
+ * about in the wrong state.
+ */
+export async function emitDrop(browser: Browser, paths: string[]): Promise<void> {
+  await browser.execute(async (dropped: string[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
+    if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
+    await invoke('e2e_emit_drop', { paths: dropped });
+  }, paths);
+}
+
+/**
+ * Wait for Tauri's drag-drop listener to actually exist, then clear the probe.
+ *
+ * Tauri registers it with an async `listen()` from an effect, so the dashboard
+ * is on screen and interactive for a window during which a drop is delivered to
+ * nobody at all. A person cannot drop a file in the few hundred milliseconds
+ * after launch; `e2e_emit_drop` can.
+ *
+ * Every spec that drops needs this, not just the one where it was first found.
+ * It lived inside dashboard-drops, and batch-cancel — which sorts first, so it
+ * always meets a freshly launched app — did not have it. On a fast machine the
+ * listener wins that race and nothing looks wrong; on an old Ubuntu box it lost,
+ * the drop vanished, and the tool opened empty twenty seconds later.
+ *
+ * Polling here rather than retrying inside the per-test drop keeps each test
+ * honest: after this returns, a drop that goes missing is a failure rather than
+ * something a helper quietly papers over.
+ */
+export async function warmUpDropListener(browser: Browser, probePath: string): Promise<void> {
+  await browser.waitUntil(
+    async () => {
+      await emitDrop(browser, [probePath]);
+      // A short settle: the emit is a round trip, and the banner is React state
+      // that lands a tick later. This is the one place a small pause is right —
+      // it is a poll interval, not a guess about how long the work takes.
+      await browser.pause(250);
+      return testIdExists(browser, 'staged-file');
+    },
+    { timeout: 30000, interval: 250, timeoutMsg: 'the drag-drop listener never came up' },
+  );
+  await clickTestId(browser, 'staged-file-dismiss');
+}
+
 /**
  * Reset the app to the open-file page of a standard tool (Compress, Rotate…).
  *
