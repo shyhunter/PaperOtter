@@ -10,6 +10,7 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 mod heic;
+mod selftest;
 mod ocr;
 
 /// Validates a source file path from the frontend.
@@ -223,6 +224,73 @@ fn with_windows_dll_path(
     cmd: tauri_plugin_shell::process::Command,
 ) -> tauri_plugin_shell::process::Command {
     cmd
+}
+
+/// Ghostscript's version string, through the same sidecar and PATH wrapper the
+/// app uses. Exposed for the self-test so it exercises the real resolution
+/// rather than a synthetic copy of it.
+pub(crate) async fn spawn_gs_version(app: &tauri::AppHandle) -> Result<String, String> {
+    let cmd = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("sidecar not found: {e}"))?;
+    let cmd = with_windows_dll_path(app, cmd);
+    let output = cmd
+        .arg("--version")
+        .output()
+        .await
+        .map_err(|e| format!("could not start: {e}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "exited with {:?}: {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+/// Make Ghostscript write a one-page PDF with no input file.
+///
+/// `--version` proves the binary loads. Only this proves `pdfwrite` works, and
+/// pdfwrite is the device every compress in the app depends on.
+pub(crate) async fn spawn_gs_pdfwrite(
+    app: &tauri::AppHandle,
+    out: &std::path::Path,
+) -> Result<(), String> {
+    let cmd = app
+        .shell()
+        .sidecar("gs")
+        .map_err(|e| format!("sidecar not found: {e}"))?;
+    let cmd = with_windows_dll_path(app, cmd);
+    let output = cmd
+        .args([
+            "-q",
+            "-dNOPAUSE",
+            "-dBATCH",
+            "-sDEVICE=pdfwrite",
+            // Irrelevant to a blank page, and included anyway: the invariant
+            // that every pdfwrite invocation preserves page rotation is worth
+            // more as an absolute rule than as one with an exemption someone
+            // has to reason about later. The test enforcing it caught this
+            // within a minute of the code being written, which is the argument
+            // for keeping it absolute.
+            GS_KEEP_PAGE_ROTATION,
+            &format!("-sOutputFile={}", out.display()),
+            "-c",
+            "showpage",
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("could not start: {e}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "exited with {:?}: {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    Ok(())
 }
 
 /// Check if Ghostscript is available (sidecar or system).
@@ -2448,11 +2516,17 @@ fn sweep_papercut_temp_files() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    run_with_file(None)
+    run_with_file(None, false)
 }
 
-/// Run the app, optionally opening a file passed via CLI argument (macOS "Open with").
-pub fn run_with_file(open_file: Option<String>) {
+/// Run the app, optionally opening a file passed via CLI argument (macOS "Open
+/// with") — or — with `selftest` — run the installed-layout check and exit.
+///
+/// The self-test deliberately goes through the *same* builder and setup as the
+/// real app. Checking `resource_dir()` from a synthetic Tauri instance would
+/// prove something about that instance, not about the installed tree the user
+/// actually runs, which is the whole question REL-01 asks.
+pub fn run_with_file(open_file: Option<String>, selftest: bool) {
     let builder = tauri::Builder::default()
         .manage(ProcessState { gs_child: Mutex::new(None) })
         .plugin(tauri_plugin_shell::init())
@@ -2479,6 +2553,20 @@ pub fn run_with_file(open_file: Option<String>) {
 
     builder
         .setup(move |app| {
+            if selftest {
+                // No window, no sweep, no frontend — resolve, probe, print, exit.
+                // The window is left alone deliberately. Hiding it needs the
+                // Manager trait in scope here for one cosmetic effect, and the
+                // process exits within a second or two anyway — on a CI runner
+                // nobody sees it at all.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let code = selftest::run(&handle).await;
+                    std::process::exit(code);
+                });
+                return Ok(());
+            }
+
             sweep_papercut_temp_files();
 
             // If a PDF file was passed via CLI, emit a "file-opened" event to the frontend

@@ -366,6 +366,45 @@ jobs:
           Stop-Process -Id $proc.Id -Force
           Write-Host "=== Windows smoke test PASSED ==="
 
+      # ── REL-01: ask the installed app whether Ghostscript actually resolves ──
+      #
+      # This is the check the Pre-Release Gate asked a person with a Windows
+      # machine to make by hand. It never happened, because there is no Windows
+      # machine. The app can answer for itself: --selftest resolves
+      # resource_dir() exactly as the app does, runs the bundled Ghostscript
+      # through the same sidecar and the same with_windows_dll_path wrapper, and
+      # makes it write a real PDF with pdfwrite — the device every compress in
+      # the app depends on.
+      #
+      # It runs here rather than in the build job on purpose: there the exe and
+      # gsdll64.dll sit in one folder and Ghostscript runs whatever happens. Only
+      # the installed layout separates them, and only the installed layout can
+      # fail the way this is guarding against.
+      #
+      # What it still does not cover: the webview. If Ghostscript resolves but
+      # the UI never reaches it, this passes and the app is broken. Smaller and
+      # different risk; worth stating rather than papering over.
+      - name: Windows — self-test the installed app (REL-01)
+        if: matrix.type == 'nsis'
+        shell: pwsh
+        run: |
+          $binary = $null
+          $roots = @("$env:LOCALAPPDATA\Papercut", "$env:ProgramFiles\Papercut")
+          foreach ($root in $roots) {
+            $found = Get-ChildItem -Path $root -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
+            if ($found) { $binary = $found.FullName; break }
+          }
+          if (-Not $binary) { Write-Host "FAIL: no installed Papercut.exe to self-test"; exit 1 }
+
+          Write-Host "Running: $binary --selftest"
+          $p = Start-Process -FilePath $binary -ArgumentList "--selftest" -PassThru -Wait -NoNewWindow
+          Write-Host "self-test exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) {
+            Write-Host "FAIL: the installed app cannot run its bundled Ghostscript."
+            exit 1
+          }
+          Write-Host "PASS: REL-01 — bundled Ghostscript resolves and writes a PDF in the installed layout"
+
       # ── Windows: the bundled Ghostscript must actually load and compress ──
       #
       # This is the check the build job cannot make. There, the exe and gsdll64.dll
