@@ -550,6 +550,7 @@ export const it: Dictionary = {
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tutta l’elaborazione avviene localmente. Nessun dato lascia mai il suo computer.',
   'aboutDialog.translationsNotNativeReviewed': 'Papercut parla nove lingue. Solo l’inglese è scritto da un madrelingua; le altre sono assistite da una macchina e non sono state riviste da un madrelingua. Se qualcosa suona strano o dice la cosa sbagliata, la preghiamo di segnalarlo.',
+  'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Sviluppato con', 'aboutDialog.license': 'Licenza',
   'aboutDialog.sendFeedback': 'Invia un commento',
   'buyMeAcoffeeButton.buyMeACoffee': 'Mi offra un caffè', 'support.buyMeACoffee': 'Mi offra un caffè',

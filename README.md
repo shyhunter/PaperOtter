@@ -86,6 +86,19 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 
 ---
 
+## Roadmap
+
+**[The roadmap is public.](https://github.com/users/shyhunter/projects/9)** What is
+being worked on, what is agreed for later, and what has been decided against —
+with the reasoning, not just the verdict.
+
+Items carry the argument that produced them. Named presets say why Protect will
+never get one; the AI-preparation work says which parts are deliberately out of
+scope and what promise they would break. If you disagree with a call, the
+reasoning is there to disagree with.
+
+---
+
 ## Languages
 
 Papercut's interface is available in nine languages: English, German, Turkish,

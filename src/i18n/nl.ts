@@ -554,6 +554,7 @@ export const nl: Dictionary = {
   'aboutDialog.allProcessingHappensLocallyNo':
     'Alle verwerking gebeurt lokaal. Er verlaten nooit gegevens uw computer.',
   'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alleen het Engels is door een moedertaalspreker geschreven; de rest is machinaal ondersteund en niet door een moedertaalspreker nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
+  'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
   'aboutDialog.sendFeedback': 'Feedback sturen',
   'buyMeAcoffeeButton.buyMeACoffee': 'Trakteer me op een koffie',

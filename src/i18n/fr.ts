@@ -864,6 +864,7 @@ export const fr: Dictionary = {
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tout le traitement est local. Aucune donnée ne quitte votre ordinateur.',
   'aboutDialog.translationsNotNativeReviewed': 'Papercut parle neuf langues. Seul l’anglais est rédigé par un locuteur natif ; les autres sont assistées par machine et n’ont pas été relues par un natif. Si une formulation semble étrange ou incorrecte, merci de le signaler.',
+  'aboutDialog.roadmap': 'Feuille de route',
   'aboutDialog.builtWith': 'Développé avec',
   'aboutDialog.license': 'Licence',
   'aboutDialog.sendFeedback': 'Envoyer un commentaire',

@@ -609,6 +609,7 @@ export const tr: Dictionary = {
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tüm işlemler yerel olarak yapılır. Hiçbir veri bilgisayarınızdan çıkmaz.',
   'aboutDialog.translationsNotNativeReviewed': 'Papercut dokuz dil konuşur. Yalnızca İngilizce metinler ana dili konuşan biri tarafından yazılmıştır; diğerleri makine desteğiyle hazırlanmış ve ana dili konuşan biri tarafından denetlenmemiştir. Bir şey tuhaf geliyor ya da yanlış anlatıyorsa lütfen bildirin.',
+  'aboutDialog.roadmap': 'Yol haritası',
   'aboutDialog.builtWith': 'Şununla geliştirildi', 'aboutDialog.license': 'Lisans',
   'aboutDialog.sendFeedback': 'Geri bildirim gönder',
   'buyMeAcoffeeButton.buyMeACoffee': 'Bana bir kahve ısmarlayın',
