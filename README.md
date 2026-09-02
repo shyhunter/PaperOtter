@@ -86,6 +86,28 @@ Papercut ships with **22 tools** across three categories -- all running locally 
 
 ---
 
+## Languages
+
+Papercut's interface is available in nine languages: English, German, Turkish,
+French, Spanish, Italian, Dutch, Polish and Portuguese.
+
+**Only the English is written by a native speaker.** The other eight are
+machine-assisted and have not been reviewed by a native speaker of that
+language. They are shipped because a good-enough translation beats an English-only
+interface for most people — but "good enough" is a claim worth being honest
+about rather than quietly hoping nobody notices.
+
+Sentences that warn about losing data, overwriting a file or deleting something
+are treated as a special case: they are either translated everywhere or shipped
+in English everywhere, never half-done, and a test enforces that. A confusing
+warning is worse than a foreign one.
+
+**If a string reads oddly, says the wrong thing, or is missing, please
+[open an issue](https://github.com/shyhunter/Papercut/issues).** Corrections from
+native speakers are the most useful contribution this project can receive.
+
+---
+
 ## Platform support
 
 Almost everything works identically on macOS, Windows and Linux. Two things do not,
