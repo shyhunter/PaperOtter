@@ -9,17 +9,20 @@ being here means it is agreed and scoped, not that it is scheduled.
 
 ## Before 1.0
 
-Six things stand between Papercut and its first stable release. None of them are
-new features — they are checks that no automated test can make.
+Four things stand between Papercut and its first stable release. None of them
+are new features — they are checks and pages that no automated test can produce.
 
 | # | Item | What it is |
 |---|------|------------|
 | 1 | Windows Ghostscript | Five tools depend on Ghostscript, including Compress PDF. The installed Windows app has never been run against it |
-| 2 | Read the German UI | Nine languages ship; German is the one with the most recent untested strings |
-| 3 | One agreed version number | `package.json`, `tauri.conf.json` and `Cargo.toml` currently disagree with the last tag |
-| 4 | README states the dependencies | "No installation required" is true of 21 of 22 tools — Convert Document needs Calibre, and the README should say so plainly |
-| 5 | Cancel a batch mid-run | Fixed by inspection; no run has yet confirmed the child process actually dies |
-| 6 | A visual pass over the UI | Automated tests render no pixels, so nothing has checked that the layout still looks right |
+| 2 | Read the German UI | Nine languages ship. German has the most recently written strings, including several warnings about losing work that nobody has yet read in German |
+| 3 | A visual pass over the UI | Automated tests render no pixels, so nothing has checked that the layout still looks right |
+| 4 | A proper home page | Papercut is a desktop app, and a desktop app needs somewhere to download it from that is not a source-code repository |
+
+Recently closed: the version number is settled at **1.0.0**; the README's
+dependency claims were checked line by line and were already accurate; and
+cancelling a batch is now proven to stop Ghostscript by a test that asks the
+operating system, rather than by reading the code and believing it.
 
 ***
 
