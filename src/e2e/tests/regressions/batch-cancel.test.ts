@@ -50,7 +50,18 @@ async function drop(paths: string[]): Promise<void> {
     if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
     await invoke('e2e_emit_drop', { paths: dropped });
   }, paths);
-  await browser.pause(400);
+
+  // Wait for the drop to actually land, rather than guessing how long it takes.
+  //
+  // This was `browser.pause(400)`, which is a number that happens to be true on
+  // a fast machine. On an old Ubuntu box it was not: staging had not finished
+  // when the next step clicked into the tool, so `stagedFile` was still null,
+  // no pending files were handed over, and Compress PDF opened on its empty
+  // pick screen. The failure surfaced twenty seconds later as "timed out
+  // waiting for configure-step", which points at the wrong thing entirely.
+  //
+  // The banner is the observable outcome, so wait for that.
+  await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 
 describe('Cancelling a batch stops Ghostscript', () => {

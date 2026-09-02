@@ -17,7 +17,7 @@
 import { browser } from '@wdio/globals';
 import { expect } from '@wdio/globals';
 import { goToDashboard, captureFailure } from '../../helpers/driver';
-import { waitForText, pageContainsText, testIdExists, clickTestId } from '../../helpers/testid';
+import { waitForText, pageContainsText, testIdExists, clickTestId, waitForTestId } from '../../helpers/testid';
 import { Workspace } from '../../helpers/workspace';
 
 const ws = new Workspace('dashboard-drops');
@@ -30,8 +30,14 @@ async function drop(paths: string[]): Promise<void> {
     if (!invoke) throw new Error('Tauri IPC unavailable — is this the e2e build?');
     await invoke('e2e_emit_drop', { paths: dropped });
   }, paths);
-  // The handler grants filesystem scope before staging, which is a round trip.
-  await browser.pause(400);
+
+  // Wait for the banner, rather than guessing how long staging takes.
+  //
+  // The handler grants filesystem scope before staging, which is a round trip,
+  // and this was `browser.pause(400)` — a number that is true on a fast machine
+  // and false on a slow one. When it is false the drop simply has not happened
+  // yet, and anything asserted next is asserted about the wrong state.
+  await waitForTestId(browser, 'staged-file', { timeout: 15000 });
 }
 
 after(() => ws.cleanup());
@@ -105,12 +111,25 @@ describe('Dropping files onto the dashboard', () => {
   it('[E2E-DROP-02] the same file dropped twice is staged once', async () => {
     const a = ws.fixture('warnock_camelot.pdf', 'dup.pdf');
 
+    const other = ws.fixture('sample.pdf', 'dup-other.pdf');
+
     await startOnEmptyDashboard();
     await drop([a]);
     await drop([a]);
 
-    // A duplicate in a merge is silent and almost never intended.
-    expect(await pageContainsText(browser, /2 files/i)).toBe(false);
+    // A third, distinct file, to turn a negative claim into a positive one.
+    //
+    // Asserting only that "2 files" is absent passes just as happily when the
+    // second drop was never processed at all — which is precisely what a slow
+    // machine does — and it would pass with deduplication entirely broken.
+    // Dropping something different forces a count that can only come out one
+    // way: deduplicated this is two files, not deduplicated it is three.
+    //
+    // A duplicate in a merge is silent and almost never intended, which is why
+    // it is worth proving rather than assuming.
+    await drop([other]);
+    await waitForText(browser, /2 files/i);
+    expect(await pageContainsText(browser, /3 files/i)).toBe(false);
   });
 
   it('[E2E-DROP-03] dropping a different type replaces rather than mixing', async () => {
