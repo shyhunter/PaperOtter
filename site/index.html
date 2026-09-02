@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papercut — your local document toolkit</title>
+<meta name="description" content="Compress, convert and edit PDFs, images and documents on your own machine. No uploads, no cloud, no telemetry. Free and open source for macOS, Windows and Linux.">
+
+<meta property="og:title" content="Papercut — your local document toolkit">
+<meta property="og:description" content="Compress, convert and edit PDFs, images and documents on your own machine. No uploads, no cloud, no telemetry.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="screenshots/dashboard-light.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>✂️</text></svg>">
+
+<style>
+  /* The app's own palette: achromatic by design — oklch(x 0 0) throughout, no
+     chroma anywhere. A landing page in brand colours the product does not have
+     would be the first thing that lies about it. */
+  :root {
+    --bg: oklch(0.97 0 0);
+    --surface: oklch(1 0 0);
+    --ink: oklch(0.145 0 0);
+    --ink-soft: oklch(0.48 0 0);
+    --border: oklch(0.88 0 0);
+    --cta: oklch(0.205 0 0);
+    --cta-ink: oklch(0.985 0 0);
+    --good: oklch(0.52 0.13 155);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: oklch(0.145 0 0);
+      --surface: oklch(0.205 0 0);
+      --ink: oklch(0.985 0 0);
+      --ink-soft: oklch(0.72 0 0);
+      --border: oklch(0.30 0 0);
+      --cta: oklch(0.93 0 0);
+      --cta-ink: oklch(0.145 0 0);
+      --good: oklch(0.72 0.14 155);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  a { color: inherit; }
+
+  /* ── Hero ─────────────────────────────────────────────────── */
+
+  header { padding: 4.5rem 0 3rem; text-align: center; }
+
+  header img.logo { width: min(30rem, 90%); height: auto; }
+
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.9rem);
+    line-height: 1.1;
+    letter-spacing: -.03em;
+    margin: 1.5rem 0 .6rem;
+    text-wrap: balance;
+  }
+
+  .tagline {
+    font-size: clamp(1rem, 2.2vw, 1.2rem);
+    color: var(--ink-soft);
+    margin: 0 auto 2rem;
+    max-width: 34rem;
+    text-wrap: balance;
+  }
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cta {
+    display: inline-block;
+    background: var(--cta);
+    color: var(--cta-ink);
+    text-decoration: none;
+    font-weight: 600;
+    padding: .8rem 1.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--cta);
+  }
+
+  .cta:hover { opacity: .88; }
+
+  .cta.secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--border);
+    font-weight: 500;
+  }
+
+  .cta:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .under-cta { margin-top: 1rem; font-size: .88rem; color: var(--ink-soft); }
+
+  /* ── Sections ─────────────────────────────────────────────── */
+
+  section { padding: 3.5rem 0; border-top: 1px solid var(--border); }
+
+  h2 {
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    letter-spacing: -.02em;
+    margin: 0 0 .5rem;
+    text-wrap: balance;
+  }
+
+  .lede { color: var(--ink-soft); margin: 0 0 2rem; max-width: 42rem; }
+
+  /* ── Promise ──────────────────────────────────────────────── */
+
+  .promise {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    text-align: center;
+  }
+
+  .promise p { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.25rem); text-wrap: balance; }
+
+  .promise .detail { margin-top: .75rem; font-size: .92rem; color: var(--ink-soft); }
+
+  /* ── Shots ────────────────────────────────────────────────── */
+
+  figure { margin: 0 0 1.5rem; }
+
+  figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  figcaption { margin-top: .6rem; font-size: .85rem; color: var(--ink-soft); }
+
+  .shots { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+
+  /* ── Tools ────────────────────────────────────────────────── */
+
+  .tools { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+
+  .tools h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-soft); margin: 0 0 .6rem; }
+
+  .tools ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-size: .95rem; }
+
+  /* ── Downloads ────────────────────────────────────────────── */
+
+  .table-scroll { overflow-x: auto; }
+
+  table { border-collapse: collapse; width: 100%; min-width: 30rem; }
+
+  th, td { text-align: start; padding: .8rem .9rem; border-bottom: 1px solid var(--border); }
+
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-soft); font-weight: 600; }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ── Honest ───────────────────────────────────────────────── */
+
+  .honest { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+
+  .honest div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+
+  .honest h3 { margin: 0 0 .4rem; font-size: 1rem; }
+
+  .honest p { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+
+  /* ── Footer ───────────────────────────────────────────────── */
+
+  footer {
+    padding: 2.5rem 0 4rem;
+    border-top: 1px solid var(--border);
+    font-size: .9rem;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem 1.5rem;
+    justify-content: space-between;
+  }
+
+  footer nav { display: flex; flex-wrap: wrap; gap: 1.1rem; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <img class="logo" src="screenshots/hero-logo.png" alt="Papercut">
+    <h1>Your local document toolkit</h1>
+    <p class="tagline">
+      Compress, convert, sign and edit PDFs, images and documents — on your own
+      machine, without an account and without an internet connection.
+    </p>
+    <div class="cta-row">
+      <a class="cta" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
+      <a class="cta secondary" href="https://github.com/shyhunter/Papercut">Source on GitHub</a>
+    </div>
+    <p class="under-cta">Free and open source · macOS, Windows and Linux</p>
+  </header>
+
+  <section>
+    <div class="promise">
+      <p><strong>Your files never leave your computer.</strong></p>
+      <p class="detail">
+        No uploads, no cloud processing, no accounts, no telemetry. Papercut makes
+        exactly two network requests, neither carrying anything about you or your
+        documents: it checks GitHub for a newer version on launch, and fetches a
+        contact address when you open the About window. That is the whole list.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it looks like</h2>
+    <p class="lede">
+      Pick a tool, choose a file, see the result before you save it. Nothing is
+      written until you say so, and saving over your original is always a
+      deliberate choice.
+    </p>
+    <div class="shots">
+      <figure>
+        <img src="screenshots/dashboard-light.png" alt="The Papercut dashboard in light mode, showing the tool grid" loading="lazy">
+        <figcaption>Every tool on one screen</figcaption>
+      </figure>
+      <figure>
+        <img src="screenshots/dashboard-dark.png" alt="The Papercut dashboard in dark mode" loading="lazy">
+        <figcaption>Dark mode, and eight languages besides English</figcaption>
+      </figure>
+    </div>
+    <figure>
+      <img src="screenshots/tool-configure-step.png" alt="The compression settings screen, showing quality levels and an estimated output size" loading="lazy">
+      <figcaption>Estimates before you commit, not after</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Twenty-two tools</h2>
+    <p class="lede">All of them work on your machine. Twenty-one need nothing installed.</p>
+    <div class="tools">
+      <div>
+        <h3>PDF</h3>
+        <ul>
+          <li>Compress</li><li>Merge</li><li>Split</li><li>Rotate</li>
+          <li>Crop</li><li>Organise pages</li><li>Page numbers</li>
+          <li>Watermark</li><li>Sign</li><li>Redact</li>
+        </ul>
+      </div>
+      <div>
+        <h3>PDF, continued</h3>
+        <ul>
+          <li>Protect with a password</li><li>Remove a password</li>
+          <li>Repair a damaged file</li><li>Convert to PDF/A</li>
+          <li>PDF to JPG</li><li>JPG to PDF</li>
+          <li>Edit text and images</li><li>Make a scan searchable</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Images and documents</h3>
+        <ul>
+          <li>Compress images</li><li>Rotate images</li>
+          <li>Convert between formats</li><li>Convert documents</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Download</h2>
+    <p class="lede">One installer, everything included. Ghostscript is bundled — there is nothing else to fetch.</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Platform</th><th>File</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>macOS</strong> (Apple silicon)</td>
+            <td><code>.dmg</code></td>
+            <td>Unsigned for now — macOS may say the app is damaged. Open <em>System Settings → Privacy &amp; Security</em> and choose <em>Open Anyway</em>.</td>
+          </tr>
+          <tr>
+            <td><strong>Windows</strong></td>
+            <td><code>.exe</code> installer</td>
+            <td>SmartScreen may warn. Choose <em>More info</em>, then <em>Run anyway</em>.</td>
+          </tr>
+          <tr>
+            <td><strong>Linux</strong></td>
+            <td><code>.AppImage</code> or <code>.deb</code></td>
+            <td>Nothing extra to accept.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="under-cta" style="text-align:start">
+      Those warnings appear because the app is not yet signed with a paid
+      certificate, not because anything is wrong with the download. The
+      <a href="https://github.com/shyhunter/Papercut/releases/latest">release page</a>
+      lists checksums for every file.
+    </p>
+  </section>
+
+  <section>
+    <h2>Worth knowing before you download</h2>
+    <p class="lede">The things a download page usually leaves out.</p>
+    <div class="honest">
+      <div>
+        <h3>One tool needs help</h3>
+        <p>
+          Converting to EPUB or MOBI uses Calibre, and some document formats use
+          LibreOffice. Everything else — all twenty-one other tools — runs with
+          nothing installed.
+        </p>
+      </div>
+      <div>
+        <h3>Two features are macOS-only</h3>
+        <p>
+          Reading text from scans uses Apple's built-in engine, and HEIC photos
+          need a decoder the operating system licenses. Papercut hides what it
+          cannot run rather than offering it and failing.
+        </p>
+      </div>
+      <div>
+        <h3>Nine languages, one native</h3>
+        <p>
+          Only the English is written by a native speaker. The rest are
+          machine-assisted and unreviewed. Warnings about losing files are
+          translated everywhere or nowhere — never half-done. Corrections are
+          very welcome.
+        </p>
+      </div>
+      <div>
+        <h3>It is a young project</h3>
+        <p>
+          Built by one person. If something breaks, the issue tracker is read by
+          the person who wrote the code, and bugs reported there are what shaped
+          most of what is here.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Papercut is free software, MIT licensed.</span>
+    <nav>
+      <a href="https://github.com/shyhunter/Papercut/wiki">Documentation</a>
+      <a href="https://github.com/shyhunter/Papercut/wiki/Roadmap">Roadmap</a>
+      <a href="https://github.com/shyhunter/Papercut/issues">Report a problem</a>
+      <a href="https://github.com/shyhunter/Papercut">GitHub</a>
+    </nav>
+  </footer>
+
+</div>
+
+</body>
+</html>
