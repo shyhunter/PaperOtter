@@ -148,14 +148,14 @@ fn find_system_ghostscript() -> Result<String, String> {
 }
 
 /// Spawn a Ghostscript process with the given arguments.
-/// Tries the bundled sidecar binary first (`binaries/gs`), then falls back
+/// Tries the bundled sidecar binary first (`binaries/papercut-gs`), then falls back
 /// to system-installed GS via PATH lookup.
 fn spawn_gs(
     app: &tauri::AppHandle,
     args: Vec<String>,
 ) -> Result<(tauri::async_runtime::Receiver<CommandEvent>, CommandChild), String> {
     // 1. Try bundled sidecar first
-    if let Ok(sidecar_cmd) = app.shell().sidecar("gs") {
+    if let Ok(sidecar_cmd) = app.shell().sidecar("papercut-gs") {
         let sidecar_cmd = with_windows_dll_path(app, sidecar_cmd);
         if let Ok(result) = sidecar_cmd.args(&args).spawn() {
             return Ok(result);
@@ -232,7 +232,7 @@ fn with_windows_dll_path(
 pub(crate) async fn spawn_gs_version(app: &tauri::AppHandle) -> Result<String, String> {
     let cmd = app
         .shell()
-        .sidecar("gs")
+        .sidecar("papercut-gs")
         .map_err(|e| format!("sidecar not found: {e}"))?;
     let cmd = with_windows_dll_path(app, cmd);
     let output = cmd
@@ -260,7 +260,7 @@ pub(crate) async fn spawn_gs_pdfwrite(
 ) -> Result<(), String> {
     let cmd = app
         .shell()
-        .sidecar("gs")
+        .sidecar("papercut-gs")
         .map_err(|e| format!("sidecar not found: {e}"))?;
     let cmd = with_windows_dll_path(app, cmd);
     let output = cmd
@@ -301,7 +301,7 @@ pub(crate) async fn spawn_gs_pdfwrite(
 /// previous check reported Ghostscript available on every platform and the
 /// disabled-tool state with its install hint could never appear.
 async fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
-    if let Ok(cmd) = app.shell().sidecar("gs") {
+    if let Ok(cmd) = app.shell().sidecar("papercut-gs") {
         if let Ok(output) = cmd.arg("--version").output().await {
             if sidecar_reports_version(
                 output.status.success(),
@@ -3355,7 +3355,7 @@ mod tests {
     fn the_bundled_ghostscript_has_no_package_manager_dependencies() {
         let binary = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("binaries")
-            .join("gs-aarch64-apple-darwin");
+            .join("papercut-gs-aarch64-apple-darwin");
         if !binary.exists() {
             return; // other targets legitimately ship a stub
         }
@@ -3395,7 +3395,7 @@ mod tests {
     // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────
     //
     // Papercut ships Ghostscript as a sidecar binary in src-tauri/binaries/.
-    // This test asserts that at least one file matching "gs-*" exists there,
+    // This test asserts that at least one file matching "papercut-gs-*" exists there,
     // catching any build step that accidentally strips or skips bundling GS.
     #[test]
     fn ghostscript_sidecar_binary_exists_in_binaries_dir() {
@@ -3411,13 +3411,43 @@ mod tests {
             .any(|e| {
                 e.file_name()
                     .to_string_lossy()
-                    .starts_with("gs-")
+                    .starts_with("papercut-gs-")
             });
         assert!(
             gs_binary,
-            "at least one Ghostscript sidecar binary (gs-*) must be present in src-tauri/binaries/. \
+            "at least one Ghostscript sidecar binary (papercut-gs-*) must be present in src-tauri/binaries/. \
              Run the build step or provide the GS binary for the target platform."
         );
+    }
+
+    // ─── GS-SIDECAR-02 — the sidecar must not claim a system binary name ─────
+    //
+    // Tauri installs `externalBin` beside the main binary, which on a .deb means
+    // /usr/bin. A sidecar named `gs` therefore lands on /usr/bin/gs — the exact
+    // path Ubuntu's `ghostscript` package owns — and dpkg refuses to overwrite a
+    // file belonging to another package. The install fails on any machine where
+    // Ghostscript is already present, which on a desktop is most of them, and
+    // App Center reports that failure as an indefinite spinner.
+    //
+    // Every release up to v1.0.0-beta.9 shipped that way. The prefix is what
+    // keeps the sidecar in our own namespace, so it is asserted rather than
+    // remembered.
+    #[test]
+    fn the_ghostscript_sidecar_does_not_claim_a_system_binary_name() {
+        let binaries_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries");
+        for entry in std::fs::read_dir(&binaries_dir).expect("must read binaries dir") {
+            let name = entry.expect("readable entry").file_name().to_string_lossy().to_string();
+            // Documentation, and the Windows DLL that Ghostscript loads rather
+            // than a program the package manager would ever own.
+            if name == "README.md" || name.ends_with(".dll") {
+                continue;
+            }
+            assert!(
+                name.starts_with("papercut-"),
+                "sidecar {name:?} would install to a bare name under /usr/bin and can collide \
+                 with a system package. Prefix it with `papercut-`."
+            );
+        }
     }
 
     // ─── IM-FIX-01 — Image processing with real committed fixtures ──────────
