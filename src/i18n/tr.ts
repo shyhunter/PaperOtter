@@ -611,6 +611,8 @@ export const tr: Dictionary = {
   'aboutDialog.translationsNotNativeReviewed': 'Papercut dokuz dil konuşur. İngilizce dahil hepsi yapay zekâ desteğiyle hazırlanmıştır ve hiçbiri profesyonel bir çevirmen tarafından denetlenmemiştir. Bir şey tuhaf geliyor ya da yanlış anlatıyorsa lütfen bildirin.',
   'aboutDialog.roadmap': 'Yol haritası',
   'aboutDialog.builtWith': 'Şununla geliştirildi', 'aboutDialog.license': 'Lisans',
+                                                   'aboutDialog.includes': 'İçerir',
+                                                   'aboutDialog.thirdPartyNotices': 'Üçüncü taraf bildirimleri',
   'aboutDialog.sendFeedback': 'Geri bildirim gönder',
   'buyMeAcoffeeButton.buyMeACoffee': 'Bana bir kahve ısmarlayın',
   'support.buyMeACoffee': 'Bana bir kahve ısmarlayın',
