@@ -1,0 +1,87 @@
+name: Linux test build
+
+# A .deb you can actually install, without cutting a release.
+#
+# There was no way to get one before: the release workflow only runs on a tag,
+# and the E2E job builds with --no-bundle after replacing the real Ghostscript
+# sidecar with a wrapper script. So the only Linux artifact anyone could test
+# was one that had already been published. That is how a package that could not
+# install on any machine with Ghostscript present shipped nine times.
+#
+# Runs only when asked, so it costs nothing until it is wanted.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or SHA to build (blank = the default branch)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-test-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deb:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # A release build, not --debug: the point is to test what a user installs.
+      - name: Build the .deb
+        run: npx tauri build --bundles deb
+
+      - name: Prove nothing claims a path a system package owns
+        run: |
+          set -euo pipefail
+          DEB="$(find src-tauri/target/release/bundle/deb -name '*.deb' | head -1)"
+          test -n "$DEB" || { echo "no .deb was produced"; exit 1; }
+          echo "built: $DEB"
+          echo "--- everything this package installs under /usr/bin ---"
+          dpkg-deb -c "$DEB" | grep -E '(\./)?usr/bin/' || true
+
+          # The failure this workflow exists for. Ubuntu's ghostscript package
+          # owns /usr/bin/gs, and dpkg refuses to overwrite a file belonging to
+          # another package, so shipping it makes the install fail outright on
+          # most desktops. Asserted against a real built package rather than
+          # inferred from the sidecar's filename.
+          # Both path forms, because the archive may or may not carry a ./ prefix
+          # and a guard that misses the case it exists for is worse than none.
+          if dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/bin/gs$'; then
+            echo "FAIL: the package still ships /usr/bin/gs, which ghostscript owns"
+            exit 1
+          fi
+          echo "PASS: no bare /usr/bin/gs in the package"
+
+          echo "--- control metadata ---"
+          dpkg-deb -I "$DEB"
+
+      - name: Upload the .deb
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: papercut-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error

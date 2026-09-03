@@ -9,10 +9,10 @@ The goal is that **no user has to install anything**, on any operating system.
 
 | Target | How it is produced | Self-contained | Actually run on that platform |
 |---|---|---|---|
-| `gs-aarch64-apple-darwin` | committed; `scripts/build_ghostscript_sidecar.sh` | verified by `otool` | yes |
-| `gs-x86_64-apple-darwin` | committed; cross-compiled `clang -arch x86_64` | verified by `otool` | yes, under Rosetta |
-| `gs-x86_64-unknown-linux-gnu` | committed; built in a `linux/amd64` container | verified by `ldd` | yes, in a clean `ubuntu:22.04` container |
-| `gs-x86_64-pc-windows-msvc.exe` | fetched in CI from Artifex's installer | n/a — needs `gsdll64.dll` | **not yet** |
+| `papercut-gs-aarch64-apple-darwin` | committed; `scripts/build_ghostscript_sidecar.sh` | verified by `otool` | yes |
+| `papercut-gs-x86_64-apple-darwin` | committed; cross-compiled `clang -arch x86_64` | verified by `otool` | yes, under Rosetta |
+| `papercut-gs-x86_64-unknown-linux-gnu` | committed; built in a `linux/amd64` container | verified by `ldd` | yes, in a clean `ubuntu:22.04` container |
+| `papercut-gs-x86_64-pc-windows-msvc.exe` | fetched in CI from Artifex's installer | n/a — needs `gsdll64.dll` | **not yet** |
 
 Three of the four are committed because they were built and tested here. Linux is
 arguably the best-verified of them: it was built in a `linux/amd64` container and
@@ -96,16 +96,16 @@ be verified.
 | Build | `./configure --without-x --disable-cups --disable-dbus --without-tesseract` |
 | Patches applied | none |
 | Source tarball SHA-512 | matches Artifex's published `SHA512SUMS` for `gs10060` (verified 2026-08-26) |
-| `gs-aarch64-apple-darwin` SHA-256 | `a4dc57a388bb3f3a00f51d2e8ad6ab4850fe33581956bd7412ca6b1956dd43fc` (26 MB) |
-| `gs-x86_64-apple-darwin` SHA-256 | `a79b950f6afa9eff24280939e4fad378322e356bc48fa50bed4ded5155d6ca96` (27 MB) |
-| `gs-x86_64-unknown-linux-gnu` SHA-256 | `4dd99daf72a1dbc83b250d4eff3c60a1a6c0fcc6e422e96d50991782f89b5a42` (28 MB) |
+| `papercut-gs-aarch64-apple-darwin` SHA-256 | `a4dc57a388bb3f3a00f51d2e8ad6ab4850fe33581956bd7412ca6b1956dd43fc` (26 MB) |
+| `papercut-gs-x86_64-apple-darwin` SHA-256 | `a79b950f6afa9eff24280939e4fad378322e356bc48fa50bed4ded5155d6ca96` (27 MB) |
+| `papercut-gs-x86_64-unknown-linux-gnu` SHA-256 | `4dd99daf72a1dbc83b250d4eff3c60a1a6c0fcc6e422e96d50991782f89b5a42` (28 MB) |
 | Windows installer SHA-256 | `8d552205c0fe87a16bac2f377c8a1b090cfcbc610db7c281bd6a646b39c9c468`, pinned in `release.yml`; its SHA-512 matches Artifex's published sums |
 
 Verify a checkout with:
 
 ```bash
-shasum -a 256 src-tauri/binaries/gs-aarch64-apple-darwin
-otool -L src-tauri/binaries/gs-aarch64-apple-darwin | grep -v '/usr/lib\|/System'   # must be empty
+shasum -a 256 src-tauri/binaries/papercut-gs-aarch64-apple-darwin
+otool -L src-tauri/binaries/papercut-gs-aarch64-apple-darwin | grep -v '/usr/lib\|/System'   # must be empty
 ```
 
 ## Licence
@@ -144,4 +144,4 @@ install back onto the user.
 
 ## Binary Naming Convention
 
-Tauri resolves sidecars by target triple — the file must be named `gs-{triple}`.
+Tauri resolves sidecars by target triple — the file must be named `papercut-gs-{triple}`.

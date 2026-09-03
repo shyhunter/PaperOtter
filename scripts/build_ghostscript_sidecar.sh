@@ -28,7 +28,7 @@ GS_URL="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/
 
 TARGET="${1:-$(rustc -vV | awk '/^host:/ {print $2}')}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="${REPO_ROOT}/src-tauri/binaries/gs-${TARGET}"
+OUT="${REPO_ROOT}/src-tauri/binaries/papercut-gs-${TARGET}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 

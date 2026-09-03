@@ -1,8 +1,11 @@
 [package]
 name = "tauri-app"
 version = "1.0.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Compress, convert and edit PDFs, images and documents on your own machine."
+authors = ["shyhunter <shyhunter@users.noreply.github.com>"]
+homepage = "https://github.com/shyhunter/Papercut"
+repository = "https://github.com/shyhunter/Papercut"
+license = "MIT"
 edition = "2021"
 default-run = "tauri-app"
 
