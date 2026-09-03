@@ -221,12 +221,6 @@
     border: 1px solid var(--rule);
   }
 
-  .demo-cap {
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
-    letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft);
-    display: flex; justify-content: space-between; gap: 1rem; padding-top: .5rem;
-  }
-
   /* ── Sections ───────────────────────────────────────────── */
 
   /* The divider does the colour work. A 1px hairline was quiet to the point of
@@ -235,6 +229,14 @@
      at the head of a press sheet. It repeats the accent down the page without
      asking any headline to carry it. */
   section { padding: 0 0 clamp(2.5rem, 6vw, 4rem); }
+
+  /* The hero's bottom-right trim mark sits exactly on .trim's own bottom edge
+     -- correct, that is the sheet boundary it is meant to mark. But the very
+     next section starts with zero clearance from it, so that section's own
+     divider bar (below) landed on the identical line and the two decorations
+     touched. Only this one adjacency needs the gap; every other section already
+     has separation from the block above it. */
+  .trim + section::before { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
 
   section::before {
     content: "";
@@ -297,6 +299,26 @@
     grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
     margin-bottom: 1.9rem;
   }
+
+  .net-panel {
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-border);
+    border-radius: .75rem;
+    box-shadow: var(--card-shadow);
+    padding: clamp(1.4rem, 3vw, 1.9rem);
+    margin: 0 0 1.9rem;
+  }
+
+  .net-panel > .lede { color: var(--card-muted); }
+  .net-panel > .lede strong { color: var(--card-ink); }
+  .net-panel > .lede:last-of-type { margin-bottom: 1.2rem; }
+  .net-panel .scroll { margin: 0; }
+
+  .net-table th:nth-child(1), .net-table td:nth-child(1) { width: 22%; }
+  .net-table th:nth-child(2), .net-table td:nth-child(2) { width: 40%; }
+  .net-table th:nth-child(3), .net-table td:nth-child(3) { width: 38%; }
+  .net-table .mono { overflow-wrap: break-word; word-break: break-word; }
 
   .claim {
     background: var(--card);
@@ -493,17 +515,17 @@
 
   <div class="trim">
     <p class="spec">
-      <span>Sheet <b>1 of 1</b></span>
-      <span>Trim <b>595 × 842 pt</b></span>
       <span>Tools <b>22</b></span>
-      <span>Requires <b>nothing, for 21</b></span>
-      <span>Network <b>2 requests</b></span>
+      <span>Need nothing installed <b>21 of 22</b></span>
+      <span>Your files uploaded <b>never</b></span>
+      <span>Sign-up <b>none</b></span>
     </p>
 
     <h1>Everything happens<br>on <em>your</em> machine.</h1>
     <p class="stand">
-      Papercut compresses, converts, signs and edits PDFs, images and documents
-      without an account, without a server, and without an internet connection.
+      Papercut&rsquo;s <a href="#tools">twenty-two tools</a> compress, convert, sign
+      and edit PDFs, images and documents without an account, without a server,
+      and without an internet connection.
     </p>
     <div class="btns">
       <a class="btn" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
@@ -517,7 +539,6 @@
       <source src="demo.mp4" type="video/mp4">
       Your browser cannot play this video. Every tool it shows is listed below.
     </video>
-    <p class="demo-cap"><span>Recorded on this machine, nothing uploaded</span><span>no sound</span></p>
   </div>
 
   <section>
@@ -550,38 +571,45 @@
       </div>
     </div>
 
-    <p class="lede" style="margin-bottom:1.2rem">
-      If you would rather check that second claim than take it, here is every
-      request the app can make. Neither carries anything about you or your
-      documents, and nothing else on this list touches the network at all.
-    </p>
+    <div class="net-panel">
+      <p class="lede">
+        <strong>Your documents never leave your computer.</strong> There is no
+        upload step to skip and no account to trust with them: compressing a
+        contract or signing a form happens on your own machine, the same way it
+        would if you unplugged the internet first.
+      </p>
+      <p class="lede">
+        The app asks the outside world exactly two questions, both of them about
+        itself rather than about you. Here they are in full:
+      </p>
 
-    <div class="scroll">
-      <table>
-        <thead><tr><th>When</th><th>Where it goes</th><th>What it carries</th></tr></thead>
+      <div class="scroll">
+        <table class="net-table">
+        <thead><tr><th>When</th><th>What it asks</th><th>What it tells them about you</th></tr></thead>
         <tbody>
           <tr>
-            <td>On launch</td>
-            <td class="mono">api.github.com/repos/…/releases/latest</td>
-            <td>Nothing. It reads the newest version number.</td>
+            <td>When you open the app</td>
+            <td>&ldquo;Is there a newer version?&rdquo;<br><span class="mono">api.github.com/repos/&hellip;/releases/latest</span></td>
+            <td>Nothing. It reads a version number and shows you a banner if one is newer.</td>
           </tr>
           <tr>
-            <td>Opening About</td>
-            <td class="mono">raw.githubusercontent.com/…/feedback-config.json</td>
-            <td>Nothing. It reads a contact address.</td>
+            <td>When you open About</td>
+            <td>&ldquo;Where should feedback go?&rdquo;<br><span class="mono">raw.githubusercontent.com/&hellip;/feedback-config.json</span></td>
+            <td>Nothing of yours. It reads the creator&rsquo;s support email address, so the Feedback button knows where to send your message.</td>
           </tr>
           <tr>
-            <td>Everything else</td>
-            <td class="mono">no request</td>
-            <td>Your files are opened, processed and written on this machine.</td>
+            <td>Everything else you do</td>
+            <td>Nothing is asked.</td>
+            <td>Nothing at all. Your files are opened, changed and saved on this machine.</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   </section>
 
   <section>
-    <p class="sig">Manifest</p>
+    <p class="sig" id="tools">Manifest</p>
     <h2><em>Twenty-two</em> tools</h2>
     <p class="lede">Twenty-one of them need nothing installed. Hover or tap a card to see how it works.</p>
     <div class="cards">
@@ -891,7 +919,7 @@
   </section>
 
   <section>
-    <p class="sig">Errata</p>
+    <p class="sig">Worth knowing</p>
     <h2><em>Before</em> you download</h2>
     <p class="lede">The things a download page usually leaves out.</p>
     <div class="notes">
@@ -915,7 +943,7 @@
   </section>
 
   <section>
-    <p class="sig">Colophon</p>
+    <p class="sig">Last but not least</p>
     <h2>If it <em>saved</em> you an afternoon</h2>
     <p class="lede">
       Papercut is free, MIT licensed, and collects nothing: no analytics, no
