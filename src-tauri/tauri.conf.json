@@ -47,6 +47,9 @@
     "externalBin": [
       "binaries/gs"
     ],
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "fileAssociations": [
       {
         "ext": [
