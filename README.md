@@ -180,6 +180,24 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 
 All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
+### A note on AI
+
+Papercut has no AI features. There is no chatbot and no assistant, no model file
+is shipped with the app, and nothing you open is sent anywhere to be processed
+or used as training data.
+
+**Make Searchable** is the one tool that might suggest otherwise, since it reads
+the text off a scanned page. On macOS it does that through Apple's Vision
+framework, the same text recognition built into Preview and Photos. Papercut
+bundles no recognition engine of its own, and the work happens on your machine
+like everything else here.
+
+This is also why the transparency duties in Article 50 of the EU AI Act, in
+force since 2 August 2026, do not attach to Papercut: it does not converse with
+you, it does not generate synthetic content, and it does no biometric or emotion
+recognition. That is our reading of the regulation rather than legal advice, and
+it is written down here so the reasoning is visible and can be challenged.
+
 ### A note on passwords
 
 The same applies to the password you set in **Protect PDF**: it never leaves
