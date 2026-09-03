@@ -3,7 +3,7 @@
 ## Your local document toolkit -> private, fast, offline.
 
 <p align="center">
-  <img src="docs/screenshots/hero-logo.png" alt="Papercut logo" width="600">
+  <img src="docs/demo.gif" alt="Papercut in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels" width="760">
 </p>
 
 <p align="center">
