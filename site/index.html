@@ -230,6 +230,14 @@
      asking any headline to carry it. */
   section { padding: 0 0 clamp(2.5rem, 6vw, 4rem); }
 
+  /* The hero's bottom-right trim mark sits exactly on .trim's own bottom edge
+     -- correct, that is the sheet boundary it is meant to mark. But the very
+     next section starts with zero clearance from it, so that section's own
+     divider bar (below) landed on the identical line and the two decorations
+     touched. Only this one adjacency needs the gap; every other section already
+     has separation from the block above it. */
+  .trim + section::before { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
+
   section::before {
     content: "";
     display: block;
@@ -291,6 +299,26 @@
     grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
     margin-bottom: 1.9rem;
   }
+
+  .net-panel {
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-border);
+    border-radius: .75rem;
+    box-shadow: var(--card-shadow);
+    padding: clamp(1.4rem, 3vw, 1.9rem);
+    margin: 0 0 1.9rem;
+  }
+
+  .net-panel > .lede { color: var(--card-muted); }
+  .net-panel > .lede strong { color: var(--card-ink); }
+  .net-panel > .lede:last-of-type { margin-bottom: 1.2rem; }
+  .net-panel .scroll { margin: 0; }
+
+  .net-table th:nth-child(1), .net-table td:nth-child(1) { width: 22%; }
+  .net-table th:nth-child(2), .net-table td:nth-child(2) { width: 40%; }
+  .net-table th:nth-child(3), .net-table td:nth-child(3) { width: 38%; }
+  .net-table .mono { overflow-wrap: break-word; word-break: break-word; }
 
   .claim {
     background: var(--card);
@@ -543,19 +571,20 @@
       </div>
     </div>
 
-    <p class="lede" style="margin-bottom:1.2rem">
-      <strong>Your documents never leave your computer.</strong> There is no upload
-      step to skip and no account to trust with them: compressing a contract or
-      signing a form happens on your own machine, the same way it would if you
-      unplugged the internet first.
+    <div class="net-panel">
+      <p class="lede">
+        <strong>Your documents never leave your computer.</strong> There is no
+        upload step to skip and no account to trust with them: compressing a
+        contract or signing a form happens on your own machine, the same way it
+        would if you unplugged the internet first.
       </p>
-      <p class="lede" style="margin-bottom:1.2rem">
-      The app asks the outside world exactly two questions, both of them about
-      itself rather than about you. Here they are in full:
-    </p>
+      <p class="lede">
+        The app asks the outside world exactly two questions, both of them about
+        itself rather than about you. Here they are in full:
+      </p>
 
-    <div class="scroll">
-      <table>
+      <div class="scroll">
+        <table class="net-table">
         <thead><tr><th>When</th><th>What it asks</th><th>What it tells them about you</th></tr></thead>
         <tbody>
           <tr>
@@ -574,7 +603,8 @@
             <td>Nothing at all. Your files are opened, changed and saved on this machine.</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   </section>
 
