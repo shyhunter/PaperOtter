@@ -495,7 +495,7 @@
     <p class="spec">
       <span>Tools <b>22</b></span>
       <span>Need nothing installed <b>21 of 22</b></span>
-      <span>Network requests <b>2, ever</b></span>
+      <span>Your files uploaded <b>never</b></span>
       <span>Sign-up <b>none</b></span>
     </p>
 
@@ -551,29 +551,34 @@
     </div>
 
     <p class="lede" style="margin-bottom:1.2rem">
-      If you would rather check that second claim than take it, here is every
-      request the app can make. There are two, neither carries anything about you
-      or your documents, and everything else runs without touching the network:
+      <strong>Your documents never leave your computer.</strong> There is no upload
+      step to skip and no account to trust with them: compressing a contract or
+      signing a form happens on your own machine, the same way it would if you
+      unplugged the internet first.
+      </p>
+      <p class="lede" style="margin-bottom:1.2rem">
+      The app asks the outside world exactly two questions, both of them about
+      itself rather than about you. Here they are in full:
     </p>
 
     <div class="scroll">
       <table>
-        <thead><tr><th>When</th><th>Where it goes</th><th>What it carries</th></tr></thead>
+        <thead><tr><th>When</th><th>What it asks</th><th>What it tells them about you</th></tr></thead>
         <tbody>
           <tr>
-            <td>On launch</td>
-            <td class="mono">api.github.com/repos/…/releases/latest</td>
-            <td>Nothing. It reads the newest version number.</td>
+            <td>When you open the app</td>
+            <td>&ldquo;Is there a newer version?&rdquo;<br><span class="mono">api.github.com/repos/&hellip;/releases/latest</span></td>
+            <td>Nothing. It reads a version number and shows you a banner if one is newer.</td>
           </tr>
           <tr>
-            <td>Opening About</td>
-            <td class="mono">raw.githubusercontent.com/…/feedback-config.json</td>
-            <td>Nothing. It reads a contact address.</td>
+            <td>When you open About</td>
+            <td>&ldquo;Where should feedback go?&rdquo;<br><span class="mono">raw.githubusercontent.com/&hellip;/feedback-config.json</span></td>
+            <td>Nothing. It reads an email address so the button has somewhere to send.</td>
           </tr>
           <tr>
-            <td>Everything else</td>
-            <td class="mono">no request</td>
-            <td>Your files are opened, processed and written on this machine.</td>
+            <td>Everything else you do</td>
+            <td>Nothing is asked.</td>
+            <td>Nothing at all. Your files are opened, changed and saved on this machine.</td>
           </tr>
         </tbody>
       </table>
