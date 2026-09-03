@@ -6,8 +6,7 @@ harness closes that gap: it mounts the **real** `EditorView` in a **real**
 browser against a large PDF, with Tauri's plugins stubbed, and watches the main
 thread for stalls.
 
-It is what finally located the "editor freezes on large PDFs" bug — see
-`.planning/EDITOR_FREEZE_BUG_HANDOFF.md`.
+It is what finally located the "editor freezes on large PDFs" bug.
 
 ## Setup
 
