@@ -201,6 +201,23 @@ jobs:
             ---
 
             <details>
+            <summary>Verifying your download</summary>
+
+            `SHA256SUMS.txt` in the Assets below lists the SHA-256 of every file
+            in this release. To check the one you downloaded:
+
+            ```
+            shasum -a 256 -c SHA256SUMS.txt --ignore-missing
+            ```
+
+            On Linux the command is `sha256sum` instead of `shasum -a 256`.
+
+            This proves the file arrived intact and unaltered in transit. It is
+            not a signature: it says nothing about who built the file, only that
+            the bytes match what this release published.
+            </details>
+
+            <details>
             <summary>What are the Assets below?</summary>
 
             The **Assets** section below is GitHub's automatic list of the same installer files from the table above. You don't need to use it: the download links in the table are the same files. The `Source code` entries are the raw project code and are only useful for developers.
@@ -518,6 +535,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Publish SHA-256 checksums
+        # Written while the release is still a draft, so it is never public for
+        # a moment without them. `gh release download` fetches the uploaded
+        # installers only; the auto-generated source tarballs are not assets and
+        # are skipped, which is what we want -- these hashes describe the files
+        # people actually run.
+        #
+        # Worth being plain about the limit: a checksum hosted beside the file
+        # it describes proves the download arrived intact, not that it is
+        # authentic. Anyone who could replace the installer could replace this
+        # too. Authenticity needs code signing, which is a separate decision.
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          gh release download "$GITHUB_REF_NAME" --dir "$work"
+          cd "$work"
+          rm -f SHA256SUMS.txt
+          if [ -z "$(ls -A)" ]; then
+            echo "the draft release has no assets to checksum"
+            exit 1
+          fi
+          sha256sum -- * > SHA256SUMS.txt
+          echo "checksummed $(wc -l < SHA256SUMS.txt) assets:"
+          cat SHA256SUMS.txt
+          # Read them back off disk: a malformed file would otherwise ship happily.
+          sha256sum -c SHA256SUMS.txt
+          gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Promote draft to published release
         run: |
