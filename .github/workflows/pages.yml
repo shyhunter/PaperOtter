@@ -4,9 +4,10 @@ name: Pages
 # project; this is for the ones who have not, and a desktop app needs somewhere
 # to download it from that is not a source-code repository.
 #
-# Built from `site/`, with the screenshots copied in at publish time rather than
-# duplicated in the repo — they are 2 MB and already live in docs/screenshots/
-# for the README to use.
+# Built from `site/`, which carries the page, the demo video, and the fonts and
+# icons it used to pull from Google and jsDelivr. The page embeds no screenshots
+# any more; the one copied in at publish time is the og:image a link preview
+# renders, and it already lives in docs/screenshots/ for the README to use.
 
 on:
   push:
@@ -52,14 +53,28 @@ jobs:
           set -euo pipefail
           mkdir -p _site
           cp -R site/. _site/
+          # Provenance for the committed font binaries: repo documentation, not
+          # a web asset.
+          rm -f _site/fonts/README.md
           mkdir -p _site/screenshots
-          cp docs/screenshots/*.png _site/screenshots/
-          # A missing image on a download page reads as a broken product, so
+          cp docs/screenshots/dashboard-light.png _site/screenshots/
+          # A missing asset on a download page reads as a broken product, so
           # fail the build here rather than ship one.
-          for f in hero-logo.png dashboard-light.png dashboard-dark.png tool-configure-step.png; do
-            test -f "_site/screenshots/$f" || { echo "missing screenshot: $f"; exit 1; }
+          for f in index.html demo.mp4 demo-poster.jpg \
+                   fonts/bricolage-var.woff2 fonts/plex-sans-var.woff2 \
+                   fonts/plex-mono-400.woff2 fonts/plex-mono-500.woff2 \
+                   screenshots/dashboard-light.png; do
+            test -f "_site/$f" || { echo "missing asset: $f"; exit 1; }
           done
-          test -f _site/index.html || { echo "no index.html"; exit 1; }
+          # The page claims the product talks to nobody. It should not itself
+          # fetch a font or a script from a third party, and this is the check
+          # that keeps a future edit from quietly reintroducing one. Only
+          # outbound links the reader clicks are allowed.
+          if grep -Eo 'https?://[a-zA-Z0-9.-]+' _site/index.html \
+             | grep -vE '^https?://(github\.com|buymeacoffee\.com|www\.w3\.org)$' \
+             | sort -u | grep .; then
+            echo "third-party resource host in index.html (listed above)"; exit 1
+          fi
           echo "assembled:"; find _site -type f | sort
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

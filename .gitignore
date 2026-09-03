@@ -71,3 +71,26 @@ test-fixtures-e2e/large-sparse.jpg
 # Playwright traces from failed runs — local evidence, not repository facts.
 test-results/
 playwright-report/
+
+# Internal working material, moved to the private Papercut-planning repo when
+# this one went public. The files stay on disk and the GSD commands and skills
+# keep reading them; they are simply not part of what a visitor to a document
+# tool should have to wade through to find the code.
+#
+#   .planning/        roadmap, scope, phase plans, test plan, codebase notes
+#   .claude/          project rules, skills, commands, agent definitions
+#   docs/agents/      issue tracker and triage conventions
+#   docs/superpowers/ agent tooling notes
+#   .security/        updater signing procedure (no keys, by P013)
+#
+# Untracking does not rewrite history: these files remain readable in commits
+# before the change. That was a deliberate call, taken with gitleaks reporting
+# no secrets across all 647 commits.
+.planning/
+.claude/
+docs/agents/
+docs/superpowers/
+.security/
+
+# Translation export: regenerate with scripts/export-translations.mjs.
+translations.csv

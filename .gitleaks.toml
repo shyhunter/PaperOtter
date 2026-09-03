@@ -40,6 +40,9 @@ paths = [
   # Vendored GSD tooling, verified by hand as false positives:
   #   gsd-tools.test.cjs  — assertion text about "JWT tokens", no credential
   #   gsd-file-manifest.json — SHA file hashes that match the Discord token shape
+  # These paths no longer exist in the working tree: .claude/ moved to the
+  # private planning repo. They stay allowlisted because the files are still
+  # present in this repository's history, which a full scan still reaches.
   '''\.claude/get-shit-done/bin/gsd-tools\.test\.cjs''',
   '''\.claude/gsd-file-manifest\.json''',
 ]

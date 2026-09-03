@@ -12,7 +12,8 @@
 //   node scripts/export-translations.mjs [outfile]
 //   node scripts/export-translations.mjs --split <dir>
 //
-// Default output: .planning/translations.csv, which IS tracked in git.
+// Default output: translations.csv in the repo root, which is gitignored:
+// the reviewed copy lives outside this repository.
 //
 // --split writes one file per language instead, each carrying the key, the
 // English source and that language alone. One reviewer — or one model — reads
@@ -141,7 +142,7 @@ async function main() {
     return;
   }
 
-  const outfile = process.argv[2] ?? join(ROOT, '.planning', 'translations.csv');
+  const outfile = process.argv[2] ?? join(ROOT, 'translations.csv');
   // A BOM, so Excel opens UTF-8 correctly. Without it every ö, ı and — is mojibake
   // and a reviewer spends the session fixing the export instead of the copy.
   writeFileSync(outfile, '﻿' + [header.map(csvCell).join(','), ...rows].join('\n') + '\n', 'utf8');

@@ -12,373 +12,989 @@
 <meta property="og:image" content="screenshots/dashboard-light.png">
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- The app names Inter and relies on it being installed; on the web that is a
-     silent fallback to Avenir or Helvetica for most visitors. Load it properly
-     so the page renders as the product does, with a real fallback stack behind
-     it either way. -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>&#9986;&#65039;</text></svg>">
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>✂️</text></svg>">
+<!-- The headline and body faces are on the critical path and are only
+     discovered once the stylesheet parses; the mono face carries small labels
+     and can wait. -->
+<link rel="preload" href="fonts/bricolage-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-sans-var.woff2" as="font" type="font/woff2" crossorigin>
 
 <style>
-  /* The app's own palette: achromatic by design, oklch(x 0 0) throughout, no
-     chroma anywhere. A landing page in brand colours the product does not have
-     would be the first thing that lies about it. */
-  :root {
-    --bg: oklch(0.97 0 0);
-    --surface: oklch(1 0 0);
-    --ink: oklch(0.145 0 0);
-    --ink-soft: oklch(0.48 0 0);
-    --border: oklch(0.88 0 0);
-    --cta: oklch(0.205 0 0);
-    --cta-ink: oklch(0.985 0 0);
-    --good: oklch(0.52 0.13 155);
-  }
+  /* Self-hosted rather than pulled from fonts.googleapis.com. A page whose
+     whole claim is that nothing leaves your machine should not hand a third
+     party the IP address of everyone who reads it. Bricolage Grotesque and
+     IBM Plex are both OFL 1.1; see fonts/README.md for provenance.
 
+     Latin subset only: the five non-ASCII characters this page uses
+     (degree, middle dot, multiplication sign, ellipsis) are all in it. The
+     rightwards arrow is in no Google subset of these families and falls back
+     to a system font here exactly as it did on the CDN.
+
+     One file per family serves several weights, which is how the Google CSS
+     declared them too: these are variable fonts and the browser fetches each
+     file once. */
+  @font-face {
+    font-family: "Bricolage Grotesque";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/bricolage-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Bricolage Grotesque";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("fonts/bricolage-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Bricolage Grotesque";
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("fonts/bricolage-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Sans";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/plex-sans-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Sans";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/plex-sans-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Sans";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("fonts/plex-sans-var.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/plex-mono-400.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/plex-mono-500.woff2") format("woff2");
+  }
+</style>
+
+<style>
+  /* Direction A: "Trim & Bleed".
+     The page presented as a sheet being prepared for print: trim marks, a spec
+     strip, plates with proof captions. Every annotation is a real measurement
+     from the product (A4 in points, the actual tool count, the real network
+     request count), because print marks that carry no information are just
+     decoration wearing a costume. */
+  :root {
+    --paper: #f6f7f4;      /* cool stock, not cream: a green-grey bias */
+    --plate: #ffffff;
+    --ink: #16181c;
+    --ink-soft: #5b6068;
+    --rule: #d5d8d1;
+    --process: #0a6f80;    /* one process ink, used for marks and links only */
+    --mark: #16181c;
+    /* The dashboard's card, in sRGB. Declared here in the bare :root so it
+       exists in every theme state: a token that is only used and never
+       declared makes border, background and shadow all invalid, which is
+       precisely how these cards came to render as bare text. */
+    --card: #ffffff;
+    --card-border: #d6d6d6;
+    --card-ink: #0a0a0a;
+    --card-muted: #5c5c5c;
+    --card-primary: #171717;
+    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / .05);
+    --verso: #0a6f80;      /* the reverse of the sheet, in process ink */
+    --verso-ink: #f2f6f6;
+  }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: oklch(0.145 0 0);
-      --surface: oklch(0.205 0 0);
-      --ink: oklch(0.985 0 0);
-      --ink-soft: oklch(0.72 0 0);
-      --border: oklch(0.30 0 0);
-      --cta: oklch(0.93 0 0);
-      --cta-ink: oklch(0.145 0 0);
-      --good: oklch(0.72 0.14 155);
+    :root:not([data-theme="light"]) {
+      --paper: #14161a;
+      --plate: #1b1e24;
+      --ink: #eceee9;
+      --ink-soft: #969ba3;
+      --rule: #2e333b;
+      --process: #4fc2d4;
+      --mark: #eceee9;
+      --verso: #0f333b;
+      --verso-ink: #dff1f4;
+      --card: #171717;
+      --card-border: rgba(255, 255, 255, .12);
+      --card-ink: #fafafa;
+      --card-muted: #a3a3a3;
+      --card-primary: #e5e5e5;
+      --card-shadow: none;
     }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161a; --plate: #1b1e24; --ink: #eceee9;
+    --ink-soft: #969ba3; --rule: #2e333b; --process: #4fc2d4; --mark: #eceee9;
+    --card: #171717;
+    --card-border: rgba(255, 255, 255, .12);
+    --card-ink: #fafafa;
+    --card-muted: #a3a3a3;
+    --card-primary: #e5e5e5;
+    --card-shadow: none;
+    --verso: #0f333b; --verso-ink: #dff1f4;
   }
 
   * { box-sizing: border-box; }
 
   body {
     margin: 0;
-    background: var(--bg);
+    background: var(--paper);
     color: var(--ink);
-    font: 16px/1.65 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font: 16px/1.6 "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
+  .sheet { max-width: 66rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3.5rem); position: relative; }
 
-  a { color: inherit; }
+  a { color: var(--process); }
+  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--process); outline-offset: 3px; }
 
-  /* ── Hero ─────────────────────────────────────────────────── */
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
 
-  header { padding: 4.5rem 0 3rem; text-align: center; }
+  /* ── Trim marks ─────────────────────────────────────────── */
 
-  header img.logo { width: min(30rem, 90%); height: auto; }
+  .trim { position: relative; padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
+  .trim::before, .trim::after {
+    content: ""; position: absolute; width: 18px; height: 18px; pointer-events: none;
+  }
+  .trim::before { top: 0; left: -14px; border-top: 1px solid var(--mark); border-left: 1px solid var(--mark); }
+  .trim::after  { bottom: 0; right: -14px; border-bottom: 1px solid var(--mark); border-right: 1px solid var(--mark); }
+
+  /* ── Spec strip ─────────────────────────────────────────── */
+
+  .spec {
+    display: flex; flex-wrap: wrap; gap: .4rem 1.6rem;
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+    border-block: 1px solid var(--rule); padding: .6rem 0; margin-bottom: 2.5rem;
+  }
+  .spec b { color: var(--ink); font-weight: 500; }
+
+  /* ── Hero ───────────────────────────────────────────────── */
 
   h1 {
-    font-size: clamp(1.9rem, 5vw, 2.9rem);
-    line-height: 1.1;
-    letter-spacing: -.03em;
-    margin: 1.5rem 0 .6rem;
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.4rem, 8vw, 5.2rem);
+    line-height: .95;
+    letter-spacing: -.035em;
+    margin: 0 0 1rem;
     text-wrap: balance;
   }
+  h1 em { font-style: normal; color: var(--process); }
 
-  .tagline {
-    font-size: clamp(1rem, 2.2vw, 1.2rem);
-    color: var(--ink-soft);
-    margin: 0 auto 2rem;
-    max-width: 34rem;
-    text-wrap: balance;
+  .stand { font-size: clamp(1.02rem, 2.3vw, 1.22rem); color: var(--ink-soft); max-width: 38rem; margin: 0 0 2rem; }
+
+  .btns { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+  .btn {
+    font-family: "IBM Plex Mono", monospace; font-size: .82rem; letter-spacing: .04em;
+    text-transform: uppercase; text-decoration: none;
+    padding: .75rem 1.5rem; border: 1px solid var(--ink); color: var(--paper);
+    background: var(--ink);
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+  .btn:hover { opacity: .85; }
+
+  /* ── Hero demo ──────────────────────────────────────────── */
+
+  .demo {
+    display: block; width: 100%; height: auto;
+    margin-top: clamp(2rem, 5vw, 3rem);
+    background: var(--plate);
+    border: 1px solid var(--rule);
   }
 
-  .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .75rem;
-    justify-content: center;
-    align-items: center;
+  .demo-cap {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft);
+    display: flex; justify-content: space-between; gap: 1rem; padding-top: .5rem;
   }
 
-  .cta {
-    display: inline-block;
-    background: var(--cta);
-    color: var(--cta-ink);
-    text-decoration: none;
-    font-weight: 600;
-    padding: .8rem 1.8rem;
-    border-radius: 8px;
-    border: 1px solid var(--cta);
-  }
+  /* ── Sections ───────────────────────────────────────────── */
 
-  .cta:hover { opacity: .88; }
+  /* The divider does the colour work. A 1px hairline was quiet to the point of
+     invisible, and a thick grey bar would just be heavy, so the rule leads
+     with the process ink and runs out into neutral, the way a colour bar sits
+     at the head of a press sheet. It repeats the accent down the page without
+     asking any headline to carry it. */
+  section { padding: 0 0 clamp(2.5rem, 6vw, 4rem); }
 
-  .cta.secondary {
-    background: transparent;
-    color: var(--ink);
-    border-color: var(--border);
-    font-weight: 500;
-  }
-
-  .cta:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-  .under-cta { margin-top: 1rem; font-size: .88rem; color: var(--ink-soft); }
-
-  /* ── Sections ─────────────────────────────────────────────── */
-
-  section { padding: 3.5rem 0; border-top: 1px solid var(--border); }
-
-  h2 {
-    font-size: clamp(1.3rem, 3vw, 1.7rem);
-    letter-spacing: -.02em;
-    margin: 0 0 .5rem;
-    text-wrap: balance;
-  }
-
-  .lede { color: var(--ink-soft); margin: 0 0 2rem; max-width: 42rem; }
-
-  /* ── Promise ──────────────────────────────────────────────── */
-
-  .promise {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.75rem;
-    text-align: center;
-  }
-
-  .promise p { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.25rem); text-wrap: balance; }
-
-  .promise .detail { margin-top: .75rem; font-size: .92rem; color: var(--ink-soft); }
-
-  /* ── Shots ────────────────────────────────────────────────── */
-
-  figure { margin: 0 0 1.5rem; }
-
-  figure img {
-    width: 100%;
-    height: auto;
+  section::before {
+    content: "";
     display: block;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    height: 5px;
+    margin-bottom: clamp(1.8rem, 4vw, 2.6rem);
+    background: linear-gradient(
+      to right,
+      var(--process) 0 5.5rem,
+      var(--rule) 5.5rem
+    );
   }
 
-  figcaption { margin-top: .6rem; font-size: .85rem; color: var(--ink-soft); }
+  /* The tool columns are sections for semantics, not for structure. */
 
-  .shots { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+  .sig {
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--process); margin: 0 0 .55rem;
+    font-weight: 500;
+    display: flex; align-items: center; gap: .55rem;
+  }
+  /* A solid mark, so the colour registers before the text is read. */
+  .sig::before {
+    content: ""; width: 10px; height: 10px; flex: none;
+    background: var(--process);
+  }
+  h2 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem); letter-spacing: -.025em;
+    margin: 0 0 .6rem; text-wrap: balance;
+  }
+  /* Same treatment as the hero's "your": one word per heading in the process
+     ink. One word, never a phrase: the emphasis stops meaning anything the
+     moment it covers half the line. */
+  h2 em { font-style: normal; color: var(--process); }
+  .lede { color: var(--ink-soft); max-width: 40rem; margin: 0 0 2rem; }
 
-  /* ── Tools ────────────────────────────────────────────────── */
+  /* ── Plates ─────────────────────────────────────────────── */
 
-  .tools { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .plates { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); }
+  figure { margin: 0; }
+  figure img { width: 100%; height: auto; display: block; background: var(--plate); border: 1px solid var(--rule); }
+  figcaption {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ink-soft);
+    display: flex; justify-content: space-between; gap: 1rem; padding-top: .5rem;
+  }
 
-  .tools h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-soft); margin: 0 0 .6rem; }
+  /* ── Claims ─────────────────────────────────────────────── */
+  /*
+     The same card as the tools below (the app's own border, radius, surface,
+     shadow and hover lift) at a larger size, because these two carry a
+     paragraph rather than a line. Deliberately not flipped: the tool cards hide
+     a detail worth going to find, whereas the payoff line here is the whole
+     point and hiding it behind a hover would be a joke at the reader's expense.
+  */
 
-  .tools ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; font-size: .95rem; }
+  .claims {
+    display: grid; gap: .75rem;
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    margin-bottom: 1.9rem;
+  }
 
-  /* ── Downloads ────────────────────────────────────────────── */
+  .claim {
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-border);
+    border-radius: .75rem;
+    box-shadow: var(--card-shadow);
+    padding: clamp(1.4rem, 3vw, 1.9rem);
+    display: flex; flex-direction: column; gap: .75rem;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .claim:hover {
+    transform: translateY(-2px) scale(1.01);
+    border-color: var(--process);
+  }
 
-  .table-scroll { overflow-x: auto; }
+  .claim-icon { color: var(--card-primary); line-height: 0; }
+  .claim-icon svg { width: 1.75rem; height: 1.75rem; }
 
-  table { border-collapse: collapse; width: 100%; min-width: 30rem; }
+  .claim h3 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+    font-size: clamp(1.3rem, 2.8vw, 1.65rem); line-height: 1.08;
+    letter-spacing: -.03em; margin: 0; text-wrap: balance;
+  }
 
-  th, td { text-align: start; padding: .8rem .9rem; border-bottom: 1px solid var(--border); }
+  .claim p { margin: 0; color: var(--card-muted); font-size: .93rem; line-height: 1.55; }
 
-  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-soft); font-weight: 600; }
+  /* The payoff, set apart by a rule in the process ink rather than by weight
+     alone: it is the sentence each card exists to deliver. */
+  .claim-payoff {
+    margin-top: auto; padding-top: .85rem;
+    border-top: 1px solid var(--card-border);
+    color: var(--card-ink) !important; font-weight: 600;
+  }
 
+  /* ── Tool cards ─────────────────────────────────────────── */
+  /*
+     Geometry, spacing and hover behaviour are the dashboard's own, translated
+     from its Tailwind classes: rounded-xl at .75rem, p-5 at 1.25rem, gap-3, a
+     1.75rem primary-tinted icon over a 14px medium title, and the same 1.02
+     scale with a 2px rise on hover. Reusing them makes this grid a fair
+     preview of the screen you land on rather than a designer's idea of it,
+     and the icons are the ones the tool registry actually names.
+  */
+
+  .cards {
+    display: grid; gap: .75rem;
+    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  }
+
+  .card {
+    all: unset;
+    display: block;
+    height: 10.5rem;
+    cursor: pointer;
+    perspective: 1000px;
+  }
+  .card:focus-visible { outline: none; }
+  .card:focus-visible .face { box-shadow: 0 0 0 2px var(--card-primary); }
+
+  .card-inner {
+    position: relative; display: block; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.2, .7, .2, 1);
+  }
+  .card:hover .card-inner,
+  .card:focus-visible .card-inner { transform: rotateY(180deg); }
+
+  .face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border: 1px solid var(--card-border);
+    border-radius: .75rem;
+    padding: 1.25rem;
+    display: flex; flex-direction: column; align-items: center; gap: .75rem;
+    text-align: center;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+
+  .recto {
+    background: var(--card); color: var(--card-ink);
+    box-shadow: var(--card-shadow);
+    justify-content: flex-start;
+  }
+  .card:hover .recto { transform: translateY(-2px) scale(1.02); }
+
+  .card-icon { color: var(--card-primary); flex: none; line-height: 0; }
+  .card-icon svg { width: 1.75rem; height: 1.75rem; }
+
+  .card-name { font-size: .875rem; font-weight: 500; line-height: 1.3; }
+
+  /* text-xs muted, clamped to two lines: the dashboard's own treatment. */
+  .card-desc {
+    font-size: .75rem; line-height: 1.35; color: var(--card-muted);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-how-label {
+    font-family: "IBM Plex Mono", monospace; font-size: .58rem;
+    letter-spacing: .14em; text-transform: uppercase; opacity: .75;
+  }
+
+  .verso {
+    background: var(--verso); color: var(--verso-ink);
+    transform: rotateY(180deg);
+    border-color: var(--verso);
+    justify-content: center;
+  }
+
+  .card-how { font-size: .78rem; line-height: 1.45; margin: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner, .face { transition: none; }
+    .card:hover .card-inner,
+    .card:focus-visible .card-inner { transform: none; }
+    .card:hover .recto { transform: none; }
+    .card:hover .recto,
+    .card:focus-visible .recto { visibility: hidden; }
+    .verso { transform: none; visibility: hidden; }
+    .card:hover .verso,
+    .card:focus-visible .verso { visibility: visible; }
+  }
+
+  /* ── Table ──────────────────────────────────────────────── */
+
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 32rem; font-size: .92rem; }
+  th, td { text-align: start; padding: .75rem .8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th {
+    font-family: "IBM Plex Mono", monospace; font-size: .66rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-soft); font-weight: 500;
+  }
   tbody tr:last-child td { border-bottom: none; }
+  td .mono { font-size: .85rem; }
 
-  /* ── Honest ───────────────────────────────────────────────── */
+  /* ── Support ────────────────────────────────────────────── */
+  /*
+     Same card as everywhere else, but as links rather than buttons: these go
+     somewhere, and a card that navigates should be an anchor so it opens in a
+     new tab, copies its address, and reads as a link to a screen reader.
+  */
 
-  .honest { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+  .support { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
 
-  .honest div { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+  .support-card {
+    text-decoration: none; color: var(--card-ink);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: .75rem;
+    box-shadow: var(--card-shadow);
+    padding: 1.4rem 1.5rem;
+    display: flex; flex-direction: column; gap: .7rem;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .support-card:hover { transform: translateY(-2px) scale(1.01); border-color: var(--process); }
 
-  .honest h3 { margin: 0 0 .4rem; font-size: 1rem; }
+  .support-icon { color: var(--card-primary); line-height: 0; }
+  .support-icon svg { width: 1.6rem; height: 1.6rem; }
 
-  .honest p { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+  .support-card h3 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
+    font-size: 1.15rem; letter-spacing: -.02em; margin: 0;
+  }
+  .support-card p { margin: 0; font-size: .9rem; color: var(--card-muted); line-height: 1.5; }
 
-  /* ── Footer ───────────────────────────────────────────────── */
+  .support-go {
+    margin-top: auto; padding-top: .3rem;
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--process);
+  }
+
+  /* ── Notes ──────────────────────────────────────────────── */
+
+  .notes { display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+  .notes > div { padding: 1.1rem 1.3rem 1.1rem 0; border-top: 1px solid var(--rule); }
+  .notes h3 { font-size: .98rem; margin: 0 0 .35rem; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; }
+  .notes p { margin: 0; font-size: .9rem; color: var(--ink-soft); }
 
   footer {
-    padding: 2.5rem 0 4rem;
-    border-top: 1px solid var(--border);
-    font-size: .9rem;
-    color: var(--ink-soft);
-    display: flex;
-    flex-wrap: wrap;
-    gap: .6rem 1.5rem;
+    border-top: 5px solid var(--process); margin-top: 2rem;
+    padding: 1.5rem 0 4rem; display: flex; flex-wrap: wrap; gap: .6rem 1.8rem;
     justify-content: space-between;
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft);
   }
-
-  footer nav { display: flex; flex-wrap: wrap; gap: 1.1rem; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 1.4rem; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="sheet">
 
-<div class="wrap">
-
-  <header>
-    <img class="logo" src="screenshots/hero-logo.png" alt="Papercut">
-    <h1>Your local document toolkit</h1>
-    <p class="tagline">
-      Compress, convert, sign and edit PDFs, images and documents: on your own
-      machine, without an account and without an internet connection.
+  <div class="trim">
+    <p class="spec">
+      <span>Sheet <b>1 of 1</b></span>
+      <span>Trim <b>595 × 842 pt</b></span>
+      <span>Tools <b>22</b></span>
+      <span>Requires <b>nothing, for 21</b></span>
+      <span>Network <b>2 requests</b></span>
     </p>
-    <div class="cta-row">
-      <a class="cta" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
-      <a class="cta secondary" href="https://github.com/shyhunter/Papercut">Source on GitHub</a>
+
+    <h1>Everything happens<br>on <em>your</em> machine.</h1>
+    <p class="stand">
+      Papercut compresses, converts, signs and edits PDFs, images and documents
+      without an account, without a server, and without an internet connection.
+    </p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
+      <a class="btn ghost" href="https://github.com/shyhunter/Papercut">Read the source</a>
     </div>
-    <p class="under-cta">Free and open source · macOS, Windows and Linux</p>
-  </header>
+
+    <video class="demo" id="demo"
+           autoplay muted loop playsinline controls preload="metadata"
+           poster="demo-poster.jpg"
+           aria-label="Papercut in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels">
+      <source src="demo.mp4" type="video/mp4">
+      Your browser cannot play this video. Every tool it shows is listed below.
+    </video>
+    <p class="demo-cap"><span>Recorded on this machine, nothing uploaded</span><span>no sound</span></p>
+  </div>
 
   <section>
-    <div class="promise">
-      <p><strong>Your files never leave your computer.</strong></p>
-      <p class="detail">
-        No uploads, no cloud processing, no accounts, no telemetry. Papercut makes
-        exactly two network requests, neither carrying anything about you or your
-        documents: it checks GitHub for a newer version on launch, and fetches a
-        contact address when you open the About window. That is the whole list.
-      </p>
-    </div>
-  </section>
-
-  <section>
-    <h2>What it looks like</h2>
+    <p class="sig">Registration · none of any kind</p>
+    <h2><em>Download</em>, open, use.</h2>
     <p class="lede">
-      Pick a tool, choose a file, see the result before you save it. Nothing is
-      written until you say so, and saving over your original is always a
-      deliberate choice.
+      Two things this page would rather say plainly than bury in a policy.
     </p>
-    <div class="shots">
-      <figure>
-        <img src="screenshots/dashboard-light.png" alt="The Papercut dashboard in light mode, showing the tool grid" loading="lazy">
-        <figcaption>Every tool on one screen</figcaption>
-      </figure>
-      <figure>
-        <img src="screenshots/dashboard-dark.png" alt="The Papercut dashboard in dark mode" loading="lazy">
-        <figcaption>Dark mode, and eight languages besides English</figcaption>
-      </figure>
-    </div>
-    <figure>
-      <img src="screenshots/tool-configure-step.png" alt="The compression settings screen, showing quality levels and an estimated output size" loading="lazy">
-      <figcaption>Estimates before you commit, not after</figcaption>
-    </figure>
-  </section>
 
-  <section>
-    <h2>Twenty-two tools</h2>
-    <p class="lede">All of them work on your machine. Twenty-one need nothing installed.</p>
-    <div class="tools">
-      <div>
-        <h3>PDF</h3>
-        <ul>
-          <li>Compress</li><li>Merge</li><li>Split</li><li>Rotate</li>
-          <li>Crop</li><li>Organise pages</li><li>Page numbers</li>
-          <li>Watermark</li><li>Sign</li><li>Redact</li>
-        </ul>
+    <div class="claims">
+      <div class="claim">
+        <svg class="claim-icon lucide lucide-user-round-x" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2 21a8 8 0 0 1 11.873-7" /> <circle cx="10" cy="8" r="5" /> <path d="m17 17 5 5" /> <path d="m22 17-5 5" /> </svg>
+        <h3>Nothing to sign up for.</h3>
+        <p>
+          No email, no licence key, no trial that runs out, no free tier with the
+          good parts missing. Download it, open it, and the first thing you see
+          is the tool you came for.
+        </p>
+        <p class="claim-payoff">There is no server to have an account on.</p>
       </div>
-      <div>
-        <h3>PDF, continued</h3>
-        <ul>
-          <li>Protect with a password</li><li>Remove a password</li>
-          <li>Repair a damaged file</li><li>Convert to PDF/A</li>
-          <li>PDF to JPG</li><li>JPG to PDF</li>
-          <li>Edit text and images</li><li>Make a scan searchable</li>
-        </ul>
-      </div>
-      <div>
-        <h3>Images and documents</h3>
-        <ul>
-          <li>Compress images</li><li>Rotate images</li>
-          <li>Convert between formats</li><li>Convert documents</li>
-        </ul>
+
+      <div class="claim">
+        <svg class="claim-icon lucide lucide-wifi-off" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 20h.01" /> <path d="M8.5 16.429a5 5 0 0 1 7 0" /> <path d="M5 12.859a10 10 0 0 1 5.17-2.69" /> <path d="M19 12.859a10 10 0 0 0-2.007-1.523" /> <path d="M2 8.82a15 15 0 0 1 4.177-2.643" /> <path d="M22 8.82a15 15 0 0 0-11.288-3.764" /> <path d="m2 2 20 20" /> </svg>
+        <h3>Works with the network off.</h3>
+        <p>
+          All twenty-two tools run on your own machine. On a plane, on a train,
+          on a laptop that has never been online: it behaves exactly the same.
+        </p>
+        <p class="claim-payoff">Turn off wi-fi and the only thing you lose is the update check.</p>
       </div>
     </div>
-  </section>
 
-  <section>
-    <h2>Download</h2>
-    <p class="lede">One installer, everything included. Ghostscript is bundled: there is nothing else to fetch.</p>
-    <div class="table-scroll">
+    <p class="lede" style="margin-bottom:1.2rem">
+      If you would rather check that second claim than take it, here is every
+      request the app can make. Neither carries anything about you or your
+      documents, and nothing else on this list touches the network at all.
+    </p>
+
+    <div class="scroll">
       <table>
-        <thead>
-          <tr><th>Platform</th><th>File</th><th>Notes</th></tr>
-        </thead>
+        <thead><tr><th>When</th><th>Where it goes</th><th>What it carries</th></tr></thead>
         <tbody>
           <tr>
-            <td><strong>macOS</strong> (Apple silicon)</td>
-            <td><code>.dmg</code></td>
-            <td>Unsigned for now: macOS may say the app is damaged. Open <em>System Settings → Privacy &amp; Security</em> and choose <em>Open Anyway</em>.</td>
+            <td>On launch</td>
+            <td class="mono">api.github.com/repos/…/releases/latest</td>
+            <td>Nothing. It reads the newest version number.</td>
           </tr>
           <tr>
-            <td><strong>Windows</strong></td>
-            <td><code>.exe</code> installer</td>
-            <td>SmartScreen may warn. Choose <em>More info</em>, then <em>Run anyway</em>.</td>
+            <td>Opening About</td>
+            <td class="mono">raw.githubusercontent.com/…/feedback-config.json</td>
+            <td>Nothing. It reads a contact address.</td>
           </tr>
           <tr>
-            <td><strong>Linux</strong></td>
-            <td><code>.AppImage</code> or <code>.deb</code></td>
-            <td>Nothing extra to accept.</td>
+            <td>Everything else</td>
+            <td class="mono">no request</td>
+            <td>Your files are opened, processed and written on this machine.</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="under-cta" style="text-align:start">
-      Those warnings appear because the app is not yet signed with a paid
-      certificate, not because anything is wrong with the download. The
-      <a href="https://github.com/shyhunter/Papercut/releases/latest">release page</a>
-      lists checksums for every file.
-    </p>
   </section>
 
   <section>
-    <h2>Worth knowing before you download</h2>
+    <p class="sig">Manifest</p>
+    <h2><em>Twenty-two</em> tools</h2>
+    <p class="lede">Twenty-one of them need nothing installed. Hover or tap a card to see how it works.</p>
+    <div class="cards">
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-file-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /> </svg>
+            <span class="card-name">Compress</span>
+            <span class="card-desc">Reduce PDF file size with quality presets</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Ghostscript re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-merge" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m8 6 4-4 4 4" /> <path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /> <path d="m20 22-5-5" /> </svg>
+            <span class="card-name">Merge</span>
+            <span class="card-desc">Combine multiple PDFs into one document</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Joins files in the order you arrange them. Nothing is re-encoded, so quality is untouched.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-scissors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="6" cy="6" r="3" /> <path d="M8.12 8.12 12 12" /> <path d="M20 4 8.12 15.88" /> <circle cx="6" cy="18" r="3" /> <path d="M14.8 14.8 20 20" /> </svg>
+            <span class="card-name">Split</span>
+            <span class="card-desc">Extract or separate pages from a PDF</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Take a page range out, or separate every page into its own file.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
+            <span class="card-name">Rotate</span>
+            <span class="card-desc">Rotate individual or all pages in a PDF</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Turns pages 90° at a time. The angle is recorded rather than the page redrawn, so nothing is re-encoded.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-crop" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M6 2v14a2 2 0 0 0 2 2h14" /> <path d="M18 22V8a2 2 0 0 0-2-2H2" /> </svg>
+            <span class="card-name">Crop</span>
+            <span class="card-desc">Crop margins or select a region on pages</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Drag a box on the page. Apply it to every page, or only the ones you pick.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-layout-grid" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" /> </svg>
+            <span class="card-name">Organise pages</span>
+            <span class="card-desc">Reorder, delete, or duplicate pages</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Reorder, duplicate or delete pages from a grid of thumbnails, then apply once.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-hash" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /> </svg>
+            <span class="card-name">Page numbers</span>
+            <span class="card-desc">Add page numbers to PDF pages</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Position, format and starting number. Added as real text, so they can be removed again later.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-stamp" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 22h14" /> <path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z" /> <path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13" /> </svg>
+            <span class="card-name">Watermark</span>
+            <span class="card-desc">Add text or image watermark to PDF pages</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Drag it where you want it and turn it with arrows. Applied across every page.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-pen-tool" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z" /> <path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18" /> <path d="m2.3 2.3 7.286 7.286" /> <circle cx="11" cy="11" r="2" /> </svg>
+            <span class="card-name">Sign</span>
+            <span class="card-desc">Add a visual signature stamp to PDF pages</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Draw, type or upload a signature, then place it. Signatures you make are saved for next time.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-eye-off" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /> </svg>
+            <span class="card-name">Redact</span>
+            <span class="card-desc">Permanently remove text or areas from a PDF</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Pages you redact are rasterised, so the text underneath is gone rather than covered. Those pages lose selectable text; the rest keep theirs.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-lock" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /> </svg>
+            <span class="card-name">Protect</span>
+            <span class="card-desc">Add password encryption to a PDF</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Adds a password. Papercut never stores it and cannot recover it: lose it and the file is closed for good.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-lock-open" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /> </svg>
+            <span class="card-name">Unlock</span>
+            <span class="card-desc">Remove password protection from a PDF</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Removes a password you already know from a file you own.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-wrench" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /> </svg>
+            <span class="card-name">Repair</span>
+            <span class="card-desc">Fix corrupted or malformed PDFs</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Rebuilds a damaged file&#x27;s structure so it opens again. Offered automatically when one fails to load.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-archive" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="20" height="5" x="2" y="3" rx="1" /> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /> <path d="M10 12h4" /> </svg>
+            <span class="card-name">PDF/A</span>
+            <span class="card-desc">Convert PDF to archival PDF/A format</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Converts to the archival format meant for long-term storage.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-eye" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /> </svg>
+            <span class="card-name">Make searchable</span>
+            <span class="card-desc">Read the text on a scan so it can be searched and copied</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Reads the text on a scan using the engine built into macOS, then adds an invisible layer you can search and copy.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-file-pen" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M13.378 15.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /> </svg>
+            <span class="card-name">Edit text</span>
+            <span class="card-desc">Edit text and images in a PDF document</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Change text and images in place, find words across the document, and reorder pages without leaving.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-file-image" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /> </svg>
+            <span class="card-name">PDF to JPG</span>
+            <span class="card-desc">Export PDF pages as JPEG or PNG images</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Renders each page to an image at the resolution you choose.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-file-plus-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M3 15h6" /> <path d="M6 12v6" /> </svg>
+            <span class="card-name">JPG to PDF</span>
+            <span class="card-desc">Convert images into a single PDF document</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Places images into one PDF, a page each, in the order you set.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-image-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" /> <path d="m14 19 3 3v-5.5" /> <path d="m17 22 3-3" /> <circle cx="9" cy="9" r="2" /> </svg>
+            <span class="card-name">Compress image</span>
+            <span class="card-desc">Resize and convert images with quality control</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Re-encodes at a quality you pick, and never hands back a file larger than the one you gave it.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
+            <span class="card-name">Rotate image</span>
+            <span class="card-desc">Rotate images 90°, 180°, or 270°</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Turns by 90° at a time, without re-encoding where the format allows.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
+            <span class="card-name">Convert image</span>
+            <span class="card-desc">Convert between JPG, PNG, and WebP formats</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">Between JPEG, PNG and WebP, with dimensions and quality in the same step.</span>
+          </span>
+        </span>
+      </button>
+      <button class="card" type="button">
+        <span class="card-inner">
+          <span class="face recto">
+            <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
+            <span class="card-name">Convert document</span>
+            <span class="card-desc">Convert between PDF, DOC, EPUB, and ebook formats</span>
+          </span>
+          <span class="face verso">
+            <span class="card-how-label">How it works</span>
+            <span class="card-how">To Markdown, HTML, JSON, text or DOCX with nothing installed. EPUB, MOBI, DOC and ODT reach for Calibre or LibreOffice.</span>
+          </span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <p class="sig">Stock &amp; finishing</p>
+    <h2><em>Download</em></h2>
+    <p class="lede">One installer. Ghostscript is bundled: there is nothing else to fetch.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Platform</th><th>File</th><th>First run</th></tr></thead>
+        <tbody>
+          <tr><td>macOS (Apple silicon)</td><td class="mono">.dmg</td><td>Unsigned: macOS may say it is damaged. Privacy &amp; Security → Open Anyway.</td></tr>
+          <tr><td>Windows</td><td class="mono">.exe</td><td>SmartScreen may warn. More info → Run anyway.</td></tr>
+          <tr><td>Linux</td><td class="mono">.AppImage / .deb</td><td>Opens normally.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <p class="sig">Errata</p>
+    <h2><em>Before</em> you download</h2>
     <p class="lede">The things a download page usually leaves out.</p>
-    <div class="honest">
+    <div class="notes">
       <div>
         <h3>One tool needs help</h3>
-        <p>
-          Converting to EPUB or MOBI uses Calibre, and some document formats use
-          LibreOffice. Everything else (all twenty-one other tools) runs with
-          nothing installed.
-        </p>
+        <p>EPUB and MOBI use Calibre; some document formats use LibreOffice. The other twenty-one tools need nothing.</p>
       </div>
       <div>
         <h3>Two features are macOS-only</h3>
-        <p>
-          Reading text from scans uses Apple's built-in engine, and HEIC photos
-          need a decoder the operating system licenses. Papercut hides what it
-          cannot run rather than offering it and failing.
-        </p>
+        <p>Reading scans and HEIC photos depend on what the operating system provides. Papercut hides what it cannot run.</p>
       </div>
       <div>
         <h3>Nine languages, all AI-assisted</h3>
-        <p>
-          Every one of them, English included, was written with AI help, and
-          none has been checked by a professional translator. Warnings about
-          losing files are translated everywhere or nowhere, never half-done.
-          Corrections are very welcome.
-        </p>
+            <p>Every one of them, English included, was written with AI help. Warnings about losing files are translated everywhere or nowhere, never half.</p>
       </div>
       <div>
-        <h3>It is a young project</h3>
-        <p>
-          Built by one person. If something breaks, the issue tracker is read by
-          the person who wrote the code, and bugs reported there are what shaped
-          most of what is here.
-        </p>
+        <h3>Built by one person</h3>
+        <p>The issue tracker is read by whoever wrote the code. Most of what is here came from bugs reported there.</p>
       </div>
     </div>
   </section>
 
+  <section>
+    <p class="sig">Colophon</p>
+    <h2>If it <em>saved</em> you an afternoon</h2>
+    <p class="lede">
+      Papercut is free, MIT licensed, and collects nothing: no analytics, no
+      telemetry, no crash reports. That is the point of it, and it has one
+      consequence worth admitting: <strong>there is no way for me to know whether
+      anyone is using this.</strong> Downloads are a number; they do not say
+      whether the thing worked.
+    </p>
+
+    <div class="support">
+      <a class="support-card" href="https://github.com/shyhunter/Papercut" target="_blank" rel="noopener">
+        <svg class="support-icon lucide lucide-star" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /> </svg>
+        <h3>Star it on GitHub</h3>
+        <p>
+          Free, takes a second, and it is the only signal that reaches me. It also
+          puts Papercut in front of people searching for a tool that does not want
+          their documents.
+        </p>
+        <span class="support-go">github.com/shyhunter/Papercut →</span>
+      </a>
+
+      <a class="support-card" href="https://github.com/users/shyhunter/projects/9" target="_blank" rel="noopener">
+        <svg class="support-icon lucide lucide-map" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /> </svg>
+        <h3>Read the roadmap</h3>
+        <p>
+          Public, and it carries the reasoning rather than just the verdict,
+          including the things decided against, and why. If you disagree with a
+          call, the argument is there to disagree with.
+        </p>
+        <span class="support-go">the roadmap →</span>
+      </a>
+
+      <a class="support-card" href="https://buymeacoffee.com/shyhunter" target="_blank" rel="noopener">
+        <svg class="support-icon lucide lucide-coffee" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10 2v2" /> <path d="M14 2v2" /> <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" /> <path d="M6 2v2" /> </svg>
+        <h3>Buy me a coffee</h3>
+        <p>
+          Entirely optional and it changes nothing: there is no paid tier to
+          unlock, and there never will be. It pays for the certificates that stop
+          your operating system calling this app damaged.
+        </p>
+        <span class="support-go">buymeacoffee.com/shyhunter →</span>
+      </a>
+    </div>
+
+    <p class="lede" style="margin:1.4rem 0 0">
+      Reporting something that broke is worth more than both. Most of what is in
+      this release came from someone taking the time to say what went wrong.
+    </p>
+  </section>
+
   <footer>
-    <span>Papercut is free software, MIT licensed.</span>
+    <span>MIT licensed · free software</span>
     <nav>
-      <a href="https://github.com/shyhunter/Papercut/wiki">Documentation</a>
-      <a href="https://github.com/shyhunter/Papercut/wiki/Roadmap">Roadmap</a>
-      <a href="https://github.com/shyhunter/Papercut/issues">Report a problem</a>
-      <a href="https://github.com/shyhunter/Papercut">GitHub</a>
+      <a href="https://github.com/shyhunter/Papercut/wiki">Docs</a>
+      <a href="https://github.com/shyhunter/Papercut/issues">Report</a>
+      <a href="https://github.com/users/shyhunter/projects/9">Roadmap</a>
+      <a href="https://github.com/shyhunter/Papercut">Source</a>
     </nav>
   </footer>
 
 </div>
+
+<script>
+  // Autoplay is an accessibility problem for anyone who has asked the system
+  // for less motion, and no media query can stop a video that is already
+  // playing. The controls stay, so the demo is still watchable on request.
+  (function () {
+    var v = document.getElementById('demo');
+    if (!v) return;
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        v.autoplay = false;
+        v.pause();
+      }
+    } catch (e) {
+      /* matchMedia missing: leave the video as authored */
+    }
+  })();
+</script>
 
 </body>
 </html>

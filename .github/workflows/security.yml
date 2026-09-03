@@ -1,6 +1,6 @@
 name: Security
 
-# Implements project rule P016 (gitleaks) and P015 (npm audit) — see .claude/project_rules_decisions.md.
+# Implements project rules P015 (npm audit) and P016 (gitleaks).
 # Independent from ci.yml so a security failure surfaces clearly and never blocks unrelated work.
 
 on:

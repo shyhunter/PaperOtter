@@ -43,15 +43,15 @@ cheap.
 
 ## House rules
 
-These come from `.claude/project_rules_decisions.md` and are worth knowing,
-because they are enforced in review:
+These are worth knowing, because they are enforced in review:
 
 - **Tests come first.** A bug fix ships with a regression test that fails before
   the fix and passes after it. Write it, watch it go red, then fix.
 - **Use real fixtures.** New processing pipelines get a real binary file in
   `test-fixtures/`, not a synthetic stub with the right magic bytes. Three live
   bugs got through because a stub looked close enough.
-- **Keep `.planning/TEST_PLAN.md` in step.** New tests get an ID there.
+- **Say what your test pins down.** Name the behaviour it protects in the PR
+  description, so the test plan can be kept in step with it.
 - **Never widen the Tauri capabilities** in `src-tauri/capabilities/` without
   saying why in the PR. Each permission is potential file or shell access from
   JavaScript.

@@ -1,7 +1,7 @@
 //! HEIC/HEIF decoding.
 //!
-//! Every photo an iPhone takes is HEIC by default, so this is the first thing the
-//! persona in `.planning/PROJECT.md` tries: photograph an ID, drag it in.
+//! Every photo an iPhone takes is HEIC by default, so this is the first thing a
+//! new user tries: photograph an ID, drag it in.
 //!
 //! Decoding runs on macOS Image I/O rather than a Rust crate. The pure-Rust
 //! decoders on crates.io are AGPL-licensed, which an MIT app cannot take, and
