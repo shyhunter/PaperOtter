@@ -56,6 +56,66 @@ MPL-2.0; see https://www.libreoffice.org/.
 
 ---
 
+## Bundled Linux system libraries (AppImage only)
+
+The Linux **AppImage** bundles roughly 110 unmodified system libraries from
+Ubuntu so it can run without those packages being installed. This includes the
+WebKitGTK stack Papercut's user interface runs on, and much of GTK, GLib,
+Pango, Cairo and GStreamer beneath it. Many of these are licensed under the
+**GNU LGPL**, versions 2.1 or 3, and a few are dual GPL/LGPL.
+
+Papercut modifies none of them. They are the stock Ubuntu binaries, linked
+dynamically, and they can be replaced inside the extracted AppImage.
+
+**Where the notices are.** Each bundled package carries its own Debian
+copyright file inside the AppImage, at:
+
+```
+usr/share/doc/<package>/copyright
+```
+
+Extract the AppImage with `./Papercut_*.AppImage --appimage-extract` to read
+them. Debian copyright files normally point at `/usr/share/common-licenses/`,
+which does not exist inside an AppImage, so those references would otherwise
+dangle. Every licence text they refer to is therefore installed alongside the
+application at `usr/lib/Papercut/licenses/`:
+
+```
+Apache-2.0  Artistic-1.0  CC0-1.0  GFDL-1.2  GFDL-1.3  GPL-1.0  GPL-2.0
+GPL-3.0     LGPL-2.0      LGPL-2.1  LGPL-3.0  MPL-1.1   MPL-2.0
+```
+
+That set was derived from the artifact itself rather than guessed: every
+`common-licenses/` reference in the bundled copyright files was collected and
+each one is covered above. Debian's unversioned `GPL`, `LGPL` and `GFDL`
+pointers resolve to the newest versioned text, which is present.
+
+**Source code offer.** Every bundled library is a stock package from the Ubuntu
+archive. Complete corresponding source for any of them can be obtained with:
+
+```
+apt-get source <package>
+```
+
+or from https://archive.ubuntu.com/ubuntu/pool/ . If you cannot obtain the
+source for a bundled library by those means, open an issue on the Papercut
+repository and we will provide it.
+
+**The `.deb` and the other platforms are not affected.** The Debian package
+declares these libraries as dependencies rather than shipping them, so nothing
+is redistributed there. macOS uses the system WKWebView, and the Windows build
+uses Microsoft's WebView2 runtime, which its own installer obtains; neither
+redistributes anything.
+
+### A note on the webkit2gtk entries in NOTICES.txt
+
+`NOTICES.txt` lists `webkit2gtk` and `webkit2gtk-sys` as MIT. Those are the
+**Rust binding crates**, and they are MIT. The WebKitGTK library itself, which
+the AppImage bundles, is **LGPL-2.1-or-later** and is covered by this section,
+not by those entries.
+
+---
+
 ## Apple system frameworks
 
 Vision, PDFKit, Core Graphics, Core Text and Image I/O are part of macOS and are
