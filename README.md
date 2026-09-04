@@ -295,15 +295,25 @@ npm run lint
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| App Shell | [Tauri v2](https://v2.tauri.app/) |
-| Frontend | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
-| PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
-| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) + [fflate](https://github.com/101arrowz/fflate) |
-| Image Processing | [image](https://github.com/image-rs/image) (Rust crate) |
-| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
+| Layer | Technology | Licence |
+|-------|------------|---------|
+| App Shell | [Tauri v2](https://v2.tauri.app/) | Apache-2.0 OR MIT |
+| Frontend | [React 19](https://react.dev/) | MIT |
+| Frontend | [TypeScript](https://www.typescriptlang.org/) (build only) | Apache-2.0 |
+| Styling | [Tailwind CSS v4](https://tailwindcss.com/) (build only) | MIT |
+| PDF Processing | [pdf-lib](https://pdf-lib.js.org/) | MIT |
+| PDF Processing | [pdfjs-dist](https://mozilla.github.io/pdf.js/) | Apache-2.0 |
+| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) | BSD-2-Clause |
+| Document Conversion | [fflate](https://github.com/101arrowz/fflate) | MIT |
+| Image Processing | [image](https://github.com/image-rs/image) (Rust crate) | MIT OR Apache-2.0 |
+| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) | **AGPL-3.0** |
+
+Ghostscript is the one to know about: it is **AGPL-3.0**, it ships inside the
+application, and its full licence text and source offer travel with every build.
+TypeScript and Tailwind are build-time only, so nothing of them is distributed.
+The complete list of all 788 compiled and bundled dependencies is in
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md), which is also installed
+alongside the app.
 
 ---
 
