@@ -554,6 +554,8 @@ export const de: Dictionary = {
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
+  'aboutDialog.includes': 'Enthält',
+  'aboutDialog.thirdPartyNotices': 'Lizenzhinweise Dritter',
   'aboutDialog.sendFeedback': 'Rückmeldung senden',
   'common.yourLocalDocumentToolkitPrivate': 'Ihr lokales Dokumentwerkzeug: privat, schnell, offline.',
   'buyMeAcoffeeButton.buyMeACoffee': 'Spendieren Sie mir einen Kaffee',

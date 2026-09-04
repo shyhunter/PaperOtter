@@ -577,6 +577,8 @@ export const en = {
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',
+  'aboutDialog.includes': 'Includes',
+  'aboutDialog.thirdPartyNotices': 'Third-party notices',
   'aboutDialog.sendFeedback': 'Send Feedback',
   'common.yourLocalDocumentToolkitPrivate': 'Your local document toolkit: private, fast, offline.',
 

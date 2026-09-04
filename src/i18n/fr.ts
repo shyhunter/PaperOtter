@@ -867,6 +867,8 @@ export const fr: Dictionary = {
   'aboutDialog.roadmap': 'Feuille de route',
   'aboutDialog.builtWith': 'Développé avec',
   'aboutDialog.license': 'Licence',
+  'aboutDialog.includes': 'Inclut',
+  'aboutDialog.thirdPartyNotices': 'Mentions des tiers',
   'aboutDialog.sendFeedback': 'Envoyer un commentaire',
   'buyMeAcoffeeButton.buyMeACoffee': 'Offrez-moi un café',
   'support.buyMeACoffee': 'Offrez-moi un café',

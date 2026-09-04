@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
+import { resolveResource } from '@tauri-apps/api/path';
 import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfig';
 import { t } from '@/i18n';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
 /** The public roadmap: what is planned, and what was decided against. */
 const ROADMAP_URL = 'https://github.com/users/shyhunter/projects/9';
+/** Read from the bundle first; this is only the fallback if that path fails. */
+const NOTICES_URL = 'https://github.com/shyhunter/Papercut/blob/main/THIRD-PARTY-LICENSES.md';
 
 const APP_VERSION_FALLBACK = '1.0.0';
 
@@ -31,6 +34,17 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
     if (!open) return;
     fetchFeedbackEmail().then(setFeedbackEmail);
   }, [open]);
+
+  // Ghostscript ships inside the app under the AGPL, which requires the licence
+  // to travel with the binary rather than live only in the repository. The file
+  // is bundled, so reveal it on disk and stay useful with no network. Revealing
+  // rather than opening is deliberate: `opener:default` already permits it,
+  // whereas opening a path would mean widening the capability for one button.
+  const handleNotices = useCallback(() => {
+    resolveResource('licenses/THIRD-PARTY-LICENSES.md')
+      .then(revealItemInDir)
+      .catch(() => openUrl(NOTICES_URL).catch(() => {}));
+  }, []);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -98,6 +112,10 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
             <span className="text-foreground font-medium">MIT</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('aboutDialog.includes')}</span>
+            <span className="text-foreground font-medium">Ghostscript (AGPL-3.0)</span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-muted-foreground">{t('aboutDialog.builtWith')}</span>
             <span className="text-foreground font-medium">Tauri + React</span>
           </div>
@@ -112,6 +130,14 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           >
             <ExternalLink className="h-3 w-3" />
             GitHub
+          </button>
+          <button
+            type="button"
+            onClick={handleNotices}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            {t('aboutDialog.thirdPartyNotices')}
           </button>
           <button
             type="button"

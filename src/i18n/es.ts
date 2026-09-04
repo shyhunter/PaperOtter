@@ -679,6 +679,8 @@ export const es: Dictionary = {
   'aboutDialog.translationsNotNativeReviewed': 'Papercut habla nueve idiomas. Todos se han creado con ayuda de IA, incluido el inglés, y ninguno ha sido revisado por un traductor profesional. Si algo suena raro o dice lo que no debe, por favor comuníquelo.',
   'aboutDialog.roadmap': 'Hoja de ruta',
   'aboutDialog.builtWith': 'Desarrollado con', 'aboutDialog.license': 'Licencia',
+                                               'aboutDialog.includes': 'Incluye',
+                                               'aboutDialog.thirdPartyNotices': 'Avisos de terceros',
   'aboutDialog.sendFeedback': 'Enviar comentarios',
   'buyMeAcoffeeButton.buyMeACoffee': 'Invítame a un café', 'support.buyMeACoffee': 'Invítame a un café',
   'colorPicker.customColour': 'Color personalizado',

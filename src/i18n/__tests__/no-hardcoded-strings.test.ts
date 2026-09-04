@@ -28,6 +28,9 @@ const SRC = join(process.cwd(), 'src');
 const PROPER_NOUNS = new Set([
   'Papercut', 'GitHub', 'Tauri + React', 'Ghostscript', 'LibreOffice',
   'Calibre', 'Rust', 'React', 'MIT', 'PDF', 'JPG', 'PNG', 'WebP',
+  // A product name and an SPDX licence identifier. The About dialog has to
+  // name the bundled AGPL component exactly, so neither half is translatable.
+  'Ghostscript (AGPL-3.0)',
   // Font families and product names — CSS values and trademarks, never translated.
   'Times New Roman', 'Times Roman', 'Courier New', 'Helvetica Neue',
   'Brush Script MT', 'Dancing Script', 'Great Vibes', 'Microsoft Word',

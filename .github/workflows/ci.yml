@@ -39,6 +39,7 @@ jobs:
       image-changed: ${{ steps.filter.outputs.image }}
       rust-changed: ${{ steps.filter.outputs.rust }}
       code-changed: ${{ steps.filter.outputs.code }}
+      deps-changed: ${{ steps.filter.outputs.deps }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -67,6 +68,13 @@ jobs:
             # than "frontend": version:check compares package.json against
             # tauri.conf.json and Cargo.toml, so src-tauri counts too. What is
             # left out is only prose — docs and loose markdown.
+            # The notices file is generated from the two lockfiles and nothing
+            # else, so this is exactly when it can go stale.
+            deps:
+              - '.github/workflows/ci.yml'
+              - 'src-tauri/Cargo.lock'
+              - 'package-lock.json'
+              - 'scripts/generate-notices.mjs'
             code:
               - '.github/workflows/**'
               - '.github/dependabot.yml'
@@ -108,6 +116,10 @@ jobs:
       - name: Version consistency check
         if: needs.detect-changes.outputs.code-changed != 'false'
         run: npm run version:check
+
+      - name: Third-party notices are current
+        if: needs.detect-changes.outputs.deps-changed != 'false'
+        run: npm run notices:check
 
       - name: TypeScript type check
         if: needs.detect-changes.outputs.code-changed != 'false'

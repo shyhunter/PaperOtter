@@ -31,6 +31,7 @@ describe('user-visible text comes from the dictionary', () => {
   const ALLOWED = new Set([
     'Papercut',        // the product name; not translated in any language
     'Tauri + React',   // technology names, shown in the About dialog
+    'Ghostscript (AGPL-3.0)',  // product name + SPDX id; the About dialog must name it exactly
     'GitHub',          // proper noun
     '1, 2, 3',         // numeral-format examples -- the glyphs are the content
     'i, ii, iii',

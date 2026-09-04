@@ -47,6 +47,11 @@
     "externalBin": [
       "binaries/papercut-gs"
     ],
+    "resources": {
+      "../LICENSES/AGPL-3.0.txt": "licenses/AGPL-3.0.txt",
+      "../THIRD-PARTY-LICENSES.md": "licenses/THIRD-PARTY-LICENSES.md",
+      "../LICENSES/NOTICES.txt": "licenses/NOTICES.txt"
+    },
     "macOS": {
       "signingIdentity": "-"
     },
