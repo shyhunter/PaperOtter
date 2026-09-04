@@ -75,10 +75,20 @@ usr/share/doc/<package>/copyright
 ```
 
 Extract the AppImage with `./Papercut_*.AppImage --appimage-extract` to read
-them. The common licence texts those files refer to are installed alongside the
-application at `usr/lib/Papercut/licenses/` (`LGPL-2.1.txt`, `LGPL-3.0.txt`,
-`GPL-3.0.txt`, `GPL-2.0.txt`); Debian copyright files normally point at
-`/usr/share/common-licenses/`, which does not exist inside an AppImage.
+them. Debian copyright files normally point at `/usr/share/common-licenses/`,
+which does not exist inside an AppImage, so those references would otherwise
+dangle. Every licence text they refer to is therefore installed alongside the
+application at `usr/lib/Papercut/licenses/`:
+
+```
+Apache-2.0  Artistic-1.0  CC0-1.0  GFDL-1.2  GFDL-1.3  GPL-1.0  GPL-2.0
+GPL-3.0     LGPL-2.0      LGPL-2.1  LGPL-3.0  MPL-1.1   MPL-2.0
+```
+
+That set was derived from the artifact itself rather than guessed: every
+`common-licenses/` reference in the bundled copyright files was collected and
+each one is covered above. Debian's unversioned `GPL`, `LGPL` and `GFDL`
+pointers resolve to the newest versioned text, which is present.
 
 **Source code offer.** Every bundled library is a stock package from the Ubuntu
 archive. Complete corresponding source for any of them can be obtained with:
