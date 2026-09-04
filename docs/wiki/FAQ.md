@@ -21,11 +21,19 @@ dialog.
 They're deleted automatically once processing finishes. If Papercut crashes
 before cleanup, any leftover temp files are swept on the next launch.
 
-### Why does macOS say "Papercut is damaged and can't be opened"?
+### Why does macOS say it "could not verify" Papercut on first launch?
 
-The app isn't yet signed with an Apple Developer certificate. Open
-**Terminal** and run `xattr -cr /Applications/Papercut.app`, then open
-Papercut normally.
+Papercut is signed, but not yet notarised by Apple. Open it, click **Done** on
+the refusal, then go to **System Settings → Privacy & Security**, scroll to
+**Security**, and click **Open Anyway**. A second dialog appears: click
+**Open Anyway** there too, then authenticate with Touch ID or your admin
+password. Note that the blue default button in that dialog is **Move to Bin**,
+which deletes the app, so click deliberately. The override only appears after
+macOS has blocked you and expires about an hour later. See
+[Troubleshooting](Troubleshooting) for the full sequence.
+
+If you see the older _"damaged and can't be opened"_ message instead, run
+`xattr -cr /Applications/Papercut.app`.
 
 ### Why does Windows show a SmartScreen warning?
 

@@ -153,11 +153,16 @@ system's where one is licensed.
 
 The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go. Ghostscript is bundled with the app.
 
-> **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
-> ```
-> xattr -cr /Applications/Papercut.app
-> ```
-> Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate.
+> **Mac users:** Papercut is signed but not yet notarised by Apple, so macOS blocks the first launch. Verified on macOS 26:
+>
+> 1. Open Papercut. macOS refuses: _**"Papercut" Not Opened**, Apple could not verify..._. Click **Done**. Do not skip this: the override does not exist until macOS has actually blocked you.
+> 2. Go to **System Settings → Privacy & Security** and scroll to **Security** at the bottom. Papercut is named there. Click **Open Anyway**. This appears for about an hour after the block, then expires.
+> 3. A second dialog asks **Open "Papercut"?** and offers three buttons. ⚠️ **The blue default is "Move to Bin" ("Move to Trash" in US English), which deletes the app.** Click **Open Anyway** instead.
+> 4. Authenticate with Touch ID or an administrator password.
+>
+> macOS remembers the decision and Papercut opens normally from then on.
+>
+> If you see the older _"Papercut is damaged and can't be opened"_ message, or the hour expired, clear the quarantine flag instead: `xattr -cr /Applications/Papercut.app`
 
 > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
 
@@ -290,15 +295,25 @@ npm run lint
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| App Shell | [Tauri v2](https://v2.tauri.app/) |
-| Frontend | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
-| PDF Processing | [pdf-lib](https://pdf-lib.js.org/) + [pdfjs-dist](https://mozilla.github.io/pdf.js/) |
-| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) + [fflate](https://github.com/101arrowz/fflate) |
-| Image Processing | [image](https://github.com/image-rs/image) (Rust crate) |
-| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) |
+| Layer | Technology | Licence |
+|-------|------------|---------|
+| App Shell | [Tauri v2](https://v2.tauri.app/) | Apache-2.0 OR MIT |
+| Frontend | [React 19](https://react.dev/) | MIT |
+| Frontend | [TypeScript](https://www.typescriptlang.org/) (build only) | Apache-2.0 |
+| Styling | [Tailwind CSS v4](https://tailwindcss.com/) (build only) | MIT |
+| PDF Processing | [pdf-lib](https://pdf-lib.js.org/) | MIT |
+| PDF Processing | [pdfjs-dist](https://mozilla.github.io/pdf.js/) | Apache-2.0 |
+| Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) | BSD-2-Clause |
+| Document Conversion | [fflate](https://github.com/101arrowz/fflate) | MIT |
+| Image Processing | [image](https://github.com/image-rs/image) (Rust crate) | MIT OR Apache-2.0 |
+| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) | **AGPL-3.0** |
+
+Ghostscript is the one to know about: it is **AGPL-3.0**, it ships inside the
+application, and its full licence text and source offer travel with every build.
+TypeScript and Tailwind are build-time only, so nothing of them is distributed.
+The complete list of all 788 compiled and bundled dependencies is in
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md), which is also installed
+alongside the app.
 
 ---
 
