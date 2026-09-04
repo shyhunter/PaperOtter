@@ -10,7 +10,7 @@ import {
   canAttemptConversion,
   requiredEngineFor,
   installableEnginesFor,
-  requirementFor, getBestEngine, getAvailableOutputFormats } from '@/lib/documentConverter';
+  requirementFor, getBestEngine, getAvailableOutputFormats, buildCalibreArgs } from '@/lib/documentConverter';
 import type { ConverterAvailability } from '@/types/converter';
 
 function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
@@ -25,6 +25,26 @@ function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
     ...partial,
   };
 }
+
+// ── Calibre args must clear the Rust-side allow-list ───────────────────────
+
+describe('[CALIBRE-ARGS-01] buildCalibreArgs unconditional flags', () => {
+  // Reported from a real build: every Convert Document run through Calibre
+  // failed with "Unsupported conversion option: --enable-heuristics".
+  // buildCalibreArgs pushes --enable-heuristics and --unsmarten-punctuation on
+  // every call, before any option is even read, but src-tauri/src/lib.rs's
+  // CALIBRE_ALLOWED_FLAGS was written six days after this function and never
+  // learned about either -- so every request this app ever sent through
+  // Calibre was rejected by its own allow-list.
+  //
+  // Vitest cannot call into Rust, so this pins the TS side of the contract:
+  // the exact unconditional prefix, so a flag added here without a matching
+  // addition to CALIBRE_ALLOWED_FLAGS is a visible diff in this test rather
+  // than a silent failure at conversion time.
+  it('always sends exactly the flags CALIBRE_ALLOWED_FLAGS in lib.rs must allow', () => {
+    expect(buildCalibreArgs({ outputFormat: 'epub' })).toEqual(['--enable-heuristics', '--unsmarten-punctuation']);
+  });
+});
 
 describe('input-aware engine selection', () => {
   it('[BUG] PDF → DOCX uses the offline built-in engine, never textutil (which dumped raw bytes)', () => {

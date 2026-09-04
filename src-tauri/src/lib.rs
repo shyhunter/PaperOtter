@@ -60,12 +60,21 @@ fn validate_filename_chars(path: &str) -> Result<(), String> {
 }
 
 /// Validates Calibre extra_args against a known-safe flag allow-list.
+///
+/// Reported from a real build: every Calibre conversion failed outright with
+/// "Unsupported conversion option: --enable-heuristics". buildCalibreArgs() in
+/// documentConverter.ts pushes --enable-heuristics and --unsmarten-punctuation
+/// unconditionally, on every call, before any option is even read -- but this
+/// list was written six days later (91f1e0f) without them, so every request
+/// this allow-list ever saw was already invalid. Keep this list a superset of
+/// buildCalibreArgs()'s output; [CALIBRE-ARGS-01] below pins the TS side's
+/// unconditional flags so the two cannot drift apart silently again.
 const CALIBRE_ALLOWED_FLAGS: &[&str] = &[
     "--base-font-size", "--font-size-mapping", "--margin-top",
     "--margin-bottom", "--margin-left", "--margin-right",
     "--change-justification", "--insert-blank-line",
     "--line-height", "--input-encoding", "--output-profile",
-    "--extra-css",
+    "--extra-css", "--enable-heuristics", "--unsmarten-punctuation",
 ];
 
 fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
@@ -2626,6 +2635,45 @@ pub fn run_with_file(open_file: Option<String>, selftest: bool) {
 
 #[cfg(test)]
 mod tests {
+
+    // ─── Calibre allow-list must accept what the TS side always sends ─────────
+
+    use super::validate_calibre_extra_args;
+
+    /// [CALIBRE-ARGS-01] The Calibre allow-list must accept the flags
+    /// buildCalibreArgs() sends on every call, unconditionally.
+    ///
+    /// Reported from a real build: every Convert Document run through Calibre
+    /// failed with "Unsupported conversion option: --enable-heuristics".
+    /// documentConverter.ts's buildCalibreArgs() pushes --enable-heuristics and
+    /// --unsmarten-punctuation before any user option is even read, so they are
+    /// present on every single call -- but CALIBRE_ALLOWED_FLAGS was written six
+    /// days after that function existed, and never learned about either.
+    ///
+    /// This asserts the boundary directly rather than the symptom: the exact
+    /// unconditional prefix buildCalibreArgs() emits, byte for byte, must clear
+    /// this allow-list. If a future flag is added to one side and not the other,
+    /// this fails here instead of during a user's conversion.
+    #[test]
+    fn calibre_allowlist_accepts_the_flags_always_sent() {
+        // Mirrors buildCalibreArgs()'s unconditional prefix in documentConverter.ts:
+        // pushed on every call, before fontSize/margins/lineSpacing/epubLayout.
+        let always_sent = vec![
+            "--enable-heuristics".to_string(),
+            "--unsmarten-punctuation".to_string(),
+        ];
+        assert!(
+            validate_calibre_extra_args(&always_sent).is_ok(),
+            "the allow-list rejects flags buildCalibreArgs() sends on every conversion"
+        );
+    }
+
+    /// The allow-list still does its actual job: an unrecognised flag is rejected.
+    #[test]
+    fn calibre_allowlist_still_rejects_the_unknown() {
+        let bogus = vec!["--not-a-real-calibre-flag".to_string()];
+        assert!(validate_calibre_extra_args(&bogus).is_err());
+    }
 
     // ─── commands must not encode on the UI thread ────────────────────────────
 
