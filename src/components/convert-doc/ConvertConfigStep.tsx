@@ -180,7 +180,7 @@ export function ConvertConfigStep({
   }, [filePath, sourceFormat, outputFormat, fontFamily, fontSize, marginTop, marginRight, marginBottom, marginLeft, lineSpacing, epubLayout, showSplitToggle, splitByChapter, onConvertComplete]);
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col min-h-0">
       <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
       <div className="w-full max-w-md space-y-4 my-auto">
         {/* File info */}

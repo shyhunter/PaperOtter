@@ -46,6 +46,60 @@ describe('scrollable page grids', () => {
     expect(hosts.length, 'sanity: found lazy-thumbnail grids').toBeGreaterThanOrEqual(4);
   });
 
+  /**
+   * Column roots paired with the block they actually contain.
+   *
+   * Containment matters: a file can hold a centred empty state AND a scrolling
+   * step in different branches, and only the one wrapping the pane is at risk.
+   * Scope is taken from indentation, which this codebase formats consistently.
+   */
+  function columnRootsWithBody(src: string): { tag: string; body: string }[] {
+    const lines = src.split('\n');
+    const out: { tag: string; body: string }[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (!/className="[^"]*\bflex flex-1 flex-col\b[^"]*"/.test(lines[i])) continue;
+      // className may sit on its own line; the owning <div> is at or above it.
+      let open = i;
+      while (open > 0 && !/<div\b/.test(lines[open])) open--;
+      const indent = (lines[open].match(/^\s*/) as RegExpMatchArray)[0].length;
+      let j = open + 1;
+      for (; j < lines.length; j++) {
+        if (lines[j].trim() === '') continue;
+        const ind = (lines[j].match(/^\s*/) as RegExpMatchArray)[0].length;
+        if (ind <= indent && /^\s*<\/div>/.test(lines[j])) break;
+      }
+      out.push({ tag: lines[i], body: lines.slice(open, j).join('\n') });
+    }
+    return out;
+  }
+
+  it('[UI-05c] a column root holding a scroll pane can shrink too', () => {
+    // The same defect as UI-05b, one level up, and the reason it reached a
+    // user: these panes carry no scrollContainerRef, so the scan above never
+    // looked at them. Convert Document showed Output format, EPUB Layout and
+    // Typography with no way to scroll and no reachable Convert button, because
+    // the root grew to fit its content and pushed the action bar off-screen.
+    //
+    // The fix belongs on the root, not the pane: ConfigureStep, the one that
+    // always worked, carries min-h-0 on the root and nothing on the pane.
+    //
+    // `overflow-hidden` counts as a fix too, and is not a loophole: the
+    // automatic minimum size only applies while overflow is `visible`, so a
+    // hidden root already shrinks. BatchSummaryStep relies on exactly that.
+    const broken: string[] = [];
+    for (const file of files) {
+      const src = readFileSync(file, 'utf8');
+      for (const { tag, body } of columnRootsWithBody(src)) {
+        const holdsPane = /\bflex-1 overflow-y-auto\b/.test(body);
+        const canShrink = /\bmin-h-0\b|\boverflow-(hidden|clip)\b/.test(tag);
+        if (holdsPane && !canShrink) {
+          broken.push(`${file}: column root above a scroll pane cannot shrink`);
+        }
+      }
+    }
+    expect(broken, 'column roots that trap their own action bar').toEqual([]);
+  });
+
   it('[UI-05b] every flex scroll container can shrink below its content', () => {
     const broken: string[] = [];
     for (const file of files) {
