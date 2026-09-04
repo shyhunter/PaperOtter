@@ -63,5 +63,32 @@ jobs:
       - name: Install dependencies (lockfile, no scripts)
         run: npm ci --ignore-scripts
 
+      # npm audit exits 1 for two unrelated reasons: advisories were found, and
+      # the registry could not be reached. Collapsing them means an npmjs.org
+      # outage blocks every merge and reads like a security finding -- which is
+      # what happened on 2026-09-04, red for 10m25s against a normal 31s.
+      # Same shape as the gitleaks 403 recorded above: infrastructure failure
+      # misread as a verdict. Retry the transient case, and keep the two apart
+      # in the log. Still fails closed on a sustained outage: "could not check"
+      # is not "clean".
       - name: npm audit (prod, fail on high+)
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          for attempt in 1 2 3; do
+            npm audit --omit=dev --json > audit.json 2>/dev/null || true
+            if jq -e '.metadata.vulnerabilities' audit.json >/dev/null 2>&1; then
+              high=$(jq '.metadata.vulnerabilities.high' audit.json)
+              crit=$(jq '.metadata.vulnerabilities.critical' audit.json)
+              echo "high=$high critical=$crit"
+              if [ "$high" -gt 0 ] || [ "$crit" -gt 0 ]; then
+                echo "::error::High or critical advisories in production dependencies."
+                npm audit --omit=dev --audit-level=high
+                exit 1
+              fi
+              echo "No high or critical advisories in production dependencies."
+              exit 0
+            fi
+            echo "Attempt $attempt of 3: audit endpoint unavailable."
+            if [ "$attempt" -lt 3 ]; then sleep 30; fi
+          done
+          echo "::error::npm audit endpoint unreachable after 3 attempts. This is a registry outage, not a finding. Dependabot alerts remain the standing control; re-run this job once registry.npmjs.org answers."
+          exit 1
