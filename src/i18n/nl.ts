@@ -556,6 +556,8 @@ export const nl: Dictionary = {
   'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alle zijn met hulp van AI gemaakt, ook het Engels, en geen enkele is door een professionele vertaler nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
+                                          'aboutDialog.includes': 'Bevat',
+                                          'aboutDialog.thirdPartyNotices': 'Kennisgevingen van derden',
   'aboutDialog.sendFeedback': 'Feedback sturen',
   'buyMeAcoffeeButton.buyMeACoffee': 'Trakteer me op een koffie',
   'support.buyMeACoffee': 'Trakteer me op een koffie', 'colorPicker.customColour': 'Eigen kleur',
