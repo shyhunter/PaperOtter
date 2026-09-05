@@ -3,20 +3,71 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Papercut: your local document toolkit</title>
-<meta name="description" content="Compress, convert and edit PDFs, images and documents on your own machine. No uploads, no cloud, no telemetry. Free and open source for macOS, Windows and Linux.">
-
-<meta property="og:title" content="Papercut: your local document toolkit">
-<meta property="og:description" content="Compress, convert and edit PDFs, images and documents on your own machine. No uploads, no cloud, no telemetry.">
+<meta name="description" content="Compress, convert, sign and redact PDFs, images and documents on your own machine. No uploads, no account, no telemetry. Free and open source for macOS, Windows and Linux.">
+<link rel="canonical" href="https://shyhunter.github.io/Papercut/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="screenshots/dashboard-light.png">
+<meta property="og:url" content="https://shyhunter.github.io/Papercut/">
+<meta property="og:site_name" content="Papercut">
+<meta property="og:title" content="Papercut: your local document toolkit">
+<meta property="og:description" content="Twenty-two tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry. Free and open source.">
+<meta property="og:image" content="https://shyhunter.github.io/Papercut/media/share-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Papercut tool grid, with a banner reading: your files never leave your device.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Papercut: your local document toolkit">
+<meta name="twitter:description" content="Twenty-two tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry.">
+<meta name="twitter:image" content="https://shyhunter.github.io/Papercut/media/share-card.jpg">
+<title>Papercut: your local document toolkit</title>
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>&#9986;&#65039;</text></svg>">
-
-<!-- The headline and body faces are on the critical path and are only
-     discovered once the stylesheet parses; the mono face carries small labels
-     and can wait. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Papercut",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "macOS, Windows, Linux",
+  "url": "https://shyhunter.github.io/Papercut/",
+  "downloadUrl": "https://github.com/shyhunter/Papercut/releases/latest",
+  "codeRepository": "https://github.com/shyhunter/Papercut",
+  "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "Twenty-two offline tools for PDFs, images and documents. Compress, convert, sign, redact and edit on your own computer, with no account, no server and no upload step.",
+  "featureList": [
+    "Compress",
+    "Merge",
+    "Split",
+    "Rotate",
+    "Crop",
+    "Organise pages",
+    "Page numbers",
+    "Watermark",
+    "Sign",
+    "Redact",
+    "Protect",
+    "Unlock",
+    "Repair",
+    "PDF/A",
+    "Make searchable",
+    "Edit text",
+    "PDF to JPG",
+    "JPG to PDF",
+    "Compress image",
+    "Rotate image",
+    "Convert image",
+    "Convert document"
+  ],
+  "author": {
+    "@type": "Person",
+    "name": "shyhunter"
+  }
+}
+</script>
 <link rel="preload" href="fonts/bricolage-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/plex-sans-var.woff2" as="font" type="font/woff2" crossorigin>
 
@@ -171,11 +222,61 @@
   /* ── Trim marks ─────────────────────────────────────────── */
 
   .trim { position: relative; padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
-  .trim::before, .trim::after {
-    content: ""; position: absolute; width: 18px; height: 18px; pointer-events: none;
+
+  /* The crop marks moved off the page margin and onto the hero image, which is
+     what crop marks are actually for: they mark where an image gets trimmed. At
+     the page edge they were a 1px hairline against paper, invisible. Against the
+     near-black frame they finally register. Kept on the diagonal, as before. */
+
+  /* ── Free / open source stamp ───────────────────────────── */
+
+  /* A proof stamp, the thing a print shop actually puts on a sheet. Rotated so
+     it reads as applied rather than designed in, and left as real text so it is
+     selectable and reaches a screen reader. It links to the source rather than
+     to the licence, because the source is what makes the privacy claim on this
+     page checkable: that is the point it is making, not the legal terms. */
+  .stamp {
+    position: absolute; top: clamp(3.2rem, 7.5vw, 5.4rem); right: 0;
+    display: block; text-decoration: none; isolation: isolate;
+    transform: rotate(-7deg);
+    padding: .62rem 1.05rem;
+    background: var(--process);
+    color: var(--paper);
+    outline: 2px solid var(--process);
+    outline-offset: 3px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .8rem; font-weight: 500;
+    letter-spacing: .2em; text-transform: uppercase;
+    line-height: 1.45; text-align: center;
+    transition: transform .2s ease;
   }
-  .trim::before { top: 0; left: -14px; border-top: 1px solid var(--mark); border-left: 1px solid var(--mark); }
-  .trim::after  { bottom: 0; right: -14px; border-bottom: 1px solid var(--mark); border-right: 1px solid var(--mark); }
+
+  /* Uneven ink, the way a rubber stamp actually prints. Turbulence rather than
+     a pasted-on grunge texture: it is generated, it never repeats, and it sits
+     over the fill only, so the text underneath stays crisp and legible. */
+  .stamp::after {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: .22;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .stamp:hover { transform: rotate(-7deg) scale(1.04); }
+  .stamp:focus-visible { outline-color: var(--ink); outline-offset: 5px; }
+
+  .stamp b { display: block; font-weight: 500; position: relative; }
+  /* The dividing rule real stamps carry between their lines. */
+  .stamp b + b { margin-top: .3rem; padding-top: .3rem; border-top: 1px solid currentColor; }
+
+  /* Absolute placement has nothing to clear on a narrow screen, so it comes
+     back into the flow rather than landing on the headline. */
+  @media (max-width: 46rem) {
+    .stamp {
+      position: static; transform: rotate(-3deg);
+      width: fit-content; margin: 0 0 1.4rem;
+    }
+  }
 
   /* ── Spec strip ─────────────────────────────────────────── */
 
@@ -206,19 +307,149 @@
   .btn {
     font-family: "IBM Plex Mono", monospace; font-size: .82rem; letter-spacing: .04em;
     text-transform: uppercase; text-decoration: none;
-    padding: .75rem 1.5rem; border: 1px solid var(--ink); color: var(--paper);
-    background: var(--ink);
+    padding: .75rem 1.5rem; border: 1px solid var(--process); color: var(--paper);
+    background: var(--process);
   }
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
   .btn:hover { opacity: .85; }
 
   /* ── Hero demo ──────────────────────────────────────────── */
 
+  /* Same device frame as the accordion's stage, at hero scale: the two
+     motion elements on the page read as one system rather than two different
+     decisions. The video already carries its own real macOS window chrome
+     (traffic lights, rounded title bar) from how it was screen-captured, so
+     this frame reads as a stage the window sits on, not a second window. */
+  .demo-frame {
+    margin-top: clamp(2rem, 5vw, 3rem);
+    border-radius: 1.4rem;
+    background: #0b0c0e;
+    padding: clamp(.85rem, 2%, 1.3rem);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 24px 48px -20px rgba(0, 0, 0, .55);
+  }
   .demo {
     display: block; width: 100%; height: auto;
-    margin-top: clamp(2rem, 5vw, 3rem);
-    background: var(--plate);
-    border: 1px solid var(--rule);
+    border-radius: .7rem;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+  }
+
+  /* ── Jobs: the accordion and its stage ──────────────────── */
+
+  /* Rules, not cards. Five jobs are a list of alternatives, not a sequence,
+     so they get no numbering: hairlines separate them and the process ink
+     marks which one is open. The stage holds the loop for whichever is. */
+  .jobs {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2.6rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: start;
+    margin-top: clamp(1.5rem, 4vw, 2.2rem);
+  }
+  @media (max-width: 54rem) { .jobs { grid-template-columns: minmax(0, 1fr); } }
+
+  .job { border-top: 1px solid var(--rule); }
+  .job:last-child { border-bottom: 1px solid var(--rule); }
+
+  .job-head {
+    width: 100%;
+    display: flex; align-items: baseline; gap: .8rem;
+    background: none; border: 0; cursor: pointer;
+    padding: .95rem 0;
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-weight: 700; font-size: 1.02rem; letter-spacing: -.015em;
+    color: var(--ink); text-align: left;
+  }
+  .job-head:hover { color: var(--process); }
+  .job-head:focus-visible { outline: 2px solid var(--process); outline-offset: 3px; }
+  .job[data-open="true"] .job-head { color: var(--process); }
+
+  .job-mark {
+    flex: none; width: .5rem; height: .5rem; margin-top: .1rem;
+    border: 1px solid var(--process); border-radius: 50%;
+    background: transparent;
+    transition: background .18s ease;
+  }
+  .job[data-open="true"] .job-mark { background: var(--process); }
+
+  .job-title { flex: 1; text-wrap: balance; }
+
+  .job-panel { padding: 0 0 1.05rem 1.3rem; }
+  .job[data-open="false"] .job-panel { display: none; }
+  .job-panel p { margin: 0 0 .6rem; color: var(--ink-soft); font-size: .95rem; max-width: 40ch; }
+  .job-panel p:last-child { margin-bottom: 0; }
+
+  .job-stat {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .74rem; color: var(--process);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Stage ── */
+  .stage-wrap { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: .7rem; }
+  @media (max-width: 54rem) { .stage-wrap { position: static; } }
+
+  /* The four clips came off four different recording sessions, two with a
+     capture tool's own window chrome baked into the pixels, two without. Fixing
+     that meant giving every one of them a single frame that is drawn once, here,
+     rather than trusting four sources to already agree. A device frame reads as
+     hardware rather than page content, so it holds its own colour in both
+     themes instead of following --plate/--ink -- the same reason a photo of a
+     phone stays a phone under dark mode. */
+  .stage {
+    position: relative;
+    border-radius: 1.1rem;
+    background: #0b0c0e;
+    aspect-ratio: 764 / 480;
+    padding: clamp(.6rem, 2.3%, .95rem);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 16px 32px -16px rgba(0, 0, 0, .5);
+  }
+  .stage-inner {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: .55rem;
+    overflow: hidden;
+    background: #f4f4f4;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+  }
+  .stage video { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+
+  .stage-empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .55rem; padding: 1.5rem; text-align: center;
+    background: #f4f4f4;
+  }
+  .stage-empty .rule {
+    width: 3.2rem; height: 0; border-top: 2px dashed #c7c9c6;
+  }
+  .stage-empty p {
+    margin: 0; max-width: 30ch;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem; line-height: 1.7; color: #6b6f6c;
+  }
+  .stage-empty strong {
+    display: block; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    font-size: .6rem; color: var(--process);
+  }
+
+  .fpo {
+    position: absolute; top: 1rem; right: 1rem; z-index: 2;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .56rem; font-weight: 500;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: .22rem .42rem;
+    color: var(--verso-ink); background: var(--verso);
+  }
+
+  .stage-cap {
+    margin: 0; font-size: .88rem; color: var(--ink-soft);
+    border-top: 1px solid var(--rule); padding-top: .55rem;
+  }
+  .stage-cap .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ── Sections ───────────────────────────────────────────── */
@@ -230,12 +461,6 @@
      asking any headline to carry it. */
   section { padding: 0 0 clamp(2.5rem, 6vw, 4rem); }
 
-  /* The hero's bottom-right trim mark sits exactly on .trim's own bottom edge
-     -- correct, that is the sheet boundary it is meant to mark. But the very
-     next section starts with zero clearance from it, so that section's own
-     divider bar (below) landed on the identical line and the two decorations
-     touched. Only this one adjacency needs the gap; every other section already
-     has separation from the block above it. */
   .trim + section::before { margin-top: clamp(1.5rem, 4vw, 2.5rem); }
 
   section::before {
@@ -300,6 +525,10 @@
     margin-bottom: 1.9rem;
   }
 
+  /* Only one .net-panel is left on the page now that the Measured section is
+     gone, so it can safely take the same hover the two claim cards above it
+     already have -- same lift, same border, same easing -- instead of reading
+     as the one card in the row that does not respond. */
   .net-panel {
     background: var(--card);
     color: var(--card-ink);
@@ -308,6 +537,11 @@
     box-shadow: var(--card-shadow);
     padding: clamp(1.4rem, 3vw, 1.9rem);
     margin: 0 0 1.9rem;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .net-panel:hover {
+    transform: translateY(-2px) scale(1.01);
+    border-color: var(--process);
   }
 
   .net-panel > .lede { color: var(--card-muted); }
@@ -337,6 +571,64 @@
 
   .claim-icon { color: var(--card-primary); line-height: 0; }
   .claim-icon svg { width: 1.75rem; height: 1.75rem; }
+
+  /* ── Install steps ──────────────────────────────────────── */
+
+  .os-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
+  .os-tab {
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .05em;
+    text-transform: uppercase; cursor: pointer;
+    padding: .5rem .9rem; border: 1px solid var(--rule); border-radius: 2px;
+    background: transparent; color: var(--ink-soft);
+  }
+  .os-tab[aria-selected="true"] { border-color: var(--process); color: var(--process); font-weight: 500; }
+  .os-tab:focus-visible { outline: 2px solid var(--process); outline-offset: 2px; }
+
+  .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  .step {
+    position: relative; counter-increment: step;
+    padding: 0 0 1.5rem 2.9rem; border-inline-start: 1px solid var(--rule);
+    margin-inline-start: .85rem;
+  }
+  .step:last-child { border-inline-start-color: transparent; padding-bottom: 0; }
+  .step::before {
+    content: counter(step);
+    position: absolute; inset-inline-start: -.85rem; top: -.15rem;
+    width: 1.7rem; height: 1.7rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--paper); border: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem; color: var(--ink);
+  }
+  .step h3 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
+    font-size: 1.02rem; margin: 0 0 .2rem; letter-spacing: -.015em;
+  }
+  .step p { margin: 0; font-size: .93rem; color: var(--ink-soft); line-height: 1.55; }
+
+  .cmd {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    margin-top: .6rem; padding: .7rem .85rem;
+    background: var(--plate); border: 1px solid var(--rule); border-radius: 3px;
+  }
+  .cmd code {
+    font-family: "IBM Plex Mono", monospace; font-size: .82rem; color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .cmd button {
+    font-family: "IBM Plex Mono", monospace; font-size: .68rem; letter-spacing: .05em;
+    text-transform: uppercase; cursor: pointer; flex: none;
+    padding: .35rem .6rem; border: 1px solid var(--rule); border-radius: 2px;
+    background: var(--paper); color: var(--ink-soft);
+  }
+  .cmd button:hover { border-color: var(--process); color: var(--process); }
+
+  .net-headline { display: flex; align-items: center; gap: .85rem; margin-bottom: .9rem; }
+  .net-headline .claim-icon svg { width: 2rem; height: 2rem; }
+  .net-claim {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+    font-size: clamp(1.3rem, 2.8vw, 1.65rem); line-height: 1.08;
+    letter-spacing: -.03em; margin: 0; color: var(--card-ink);
+  }
 
   .claim h3 {
     font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
@@ -431,6 +723,28 @@
 
   .card-how { font-size: .78rem; line-height: 1.45; margin: 0; }
 
+  .dl-note {
+    font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .04em;
+    color: var(--ink-soft); margin: .9rem 0 0;
+  }
+
+  .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
+  .filter {
+    font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .05em;
+    text-transform: uppercase; cursor: pointer;
+    padding: .5rem .9rem; border: 1px solid var(--rule); border-radius: 2px;
+    background: transparent; color: var(--ink-soft);
+  }
+  .filter b { font-weight: 500; opacity: .7; margin-inline-start: .3rem; }
+  .filter[aria-pressed="true"] { border-color: var(--process); color: var(--process); }
+  .filter[aria-pressed="true"] b { opacity: 1; }
+  .filter:focus-visible { outline: 2px solid var(--process); outline-offset: 2px; }
+  .filter-status {
+    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .04em;
+    color: var(--ink-soft); margin: 0 0 1.4rem;
+  }
+  .card[hidden] { display: none !important; }
+
   @media (prefers-reduced-motion: reduce) {
     .card-inner, .face { transition: none; }
     .card:hover .card-inner,
@@ -508,12 +822,18 @@
   footer nav { display: flex; flex-wrap: wrap; gap: 1.4rem; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .arw { width: .82em; height: .82em; display: inline-block; vertical-align: -.08em; }
 </style>
 </head>
 <body>
 <div class="sheet">
 
   <div class="trim">
+    <a class="stamp" href="https://github.com/shyhunter/Papercut"
+       aria-label="Papercut is free and open source. Read the source on GitHub.">
+      <b>Free</b><b>Open source</b>
+    </a>
+
     <p class="spec">
       <span>Tools <b>22</b></span>
       <span>Need nothing installed <b>21 of 22</b></span>
@@ -523,29 +843,31 @@
 
     <h1>Everything happens<br>on <em>your</em> machine.</h1>
     <p class="stand">
-      Papercut&rsquo;s <a href="#tools">twenty-two tools</a> compress, convert, sign
-      and edit PDFs, images and documents without an account, without a server,
-      and without an internet connection.
+      Compressing a PDF, converting a scan, signing a form: the jobs you would
+      normally hand to a website. Papercut&rsquo;s <a href="#tools">twenty-two tools</a>
+      do them on your own computer instead.
     </p>
     <div class="btns">
-      <a class="btn" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
+      <a class="btn" id="dl" href="https://github.com/shyhunter/Papercut/releases/latest">Download</a>
       <a class="btn ghost" href="https://github.com/shyhunter/Papercut">Read the source</a>
     </div>
+    <p class="dl-note" id="dl-note">Every build is on the releases page.</p>
 
-    <video class="demo" id="demo"
-           autoplay muted loop playsinline controls preload="metadata"
-           poster="demo-poster.jpg"
-           aria-label="Papercut in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels">
-      <source src="demo.mp4" type="video/mp4">
-      Your browser cannot play this video. Every tool it shows is listed below.
+    <div class="demo-frame">
+    <video class="demo" id="demo" poster="media/hero-poster.jpg"
+           autoplay muted loop playsinline controls preload="none"
+           aria-label="Papercut in use: choosing a tool, opening a document and saving the result">
+      <source src="media/hero.mp4" type="video/mp4">
+      Your browser cannot play this video. The screenshots below show the same thing.
     </video>
+    </div>
   </div>
 
   <section>
     <p class="sig">Registration · none of any kind</p>
-    <h2><em>Download</em>, open, use.</h2>
+    <h2><em>Privacy</em> was never optional.</h2>
     <p class="lede">
-      Two things this page would rather say plainly than bury in a policy.
+      No sign-up? Correct. No internet? Also correct.
     </p>
 
     <div class="claims">
@@ -572,11 +894,14 @@
     </div>
 
     <div class="net-panel">
+      <div class="net-headline">
+        <svg class="claim-icon lucide lucide-hard-drive" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10 16h.01" /> <path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /> <path d="M21.946 12.013H2.054" /> <path d="M6 16h.01" /> </svg>
+        <p class="net-claim">Your documents never leave your computer.</p>
+      </div>
       <p class="lede">
-        <strong>Your documents never leave your computer.</strong> There is no
-        upload step to skip and no account to trust with them: compressing a
-        contract or signing a form happens on your own machine, the same way it
-        would if you unplugged the internet first.
+        There is no upload step to skip and no account to trust with them:
+        compressing a contract or signing a form happens on your own machine, the
+        same way it would if you unplugged the internet first.
       </p>
       <p class="lede">
         The app asks the outside world exactly two questions, both of them about
@@ -609,11 +934,17 @@
   </section>
 
   <section>
-    <p class="sig" id="tools">Manifest</p>
+    <p class="sig" id="tools">Yours, to go.</p>
     <h2><em>Twenty-two</em> tools</h2>
     <p class="lede">Twenty-one of them need nothing installed. Hover or tap a card to see how it works.</p>
+    <div class="filters" role="group" aria-label="Filter tools by what you start with">
+      <button class="filter" type="button" data-cat="all" aria-pressed="true">All <b>22</b></button>
+      <button class="filter" type="button" data-cat="pdf" aria-pressed="false">PDF <b>17</b></button>
+      <button class="filter" type="button" data-cat="other" aria-pressed="false">Images &amp; documents <b>5</b></button>
+    </div>
+    <p class="filter-status" id="filter-status" role="status">Showing all 22 tools.</p>
     <div class="cards">
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-file-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /> </svg>
@@ -626,7 +957,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-merge" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m8 6 4-4 4 4" /> <path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /> <path d="m20 22-5-5" /> </svg>
@@ -639,7 +970,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-scissors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="6" cy="6" r="3" /> <path d="M8.12 8.12 12 12" /> <path d="M20 4 8.12 15.88" /> <circle cx="6" cy="18" r="3" /> <path d="M14.8 14.8 20 20" /> </svg>
@@ -652,7 +983,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
@@ -665,7 +996,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-crop" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M6 2v14a2 2 0 0 0 2 2h14" /> <path d="M18 22V8a2 2 0 0 0-2-2H2" /> </svg>
@@ -678,7 +1009,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-layout-grid" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" /> </svg>
@@ -691,7 +1022,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-hash" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /> </svg>
@@ -704,7 +1035,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-stamp" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 22h14" /> <path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z" /> <path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13" /> </svg>
@@ -717,7 +1048,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-pen-tool" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z" /> <path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18" /> <path d="m2.3 2.3 7.286 7.286" /> <circle cx="11" cy="11" r="2" /> </svg>
@@ -730,7 +1061,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-eye-off" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /> </svg>
@@ -743,7 +1074,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-lock" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /> </svg>
@@ -756,10 +1087,10 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-lock-open" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /> </svg>
+            <svg class="card-icon lucide lucide-unlock" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /> </svg>
             <span class="card-name">Unlock</span>
             <span class="card-desc">Remove password protection from a PDF</span>
           </span>
@@ -769,7 +1100,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-wrench" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /> </svg>
@@ -782,7 +1113,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-archive" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="20" height="5" x="2" y="3" rx="1" /> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /> <path d="M10 12h4" /> </svg>
@@ -795,7 +1126,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-eye" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /> </svg>
@@ -808,10 +1139,10 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-file-pen" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M13.378 15.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /> </svg>
+            <svg class="card-icon lucide lucide-file-edit" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M13.378 15.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /> </svg>
             <span class="card-name">Edit text</span>
             <span class="card-desc">Edit text and images in a PDF document</span>
           </span>
@@ -821,7 +1152,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-file-image" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /> </svg>
@@ -834,7 +1165,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-file-plus-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M3 15h6" /> <path d="M6 12v6" /> </svg>
@@ -847,7 +1178,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-image-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" /> <path d="m14 19 3 3v-5.5" /> <path d="m17 22 3-3" /> <circle cx="9" cy="9" r="2" /> </svg>
@@ -860,7 +1191,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
@@ -873,7 +1204,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
@@ -886,7 +1217,7 @@
           </span>
         </span>
       </button>
-      <button class="card" type="button">
+      <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
             <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
@@ -903,19 +1234,184 @@
   </section>
 
   <section>
-    <p class="sig">Stock &amp; finishing</p>
-    <h2><em>Download</em></h2>
-    <p class="lede">One installer. Ghostscript is bundled: there is nothing else to fetch.</p>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Platform</th><th>File</th><th>First run</th></tr></thead>
-        <tbody>
-          <tr><td>macOS (Apple silicon)</td><td class="mono">.dmg</td><td>Unsigned: macOS may say it is damaged. Privacy &amp; Security → Open Anyway.</td></tr>
-          <tr><td>Windows</td><td class="mono">.exe</td><td>SmartScreen may warn. More info → Run anyway.</td></tr>
-          <tr><td>Linux</td><td class="mono">.AppImage / .deb</td><td>Opens normally.</td></tr>
-        </tbody>
-      </table>
+    <p class="sig">What it is for</p>
+    <h2>The jobs people <em>actually</em> open it for</h2>
+    <p class="lede">
+      Pick one and the loop beside it shows that job being done, start to finish,
+      on a real document. No narration, no cuts to a marketing shot.
+    </p>
+
+    <div class="jobs">
+      <div class="job-list">
+        <div class="job" data-job="0" data-open="true">
+          <button class="job-head" type="button" id="jb0" aria-expanded="true" aria-controls="jp0">
+            <span class="job-mark" aria-hidden="true"></span>
+            <span class="job-title">Compression that survives the send</span>
+          </button>
+          <div class="job-panel" id="jp0" role="region" aria-labelledby="jb0">
+            <p>Get a scan or a report under an attachment limit without turning the text to mush. The setting says what it will cost before you commit to it.</p>
+          <p class="job-stat">73.80 MB <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> 20.49 MB &middot; 72% smaller &middot; 438 pages</p>
+          <p>Measured, not promised: a scanned page went from 127 KB to 40 KB, 68% smaller. A photo PDF already at screen resolution came back unchanged. There was nothing left to downsample, and the app said so instead of pretending otherwise.</p>
+          </div>
+        </div>
+        <div class="job" data-job="1" data-open="false">
+          <button class="job-head" type="button" id="jb1" aria-expanded="false" aria-controls="jp1">
+            <span class="job-mark" aria-hidden="true"></span>
+            <span class="job-title">A manuscript that becomes an ebook</span>
+          </button>
+          <div class="job-panel" id="jp1" role="region" aria-labelledby="jb1">
+            <p>EPUB and MOBI out of the document you already wrote. Calibre does that pair; everything else converts with nothing installed.</p>
+          <p>Measured, not promised: the file got bigger, not smaller. An EPUB is a zip archive of HTML, fonts and navigation metadata, and that container has a fixed cost a short document cannot spread out. Convert something book-length and the ratio flips; convert six pages and the honest answer is that it grows.</p>
+          </div>
+        </div>
+        <div class="job" data-job="2" data-open="false">
+          <button class="job-head" type="button" id="jb2" aria-expanded="false" aria-controls="jp2">
+            <span class="job-mark" aria-hidden="true"></span>
+            <span class="job-title">Turn a PDF into Markdown and spend fewer tokens</span>
+          </button>
+          <div class="job-panel" id="jp2" role="region" aria-labelledby="jb2">
+            <p>Export to Markdown, HTML, JSON or plain text. What reaches the model is structure rather than a picture of a page, which reads better and costs a fraction of the tokens.</p>
+          </div>
+        </div>
+        <div class="job" data-job="3" data-open="false">
+          <button class="job-head" type="button" id="jb3" aria-expanded="false" aria-controls="jp3">
+            <span class="job-mark" aria-hidden="true"></span>
+            <span class="job-title">A signature without a signing service</span>
+          </button>
+          <div class="job-panel" id="jp3" role="region" aria-labelledby="jb3">
+            <p>Draw or upload it once, place it, save the file. Nobody else holds the document, and there is no account in between.</p>
+          </div>
+        </div>
+        <div class="job" data-job="4" data-open="false">
+          <button class="job-head" type="button" id="jb4" aria-expanded="false" aria-controls="jp4">
+            <span class="job-mark" aria-hidden="true"></span>
+            <span class="job-title">Redaction that stays redacted</span>
+          </button>
+          <div class="job-panel" id="jp4" role="region" aria-labelledby="jb4">
+            <p>Text is removed, not covered with a black rectangle somebody can lift off in another reader.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage-wrap">
+        <div class="stage">
+          <div class="stage-inner">
+            <video id="stage-video" autoplay muted loop playsinline preload="metadata"
+                   aria-label="Papercut performing the selected job on a real document"></video>
+          </div>
+        </div>
+        <p class="stage-cap" id="stage-cap"></p>
+      </div>
     </div>
+
+    <script>
+      (function () {
+        var SRC = ["media/compress.mp4", "media/ebook.mp4", "media/markdown.mp4", "media/signature.mp4", "media/redact.mp4"];
+        var POSTER = ["media/compress-poster.jpg", "media/ebook-poster.jpg", "media/markdown-poster.jpg", "media/signature-poster.jpg", "media/redact-poster.jpg"];
+        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowed into a real page rather than a picture of one.", "PDF to Markdown &middot; 18.9 KB <svg class='arw' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M5 12h14'/><path d='m12 5 7 7-7 7'/></svg> 12.5 KB &middot; 34% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn, then applied: opaque black, not a rectangle laid over the text."];
+        var vid = document.getElementById('stage-video');
+        var cap = document.getElementById('stage-cap');
+        var jobs = Array.prototype.slice.call(document.querySelectorAll('.job'));
+        var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function show(i) {
+          jobs.forEach(function (j, k) {
+            j.dataset.open = k === i ? 'true' : 'false';
+            j.querySelector('.job-head').setAttribute('aria-expanded', k === i ? 'true' : 'false');
+          });
+          cap.innerHTML = CAPS[i];
+          vid.poster = POSTER[i];
+          vid.alt = jobs[i].querySelector('.job-title').textContent;
+          // Reduced motion: hold the poster, never fetch or play the clip.
+          if (still) { vid.removeAttribute('src'); vid.load(); return; }
+          vid.src = SRC[i];
+          var go = vid.play();
+          if (go && go.catch) { go.catch(function () {}); }
+        }
+
+        jobs.forEach(function (j, i) {
+          j.querySelector('.job-head').addEventListener('click', function () { show(i); });
+        });
+        show(0);
+      })();
+    </script>
+  </section>
+
+  <section>
+    <p class="sig">One file</p>
+    <h2><em>No data</em> is tracked</h2>
+    <p class="lede">One file. Open it and everything it needs is already there. Nothing more to track down afterward.</p>
+    <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
+      <button class="os-tab" role="tab" type="button" data-os="mac" aria-selected="false">macOS</button>
+      <button class="os-tab" role="tab" type="button" data-os="windows" aria-selected="false">Windows</button>
+      <button class="os-tab" role="tab" type="button" data-os="linux" aria-selected="false">Linux</button>
+    </div>
+
+    <ol class="steps" data-panel="mac" hidden>
+      <li class="step">
+        <h3>Download the .dmg</h3>
+        <p>Apple silicon or Intel, whichever this Mac is. The download page picks for you.</p>
+      </li>
+      <li class="step">
+        <h3>Drag Papercut into Applications</h3>
+        <p>The usual dmg window. Nothing installs in the background.</p>
+      </li>
+      <li class="step">
+        <h3>Open it once and let macOS refuse</h3>
+        <p>Papercut has no Apple developer certificate yet, so the first open is blocked: <em>&ldquo;Apple could not verify Papercut is free of malware.&rdquo;</em> Click Done. This step matters, because the button that lets you past it does not exist until macOS has actually stopped you.</p>
+      </li>
+      <li class="step">
+        <h3>Now go to Privacy &amp; Security</h3>
+        <p>System Settings, then Privacy &amp; Security, and scroll to the Security section at the bottom. <strong>Open Anyway</strong> is waiting there, naming Papercut. Do this within an hour of being blocked or the button expires and you start again.</p>
+      </li>
+      <li class="step">
+        <h3>Open it a second time</h3>
+        <p>The same warning appears, now with an <strong>Open Anyway</strong> button in it. Click that, and macOS remembers the decision. You never do any of this again.</p>
+      </li>
+      <li class="step">
+        <h3>That is the whole setup</h3>
+        <p>No account, no key, nothing to configure. It opens on the tool grid.</p>
+      </li>
+    </ol>
+
+    <ol class="steps" data-panel="windows" hidden>
+      <li class="step">
+        <h3>Download the .exe</h3>
+        <p>One installer, Ghostscript already inside it.</p>
+      </li>
+      <li class="step">
+        <h3>Run it, and expect SmartScreen</h3>
+        <p>Windows shows &ldquo;Windows protected your PC&rdquo; for installers it has not seen signed before. Click More info, then Run anyway.</p>
+      </li>
+      <li class="step">
+        <h3>That is the whole setup</h3>
+        <p>No account, no key, nothing to configure. It opens on the tool grid.</p>
+      </li>
+    </ol>
+
+    <ol class="steps" data-panel="linux" hidden>
+      <li class="step">
+        <h3>Download the .deb or the .AppImage</h3>
+        <p>Debian and Ubuntu take the .deb. Anything else, use the AppImage.</p>
+      </li>
+      <li class="step">
+        <h3>Install it</h3>
+        <p>The .deb goes through your package manager:</p>
+        <div class="cmd">
+          <code>sudo apt install ./Papercut_1.0.0_amd64.deb</code>
+          <button type="button" data-copy="sudo apt install ./Papercut_1.0.0_amd64.deb">Copy</button>
+        </div>
+        <p style="margin-top:.7rem">The AppImage just needs to be executable:</p>
+        <div class="cmd">
+          <code>chmod +x Papercut_1.0.0_amd64.AppImage</code>
+          <button type="button" data-copy="chmod +x Papercut_1.0.0_amd64.AppImage">Copy</button>
+        </div>
+      </li>
+      <li class="step">
+        <h3>Open it. No warning to click through</h3>
+        <p>Linux has no equivalent of Gatekeeper or SmartScreen, so it simply starts.</p>
+      </li>
+    </ol>
   </section>
 
   <section>
@@ -939,6 +1435,10 @@
         <h3>Built by one person</h3>
         <p>The issue tracker is read by whoever wrote the code. Most of what is here came from bugs reported there.</p>
       </div>
+      <div>
+        <h3>Not signed. Not yet.</h3>
+        <p>This is still a hobby project. One person, no revenue yet. A developer certificate is a real cost every year, and it&rsquo;s next once downloads show there&rsquo;s enough interest to justify it.</p>
+      </div>
     </div>
   </section>
 
@@ -960,20 +1460,20 @@
         <p>
           Free, takes a second, and it is the only signal that reaches me. It also
           puts Papercut in front of people searching for a tool that does not want
-          their documents.
+          their data.
         </p>
-        <span class="support-go">github.com/shyhunter/Papercut →</span>
+        <span class="support-go">github.com/shyhunter/Papercut <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
       </a>
 
       <a class="support-card" href="https://github.com/users/shyhunter/projects/9" target="_blank" rel="noopener">
         <svg class="support-icon lucide lucide-map" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /> </svg>
         <h3>Read the roadmap</h3>
         <p>
-          Public, and it carries the reasoning rather than just the verdict,
-          including the things decided against, and why. If you disagree with a
-          call, the argument is there to disagree with.
+          Papercut is still being built, and it happens in the open: what is
+          coming next, what was decided against, and the reasoning either way.
+          If the tool you need is not on it yet, that is worth telling me.
         </p>
-        <span class="support-go">the roadmap →</span>
+        <span class="support-go">the roadmap <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
       </a>
 
       <a class="support-card" href="https://buymeacoffee.com/shyhunter" target="_blank" rel="noopener">
@@ -984,7 +1484,7 @@
           unlock, and there never will be. It pays for the certificates that stop
           your operating system calling this app damaged.
         </p>
-        <span class="support-go">buymeacoffee.com/shyhunter →</span>
+        <span class="support-go">buymeacoffee.com/shyhunter <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
       </a>
     </div>
 
@@ -995,7 +1495,6 @@
   </section>
 
   <footer>
-    <span>MIT licensed · free software</span>
     <nav>
       <a href="https://github.com/shyhunter/Papercut/wiki">Docs</a>
       <a href="https://github.com/shyhunter/Papercut/issues">Report</a>
@@ -1006,6 +1505,43 @@
 
 </div>
 
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.os-tab'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.steps[data-panel]'));
+    if (!tabs.length) return;
+
+    function show(os) {
+      tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
+      panels.forEach(function (pnl) { pnl.hidden = pnl.dataset.panel !== os; });
+    }
+
+    // Read only. navigator.userAgent never leaves the page, and this adds no
+    // network request -- the two in the table above are still the only two.
+    var ua = navigator.userAgent || '';
+    var detected = /Mac|iPhone|iPad/.test(ua) ? 'mac' : /Win/.test(ua) ? 'windows' : 'linux';
+    show(detected);
+
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () { show(t.dataset.os); });
+    });
+
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.dataset.copy;
+        var done = function (ok) {
+          btn.textContent = ok ? 'Copied' : 'Select it';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1600);
+        };
+        try {
+          navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+        } catch (e) {
+          done(false);
+        }
+      });
+    });
+  })();
+</script>
 <script>
   // Autoplay is an accessibility problem for anyone who has asked the system
   // for less motion, and no media query can stop a video that is already
@@ -1024,5 +1560,61 @@
   })();
 </script>
 
+<script>
+  (function () {
+    // Name the platform the visitor is actually on. Same read-only
+    // navigator.userAgent as the install steps below, so this still adds no
+    // network request: the two in the table above remain the only two.
+    var btn = document.getElementById('dl');
+    var note = document.getElementById('dl-note');
+    if (!btn) return;
+    var ua = navigator.userAgent || '';
+    var os = /Mac|iPhone|iPad/.test(ua) ? 'mac'
+           : /Win/.test(ua) ? 'windows'
+           : /Linux|X11/.test(ua) ? 'linux' : null;
+    // Apple Silicon and Intel are indistinguishable from the user agent, so the
+    // note names both rather than guessing and sending someone the wrong file.
+    var copy = {
+      mac:     ['Download for macOS',   'Apple Silicon and Intel builds, plus Windows and Linux, are on the releases page.'],
+      windows: ['Download for Windows', 'macOS and Linux builds are on the same page.'],
+      linux:   ['Download for Linux',   'Both .deb and .AppImage, plus macOS and Windows, are on the same page.']
+    };
+    // No match means an OS we do not ship for. The generic label is correct there.
+    if (os) {
+      btn.textContent = copy[os][0];
+      if (note) note.textContent = copy[os][1];
+    }
+  })();
+
+  (function () {
+    // Tools are filed by what you start with, so each lands in exactly one
+    // bucket and the counts on the pills add up to the whole grid.
+    var pills = Array.prototype.slice.call(document.querySelectorAll('.filter'));
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card[data-cat]'));
+    var status = document.getElementById('filter-status');
+    if (!pills.length || !cards.length) return;
+
+    function apply(cat) {
+      var shown = 0;
+      cards.forEach(function (c) {
+        var hit = cat === 'all' || c.dataset.cat === cat;
+        c.hidden = !hit;
+        if (hit) shown++;
+      });
+      pills.forEach(function (p) {
+        p.setAttribute('aria-pressed', String(p.dataset.cat === cat));
+      });
+      if (status) {
+        status.textContent = cat === 'all'
+          ? 'Showing all ' + shown + ' tools.'
+          : 'Showing ' + shown + ' of ' + cards.length + ' tools.';
+      }
+    }
+
+    pills.forEach(function (p) {
+      p.addEventListener('click', function () { apply(p.dataset.cat); });
+    });
+  })();
+</script>
 </body>
 </html>
