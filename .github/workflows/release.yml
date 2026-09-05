@@ -158,14 +158,41 @@ jobs:
             *)         BIN="src-tauri/binaries/papercut-gs-${{ matrix.target }}" ;;
           esac
           SIZE=$(wc -c < "$BIN")
-          # The stubs are under 100 bytes. A real Ghostscript is tens of MB.
-          if [ "$SIZE" -lt 1000000 ]; then
-            echo "$BIN is still a placeholder ($SIZE bytes)."
-            echo "Shipping this means PDF compression silently requires the user"
-            echo "to install Ghostscript themselves. Refusing to release."
-            exit 1
-          fi
-          echo "$BIN: $SIZE bytes"
+          # On macOS and Linux, Ghostscript is one self-contained binary of tens
+          # of MB, so its size is the whole story. On Windows it is two files:
+          # gswin64c.exe is a ~94 KB wrapper and gsdll64.dll is the engine, so
+          # sizing the exe alone would reject a perfectly good Ghostscript.
+          # The committed stubs are under 100 bytes either way.
+          case "${{ matrix.target }}" in
+            *windows*)
+              if [ "$SIZE" -lt 10000 ]; then
+                echo "$BIN is still a placeholder ($SIZE bytes)."
+                exit 1
+              fi
+              DLL="src-tauri/binaries/gsdll64.dll"
+              if [ ! -f "$DLL" ]; then
+                echo "$DLL is missing. gswin64c.exe is only a wrapper around it"
+                echo "and cannot start without it. Refusing to release."
+                exit 1
+              fi
+              DLL_SIZE=$(wc -c < "$DLL")
+              if [ "$DLL_SIZE" -lt 1000000 ]; then
+                echo "$DLL is not a real Ghostscript engine ($DLL_SIZE bytes)."
+                exit 1
+              fi
+              echo "$BIN: $SIZE bytes"
+              echo "$DLL: $DLL_SIZE bytes"
+              ;;
+            *)
+              if [ "$SIZE" -lt 1000000 ]; then
+                echo "$BIN is still a placeholder ($SIZE bytes)."
+                echo "Shipping this means PDF compression silently requires the user"
+                echo "to install Ghostscript themselves. Refusing to release."
+                exit 1
+              fi
+              echo "$BIN: $SIZE bytes"
+              ;;
+          esac
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
@@ -457,7 +484,7 @@ jobs:
 
           $gs = $null; $dll = $null
           foreach ($root in $searchRoots) {
-            if (-Not $gs)  { $gs  = (Get-ChildItem -Path $root -Recurse -Filter 'gs.exe'       -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
+            if (-Not $gs)  { $gs  = (Get-ChildItem -Path $root -Recurse -Filter 'papercut-gs.exe' -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
             if (-Not $dll) { $dll = (Get-ChildItem -Path $root -Recurse -Filter 'gsdll64.dll'  -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
           }
 
