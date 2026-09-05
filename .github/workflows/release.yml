@@ -529,18 +529,30 @@ jobs:
           )
           Set-Content -Path smoke.ps -Value $ps -Encoding ascii
 
-          & $gs -q -dNOPAUSE -dBATCH -dSAFER -dPDFSETTINGS=/screen `
-                -sDEVICE=pdfwrite -sOutputFile=out.pdf smoke.ps
-          if ($LASTEXITCODE -ne 0 -or -Not (Test-Path out.pdf)) {
+          # Every argument quoted, built as an array, and both paths absolute.
+          # Passed bare, -sOutputFile=out.pdf reached Ghostscript split, so it
+          # took ".pdf" for an input file and died with
+          # "/undefinedfilename in (.pdf)" on v1.0.0-beta.13 -- while the same
+          # binary had just printed its version and the app's own self-test had
+          # produced a PDF through it. A harness quoting bug, not a product one,
+          # but it fails the release either way.
+          $inPs   = Join-Path (Get-Location) 'smoke.ps'
+          $outPdf = Join-Path (Get-Location) 'out.pdf'
+          $gsArgs = @(
+            '-q', '-dNOPAUSE', '-dBATCH', '-dSAFER', '-dPDFSETTINGS=/screen',
+            '-sDEVICE=pdfwrite', "-sOutputFile=$outPdf", $inPs
+          )
+          & $gs @gsArgs
+          if ($LASTEXITCODE -ne 0 -or -Not (Test-Path $outPdf)) {
             Write-Host "FAIL: bundled Ghostscript could not produce a PDF."
             exit 1
           }
-          $header = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes("out.pdf")[0..4])
+          $header = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($outPdf)[0..4])
           if ($header -ne "%PDF-") {
             Write-Host "FAIL: output is not a PDF (header: '$header')"
             exit 1
           }
-          Write-Host "PASS: bundled Ghostscript produced a valid PDF ($((Get-Item out.pdf).Length) bytes)"
+          Write-Host "PASS: bundled Ghostscript produced a valid PDF ($((Get-Item $outPdf).Length) bytes)"
           Write-Host "=== Windows Ghostscript smoke test PASSED ==="
 
       # ── Linux (AppImage) ──
