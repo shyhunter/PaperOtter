@@ -449,10 +449,18 @@ jobs:
         shell: pwsh
         run: |
           $binary = $null
+          # Tauri names the executable after the Cargo package ("tauri-app"),
+          # not productName: v1.0.0-beta.9 installed
+          # %LOCALAPPDATA%\Papercut\tauri-app.exe. Searching for Papercut.exe
+          # alone finds nothing, which is why the step above carries both names.
           $roots = @("$env:LOCALAPPDATA\Papercut", "$env:ProgramFiles\Papercut")
+          $candidateNames = @("Papercut.exe", "tauri-app.exe")
           foreach ($root in $roots) {
-            $found = Get-ChildItem -Path $root -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
-            if ($found) { $binary = $found.FullName; break }
+            foreach ($name in $candidateNames) {
+              $found = Get-ChildItem -Path $root -Recurse -Filter $name -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
+              if ($found) { $binary = $found.FullName; break }
+            }
+            if ($binary) { break }
           }
           if (-Not $binary) { Write-Host "FAIL: no installed Papercut.exe to self-test"; exit 1 }
 
