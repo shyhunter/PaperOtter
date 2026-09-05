@@ -1,7 +1,7 @@
 {
   "bundle": {
-    "resources": [
-      "binaries/gsdll64.dll"
-    ]
+    "resources": {
+      "binaries/gsdll64.dll": "gsdll64.dll"
+    }
   }
 }
