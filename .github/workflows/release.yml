@@ -104,6 +104,7 @@ jobs:
 
       - name: Derive version from tag
         id: version
+        shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
