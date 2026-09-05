@@ -60,18 +60,28 @@ jobs:
           cp docs/screenshots/dashboard-light.png _site/screenshots/
           # A missing asset on a download page reads as a broken product, so
           # fail the build here rather than ship one.
-          for f in index.html demo.mp4 demo-poster.jpg \
+          for f in index.html \
                    fonts/bricolage-var.woff2 fonts/plex-sans-var.woff2 \
                    fonts/plex-mono-400.woff2 fonts/plex-mono-500.woff2 \
-                   screenshots/dashboard-light.png; do
+                   screenshots/dashboard-light.png \
+                   media/share-card.jpg \
+                   media/hero.mp4 media/hero-poster.jpg \
+                   media/compress.mp4 media/compress-poster.jpg \
+                   media/ebook.mp4 media/ebook-poster.jpg \
+                   media/markdown.mp4 media/markdown-poster.jpg \
+                   media/signature.mp4 media/signature-poster.jpg \
+                   media/redact.mp4 media/redact-poster.jpg; do
             test -f "_site/$f" || { echo "missing asset: $f"; exit 1; }
           done
           # The page claims the product talks to nobody. It should not itself
           # fetch a font or a script from a third party, and this is the check
           # that keeps a future edit from quietly reintroducing one. Only
-          # outbound links the reader clicks are allowed.
+          # outbound links the reader clicks are allowed, plus two hosts that
+          # are named but never fetched: schema.org is the JSON-LD vocabulary
+          # identifier, and shyhunter.github.io is this site's own origin,
+          # spelled absolutely because og:image and canonical require it.
           if grep -Eo 'https?://[a-zA-Z0-9.-]+' _site/index.html \
-             | grep -vE '^https?://(github\.com|buymeacoffee\.com|www\.w3\.org)$' \
+             | grep -vE '^https?://(github\.com|buymeacoffee\.com|www\.w3\.org|opensource\.org|schema\.org|shyhunter\.github\.io)$' \
              | sort -u | grep .; then
             echo "third-party resource host in index.html (listed above)"; exit 1
           fi
