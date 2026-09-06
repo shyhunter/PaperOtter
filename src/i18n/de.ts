@@ -905,6 +905,7 @@ export const de: Dictionary = {
   'configureStep.screen': 'Bildschirm',
   'configureStep.print': 'Druck',
   'configureStep.archive': 'Archiv',
+  'configureStep.lossless': 'Verlustfrei',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)',
   'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',
   'configureStep.letter216279Mm': 'Letter (216 × 279 mm)',

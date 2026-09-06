@@ -108,6 +108,7 @@ export const tr: Dictionary = {
   'configureStep.screen': 'Ekran',
   'configureStep.print': 'Baskı',
   'configureStep.archive': 'Arşiv',
+  'configureStep.lossless': 'Kayıpsız',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)',
   'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',
   'configureStep.letter216279Mm': 'Letter (216 × 279 mm)',

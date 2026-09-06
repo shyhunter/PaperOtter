@@ -643,6 +643,7 @@ export const pt: Dictionary = {
   'configureStep.a3297420Mm': 'A3 (297 × 420 mm)', 'configureStep.a4210297Mm': 'A4 (210 × 297 mm)',
   'configureStep.letter216279Mm': 'Carta (216 × 279 mm)', 'configureStep.custom': 'Personalizado…',
   'configureStep.archive': 'Arquivo', 'configureStep.print': 'Impressão', 'configureStep.screen': 'Ecrã',
+  'configureStep.lossless': 'Sem perdas',
   'configureStep.compressionNotAvailable': 'Compressão indisponível',
   'configureStep.enterAValidTargetSize': 'Indique um tamanho pretendido válido',
   'configureStep.highQuality': 'Alta qualidade', 'configureStep.noRecompression': 'Sem recompressão',

@@ -62,6 +62,7 @@ export const nl: Dictionary = {
   'configure.pagesPlaceholder': 'bijv. 1-3, 5, 7-9',
   'configure.bestPresetAuto': 'Beste voorinstelling automatisch gekozen',
   'configureStep.noRecompression': 'Geen hercompressie', 'configureStep.smallestFile': 'Kleinste bestand',
+  'configureStep.lossless': 'Verliesvrij',
   'configureStep.highQuality': 'Hoge kwaliteit', 'configureStep.screen': 'Scherm',
   'configureStep.print': 'Afdruk', 'configureStep.archive': 'Archief',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)', 'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',

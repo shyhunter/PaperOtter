@@ -255,8 +255,15 @@ const QUALITY_ZONES = [
   { value: 'screen', quality: 'web' as PdfQualityLevel, dpi: '72–150 dpi' },
   { value: 'ebook', quality: 'screen' as PdfQualityLevel, dpi: '150 dpi' },
   { value: 'printer', quality: 'print' as PdfQualityLevel, dpi: '300 dpi' },
-  { value: 'prepress', quality: 'archive' as PdfQualityLevel, dpi: 'Lossless' },
+  // "Lossless" is a word, not a figure, so it is resolved at render by
+  // zoneFigure below rather than frozen in English here.
+  { value: 'prepress', quality: 'archive' as PdfQualityLevel, dpi: '' },
 ] as const;
+
+/** See the note on QUALITY_ZONES: the archive figure is a translatable word. */
+function zoneFigure(value: ZoneValue, dpi: string): string {
+  return value === 'prepress' ? t('configureStep.lossless') : dpi;
+}
 
 type ZoneValue = (typeof QUALITY_ZONES)[number]['value'];
 
@@ -489,7 +496,7 @@ function CompressPanel() {
             />
             <div className="min-w-0">
               <div className="font-medium">{zoneLabel(p.value)}</div>
-              <div className="text-[10px] text-muted-foreground">{p.dpi} — {zoneDesc(p.value)}</div>
+              <div className="text-[10px] text-muted-foreground">{zoneFigure(p.value, p.dpi)}, {zoneDesc(p.value)}</div>
               {estimates && (
                 <div data-testid="preset-estimate" className="text-[10px] font-medium text-foreground/80 mt-0.5">
                   ≈ {formatBytes(estimates[p.value])}
