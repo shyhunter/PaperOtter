@@ -98,6 +98,30 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
 /// - macOS/Linux: tries `which gs`
 /// - Windows: tries `where gswin64c` then `where gs`
 ///
+/// Build a child process that never flashes a console window on Windows.
+///
+/// A GUI app gets `windows_subsystem = "windows"` and so has no console of its
+/// own, but every console-subsystem child it spawns allocates one, and Windows
+/// shows it. `detect_converters` runs on the dashboard's first render and
+/// spawns powershell, soffice, pandoc and calibre, so launching Papercut
+/// flashed several black windows over the UI before it had drawn anything.
+/// Reported from a real Windows 11 machine on v1.0.0-beta.13; invisible on
+/// macOS and Linux, which have no equivalent behaviour.
+///
+/// `tauri_plugin_shell` already does this for sidecars, which is why
+/// Ghostscript never flashed. These are the spawns the app makes itself.
+fn quiet_command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    #[allow(unused_mut)]
+    let mut cmd = std::process::Command::new(program);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        // CREATE_NO_WINDOW. Same constant tauri_plugin_shell uses.
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd
+}
+
 /// Returns the binary name (not full path) suitable for `app.shell().command()`.
 /// Used as fallback when sidecar is not available, and by check_capabilities.
 fn find_system_ghostscript() -> Result<String, String> {
@@ -106,7 +130,7 @@ fn find_system_ghostscript() -> Result<String, String> {
         // Try gswin64c first (standard Windows GS name), then gs
         let candidates = ["gswin64c", "gswin32c", "gs"];
         for candidate in candidates {
-            let result = std::process::Command::new("where")
+            let result = quiet_command("where")
                 .arg(candidate)
                 .output();
             if let Ok(output) = result {
@@ -123,7 +147,7 @@ fn find_system_ghostscript() -> Result<String, String> {
     #[cfg(not(target_os = "windows"))]
     {
         // macOS / Linux: check for gs in PATH
-        let result = std::process::Command::new("which")
+        let result = quiet_command("which")
             .arg("gs")
             .output();
         if let Ok(output) = result {
@@ -1475,7 +1499,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     // textutil — built-in on macOS, handles doc/docx/odt/rtf/txt
     #[cfg(target_os = "macos")]
     {
-        let textutil_ok = std::process::Command::new("textutil")
+        let textutil_ok = quiet_command("textutil")
             .arg("-info")
             .arg("/dev/null")
             .output()
@@ -1496,7 +1520,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
         // Check Windows registry or common install paths for Word
-        let word_ok = std::process::Command::new("powershell")
+        let word_ok = quiet_command("powershell")
             .args(["-Command", "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WINWORD.EXE' -ErrorAction SilentlyContinue) -ne $null"])
             .output()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "True")
@@ -1516,7 +1540,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        let lo_ok = std::process::Command::new("soffice")
+        let lo_ok = quiet_command("soffice")
             .arg("--version")
             .output()
             .map(|o| o.status.success())
@@ -1548,7 +1572,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
             ("calibre.ebook-convert", &["--version"]),
         ];
         let cal_ok = candidates.iter().any(|(bin, args)| {
-            std::process::Command::new(bin)
+            quiet_command(bin)
                 .args(*args)
                 .output()
                 .map(|o| o.status.success())
@@ -1558,7 +1582,7 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
     }
 
     // Pandoc
-    let pandoc_ok = std::process::Command::new("pandoc")
+    let pandoc_ok = quiet_command("pandoc")
         .arg("--version")
         .output()
         .map(|o| o.status.success())
@@ -1608,7 +1632,7 @@ async fn convert_with_textutil(
         ));
         let output_path_str = output_path.to_string_lossy().to_string();
 
-        let output = std::process::Command::new("textutil")
+        let output = quiet_command("textutil")
             .args([
                 "-convert", &output_format,
                 "-output", &output_path_str,
@@ -1673,7 +1697,7 @@ async fn convert_with_word(
             word_format,
         );
 
-        let output = std::process::Command::new("osascript")
+        let output = quiet_command("osascript")
             .args(["-e", &applescript])
             .output()
             .map_err(|e| format!("Failed to run Word via AppleScript: {}", e))?;
@@ -1715,7 +1739,7 @@ async fn convert_with_word(
             wd_format,
         );
 
-        let output = std::process::Command::new("powershell")
+        let output = quiet_command("powershell")
             .args(["-NoProfile", "-NonInteractive", "-Command", &ps_script])
             .output()
             .map_err(|e| format!("Failed to run Word via PowerShell: {}", e))?;
@@ -2209,14 +2233,14 @@ async fn reveal_in_finder(path: String) -> Result<(), String> {
     validate_source_path(&path)?;
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
+        quiet_command("open")
             .args(["-R", &path])
             .spawn()
             .map_err(|e| format!("Failed to reveal in Finder: {}", e))?;
     }
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("explorer")
+        quiet_command("explorer")
             .args(["/select,", &path])
             .spawn()
             .map_err(|e| format!("Failed to reveal in Explorer: {}", e))?;
@@ -2228,7 +2252,7 @@ async fn reveal_in_finder(path: String) -> Result<(), String> {
             .parent()
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| path.clone());
-        std::process::Command::new("xdg-open")
+        quiet_command("xdg-open")
             .arg(&parent)
             .spawn()
             .map_err(|e| format!("Failed to open file manager: {}", e))?;
@@ -3414,6 +3438,8 @@ mod tests {
             return;
         }
 
+        // Plain Command on purpose: this is a macOS-only unit test, so it never
+        // spawns on Windows and has no console to suppress.
         let output = std::process::Command::new("otool")
             .arg("-L")
             .arg(&binary)
