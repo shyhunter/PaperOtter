@@ -236,13 +236,13 @@ export const de: Dictionary = {
     'Nicht unterstütztes Dateiformat. Bitte PDF, DOCX, DOC, ODT, EPUB, TXT, RTF oder HTML verwenden.',
 
   // ── Crop ──────────────────────────────────────────────────────────────────
-  'cropPdf.cropMargins': 'Ränder beschneiden',
-  'cropPdf.cropPdf': 'PDF beschneiden',
+  'cropPdf.cropMargins': 'Ränder zuschneiden',
+  'cropPdf.cropPdf': 'PDF zuschneiden',
   'cropPdf.cropPreview': 'Beschnitt-Vorschau',
   'cropPdf.cropping': 'Wird beschnitten…',
   'cropPdf.equalMargins': 'Gleiche Ränder',
   'cropPdf.loadingPreview': 'Vorschau wird geladen…',
-  'cropPdf.selectAPdfToCrop': 'Wählen Sie ein PDF, um die Ränder zu beschneiden.',
+  'cropPdf.selectAPdfToCrop': 'Wählen Sie ein PDF, um die Ränder zuzuschneiden.',
 
   // ── Merge ─────────────────────────────────────────────────────────────────
   'merge.merging': 'Wird zusammengeführt…',
@@ -685,8 +685,8 @@ export const de: Dictionary = {
   'tool.watermark.desc': 'PDF-Seiten mit einem Text- oder Bild-Wasserzeichen versehen',
   'tool.watermark.step1': 'Nummeriertes PDF speichern',
   'tool.watermark.step2': 'Eine PDF-Datei öffnen',
-  'tool.cropPdf.name': 'PDF beschneiden',
-  'tool.cropPdf.desc': 'Ränder beschneiden oder einen Bereich auswählen',
+  'tool.cropPdf.name': 'PDF zuschneiden',
+  'tool.cropPdf.desc': 'Ränder zuschneiden oder einen Bereich auswählen',
   'tool.cropPdf.step1': 'PDF mit Wasserzeichen speichern',
   'tool.cropPdf.step2': 'Eine PDF-Datei öffnen',
   'tool.organizePdf.name': 'PDF organisieren',
