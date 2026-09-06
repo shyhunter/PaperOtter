@@ -18,6 +18,17 @@ import type { Dictionary } from '@/i18n/en';
  * rather than relying on the verb to carry it.
  */
 export const pt: Dictionary = {
+  'signatureBackground.label': 'Fundo',
+  'signatureBackground.none': 'Nenhum',
+  'signatureBackground.white': 'Branco',
+  'signatureBackground.cream': 'Creme',
+  'signatureBackground.grey': 'Cinzento',
+  'signatureBackground.custom': 'Cor personalizada',
+  'signatureBackground.pickFromPage': 'Recolher da página',
+  'signatureBackground.pickingCancel': 'Cancelar',
+  'signatureBackground.pickingHint': 'Clique na página para corresponder à sua cor. Escape para cancelar.',
+  'signatureBackground.removeBg': 'Remover o fundo',
+  'signatureBackground.removeBgHint': 'Torna transparente o papel por trás de uma assinatura carregada.',
   'count.page_one': '{count} página',
   'count.page_other': '{count} páginas',
   'count.file_one': '{count} ficheiro',

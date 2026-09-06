@@ -13,6 +13,17 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal usted throughout; buttons take the infinitive.
  */
 export const es: Dictionary = {
+  'signatureBackground.label': 'Fondo',
+  'signatureBackground.none': 'Ninguno',
+  'signatureBackground.white': 'Blanco',
+  'signatureBackground.cream': 'Crema',
+  'signatureBackground.grey': 'Gris',
+  'signatureBackground.custom': 'Color personalizado',
+  'signatureBackground.pickFromPage': 'Tomar de la página',
+  'signatureBackground.pickingCancel': 'Cancelar',
+  'signatureBackground.pickingHint': 'Haga clic en la página para igualar su color. Escape para cancelar.',
+  'signatureBackground.removeBg': 'Quitar el fondo',
+  'signatureBackground.removeBgHint': 'Hace transparente el papel detrás de una firma subida.',
   'common.cancel': 'Cancelar',
   'common.save': 'Guardar',
   'common.back': 'Atrás',

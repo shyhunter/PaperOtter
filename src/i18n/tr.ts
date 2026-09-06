@@ -20,6 +20,17 @@ import type { Dictionary } from '@/i18n/en';
  * plural helper uses Intl.PluralRules rather than an n === 1 test.
  */
 export const tr: Dictionary = {
+  'signatureBackground.label': 'Arka plan',
+  'signatureBackground.none': 'Yok',
+  'signatureBackground.white': 'Beyaz',
+  'signatureBackground.cream': 'Krem',
+  'signatureBackground.grey': 'Gri',
+  'signatureBackground.custom': 'Özel renk',
+  'signatureBackground.pickFromPage': 'Sayfadan seç',
+  'signatureBackground.pickingCancel': 'İptal',
+  'signatureBackground.pickingHint': 'Rengini eşlemek için sayfaya tıklayın. İptal için Escape.',
+  'signatureBackground.removeBg': 'Arka planı kaldır',
+  'signatureBackground.removeBgHint': 'Yüklenen bir imzanın arkasındaki kağıdı saydam yapar.',
   'common.cancel': 'İptal',
   'common.save': 'Kaydet',
   'common.back': 'Geri',

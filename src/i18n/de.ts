@@ -15,6 +15,17 @@ import type { Dictionary } from '@/i18n/en';
  * - Placeholders such as {size} and {count} must survive verbatim.
  */
 export const de: Dictionary = {
+  'signatureBackground.label': 'Hintergrund',
+  'signatureBackground.none': 'Keiner',
+  'signatureBackground.white': 'Weiß',
+  'signatureBackground.cream': 'Creme',
+  'signatureBackground.grey': 'Grau',
+  'signatureBackground.custom': 'Eigene Farbe',
+  'signatureBackground.pickFromPage': 'Von Seite wählen',
+  'signatureBackground.pickingCancel': 'Abbrechen',
+  'signatureBackground.pickingHint': 'Klicken Sie auf die Seite, um deren Farbe zu übernehmen. Escape zum Abbrechen.',
+  'signatureBackground.removeBg': 'Hintergrund entfernen',
+  'signatureBackground.removeBgHint': 'Macht das Papier hinter einer hochgeladenen Unterschrift transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
   'common.cancel': 'Abbrechen',
   'common.save': 'Speichern',
