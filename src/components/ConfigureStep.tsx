@@ -54,8 +54,23 @@ const ZONES: { min: number; max: number; quality: ZoneQuality; dpi: string }[] =
   { min: 0,  max: 25,  quality: 'web',     dpi: '72 dpi'   },
   { min: 25, max: 50,  quality: 'screen',  dpi: '150 dpi'  },
   { min: 50, max: 75,  quality: 'print',   dpi: '300 dpi'  },
-  { min: 75, max: 100, quality: 'archive', dpi: 'Lossless' },
+  // The archive zone's figure is a word, not a number, so it is resolved at
+  // render by zoneFigure below. Left literal here it shipped untranslated in
+  // all eight non-English locales.
+  { min: 75, max: 100, quality: 'archive', dpi: '' },
 ];
+
+/**
+ * The figure shown beside the zone label.
+ *
+ * Three of the four are numerals plus an international unit and need no
+ * translation. The archive zone reads "Lossless", which is an English word, and
+ * a module-level const cannot call t(): it would resolve once at import and
+ * keep whatever language was active then.
+ */
+function zoneFigure(quality: ZoneQuality, dpi: string): string {
+  return quality === 'archive' ? t('configureStep.lossless') : dpi;
+}
 
 function zoneLabel(quality: ZoneQuality): string {
   const labels: Record<ZoneQuality, string> = {
@@ -334,7 +349,7 @@ export function ConfigureStep({
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">{t('configure.compressionLevel')}</span>
               <span className="text-xs font-medium text-foreground">
-                {zoneLabel(activeZone.quality)} ({activeZone.dpi})
+                {zoneLabel(activeZone.quality)} ({zoneFigure(activeZone.quality, activeZone.dpi)})
               </span>
             </div>
 

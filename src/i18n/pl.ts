@@ -76,6 +76,7 @@ export const pl: Dictionary = {
   'configure.pagesPlaceholder': 'np. 1-3, 5, 7-9',
   'configure.bestPresetAuto': 'Najlepsze ustawienie wybrane automatycznie',
   'configureStep.noRecompression': 'Bez ponownej kompresji', 'configureStep.smallestFile': 'Najmniejszy plik',
+  'configureStep.lossless': 'Bezstratny',
   'configureStep.highQuality': 'Wysoka jakość', 'configureStep.screen': 'Ekran',
   'configureStep.print': 'Druk', 'configureStep.archive': 'Archiwum',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)', 'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',
