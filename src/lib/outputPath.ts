@@ -6,6 +6,28 @@ import { exists } from '@tauri-apps/plugin-fs';
  */
 const MAX_ATTEMPTS = 999;
 
+/**
+ * Joins a directory and a file name with the separator the directory already
+ * uses.
+ *
+ * The batch save built every path with a hardcoded "/", so on Windows a folder
+ * save produced `C:\\Users\\you\\Desktop/page-001.jpg`. Reported as
+ * "could not write files" when saving 238 pages from PDF to JPG, on a machine
+ * where saving a single file worked: single saves take their path from the
+ * dialog, which returns a well-formed one, and only the batch built its own.
+ *
+ * A pure function rather than Tauri's join(): this runs once per output, so a
+ * 238-page batch would otherwise mean 238 IPC round-trips to learn a separator
+ * the directory has already told us, and a pure one can be tested for both
+ * platforms from either.
+ */
+export function joinPath(dir: string, name: string): string {
+  // A Windows path that already contains a forward slash is left alone: mixing
+  // is legal there, and rewriting it could break a path the caller built.
+  const sep = dir.includes('\\') && !dir.includes('/') ? '\\' : '/';
+  return `${dir.replace(/[\\/]+$/, '')}${sep}${name}`;
+}
+
 /** Splits "holiday.photo.v2.jpg" into ["holiday.photo.v2", ".jpg"]. */
 function splitExtension(fileName: string): [string, string] {
   const dot = fileName.lastIndexOf('.');
@@ -34,7 +56,7 @@ export async function uniqueOutputPath(
   const [stem, ext] = splitExtension(fileName);
 
   for (let n = 1; n <= MAX_ATTEMPTS; n++) {
-    const candidate = n === 1 ? `${dir}/${stem}${ext}` : `${dir}/${stem} (${n})${ext}`;
+    const candidate = n === 1 ? joinPath(dir, `${stem}${ext}`) : joinPath(dir, `${stem} (${n})${ext}`);
     if (reserved?.has(candidate)) continue;
     if (!(await exists(candidate))) {
       reserved?.add(candidate);

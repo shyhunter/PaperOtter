@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exists } from '@tauri-apps/plugin-fs';
-import { uniqueOutputPath } from '@/lib/outputPath';
+import { uniqueOutputPath, joinPath } from '@/lib/outputPath';
 
 // ─── Non-destructive output naming (BATCH-01a) ───────────────────────────────
 //
@@ -71,5 +71,41 @@ describe('uniqueOutputPath', () => {
   it('[BATCH-01i] gives up rather than looping forever', async () => {
     vi.mocked(exists).mockResolvedValue(true); // everything collides
     await expect(uniqueOutputPath('/out', 'scan.pdf')).rejects.toThrow(/could not find/i);
+  });
+});
+
+/**
+ * [SAVE] A batch save must build paths for the platform it is running on.
+ *
+ * Reported from a real Windows build: saving 238 pages from PDF to JPG into a
+ * folder failed with "could not write files", while saving a single file to the
+ * same folder worked. A single save takes its path from the dialog, which
+ * returns a well-formed one; only the batch built its own, with a hardcoded "/",
+ * so every path it produced looked like
+ * `C:\Users\you\Desktop/page-001.jpg`.
+ */
+describe('joinPath', () => {
+  it('[SAVE-01] uses a backslash for a Windows directory', () => {
+    expect(joinPath('C:\\Users\\you\\Desktop', 'page-001.jpg'))
+      .toBe('C:\\Users\\you\\Desktop\\page-001.jpg');
+  });
+
+  it('[SAVE-02] uses a forward slash for a POSIX directory', () => {
+    expect(joinPath('/Users/you/Desktop', 'page-001.jpg'))
+      .toBe('/Users/you/Desktop/page-001.jpg');
+  });
+
+  it('[SAVE-03] handles a UNC share', () => {
+    expect(joinPath('\\\\server\\share\\out', 'a.jpg'))
+      .toBe('\\\\server\\share\\out\\a.jpg');
+  });
+
+  it('[SAVE-04] does not double the separator when the directory ends in one', () => {
+    expect(joinPath('C:\\out\\', 'a.jpg')).toBe('C:\\out\\a.jpg');
+    expect(joinPath('/out/', 'a.jpg')).toBe('/out/a.jpg');
+  });
+
+  it('[SAVE-05] leaves a Windows drive path that already uses forward slashes alone', () => {
+    expect(joinPath('C:/Users/you', 'a.jpg')).toBe('C:/Users/you/a.jpg');
   });
 });
