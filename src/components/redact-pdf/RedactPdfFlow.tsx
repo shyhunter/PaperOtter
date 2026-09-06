@@ -1,5 +1,6 @@
 // RedactPdfFlow: Pick PDF → Redact (draw/search) → Save redacted PDF.
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { open } from '@/lib/dialog';
@@ -58,7 +59,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       // page count, so without this the tool opens and then renders nothing.
       const refusal = await encryptedPdfRefusal(bytes);
       if (refusal) { setLoadError(refusal); return; }
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setSourcePath(filePath);
       setFileName(name);

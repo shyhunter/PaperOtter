@@ -1,5 +1,6 @@
 // PageNumbersFlow: Orchestrates the page-numbers tool flow — Pick → Configure → Save.
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -57,7 +58,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
       if (refusal) { setLoadError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pages = doc.getPageCount();
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setPageCount(pages);
       setFileName(name);

@@ -3,6 +3,7 @@
 // Step 1: Edit in EditorLayout (three-panel layout)
 // Step 2: Save edited PDF
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { open } from '@/lib/dialog';
 import { FileUp, Loader2, Save } from 'lucide-react';
@@ -73,7 +74,7 @@ export function EditPdfFlow({ onStepChange, onIsDirtyChange }: EditPdfFlowProps)
     setLoadError(null);
     try {
       const bytes = await readFile(filePath);
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
 
       // Get page count from pdf-lib
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });

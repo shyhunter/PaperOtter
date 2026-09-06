@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { stripImageExtension } from '@/lib/fileValidation';
+import { stripImageExtension, getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
@@ -122,7 +122,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       const url = canvas.toDataURL();
       bitmap.close();
 
-      const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
+      const name = getFileName(path);
       setFilePath(path);
       setFileName(name);
       setFileSize(sizeBytes);

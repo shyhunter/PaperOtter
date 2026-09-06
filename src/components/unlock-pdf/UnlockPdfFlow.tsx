@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
@@ -61,7 +62,7 @@ export function UnlockPdfFlow({ onStepChange }: UnlockPdfFlowProps) {
       setLoadError(t('unlockPdf.notProtected'));
       return false;
     }
-    const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
+    const name = getFileName(path);
     setFilePath(path);
     setFileName(name);
     setLoadError(null);

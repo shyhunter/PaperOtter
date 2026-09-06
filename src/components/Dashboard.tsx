@@ -36,7 +36,7 @@ import { useToolContext } from '@/context/ToolContext';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { grantDroppedPaths } from '@/lib/dropScope';
 import { toast } from 'sonner';
-import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
+import { detectFormat, isSupportedFile, isHeicPath, isHeicDecodable, heicUnsupportedMessage, getFileName } from '@/lib/fileValidation';
 import type { SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -392,7 +392,7 @@ export function Dashboard() {
             // forward would only produce a batch with no single operation.
             return {
               path: dropped[0],
-              name: dropped[0].split('/').pop() ?? dropped[0],
+              name: getFileName(dropped[0]),
               format,
               alsoDropped: dropped.slice(1),
             };
@@ -462,7 +462,7 @@ export function Dashboard() {
                   if (!format) return;
                   setStagedFile({
                     path: filePath,
-                    name: filePath.split('/').pop() ?? filePath,
+                    name: getFileName(filePath),
                     format,
                   });
                   }}

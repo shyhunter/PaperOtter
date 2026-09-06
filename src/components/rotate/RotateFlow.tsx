@@ -1,5 +1,6 @@
 // RotateFlow: Orchestrates the rotate tool flow — Pick → Select & Rotate → Save.
 import { useState, useCallback, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -54,7 +55,7 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
       if (refusal) { setLoadError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pages = doc.getPageCount();
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setPageCount(pages);
       setFileName(name);

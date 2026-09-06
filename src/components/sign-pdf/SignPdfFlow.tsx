@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
@@ -48,7 +49,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
     const file = pendingFiles[0];
     consumedPending.current = true;
     setPendingFiles([]);
-    const name = file.split('/').pop() ?? file.split('\\').pop() ?? file;
+    const name = getFileName(file);
     setFilePath(file);
     setFileName(name);
     // Read bytes will happen via effect-like pattern after render
@@ -81,7 +82,7 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
         setIsLoadingFile(false);
         return;
       }
-      const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
+      const name = getFileName(result);
       const bytes = await readFile(result);
       // A locked PDF loads fine under `ignoreEncryption` and reports its real
       // page count, so without this the tool opens and then renders nothing.

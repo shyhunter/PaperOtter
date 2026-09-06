@@ -4,6 +4,7 @@
 // Save: if filePath is null → Save As dialog, otherwise overwrite in-place.
 // Save As: always opens dialog regardless of existing filePath.
 import { useEffect, useCallback, useState, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
@@ -15,7 +16,7 @@ import { revealLabelKey } from '@/lib/platform';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
-  const fileName = savedPath.split('/').pop() ?? savedPath.split('\\').pop() ?? 'file';
+  const fileName = getFileName(savedPath).split('\\').pop() ?? 'file';
   toast.success(t('saveController.savedTo', { name: fileName }), {
     duration: 5000,
     action: {
@@ -67,7 +68,7 @@ export function SaveController() {
       // Update state
       if (targetPath !== currentState.filePath) {
         setFilePath(targetPath);
-        const newName = targetPath.split('/').pop() ?? targetPath.split('\\').pop() ?? 'Untitled.pdf';
+        const newName = getFileName(targetPath).split('\\').pop() ?? 'Untitled.pdf';
         setFileName(newName);
       }
       clearDirty();
@@ -151,7 +152,7 @@ export function useSaveActions() {
 
       if (targetPath !== currentState.filePath) {
         setFilePath(targetPath);
-        const newName = targetPath.split('/').pop() ?? targetPath.split('\\').pop() ?? 'Untitled.pdf';
+        const newName = getFileName(targetPath).split('\\').pop() ?? 'Untitled.pdf';
         setFileName(newName);
       }
       clearDirty();

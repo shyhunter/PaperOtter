@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { tempDir, join } from '@tauri-apps/api/path';
@@ -224,7 +225,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pages = doc.getPageCount();
 
-      const name = path.split('/').pop() ?? path.split('\\').pop() ?? path;
+      const name = getFileName(path);
       setFilePath(path);
       setFileName(name);
       const pdfBytesArray = new Uint8Array(bytes);
