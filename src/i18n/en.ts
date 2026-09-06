@@ -10,6 +10,17 @@
  * `_other` pairs and are read through `plural()`, never `t()`.
  */
 export const en = {
+  'signatureBackground.label': 'Background',
+  'signatureBackground.none': 'None',
+  'signatureBackground.white': 'White',
+  'signatureBackground.cream': 'Cream',
+  'signatureBackground.grey': 'Grey',
+  'signatureBackground.custom': 'Custom colour',
+  'signatureBackground.pickFromPage': 'Pick from page',
+  'signatureBackground.pickingCancel': 'Cancel',
+  'signatureBackground.pickingHint': 'Click anywhere on the page to match its colour. Escape to cancel.',
+  'signatureBackground.removeBg': 'Remove background',
+  'signatureBackground.removeBgHint': 'Makes the paper behind an uploaded signature transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
   'common.cancel': 'Cancel',
   'common.save': 'Save',

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
@@ -68,7 +69,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
         const refusal = await encryptedPdfRefusal(await readFile(file));
         if (refusal) { setLoadError(refusal); return; }
         setFilePath(file);
-        setFileName(file.split('/').pop() ?? file.split('\\').pop() ?? file);
+        setFileName(getFileName(file));
         goToStep(1);
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : String(err));
@@ -90,7 +91,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
         setIsLoadingFile(false);
         return;
       }
-      const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
+      const name = getFileName(result);
       // Repair cannot help a locked document either: Ghostscript needs the
       // password before it can rewrite anything.
       const refusal = await encryptedPdfRefusal(await readFile(result));

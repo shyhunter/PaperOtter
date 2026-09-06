@@ -11,6 +11,17 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal lei; buttons take the imperative, as Italian software does.
  */
 export const it: Dictionary = {
+  'signatureBackground.label': 'Sfondo',
+  'signatureBackground.none': 'Nessuno',
+  'signatureBackground.white': 'Bianco',
+  'signatureBackground.cream': 'Crema',
+  'signatureBackground.grey': 'Grigio',
+  'signatureBackground.custom': 'Colore personalizzato',
+  'signatureBackground.pickFromPage': 'Preleva dalla pagina',
+  'signatureBackground.pickingCancel': 'Annulla',
+  'signatureBackground.pickingHint': 'Fare clic sulla pagina per riprenderne il colore. Esc per annullare.',
+  'signatureBackground.removeBg': 'Rimuovi lo sfondo',
+  'signatureBackground.removeBgHint': 'Rende trasparente la carta dietro una firma caricata.',
   'common.cancel': 'Annulla', 'common.save': 'Salva', 'common.back': 'Indietro',
   'app.unsavedChangesGoBackToDashboard': 'Ci sono modifiche non salvate. Vuole davvero tornare alla schermata principale? Le sue modifiche andranno perse.',
   'editorView.unsavedChangesCloseWithoutSaving': 'Ci sono modifiche non salvate. Chiudere senza salvare?',

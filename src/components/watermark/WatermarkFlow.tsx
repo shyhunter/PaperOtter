@@ -1,5 +1,6 @@
 // WatermarkFlow: Orchestrates the watermark tool — Pick → Configure → Save.
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -84,7 +85,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
       if (refusal) { setLoadError(refusal); return; }
       // Validate it is a real PDF
       await PDFDocument.load(bytes, { ignoreEncryption: true });
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setFileName(name);
       setSourcePath(filePath);

@@ -19,6 +19,17 @@ import type { Dictionary } from '@/i18n/en';
  * render "2 stron", which is wrong.
  */
 export const pl: Dictionary = {
+  'signatureBackground.label': 'Tło',
+  'signatureBackground.none': 'Brak',
+  'signatureBackground.white': 'Białe',
+  'signatureBackground.cream': 'Kremowe',
+  'signatureBackground.grey': 'Szare',
+  'signatureBackground.custom': 'Kolor własny',
+  'signatureBackground.pickFromPage': 'Pobierz ze strony',
+  'signatureBackground.pickingCancel': 'Anuluj',
+  'signatureBackground.pickingHint': 'Kliknij stronę, aby dopasować jej kolor. Escape, aby anulować.',
+  'signatureBackground.removeBg': 'Usuń tło',
+  'signatureBackground.removeBgHint': 'Sprawia, że papier za wgranym podpisem staje się przezroczysty.',
   'count.page_one': '{count} strona', 'count.page_few': '{count} strony',
   'count.page_many': '{count} stron', 'count.page_other': '{count} strony',
   'count.file_one': '{count} plik', 'count.file_few': '{count} pliki',

@@ -17,6 +17,17 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal u; buttons take the infinitive, as Dutch software does.
  */
 export const nl: Dictionary = {
+  'signatureBackground.label': 'Achtergrond',
+  'signatureBackground.none': 'Geen',
+  'signatureBackground.white': 'Wit',
+  'signatureBackground.cream': 'Crème',
+  'signatureBackground.grey': 'Grijs',
+  'signatureBackground.custom': 'Eigen kleur',
+  'signatureBackground.pickFromPage': 'Van pagina kiezen',
+  'signatureBackground.pickingCancel': 'Annuleren',
+  'signatureBackground.pickingHint': 'Klik op de pagina om die kleur over te nemen. Escape om te annuleren.',
+  'signatureBackground.removeBg': 'Achtergrond verwijderen',
+  'signatureBackground.removeBgHint': 'Maakt het papier achter een geüploade handtekening transparant.',
   'common.cancel': 'Annuleren', 'common.save': 'Opslaan', 'common.back': 'Terug',
   'app.unsavedChangesGoBackToDashboard': 'U hebt niet-opgeslagen wijzigingen. Weet u zeker dat u terug wilt naar het overzicht? Uw bewerkingen gaan verloren.',
   'editorView.unsavedChangesCloseWithoutSaving': 'U hebt niet-opgeslagen wijzigingen. Sluiten zonder opslaan?',

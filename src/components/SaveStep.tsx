@@ -268,7 +268,10 @@ function MultiFileSave({
           const output = multiFileOutputs[i];
           setMultiProgress(t('saveStep.savingProgress', { current: i + 1, total: multiFileOutputs.length }));
           const filePath = await uniqueOutputPath(folderPath, output.fileName, reserved);
-          if (!filePath.endsWith(`/${output.fileName}`)) {
+          // Compared by basename, not by suffix: `endsWith('/' + name)` is
+          // never true on Windows, so every file in every batch was reported
+          // as renamed.
+          if (getFileName(filePath) !== output.fileName) {
             renamed.push(getFileName(filePath));
           }
           // Same coercion the archive needs: what Tauri returned is an

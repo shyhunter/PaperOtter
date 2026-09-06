@@ -1,5 +1,6 @@
 // JpgToPdfFlow: Pick images -> Configure page layout -> Create & Save PDF.
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
@@ -68,10 +69,6 @@ interface ImageEntry {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-function getFileName(path: string): string {
-  return path.split('/').pop() ?? path.split('\\').pop() ?? path;
-}
 
 /**
  * Convert any image bytes to a supported format for pdf-lib.

@@ -1,6 +1,7 @@
 // PDF merge engine — combines multiple PDFs into one using pdf-lib.
 // CRITICAL: Never use useCompression: true (pdf-lib issue #1445 — corrupts output).
 import { readFile } from '@tauri-apps/plugin-fs';
+import { getFileName } from '@/lib/fileValidation';
 import { PDFDocument } from 'pdf-lib';
 import { t } from '@/i18n';
 
@@ -25,7 +26,7 @@ export async function loadPdfForMerge(filePath: string): Promise<MergeInput> {
   const bytes = await readFile(filePath);
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const pageCount = doc.getPageCount();
-  const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+  const fileName = getFileName(filePath);
 
   return { filePath, fileName, pageCount, bytes };
 }

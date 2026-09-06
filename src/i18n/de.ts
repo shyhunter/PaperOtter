@@ -15,6 +15,17 @@ import type { Dictionary } from '@/i18n/en';
  * - Placeholders such as {size} and {count} must survive verbatim.
  */
 export const de: Dictionary = {
+  'signatureBackground.label': 'Hintergrund',
+  'signatureBackground.none': 'Keiner',
+  'signatureBackground.white': 'Weiß',
+  'signatureBackground.cream': 'Creme',
+  'signatureBackground.grey': 'Grau',
+  'signatureBackground.custom': 'Eigene Farbe',
+  'signatureBackground.pickFromPage': 'Von Seite wählen',
+  'signatureBackground.pickingCancel': 'Abbrechen',
+  'signatureBackground.pickingHint': 'Klicken Sie auf die Seite, um deren Farbe zu übernehmen. Escape zum Abbrechen.',
+  'signatureBackground.removeBg': 'Hintergrund entfernen',
+  'signatureBackground.removeBgHint': 'Macht das Papier hinter einer hochgeladenen Unterschrift transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
   'common.cancel': 'Abbrechen',
   'common.save': 'Speichern',
@@ -77,7 +88,7 @@ export const de: Dictionary = {
 
   // ── PDF configure ─────────────────────────────────────────────────────────
   'configure.optimiseSize': 'Dateigröße optimieren',
-  'configure.compressionLevel': 'Komprimierungsstufe',
+  'configure.compressionLevel': 'Verkleinerungsstufe',
   'configure.customTargetSize': 'Eigene Zielgröße',
   'configure.resizePages': 'Seitengröße ändern',
   'configure.enablePageResize': 'Seitengröße ändern aktivieren',
@@ -236,13 +247,13 @@ export const de: Dictionary = {
     'Nicht unterstütztes Dateiformat. Bitte PDF, DOCX, DOC, ODT, EPUB, TXT, RTF oder HTML verwenden.',
 
   // ── Crop ──────────────────────────────────────────────────────────────────
-  'cropPdf.cropMargins': 'Ränder beschneiden',
-  'cropPdf.cropPdf': 'PDF beschneiden',
+  'cropPdf.cropMargins': 'Ränder zuschneiden',
+  'cropPdf.cropPdf': 'PDF zuschneiden',
   'cropPdf.cropPreview': 'Beschnitt-Vorschau',
   'cropPdf.cropping': 'Wird beschnitten…',
   'cropPdf.equalMargins': 'Gleiche Ränder',
   'cropPdf.loadingPreview': 'Vorschau wird geladen…',
-  'cropPdf.selectAPdfToCrop': 'Wählen Sie ein PDF, um die Ränder zu beschneiden.',
+  'cropPdf.selectAPdfToCrop': 'Wählen Sie ein PDF, um die Ränder zuzuschneiden.',
 
   // ── Merge ─────────────────────────────────────────────────────────────────
   'merge.merging': 'Wird zusammengeführt…',
@@ -499,7 +510,7 @@ export const de: Dictionary = {
   'pdfEditor.clickAnywhereOnThePdf':
     'Klicken Sie an eine beliebige Stelle des PDFs, um einen Textblock zu platzieren.',
   'pdfEditor.compareFullSize': 'In voller Größe vergleichen',
-  'pdfEditor.compressed': 'Komprimiert',
+  'pdfEditor.compressed': 'Verkleinert',
   'pdfEditor.currentSize': 'Aktuelle Größe',
   'pdfEditor.deleteSavedSignature': 'Gespeicherte Unterschrift löschen',
   'pdfEditor.direction': 'Richtung',
@@ -576,7 +587,7 @@ export const de: Dictionary = {
   'firstLaunchBanner.dismissPrivacyBanner': 'Datenschutzhinweis ausblenden',
   'firstLaunchBanner.learnMore': 'Mehr erfahren',
   'landingCard.compressResizeConvertStaysOn':
-    'Komprimieren, Größe ändern, umwandeln: bleibt auf Ihrem Gerät',
+    'Verkleinern, Größe ändern, umwandeln: bleibt auf Ihrem Gerät',
   'landingCard.damagedOrInvalidPdf': 'Beschädigtes oder ungültiges PDF',
   'landingCard.fileTooLarge': 'Datei zu groß',
   'landingCard.loadingFile': 'Datei wird geladen…',
@@ -620,13 +631,13 @@ export const de: Dictionary = {
   'stepBar.lockedHint': '{step}: schließen Sie zuerst die vorherigen Schritte ab',
 
   // ── Tool registry ─────────────────────────────────────────────────────────
-  'tool.compressPdf.name': 'PDF komprimieren',
+  'tool.compressPdf.name': 'PDF verkleinern',
   'tool.compressPdf.desc': 'PDF-Dateigröße mit Qualitätsvoreinstellungen verringern',
   'tool.compressPdf.step1': 'Eine PDF-Datei öffnen',
-  'tool.compressPdf.step2': 'Komprimierung einstellen',
+  'tool.compressPdf.step2': 'Verkleinerung einstellen',
   'tool.compressPdf.step3': 'Ergebnis prüfen',
   'tool.compressPdf.step4': 'Auf der Festplatte speichern',
-  'tool.compressImage.name': 'Bild komprimieren',
+  'tool.compressImage.name': 'Bild verkleinern',
   'tool.compressImage.desc': 'Bilder mit Qualitätskontrolle verkleinern und umwandeln',
   'tool.compressImage.step1': 'Eine Bilddatei öffnen',
   'tool.compressImage.step2': 'Bildoptionen einstellen',
@@ -685,8 +696,8 @@ export const de: Dictionary = {
   'tool.watermark.desc': 'PDF-Seiten mit einem Text- oder Bild-Wasserzeichen versehen',
   'tool.watermark.step1': 'Nummeriertes PDF speichern',
   'tool.watermark.step2': 'Eine PDF-Datei öffnen',
-  'tool.cropPdf.name': 'PDF beschneiden',
-  'tool.cropPdf.desc': 'Ränder beschneiden oder einen Bereich auswählen',
+  'tool.cropPdf.name': 'PDF zuschneiden',
+  'tool.cropPdf.desc': 'Ränder zuschneiden oder einen Bereich auswählen',
   'tool.cropPdf.step1': 'PDF mit Wasserzeichen speichern',
   'tool.cropPdf.step2': 'Eine PDF-Datei öffnen',
   'tool.organizePdf.name': 'PDF organisieren',
@@ -761,9 +772,9 @@ export const de: Dictionary = {
 
   // ── Dependency hints ──────────────────────────────────────────────────────
   'deps.ghostscriptWindows':
-    'Zum Komprimieren von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
+    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
   'deps.ghostscriptLinux':
-    'Zum Komprimieren von PDFs wird Ghostscript benötigt. Installation über Ihre Paketverwaltung, z. B. sudo apt install ghostscript',
+    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Installation über Ihre Paketverwaltung, z. B. sudo apt install ghostscript',
   'deps.calibre': 'Installieren Sie Calibre für E-Book-Unterstützung: calibre-ebook.com/download',
   'deps.libreoffice': 'Installieren Sie LibreOffice für die Dokumentumwandlung: libreoffice.org/download',
 
@@ -805,10 +816,10 @@ export const de: Dictionary = {
   'imageConfigureStep.unlockAspectRatio': 'Seitenverhältnis entsperren',
   'imageConfigureStep.lockAspectRatio': 'Seitenverhältnis sperren',
   'imageConfigureStep.generatePreview': 'Vorschau erstellen',
-  'imageConfigureStep.compression': 'Komprimierung',
+  'imageConfigureStep.compression': 'Verkleinerung',
   'themeToggle.system': 'System',
   'themeToggle.light': 'Hell',
-  'configureStep.compressionNotAvailable': 'Komprimierung nicht verfügbar',
+  'configureStep.compressionNotAvailable': 'Verkleinerung nicht verfügbar',
   'configureStep.enterAValidTargetSize': 'Geben Sie eine gültige Zielgröße ein',
   'mergePickStep.selectPdfs': 'PDFs auswählen',
   'mergePickStep.addMore': 'Weitere hinzufügen',
@@ -881,11 +892,11 @@ export const de: Dictionary = {
   'docModel.thisDocumentHasNoExtractable':
     'Dieses Dokument enthält keinen auslesbaren Text: es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
   'pdfProcessor.thisFileIsMostlyText':
-    'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder: bei reinen Textdokumenten bringt die Komprimierung kaum etwas.',
+    'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder: bei reinen Textdokumenten bringt das Verkleinern kaum etwas.',
   'pdfProcessor.customPageSizeRequiresBoth':
     'Für eine eigene Seitengröße werden Breite und Höhe in mm benötigt',
   'compareStep.thisFileIsAlreadyAt':
-    'Diese Datei ist bei allen Qualitätsstufen bereits maximal komprimiert.',
+    'Diese Datei ist bei allen Qualitätsstufen bereits maximal verkleinert.',
   'compareStep.tryALowerQualityLevel':
     'Versuchen Sie eine niedrigere Qualitätsstufe, um sie weiter zu verkleinern.',
   'compareStep.fileAlreadyOptimal': 'Datei bereits optimal',
@@ -899,7 +910,7 @@ export const de: Dictionary = {
   'dashboard.imageTools': 'Bildwerkzeuge',
 
   // ── Option labels ─────────────────────────────────────────────────────────
-  'configureStep.noRecompression': 'Keine Neukomprimierung',
+  'configureStep.noRecompression': 'Keine erneute Verkleinerung',
   'configureStep.smallestFile': 'Kleinste Datei',
   'configureStep.highQuality': 'Hohe Qualität',
   'configureStep.screen': 'Bildschirm',
@@ -994,7 +1005,7 @@ export const de: Dictionary = {
   'format.document': 'Dokument',
   'configureStep.balanced': 'Ausgewogen',
   'configureStep.letter': 'Letter',
-  'toolSidebarPanel.prepressArchivalNoRecompression': 'Druckvorstufe / Archiv: keine Neukomprimierung',
+  'toolSidebarPanel.prepressArchivalNoRecompression': 'Druckvorstufe / Archiv: keine erneute Verkleinerung',
   'jpgToPdfFlow.autoFit': 'Automatisch anpassen',
   'jpgToPdfFlow.portrait': 'Hochformat',
   'jpgToPdfFlow.landscape': 'Querformat',
@@ -1014,8 +1025,8 @@ export const de: Dictionary = {
   'compareOverlay.labelledPage': '{label}, Seite {page}',
   'compareStep.targetSizeNotAchievable': 'Zielgröße nicht erreichbar , ',
   'compareStep.bestResult': 'bestes Ergebnis: {size}.',
-  'configureStep.canCompressToAboutMax': 'Komprimierbar auf bestenfalls etwa {size}. Maximale Dateigröße: die beste Komprimierungsvorgabe wird automatisch gewählt.',
-  'configureStep.containsImagesHighSavings': 'Dieses PDF enthält {images}: die Komprimierung verringert die Dateigröße deutlich.',
+  'configureStep.canCompressToAboutMax': 'Verkleinerbar auf bestenfalls etwa {size}. Maximale Dateigröße: die beste Verkleinerungsvorgabe wird automatisch gewählt.',
+  'configureStep.containsImagesHighSavings': 'Dieses PDF enthält {images}: das Verkleinern verringert die Dateigröße deutlich.',
   'configureStep.containsImagesModerateSavings': 'Dieses PDF enthält {images}: eine mäßige Ersparnis ist zu erwarten.',
   'configureStep.processingPageOf': 'Seite {current} von {total} wird verarbeitet…',
   'configureStep.targetMayNotBeAchievable': 'Ziel möglicherweise nicht erreichbar: geschätztes Minimum ist ca. {size}.',
@@ -1035,7 +1046,7 @@ export const de: Dictionary = {
   'exportPanel.typographyOptions': 'Typografie-Optionen',
   'imageBlockLayer.resizeFromCorner': 'Größe ändern ab {corner}',
   'imageCompareStep.qualityValue': 'Qualität: {value}',
-  'imageConfigureStep.compressionOutOfNine': 'Komprimierung: {level}/9',
+  'imageConfigureStep.compressionOutOfNine': 'Verkleinerung: {level}/9',
   'imageConfigureStep.widthPx': 'Breite (px)',
   'imageConfigureStep.widthPercent': 'Breite (%)',
   'imageConfigureStep.heightPx': 'Höhe (px)',
@@ -1084,7 +1095,7 @@ export const de: Dictionary = {
   'unsavedChangesDialog.hasUnsavedChanges': 'hat ungespeicherte Änderungen. Beim Speichern wird die Originaldatei ersetzt.',
   'updateChecker.versionAvailable': 'Papercut v{version} ist verfügbar.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} erfolgreich angewendet',
-  'toolSidebarPanel.canCompressToAbout': 'Komprimierbar auf bestenfalls etwa {size}.',
+  'toolSidebarPanel.canCompressToAbout': 'Verkleinerbar auf bestenfalls etwa {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Ziehen Sie auf der Seite, um etwas abzudecken. Beim Anwenden werden diese Seiten zu einem Bild reduziert, sodass der darunterliegende Inhalt aus der Datei entfernt und nicht nur verborgen wird.',
   'toolSidebarPanel.imagesStillReEncoded': 'Bilder werden weiterhin neu kodiert, nur nicht verkleinert. Die Schätzungen gehen von einer Verkleinerung aus: die tatsächlichen Größen fallen höher aus.',
   'toolSidebarPanel.marginMm': 'Rand {side} (mm)',
@@ -1097,7 +1108,7 @@ export const de: Dictionary = {
   'toolSidebarPanel.rotatingPage': 'Seite {page} wird gedreht',
   'toolSidebarPanel.rotatingSelectedPages': '{count} ausgewählte Seiten werden gedreht',
   'toolSidebarPanel.savedSignaturesCount': 'Gespeicherte Unterschriften ({count})',
-  'toolSidebarPanel.smallestAchievable': 'Kleinstmöglich sind etwa {size}: weiter lässt sich diese Datei nicht komprimieren.',
+  'toolSidebarPanel.smallestAchievable': 'Kleinstmöglich sind etwa {size}: weiter lässt sich diese Datei nicht verkleinern.',
   'toolSidebarPanel.targetMet': 'erreicht',
   'toolSidebarPanel.targetNotMet': 'nicht erreicht ({size})',
   'count.match_one': '{count} Treffer',
@@ -1112,11 +1123,11 @@ export const de: Dictionary = {
   'common.find': 'Suchen',
   'common.percentLarger': '{percent} % größer',
   'common.percentSmaller': '{percent} % kleiner',
-  'compareStep.jpxAlreadyEncoded': 'Bilder bereits JPEG2000-kodiert: keine weitere Komprimierung möglich',
+  'compareStep.jpxAlreadyEncoded': 'Bilder bereits JPEG2000-kodiert: keine weitere Verkleinerung möglich',
   'configureStep.enableResizeToStillProcess': 'Aktivieren Sie unten die Seitenskalierung, um diese Datei dennoch zu verarbeiten.',
   'merge.mergeAndSave': 'Zusammenführen und speichern',
   'pdfEditor.untitledPdf': 'Ohne Titel.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Ghostscript kann sie nicht weiter komprimieren.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Ghostscript kann sie nicht weiter verkleinern.',
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
@@ -1132,6 +1143,6 @@ export const de: Dictionary = {
   'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
   'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
   'dashboard.andMoreFiles': '+{count} weitere',
-  'deps.ghostscriptMac': 'Zum Komprimieren von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden: eine Neuinstallation von Papercut sollte sie wiederherstellen.',
+  'deps.ghostscriptMac': 'Zum Verkleinern von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden: eine Neuinstallation von Papercut sollte sie wiederherstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (Monospace)',
 };

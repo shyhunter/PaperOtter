@@ -1,5 +1,6 @@
 // OrganizePdfFlow: Pick PDF → Reorder/delete/duplicate pages → Save.
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -73,7 +74,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       if (refusal) { setLoadError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const count = doc.getPageCount();
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setOriginalPageCount(count);
       setFileName(name);

@@ -1,5 +1,6 @@
 // SplitPickStep: Single-file PDF picker for the split tool.
 import { useState, useCallback, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
@@ -30,7 +31,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
       if (refusal) { setError(refusal); return; }
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const pageCount = doc.getPageCount();
-      const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const fileName = getFileName(filePath);
       onFileLoaded(bytes, pageCount, fileName);
     } catch (err) {
       setError(friendlyPdfError(err));

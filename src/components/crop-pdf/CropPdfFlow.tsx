@@ -1,5 +1,6 @@
 // CropPdfFlow: Pick PDF → Set crop margins → Save cropped PDF.
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
@@ -86,7 +87,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const firstPage = doc.getPage(0);
       const { width, height } = firstPage.getSize();
-      const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+      const name = getFileName(filePath);
       setPdfBytes(bytes);
       setFileName(name);
       setSourcePath(filePath);

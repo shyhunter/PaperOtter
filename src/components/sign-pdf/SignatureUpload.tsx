@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { t } from '@/i18n';
@@ -79,7 +80,7 @@ export function SignatureUpload({ onComplete }: SignatureUploadProps) {
       const dataUrl = await imageBytesToPngDataUrl(bytes, mime);
 
       setPreview(dataUrl);
-      setFileName(filePath.split('/').pop() ?? filePath.split('\\').pop() ?? 'image');
+      setFileName(getFileName(filePath).split('\\').pop() ?? 'image');
       setIsLoading(false);
     } catch {
       setIsLoading(false);

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
@@ -89,7 +90,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
         const refusal = await encryptedPdfRefusal(await readFile(file));
         if (refusal) { setLoadError(refusal); return; }
         setFilePath(file);
-        setFileName(file.split('/').pop() ?? file.split('\\').pop() ?? file);
+        setFileName(getFileName(file));
         goToStep(1);
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : String(err));
@@ -111,7 +112,7 @@ export function PdfaConvertFlow({ onStepChange }: PdfaConvertFlowProps) {
         setIsLoadingFile(false);
         return;
       }
-      const name = result.split('/').pop() ?? result.split('\\').pop() ?? result;
+      const name = getFileName(result);
       // A locked PDF loads fine under `ignoreEncryption` and reports its real
       // page count, so without this the tool opens and then fails downstream.
       const refusal = await encryptedPdfRefusal(await readFile(result));

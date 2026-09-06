@@ -2,6 +2,7 @@
 // Assembles: EditorProvider > EditorTopToolbar + (left panel | EditorCanvas | right panel).
 // Left and right panels are placeholders for future plans.
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument } from 'pdf-lib';
 import { AlertTriangle, ArrowLeft, Wrench } from 'lucide-react';
@@ -124,7 +125,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
       const doc = await PDFDocument.load(pdfBytesArray, { ignoreEncryption: true });
       const pageCount = doc.getPageCount();
 
-      const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? 'Untitled.pdf';
+      const fileName = getFileName(filePath).split('\\').pop() ?? 'Untitled.pdf';
 
       // Initial fit-width zoom — will be refined by ResizeObserver in EditorCanvas
       const initialFitWidth = 1.0;
