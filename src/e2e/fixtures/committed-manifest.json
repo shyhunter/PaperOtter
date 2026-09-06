@@ -3,6 +3,10 @@
     "sha256": "78db480de73f8a59c83cb0c651ab3d910e8057c7f2764e42d4435a9c239a07cf",
     "bytes": 44827
   },
+  "permissions-only.pdf": {
+    "sha256": "49d359619035c297bfed455c4c6bb8e00a14b85793c7d1916501a0d6bcd2e27b",
+    "bytes": 3305
+  },
   "pexels-pixabay-459225.jpg": {
     "sha256": "2c4313a5833de480944ead47429181f9393040705f00f836d219cbeec0beaf76",
     "bytes": 2385146
