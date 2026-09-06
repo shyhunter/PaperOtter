@@ -31,8 +31,18 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // pdf.js ships a separate build for Node and says so out loud: the
+      // default one calls Promise.try, which Node 22 does not have, and prints
+      // "Please use the `legacy` build in Node.js environments" before failing.
+      // Without this, every getDocument() in a test rejects for a reason that
+      // has nothing to do with the document, which is how a password check that
+      // answered the same way for every file looked like it was passing.
+      // The app itself keeps the default build: its webview has what that needs.
+      // Exact match only. A plain string alias matches by prefix, which rewrote
+      // explicit subpath imports into .../pdf.mjs/legacy/build/pdf.mjs.
+      { find: /^pdfjs-dist$/, replacement: path.resolve(__dirname, './node_modules/pdfjs-dist/legacy/build/pdf.mjs') },
+    ],
   },
 });
