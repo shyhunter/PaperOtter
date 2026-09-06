@@ -167,7 +167,7 @@ export function SplitSelectStep({
       <div ref={scrollContainerRef} className="w-full max-w-2xl mx-auto space-y-4 flex-1 overflow-y-auto min-h-0">
         <div className="text-center space-y-1">
           <h2 className="text-lg font-semibold text-foreground">{t('pdfToJpg.selectPages')}</h2>
-          <p className="text-sm text-muted-foreground">{fileName} — {plural('count.page', pageCount)}</p>
+          <p className="text-sm text-muted-foreground">{fileName}, {plural('count.page', pageCount)}</p>
         </div>
 
         {/* Mode tabs */}

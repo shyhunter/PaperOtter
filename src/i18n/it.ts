@@ -68,6 +68,7 @@ export const it: Dictionary = {
   'configure.pagesPlaceholder': 'es. 1-3, 5, 7-9',
   'configure.bestPresetAuto': 'Preimpostazione migliore selezionata automaticamente',
   'configureStep.noRecompression': 'Nessuna ricompressione', 'configureStep.smallestFile': 'File più piccolo',
+  'configureStep.lossless': 'Senza perdita',
   'configureStep.highQuality': 'Alta qualità', 'configureStep.screen': 'Schermo',
   'configureStep.print': 'Stampa', 'configureStep.archive': 'Archivio',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)', 'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',

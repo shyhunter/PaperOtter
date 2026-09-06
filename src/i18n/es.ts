@@ -112,6 +112,7 @@ export const es: Dictionary = {
   'configureStep.screen': 'Pantalla',
   'configureStep.print': 'Impresión',
   'configureStep.archive': 'Archivo',
+  'configureStep.lossless': 'Sin pérdida',
   'configureStep.a4210297Mm': 'A4 (210 × 297 mm)',
   'configureStep.a3297420Mm': 'A3 (297 × 420 mm)',
   'configureStep.letter216279Mm': 'Letter (216 × 279 mm)',
