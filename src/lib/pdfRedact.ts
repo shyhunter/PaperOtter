@@ -103,11 +103,16 @@ export async function applyRedactions(
         const pngBase64 = pngDataUrl.split(',')[1];
         const pngBytes = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
 
-        // Get original page dimensions (in PDF points)
-        const originalPage = sourceDoc.getPage(i);
-        const { width: pageWidth, height: pageHeight } = originalPage.getSize();
+        // The size the reader sees, taken from the viewport rather than from
+        // getSize(). pdf.js has already applied the page's /Rotate here, so on a
+        // turned page the render is landscape while getSize() still reports the
+        // portrait box underneath -- and the replacement page carries no
+        // /Rotate of its own, so building it at the raw size squashed a
+        // landscape image into a portrait sheet and turned the content with it.
+        const pageWidth = viewport.width / renderScale;
+        const pageHeight = viewport.height / renderScale;
 
-        // Create new page with same dimensions and embed the image
+        // Create new page at the size that was rendered, and embed the image
         const pngImage = await outputDoc.embedPng(pngBytes);
         const newPage = outputDoc.addPage([pageWidth, pageHeight]);
         newPage.drawImage(pngImage, {

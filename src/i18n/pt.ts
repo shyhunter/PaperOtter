@@ -18,15 +18,16 @@ import type { Dictionary } from '@/i18n/en';
  * rather than relying on the verb to carry it.
  */
 export const pt: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrado (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Exportação do navegador (HTML para PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Fundo',
   'signatureBackground.none': 'Nenhum',
   'signatureBackground.white': 'Branco',
   'signatureBackground.cream': 'Creme',
   'signatureBackground.grey': 'Cinzento',
   'signatureBackground.custom': 'Cor personalizada',
-  'signatureBackground.pickFromPage': 'Recolher da página',
-  'signatureBackground.pickingCancel': 'Cancelar',
-  'signatureBackground.pickingHint': 'Clique na página para corresponder à sua cor. Escape para cancelar.',
   'signatureBackground.removeBg': 'Remover o fundo',
   'signatureBackground.removeBgHint': 'Torna transparente o papel por trás de uma assinatura carregada.',
   'count.page_one': '{count} página',
@@ -57,6 +58,8 @@ export const pt: Dictionary = {
     'As fotografias HEIC do iPhone só podem ser abertas no macOS, por enquanto. No iPhone, em Definições › Câmara › Formatos, escolha «Mais compatível» para tirar fotografias em JPEG.',
   'file.unsafeName':
     'O nome deste ficheiro contém caracteres que não podem ser utilizados em segurança. Mude-lhe o nome e tente novamente.',
+  'file.needsImage': 'Esta ferramenta trabalha com imagens. Para reduzir um PDF, utilize «{tool}».',
+  'file.needsPdf': 'Esta ferramenta trabalha com PDF. Para reduzir uma imagem, utilize «{tool}».',
   'imageCompare.before': 'Antes', 'imageCompare.after': 'Depois',
   'imageCompare.original': 'Original', 'imageCompare.processed': 'Processado',
   'imageCompare.regenerating': 'A regenerar…',
@@ -273,6 +276,7 @@ export const pt: Dictionary = {
   'redactPdf.removeRedaction': 'Remover ocultação',
   'redactPdf.applyingRedactions': 'A aplicar as ocultações…',
   'redactPdf.redactPdf': 'Ocultar no PDF',
+  'redactPdf.willFlattenPages': 'Ao aplicar, as páginas marcadas passam a imagens. O texto nelas deixa de poder ser selecionado ou pesquisado.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'As páginas ocultadas foram convertidas em imagens. O texto dessas páginas deixou de poder ser selecionado.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -308,6 +312,7 @@ export const pt: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Rodar as páginas selecionadas para a esquerda',
   'rotate.rotateSelectedPagesRight': 'Rodar as páginas selecionadas para a direita',
   'signPdf.addASignatureToYour': 'Adicione uma assinatura ao seu documento PDF.',
+  'signPdf.couldNotPlaceSignature': 'Não foi possível colocar esta assinatura. Escolha outra ou crie uma nova.',
   'signPdf.couldNotReadThePdf': 'Não foi possível ler o PDF.', 'signPdf.signPdf': 'Assinar PDF',
   'signPdf.clear': 'Limpar', 'signPdf.createNew': 'Criar nova',
   'signPdf.createOrSelectSignature': 'Criar ou selecionar uma assinatura',
@@ -553,6 +558,7 @@ export const pt: Dictionary = {
   'toolSidebar.targetFileSize': 'Tamanho de ficheiro pretendido',
   'toolSidebarPanel.alreadyMarked': 'Já marcado', 'toolSidebarPanel.markThisOne': 'Marcar este',
   'toolSidebarPanel.redacting': 'A ocultar…', 'toolSidebarPanel.apply': 'Aplicar',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Arraste a assinatura para o sítio certo na página e redimensione-a pelos cantos. O botão de eliminar remove-a.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Não foi possível desenhar a assinatura. Experimente outro estilo ou um nome mais curto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Ficheiro mais pequeno: ideal para ver no ecrã',
@@ -730,6 +736,7 @@ export const pt: Dictionary = {
   'exportPanel.exportAsFormat': 'Exportar como {format}',
   'exportPanel.savedAsFormat': 'Guardado como {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opções de tipografia',
+  'imageBlockLayer.deleteStamp': 'Eliminar este carimbo',
   'imageBlockLayer.resizeFromCorner': 'Redimensionar a partir de {corner}',
   'imageCompareStep.qualityValue': 'Qualidade: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressão: {level}/9',
@@ -790,6 +797,8 @@ export const pt: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacidade: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Um retângulo tão claro é difícil de ver numa página branca. O conteúdo por baixo é removido permanentemente na mesma.',
   'toolSidebarPanel.pdfaConversion': 'Conversão PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Serão redimensionadas {count} páginas selecionadas.',
+  'toolSidebarPanel.resizingAllPages': 'Serão redimensionadas as {count} páginas. Selecione páginas primeiro para redimensionar apenas essas.',
   'toolSidebarPanel.rotatingAllPages': 'A rodar as {count} páginas',
   'toolSidebarPanel.rotatingPage': 'A rodar a página {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'A rodar {count} páginas selecionadas',

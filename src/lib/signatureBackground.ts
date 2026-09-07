@@ -59,46 +59,6 @@ export function keyOutBackground(
   }
 }
 
-/** "#rrggbb" for a channel triple. */
-export function toHex(r: number, g: number, b: number): string {
-  const h = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
-  return `#${h(r)}${h(g)}${h(b)}`;
-}
-
-/**
- * The average colour of a small square of pixels, as "#rrggbb".
- *
- * Averaged rather than read from the single pixel under the cursor: page
- * rasters carry JPEG noise and anti-aliased text, and one unlucky pixel picks
- * the edge of a letter instead of the paper. Fully transparent pixels are
- * ignored so sampling near a page edge does not drag the average toward black.
- *
- * Returns null when the patch has nothing opaque in it, which the caller should
- * treat as "no sample taken" rather than as a colour.
- */
-export function sampleAverageColour(
-  pixels: Uint8ClampedArray,
-  width: number,
-  height: number,
-  x: number,
-  y: number,
-  radius = 2,
-): string | null {
-  let r = 0, g = 0, b = 0, n = 0;
-  const x0 = Math.max(0, x - radius), x1 = Math.min(width - 1, x + radius);
-  const y0 = Math.max(0, y - radius), y1 = Math.min(height - 1, y + radius);
-
-  for (let py = y0; py <= y1; py++) {
-    for (let px = x0; px <= x1; px++) {
-      const i = (py * width + px) * 4;
-      if (pixels[i + 3] === 0) continue;
-      r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; n++;
-    }
-  }
-  if (n === 0) return null;
-  return toHex(r / n, g / n, b / n);
-}
-
 /** Loads a data URL into a canvas and hands back its 2D context and pixels. */
 async function rasterise(
   dataUrl: string,

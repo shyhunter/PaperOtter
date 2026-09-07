@@ -17,15 +17,16 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal u; buttons take the infinitive, as Dutch software does.
  */
 export const nl: Dictionary = {
+  'documentConverter.usingEngines': 'Gebruikt: {engines}',
+  'documentConverter.engineBuiltIn': 'Ingebouwd (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browserexport (HTML naar PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Achtergrond',
   'signatureBackground.none': 'Geen',
   'signatureBackground.white': 'Wit',
   'signatureBackground.cream': 'Crème',
   'signatureBackground.grey': 'Grijs',
   'signatureBackground.custom': 'Eigen kleur',
-  'signatureBackground.pickFromPage': 'Van pagina kiezen',
-  'signatureBackground.pickingCancel': 'Annuleren',
-  'signatureBackground.pickingHint': 'Klik op de pagina om die kleur over te nemen. Escape om te annuleren.',
   'signatureBackground.removeBg': 'Achtergrond verwijderen',
   'signatureBackground.removeBgHint': 'Maakt het papier achter een geüploade handtekening transparant.',
   'common.cancel': 'Annuleren', 'common.save': 'Opslaan', 'common.back': 'Terug',
@@ -52,6 +53,8 @@ export const nl: Dictionary = {
     'HEIC-foto’s kunnen voorlopig alleen op macOS worden geopend: zet de foto eerst om naar JPEG.',
   'file.unsafeName':
     'Deze bestandsnaam bevat tekens die niet worden ondersteund. Hernoem het bestand en probeer het opnieuw.',
+  'file.needsImage': 'Dit gereedschap werkt met afbeeldingen. Gebruik ‘{tool}’ om een PDF te verkleinen.',
+  'file.needsPdf': 'Dit gereedschap werkt met PDF-bestanden. Gebruik ‘{tool}’ om een afbeelding te verkleinen.',
   'imageCompare.before': 'Voor', 'imageCompare.after': 'Na', 'imageCompare.original': 'Origineel',
   'imageCompare.processed': 'Verwerkt', 'imageCompare.regenerating': 'Opnieuw maken…',
   'compare.copyStats': 'Verwerkingsgegevens naar klembord kopiëren',
@@ -193,7 +196,7 @@ export const nl: Dictionary = {
   'pdfToJpg.selectPages': 'Pagina’s kiezen',
   'pdfToJpgFlow.extractingSelectedPages': 'Geselecteerde pagina’s uitpakken…',
   'pdfToJpgFlow.conversionFailed': 'Omzetten mislukt.',
-  'convertDoc.converted': 'Omgezet', 'convertDoc.processAnother': 'Nog een bestand verwerken', 'convertDoc.byChapter': 'Per hoofdstuk',
+  'convertDoc.converted': 'Omgezet', 'convertDoc.processAnother': 'Ander bestand verwerken', 'convertDoc.byChapter': 'Per hoofdstuk',
   'convertDoc.detectingTools': 'Programma’s zoeken…',
   'convertDoc.documentConversionRequiresACompatible':
     'Voor het omzetten van documenten is een geschikt programma nodig, zoals Microsoft Word of LibreOffice.',
@@ -284,6 +287,7 @@ export const nl: Dictionary = {
   'redactPdf.removeRedaction': 'Zwartlakking verwijderen',
   'redactPdf.applyingRedactions': 'Zwartlakkingen toepassen…',
   'redactPdf.redactPdf': 'PDF zwartlakken',
+  'redactPdf.willFlattenPages': 'Toepassen maakt van de gemarkeerde pagina’s afbeeldingen. De tekst erop is daarna niet meer selecteerbaar of doorzoekbaar.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Zwartgelakte pagina’s zijn omgezet naar afbeeldingen. De tekst op die pagina’s is niet meer selecteerbaar.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -318,6 +322,7 @@ export const nl: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Geselecteerde pagina’s naar links draaien',
   'rotate.rotateSelectedPagesRight': 'Geselecteerde pagina’s naar rechts draaien',
   'signPdf.addASignatureToYour': 'Voeg een handtekening toe aan uw PDF-document.',
+  'signPdf.couldNotPlaceSignature': 'Deze handtekening kon niet worden geplaatst. Kies een andere of maak een nieuwe.',
   'signPdf.couldNotReadThePdf': 'Kon het PDF-bestand niet lezen.', 'signPdf.signPdf': 'PDF ondertekenen',
   'signPdf.clear': 'Wissen', 'signPdf.createNew': 'Nieuwe maken',
   'signPdf.createOrSelectSignature': 'Handtekening maken of kiezen',
@@ -548,6 +553,7 @@ export const nl: Dictionary = {
   'toolSidebar.targetFileSize': 'Doelbestandsgrootte',
   'toolSidebarPanel.alreadyMarked': 'Al gemarkeerd', 'toolSidebarPanel.markThisOne': 'Deze markeren',
   'toolSidebarPanel.redacting': 'Zwartlakken…', 'toolSidebarPanel.apply': 'Toepassen',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Sleep de handtekening op zijn plaats en pas de grootte aan met de hoeken. De verwijderknop haalt hem weg.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Kon de handtekening niet tekenen. Probeer een andere stijl of een kortere naam.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste bestand: het beste voor op het scherm',
@@ -669,6 +675,7 @@ export const nl: Dictionary = {
   'exportPanel.exportAsFormat': 'Exporteren als {format}',
   'exportPanel.savedAsFormat': 'Opgeslagen als {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-opties',
+  'imageBlockLayer.deleteStamp': 'Deze stempel verwijderen',
   'imageBlockLayer.resizeFromCorner': 'Formaat wijzigen vanaf {corner}',
   'imageCompareStep.qualityValue': 'Kwaliteit: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressie: {level}/9',
@@ -729,6 +736,8 @@ export const nl: Dictionary = {
   'toolSidebarPanel.opacity': 'Dekking: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Een vak dat zo bleek is, valt op een witte pagina nauwelijks op. De inhoud eronder wordt hoe dan ook permanent verwijderd.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-conversie',
+  'toolSidebarPanel.resizingSelectedPages': '{count} geselecteerde pagina’s worden aangepast.',
+  'toolSidebarPanel.resizingAllPages': 'Alle {count} pagina’s worden aangepast. Selecteer eerst pagina’s om alleen die aan te passen.',
   'toolSidebarPanel.rotatingAllPages': 'Alle {count} pagina’s worden gedraaid',
   'toolSidebarPanel.rotatingPage': 'Pagina {page} wordt gedraaid',
   'toolSidebarPanel.rotatingSelectedPages': '{count} geselecteerde pagina’s worden gedraaid',

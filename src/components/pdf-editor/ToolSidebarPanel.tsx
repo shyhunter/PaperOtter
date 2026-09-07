@@ -18,21 +18,31 @@ import {
   type WatermarkOptions,
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { rasteriseSignature } from '@/lib/signatureRaster';
+import { rasteriseSignatureDataUrl, signatureBlockSize } from '@/lib/signatureRaster';
+import { useSavedSignatures } from '@/hooks/useSavedSignatures';
+import { SignatureBackground, type SignatureBg } from '@/components/SignatureBackground';
+import { SignatureCanvas } from '@/components/sign-pdf/SignatureCanvas';
+import { SignatureUpload } from '@/components/sign-pdf/SignatureUpload';
+import { applySignatureBackground } from '@/lib/signatureBackground';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { TextMatch } from '@/lib/pdfTextSearch';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
+import { nextStampPosition } from '@/lib/blockResize';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
+import { SavedSettingsRow, SaveSettingAs } from '@/components/destinations/DestinationPicker';
+import { targetSizeInput, type DestinationRequirement } from '@/lib/destinations';
+import { useDestinations } from '@/hooks/useDestinations';
 import {
   getPdfCompressibilityFromBytes,
   estimateOutputSizeBytes,
   getNonCompressibleReason,
   nonCompressibleMessage,
+  resizePagesInDocument,
   type PdfCompressibility,
 } from '@/lib/pdfProcessor';
-import type { PdfQualityLevel } from '@/types/file';
+import type { PdfQualityLevel, PdfPagePreset } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand, RotateCcw, RotateCw } from 'lucide-react';
@@ -299,8 +309,23 @@ function zoneDesc(value: ZoneValue): string {
   return descriptions[value];
 }
 
+/**
+ * The page sizes the resize offers, matching the standalone tool exactly.
+ *
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import, before the locale is known.
+ */
+function pageSizePresets(): { value: PdfPagePreset; label: string }[] {
+  return [
+    { value: 'A4', label: t('configureStep.a4210297Mm') },
+    { value: 'A3', label: t('configureStep.a3297420Mm') },
+    { value: 'Letter', label: t('configureStep.letter216279Mm') },
+    { value: 'custom', label: t('configureStep.custom') },
+  ];
+}
+
 function CompressPanel() {
-  const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
+  const { state, selectedPages, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
 
   // Target file size mode
@@ -310,6 +335,20 @@ function CompressPanel() {
 
   // Additional options
   const [downsampleImages, setDownsampleImages] = useState(true);
+
+  // Page resize. The standalone tool has had these since it shipped; this panel
+  // offered compression only, so the editor could not change a page's size at
+  // all. Off by default, as it is there: it rewrites every page it touches.
+  const [resizeEnabled, setResizeEnabled] = useState(false);
+  const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
+  const [customWidthMm, setCustomWidthMm] = useState('210');
+  const [customHeightMm, setCustomHeightMm] = useState('297');
+
+  // Saved settings. The same list the standalone tool keeps, so a setting saved
+  // for a portal is there whichever way the document was opened -- which is the
+  // whole point of a saved setting, and the editor had none of it.
+  const [destination, setDestination] = useState<DestinationRequirement | null>(null);
+  const { destinations, save: saveDestination, remove: removeDestination } = useDestinations();
 
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -414,6 +453,86 @@ function CompressPanel() {
     return 'prepress';
   }, [targetActive, targetSizeValue, unit, baseBytes, preset]);
 
+  /**
+   * Apply a saved setting by moving the controls, not by overriding them.
+   *
+   * The same rule the standalone tool follows, for the same reason: the user
+   * can see exactly what was set and change any of it, because a saved setting
+   * is a starting point for their document rather than a mode the app enters.
+   */
+  const applyDestination = useCallback((d: DestinationRequirement | null) => {
+    setDestination(d);
+    if (!d) return;
+
+    // Target size and quality are alternatives, so only the one it was saved
+    // in comes back; restoring both would leave the panel in a state nobody
+    // filled in.
+    if (d.maxBytes !== undefined) {
+      const { value, unit: u } = targetSizeInput(d.maxBytes);
+      setUseTargetSize(true);
+      setTargetSizeValue(value);
+      setTargetUnit(u);
+    } else if (d.qualityLevel !== undefined) {
+      setUseTargetSize(false);
+      const zone = QUALITY_ZONES.find((z) => z.quality === d.qualityLevel);
+      if (zone) setPreset(zone.value);
+    }
+
+    if (d.pageSize !== undefined) {
+      setResizeEnabled(true);
+      setPagePreset(d.pageSize);
+    } else {
+      // Saved with resizing off, so it goes back off. Leaving a previous
+      // setting's A4 in place would silently resize a document this one never
+      // asked to resize.
+      setResizeEnabled(false);
+    }
+  }, []);
+
+  /** Save what the controls currently say, under the user's own name. */
+  const saveCurrentAsDestination = useCallback((name: string) => {
+    const parsed = parseInt(targetSizeValue, 10);
+    const maxBytes = useTargetSize && !isNaN(parsed) && parsed > 0
+      ? parsed * (unit === 'MB' ? 1024 * 1024 : 1024)
+      : undefined;
+    void saveDestination({
+      name,
+      maxBytes,
+      // The zones are the four real presets; 'custom' is not one of them, so
+      // this narrowing can never drop a quality that was actually offered.
+      qualityLevel: !useTargetSize
+        ? QUALITY_ZONES.find((z) => z.value === preset)?.quality as
+            Exclude<PdfQualityLevel, 'custom'> | undefined
+        : undefined,
+      pageSize: resizeEnabled && pagePreset !== 'custom' ? pagePreset : undefined,
+    });
+  }, [targetSizeValue, useTargetSize, unit, preset, resizeEnabled, pagePreset, saveDestination]);
+
+  // Which pages the resize touches. A selection in the Pages panel is what the
+  // user pointed at, the same rule the Rotate panel follows; with no selection
+  // it means the whole document, because that is what "resize pages" reads as.
+  const resizeTargets = useMemo(
+    () => (selectedPages.size > 0
+      ? Array.from(selectedPages).sort((a, b) => a - b)
+      : Array.from({ length: state.pageCount }, (_, i) => i)),
+    [selectedPages, state.pageCount],
+  );
+
+  /** The document with its pages resized, as bytes ready for Ghostscript. */
+  const resizedBytes = useCallback(async (source: Uint8Array, indices: number[]) => {
+    const { PDFDocument } = await import('pdf-lib');
+    // slice(): pdf.js elsewhere in the editor transfers this buffer to its
+    // worker, and a detached one loads as an empty document.
+    const doc = await PDFDocument.load(source.slice(), { ignoreEncryption: true });
+    resizePagesInDocument(doc, {
+      pagePreset,
+      customWidthMm: pagePreset === 'custom' ? parseFloat(customWidthMm) : null,
+      customHeightMm: pagePreset === 'custom' ? parseFloat(customHeightMm) : null,
+      selectedPageIndices: indices,
+    });
+    return new Uint8Array(await doc.save({ useObjectStreams: true }));
+  }, [pagePreset, customWidthMm, customHeightMm]);
+
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
     setCompressionResult(null);
@@ -427,7 +546,13 @@ function CompressPanel() {
       const source = baseline ?? state.pdfBytes;
       setBaseline(source);
       const originalSize = source.byteLength;
-      await writeFile(tempInputPath, source);
+
+      // Resize before compressing, the order processPdf uses: Ghostscript
+      // should encode the pages that are actually going to be in the file.
+      const toCompress = resizeEnabled
+        ? await resizedBytes(source, resizeTargets)
+        : source;
+      await writeFile(tempInputPath, toCompress);
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
@@ -453,7 +578,8 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes,
+      resizeEnabled, resizedBytes, resizeTargets, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -462,6 +588,19 @@ function CompressPanel() {
   return (
     <div className="space-y-3">
       <PanelHeader toolId="compress-pdf" />
+
+      {/* Saved settings, above the controls they rewrite -- the arrangement the
+          standalone tool uses. Renders nothing until something has been saved,
+          so a first run is not given a heading over a dead control. */}
+      <SavedSettingsRow
+        destinations={destinations}
+        selectedId={destination?.id ?? null}
+        onSelect={applyDestination}
+        onRemove={(id) => {
+          void removeDestination(id);
+          if (destination?.id === id) setDestination(null);
+        }}
+      />
 
       {/* Current file size */}
       <div className="rounded bg-muted/30 p-2 flex justify-between text-[10px]">
@@ -609,6 +748,82 @@ function CompressPanel() {
             )}
           </>
         )}
+      </div>
+
+      {/* Resize pages -- the standalone tool's controls, which this panel never
+          had. Its own section rather than an "advanced option": it changes the
+          shape of the document, which compression never does. */}
+      <div className="space-y-1.5 border-t pt-2">
+        <label className="flex cursor-pointer items-center gap-2 text-[11px] font-medium">
+          <input
+            type="checkbox"
+            checked={resizeEnabled}
+            onChange={(e) => setResizeEnabled(e.target.checked)}
+          />
+          {t('configure.resizePages')}
+        </label>
+
+        {resizeEnabled && (
+          <div className="space-y-1.5 ps-5">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">
+                {t('configure.pageSize')}
+              </label>
+              <select
+                value={pagePreset}
+                onChange={(e) => setPagePreset(e.target.value as PdfPagePreset)}
+                aria-label={t('configure.pageSize')}
+                className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+              >
+                {pageSizePresets().map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {pagePreset === 'custom' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">{t('configure.widthMm')}</label>
+                  <input
+                    type="number"
+                    value={customWidthMm}
+                    onChange={(e) => setCustomWidthMm(e.target.value)}
+                    aria-label={t('configure.widthMm')}
+                    className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">{t('configure.heightMm')}</label>
+                  <input
+                    type="number"
+                    value={customHeightMm}
+                    onChange={(e) => setCustomHeightMm(e.target.value)}
+                    aria-label={t('configure.heightMm')}
+                    className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                    min={1}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Says what Apply will touch. The standalone asks for a page list;
+                here the Pages panel already holds a selection, so this reports
+                that rather than asking for the same thing twice. */}
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {selectedPages.size > 0
+                ? t('toolSidebarPanel.resizingSelectedPages', { count: selectedPages.size })
+                : t('toolSidebarPanel.resizingAllPages', { count: state.pageCount })}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Keeping the current controls under a name, below the controls being
+          kept. Sits after resize because a saved setting captures that too. */}
+      <div className="border-t pt-2">
+        <SaveSettingAs onSave={saveCurrentAsDestination} hasSaved={destinations.length > 0} />
       </div>
 
       {/* Compression result feedback */}
@@ -1391,93 +1606,191 @@ function signatureFontLabel(value: SignatureFontValue): string {
   return labels[value];
 }
 
-const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';
+/**
+ * The three ways to make a signature, in the order Sign PDF lists them.
+ *
+ * A function would be needed for translated labels; these are keys, resolved at
+ * render, for the reason PRESETS in SignatureBackground gives.
+ */
+const SIGNATURE_TABS = [
+  { id: 'draw', key: 'signatureCreateStep.draw' },
+  { id: 'type', key: 'signatureCreateStep.type' },
+  { id: 'upload', key: 'signatureCreateStep.upload' },
+] as const;
 
-interface SavedSignature {
-  text: string;
-  font: string;
-  color: string;
-  createdAt: number;
-}
-
-function loadSavedSignatures(): SavedSignature[] {
-  try {
-    const raw = localStorage.getItem(SAVED_SIGNATURES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function saveSavedSignatures(sigs: SavedSignature[]) {
-  localStorage.setItem(SAVED_SIGNATURES_KEY, JSON.stringify(sigs));
-}
+// Saved signatures live in the shared store, the same one Sign PDF reads.
+//
+// This panel used to keep its own list in localStorage under
+// 'papercut_saved_signatures' -- which is the very key useSavedSignatures
+// migrates out of and then deletes. So a signature saved here survived only
+// until the next time Sign PDF was opened, and one saved there was never
+// visible here at all. Reported as "signature should have same saved
+// signatures also by edit -> signature and vice versa".
+//
+// The shared list holds an image rather than a recipe, so it can carry drawn
+// and uploaded signatures too, which the old recipe list could not represent.
 
 function SignPanel() {
-  const { state, setEditorMode, addImageBlock, markDirty } = useEditorContext();
+  const { state, addImageBlock, markDirty } = useEditorContext();
   const [placeError, setPlaceError] = useState<string | null>(null);
-  const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
   const [sigFont, setSigFont] = useState<SignatureFontValue>(SIGNATURE_FONTS[0].value);
   const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
-  const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
+  // What sits behind the signature on the page. The editor renders the document
+  // to a canvas, so the colour can be taken off the page rather than guessed.
+  const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
+  const { signatures: savedSignatures, saveSignature, deleteSignature } = useSavedSignatures();
+  // Draw and Upload were only ever in Sign PDF, so a signature made with a
+  // stylus or scanned from paper could not be used in the editor at all --
+  // and, before the shared store, could not even be seen here.
+  const [sigTab, setSigTab] = useState<'draw' | 'type' | 'upload'>('type');
+  // What Draw or Upload produced, waiting to be placed or saved.
+  const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
 
   const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
 
-  // Place the signature as a rasterised stamp on the current page.
-  //
-  // Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
-  // script face, so a Script signature used to be silently swapped for italic
-  // Helvetica while the panel went on showing a script preview over it. Drawing
-  // it to a canvas in the real bundled font makes the preview and the page the
-  // same thing, for every style rather than just the two that happened to map.
-  const handlePlaceSignature = useCallback(async (text: string, font: string, color: string) => {
+  /**
+   * Puts a signature image on the current page as a draggable stamp.
+   *
+   * Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
+   * script face, so a Script signature used to be silently swapped for italic
+   * Helvetica while the panel went on showing a script preview over it.
+   *
+   * Each stamp is offset from the last one on that page. Every placement used
+   * to land on exactly the same point, so pressing the button twice stacked an
+   * identical copy in the identical spot -- reported as "it copy and paste the
+   * signature and suddenly I have many signatures of same one". Offsetting
+   * makes a second copy visible, and therefore removable.
+   */
+  const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
     const pageIndex = state.currentPage;
-    const fontCss = SIGNATURE_FONTS.find((f) => f.value === font)?.css ?? 'cursive';
 
-    const raster = await rasteriseSignature(text, fontCss, sigSize, color);
-    if (!raster) {
+    const composited = background ? await applySignatureBackground(dataUrl, background) : dataUrl;
+    const bytes = new Uint8Array(await (await fetch(composited)).arrayBuffer());
+
+    // The stored image carries no size of its own, so the height comes from the
+    // size control and the width follows the image's proportions.
+    const dims = await new Promise<{ w: number; h: number } | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = composited;
+    });
+    if (!dims) {
       setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
       return;
     }
     setPlaceError(null);
 
+    const { width, height } = signatureBlockSize(dims.w, dims.h, sigSize);
+    const { x, y } = nextStampPosition(state.pages[pageIndex]?.imageBlocks.length ?? 0);
+
     addImageBlock(pageIndex, {
       id: crypto.randomUUID(),
       pageIndex,
-      x: 100,
-      y: 100,
-      width: raster.width,
-      height: raster.height,
-      imageBytes: raster.bytes,
+      x,
+      y,
+      width,
+      height,
+      imageBytes: bytes,
       rotation: 0,
       flipH: false,
       flipV: false,
       isNew: true,
     });
     markDirty();
-  }, [state.currentPage, sigSize, addImageBlock, markDirty]);
+  }, [state.currentPage, state.pages, sigSize, addImageBlock, markDirty]);
 
-  const handleSaveSignature = useCallback(() => {
+  /** Whether there is a signature to place at all, on whichever tab is open. */
+  const canPlace = sigTab === 'type' ? sigText.trim().length > 0 : pendingDataUrl !== null;
+
+  /** Draws what is typed in the panel, then places it. */
+  const handlePlaceTyped = useCallback(async () => {
     if (!sigText.trim()) return;
-    const newSig: SavedSignature = { text: sigText, font: sigFont, color: sigColor, createdAt: Date.now() };
-    const updated = [newSig, ...savedSignatures].slice(0, 5); // Keep last 5
-    setSavedSignatures(updated);
-    saveSavedSignatures(updated);
-  }, [sigText, sigFont, sigColor, savedSignatures]);
+    const dataUrl = await rasteriseSignatureDataUrl(sigText, selectedFontCss, sigSize, sigColor);
+    if (!dataUrl) {
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
+      return;
+    }
+    await placeSignatureImage(dataUrl, sigBackground);
+  }, [sigText, selectedFontCss, sigSize, sigColor, sigBackground, placeSignatureImage]);
 
-  const handleDeleteSavedSig = useCallback((idx: number) => {
-    const updated = savedSignatures.filter((_, i) => i !== idx);
-    setSavedSignatures(updated);
-    saveSavedSignatures(updated);
-  }, [savedSignatures]);
+  // Saved as the image, not as text-plus-font. The shared list is what Sign PDF
+  // shows, and it has to be able to hold a drawn or uploaded signature too --
+  // neither of which a recipe can describe.
+  const handleSaveSignature = useCallback(async () => {
+    if (!sigText.trim()) return;
+    const dataUrl = await rasteriseSignatureDataUrl(sigText, selectedFontCss, sigSize, sigColor);
+    if (!dataUrl) {
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
+      return;
+    }
+    setPlaceError(null);
+    await saveSignature({
+      name: sigText.trim(),
+      type: 'typed',
+      dataUrl,
+      background: sigBackground,
+    });
+  }, [sigText, selectedFontCss, sigSize, sigColor, sigBackground, saveSignature]);
+
+  /** Place whatever the open tab produced. */
+  const handlePlace = useCallback(() => {
+    if (sigTab === 'type') return void handlePlaceTyped();
+    if (pendingDataUrl) return void placeSignatureImage(pendingDataUrl, sigBackground);
+  }, [sigTab, pendingDataUrl, sigBackground, handlePlaceTyped, placeSignatureImage]);
+
+  /** Save whatever the open tab produced, into the list both tools read. */
+  const handleSave = useCallback(async () => {
+    if (sigTab === 'type') return handleSaveSignature();
+    if (!pendingDataUrl) return;
+    await saveSignature({
+      // Drawn and uploaded signatures have no text to name themselves with, so
+      // they get the numbered name Sign PDF offers for the same reason.
+      name: t('signatureCreateStep.signatureN', { n: savedSignatures.length + 1 }),
+      type: sigTab === 'draw' ? 'drawn' : 'uploaded',
+      dataUrl: pendingDataUrl,
+      background: sigBackground,
+    });
+  }, [sigTab, pendingDataUrl, sigBackground, savedSignatures.length, saveSignature, handleSaveSignature]);
 
   return (
     <div className="space-y-3">
       <PanelHeader toolId="sign-pdf" />
 
+      {/* The same three ways to make a signature that Sign PDF offers. */}
+      <div className="flex gap-1">
+        {SIGNATURE_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => { setSigTab(tab.id); setPendingDataUrl(null); }}
+            className={`flex-1 rounded border py-1 text-[10px] transition-colors ${
+              sigTab === tab.id
+                ? 'border-primary bg-primary/10 font-medium'
+                : 'border-border hover:bg-muted/50'
+            }`}
+          >
+            {t(tab.key)}
+          </button>
+        ))}
+      </div>
+
+      {sigTab === 'draw' && (
+        <SignatureCanvas
+          color={sigColor}
+          onComplete={setPendingDataUrl}
+          onClear={() => setPendingDataUrl(null)}
+        />
+      )}
+
+      {sigTab === 'upload' && <SignatureUpload onComplete={setPendingDataUrl} />}
+
       {/* Type signature */}
+      {sigTab === 'type' && (
       <div className="space-y-2">
         <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.typeYourSignature')}</label>
         <input
@@ -1490,9 +1803,17 @@ function SignPanel() {
           style={{ fontFamily: selectedFontCss, fontStyle: sigFont === 'cursive' ? 'italic' : 'normal' }}
         />
 
-        {/* Live preview */}
+        {/* Live preview.
+            The panel was hardcoded to bg-white, so a chosen background never
+            appeared here and picking one looked like it had done nothing --
+            reported as the colour picker not working in this panel. The colour
+            was being stored and stamped correctly all along; there was simply
+            nothing on screen that showed it. */}
         {sigText && (
-          <div className="rounded border bg-white p-3 text-center overflow-hidden">
+          <div
+            className="rounded border p-3 text-center overflow-hidden"
+            style={{ background: sigBackground ?? '#ffffff' }}
+          >
             <span
               style={{
                 fontFamily: selectedFontCss,
@@ -1546,22 +1867,28 @@ function SignPanel() {
             />
           </div>
         </div>
+
       </div>
+      )}
+
+      {/* Outside the tabs: what sits behind the signature applies to a drawn or
+          uploaded one just as much as a typed one. */}
+      <SignatureBackground value={sigBackground} onChange={setSigBackground} />
 
       {/* Place + Save buttons */}
       <div className="flex gap-1.5">
         <button
           type="button"
-          onClick={() => { if (sigText.trim()) handlePlaceSignature(sigText, sigFont, sigColor); }}
-          disabled={!sigText.trim()}
+          onClick={handlePlace}
+          disabled={!canPlace}
           className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t('pdfEditor.placeOnPage')}
         </button>
         <button
           type="button"
-          onClick={handleSaveSignature}
-          disabled={!sigText.trim()}
+          onClick={handleSave}
+          disabled={!canPlace}
           className="py-1.5 px-2 text-xs rounded border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           title={t('pdfEditor.saveSignatureForReuse')}
         >
@@ -1573,7 +1900,7 @@ function SignPanel() {
         <p className="text-[10px] leading-relaxed text-destructive">{placeError}</p>
       )}
 
-      {/* Saved signatures */}
+      {/* Saved signatures -- the same list Sign PDF shows. */}
       {savedSignatures.length > 0 && (
         <div className="space-y-1.5 border-t pt-2">
           <button
@@ -1581,61 +1908,46 @@ function SignPanel() {
             onClick={() => setShowSaved(!showSaved)}
             className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
-            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '▾' : '▸'}
+            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '\u25be' : '\u25b8'}
           </button>
-          {showSaved && savedSignatures.map((sig, idx) => (
-            <div key={sig.createdAt} className="flex items-center gap-1.5 p-1.5 rounded border hover:bg-muted/50 group">
+          {showSaved && savedSignatures.map((sig) => (
+            <div key={sig.id} className="flex items-center gap-1.5 rounded border p-1.5 hover:bg-muted/50 group">
               <button
                 type="button"
-                onClick={() => handlePlaceSignature(sig.text, sig.font, sig.color)}
-                className="flex-1 text-start text-xs truncate"
-                style={{
-                  fontFamily: SIGNATURE_FONTS.find(f => f.value === sig.font)?.css ?? 'cursive',
-                  color: sig.color,
-                  fontStyle: sig.font === 'cursive' ? 'italic' : 'normal',
-                }}
+                onClick={() => placeSignatureImage(sig.dataUrl, sig.background ?? null)}
+                className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                title={sig.name}
               >
-                {sig.text}
+                {/* The image itself: the list holds drawn and uploaded
+                    signatures now, which no text preview could show. */}
+                <img
+                  src={sig.dataUrl}
+                  alt={sig.name}
+                  className="h-6 w-12 flex-none object-contain"
+                />
+                <span className="truncate text-[10px] text-muted-foreground">{sig.name}</span>
               </button>
               <button
                 type="button"
-                onClick={() => handleDeleteSavedSig(idx)}
-                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 text-[10px]"
+                onClick={() => deleteSignature(sig.id)}
+                className="flex-none text-[10px] text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                 title={t('pdfEditor.deleteSavedSignature')}
               >
-                ×
+                \u00d7
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Text mode for freehand placement */}
-      <div className="border-t pt-2">
-        <button
-          type="button"
-          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-          className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-            isTextMode
-              ? 'bg-green-600 text-white'
-              : 'border border-border hover:bg-muted'
-          }`}
-        >
-          {isTextMode ? (
-            <>
-              <Check className="h-3 w-3" />
-              {t('pdfEditor.placementModeActive')}
-            </>
-          ) : (
-            t('toolSidebarPanel.clickToPlaceMode')
-          )}
-        </button>
-        {isTextMode && (
-          <p className="text-[9px] text-muted-foreground mt-1">
-            {t('pdfEditor.clickAnywhereOnThePdf')}
-          </p>
-        )}
-      </div>
+      {/* Was a "Click to place mode" button that switched the editor to its
+          text tool, so clicking the page made an empty text box rather than
+          placing the signature. Two controls that both claimed to place it and
+          neither of which let you choose where. A stamp is dragged, so the only
+          thing to say is that. */}
+      <p className="border-t pt-2 text-[10px] leading-relaxed text-muted-foreground">
+        {t('toolSidebarPanel.dragTheStampIntoPlace')}
+      </p>
     </div>
   );
 }
@@ -1869,6 +2181,21 @@ function RedactPanel() {
         {applyError && (
           <p className="text-[10px] leading-relaxed text-destructive">{applyError}</p>
         )}
+        {/* What Apply costs, said before it is pressed.
+            Redaction replaces each marked page with a flat image, so the text
+            on it stops being selectable, searchable and extractable -- for the
+            content underneath a box that is the whole point, and for the rest
+            of the page it is a side effect worth knowing about. The standalone
+            tool says this, but only on its Save step, after the work is done;
+            here Apply writes straight into the open document, so the moment
+            that matters is before the click, not after it -- which is why this
+            is its own string rather than the standalone's, whose past tense
+            would be a lie on this side of the button. */}
+        {draft.length > 0 && (
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            {t('redactPdf.willFlattenPages')}
+          </p>
+        )}
         <button
           type="button"
           onClick={handleApply}
@@ -1966,6 +2293,14 @@ function RepairPanel() {
   const [resultInfo, setResultInfo] = useState<{ originalSize: number; resultSize: number } | null>(null);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
 
+  // Within 5% of where it started: the same rule the standalone tool applies,
+  // and the only signal available -- Ghostscript reports no diagnosis, it
+  // simply rewrites whatever it is given.
+  const isFileSizeSimilar =
+    resultInfo !== null &&
+    resultInfo.originalSize > 0 &&
+    Math.abs(resultInfo.resultSize - resultInfo.originalSize) / resultInfo.originalSize < 0.05;
+
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
     setResultInfo(null);
@@ -2002,12 +2337,34 @@ function RepairPanel() {
         {t('pdfEditor.attemptToFixCorruptedOr')}
       </p>
 
+      {/* What repair actually does, which the standalone tool explains and this
+          panel did not. Repair always "succeeds" -- it re-processes the file
+          through Ghostscript whatever state it was in -- so without this the
+          result reads as a verdict on the document rather than as a description
+          of a process that ran. */}
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        {t('repairPdf.repairExplanation')}
+      </p>
+
       {resultInfo && (
-        <ToolResultFeedback
-          originalSize={resultInfo.originalSize}
-          resultSize={resultInfo.resultSize}
-          toolLabel="PDF repair"
-        />
+        <>
+          <ToolResultFeedback
+            originalSize={resultInfo.originalSize}
+            resultSize={resultInfo.resultSize}
+            toolLabel="PDF repair"
+          />
+          {/* A file that came back the same size did not have much wrong with
+              it. Saying so is the difference between "repaired" and "nothing
+              needed repairing", which the size alone does not tell anyone. */}
+          {isFileSizeSimilar && (
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {t('repairPdf.noIssuesDetectedFileAppears')}
+            </p>
+          )}
+          <p className="text-[10px] italic leading-relaxed text-muted-foreground/70">
+            {t('repairPdf.repairCompleteIfTheDocument')}
+          </p>
+        </>
       )}
 
       <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} isProcessing={isProcessing} />
@@ -2025,8 +2382,45 @@ function RepairPanel() {
 
 // ── Protect Panel ────────────────────────────────────────────────────
 
+/**
+ * Whether the open document carries an /Encrypt dictionary.
+ *
+ * Both password panels need the same answer, from opposite sides: Protect
+ * cannot encrypt a document that already is, and Unlock has nothing to do for
+ * one that is not. Neither could ask before, so Protect let a whole form be
+ * filled in for a job that would fail, and Unlock offered a password prompt
+ * with no correct answer.
+ *
+ * Null while the answer is still being worked out, so nothing is claimed before
+ * it is known. A read that throws is reported as "not encrypted": the panels
+ * use this to warn, and a warning invented from a failed read is worse than no
+ * warning at all -- the tools themselves still refuse properly.
+ */
+function useEncryptedDocument(pdfBytes: Uint8Array): boolean | null {
+  const [encrypted, setEncrypted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setEncrypted(null);
+    import('@/lib/pdfEncryption')
+      .then(({ isPdfEncrypted }) => isPdfEncrypted(pdfBytes))
+      .then((result) => { if (!cancelled) setEncrypted(result); })
+      .catch(() => { if (!cancelled) setEncrypted(false); });
+    return () => { cancelled = true; };
+  }, [pdfBytes]);
+
+  return encrypted;
+}
+
 function ProtectPanel() {
   const { state } = useEditorContext();
+  // A document that is already encrypted cannot be encrypted again: qpdf
+  // refuses with "User password is specified. Need an Owner password or both."
+  // and leaves a zero-byte file. The standalone tool checks this when the file
+  // is picked; here the document is already open, so the check belongs on the
+  // bytes in hand -- and the answer has to arrive before two passwords and an
+  // acknowledgement have been typed, not after.
+  const alreadyProtected = useEncryptedDocument(state.pdfBytes);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
@@ -2113,6 +2507,15 @@ function ProtectPanel() {
     <div className="space-y-3">
       <PanelHeader toolId="protect-pdf" />
 
+      {/* Said before the form, not after it: qpdf refuses a document that is
+          already encrypted, and it is not worth two passwords and a tick box to
+          find that out. */}
+      {alreadyProtected === true && (
+        <p className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">
+          {t('protectPdf.alreadyProtected')}
+        </p>
+      )}
+
       <div className="space-y-2">
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
@@ -2192,6 +2595,9 @@ function ProtectPanel() {
 
 function UnlockPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
+  // The other side of the same question the Protect panel asks. A password
+  // prompt for a document with no password is a prompt with no correct answer.
+  const isProtected = useEncryptedDocument(state.pdfBytes);
   const [password, setPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
@@ -2227,6 +2633,14 @@ function UnlockPanel() {
   return (
     <div className="space-y-3">
       <PanelHeader toolId="unlock-pdf" />
+
+      {/* Nothing to unlock is worth saying: the alternative is a password field
+          that will reject every password, correct ones included. */}
+      {isProtected === false && !success && (
+        <p className="rounded border border-border bg-muted/40 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {t('unlockPdf.notProtected')}
+        </p>
+      )}
 
       <div>
         <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>

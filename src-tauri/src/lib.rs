@@ -377,6 +377,32 @@ fn format_gs_crash_error(stderr: &str) -> String {
 /// Only called from the macOS Word-automation path, but deliberately left
 /// compiled on every platform so its unit tests keep running in CI (which is
 /// Linux). Without this, `cargo clippy -- -D warnings` fails there on dead_code.
+/// Word for Mac's AppleScript constant for a save format.
+///
+/// These are enum constants from Word's own dictionary, not prose, and two of
+/// them shipped as prose: "format Microsoft Word 97-2004 document" and
+/// "format rtf format". Neither is valid AppleScript. They do not merely fail
+/// at run time, they fail to COMPILE with -2741, so PDF to .doc and PDF to .rtf
+/// could never have worked through Word on any Mac: osascript rejected the
+/// script before Word ever saw it. Reported as
+/// "Word conversion failed: syntax error: Expected end of line, etc. but found
+/// identifier. (-2741)".
+///
+/// Every value here was checked with `osacompile` against a real Word install.
+/// The test below pins them: they look like English and are not, so the next
+/// person to tidy the wording needs something that says so.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn word_save_format(output_format: &str) -> Option<&'static str> {
+    match output_format {
+        "pdf" => Some("format PDF"),
+        "docx" => Some("format document"),
+        "doc" => Some("format document97"),
+        "rtf" => Some("format rtf"),
+        "txt" => Some("format plain text"),
+        _ => None,
+    }
+}
+
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn format_word_automation_error(stderr: &str) -> String {
     const HINT: &str =
@@ -1669,16 +1695,24 @@ async fn convert_with_word(
     ));
     let output_path_str = output_path.to_string_lossy().to_string();
 
+    // What the automation said went wrong, if it said anything.
+    //
+    // Held rather than returned on the spot, because a non-zero exit does not
+    // mean no document was written. Reported from a real session: a conversion
+    // showed a Word error and the converted file was on the Desktop anyway.
+    // On macOS the script does `save as` and then hangs on Word's sandbox
+    // permission dialog, so the save had already happened when osascript was
+    // killed at -1712; on Windows, SaveAs2 can succeed and Close, Quit or the
+    // COM release fail after it. Either way the work is done and the only
+    // thing wrong is the verdict.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    let mut automation_error: Option<String> = None;
+
     #[cfg(target_os = "macos")]
     {
-        // Map output format to Word for Mac save format constant
-        let (word_format, _) = match output_format.as_str() {
-            "pdf" => ("format PDF", "pdf"),
-            "docx" => ("format document", "docx"),
-            "doc" => ("format Microsoft Word 97-2004 document", "doc"),
-            "rtf" => ("format rtf format", "rtf"),
-            "txt" => ("format plain text", "txt"),
-            _ => return Err(format!("Word does not support '{}' output", output_format)),
+        let word_format = match word_save_format(output_format.as_str()) {
+            Some(f) => f,
+            None => return Err(format!("Word does not support '{}' output", output_format)),
         };
 
         let applescript = format!(
@@ -1704,7 +1738,8 @@ async fn convert_with_word(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format_word_automation_error(&stderr));
+            // Held, not returned: see the note on usable_output below.
+            automation_error = Some(format_word_automation_error(&stderr));
         }
     }
 
@@ -1746,7 +1781,7 @@ async fn convert_with_word(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Word conversion failed: {}", stderr));
+            automation_error = Some(format!("Word conversion failed: {}", stderr));
         }
     }
 
@@ -1758,12 +1793,33 @@ async fn convert_with_word(
 
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
-        let bytes = std::fs::read(&output_path)
-            .map_err(|e| format!("Failed to read Word output: {}", e))?;
-
+        let bytes = std::fs::read(&output_path).ok().filter(|b| !b.is_empty());
         let _ = std::fs::remove_file(&output_path);
 
-        Ok(tauri::ipc::Response::new(bytes))
+        word_outcome(bytes, automation_error).map(tauri::ipc::Response::new)
+    }
+}
+
+/// Whether a Word run counts as a success, given what it wrote and what it said.
+///
+/// A document that exists wins over a complaint about it. The automation reports
+/// failure for things that happen after the save: on macOS the script is killed
+/// at -1712 while Word waits on its sandbox permission dialog, by which point
+/// `save as` has already run; on Windows SaveAs2 can succeed and `Close`, `Quit`
+/// or the COM release fail behind it. Reported as an error shown next to a file
+/// that had converted perfectly well.
+///
+/// An empty file is not a document, so it is filtered out before this sees it.
+#[cfg_attr(
+    not(any(target_os = "macos", target_os = "windows")),
+    allow(dead_code)
+)]
+fn word_outcome(bytes: Option<Vec<u8>>, error: Option<String>) -> Result<Vec<u8>, String> {
+    match (bytes, error) {
+        (Some(bytes), _) => Ok(bytes),
+        (None, Some(err)) => Err(err),
+        // Nothing written and nothing said: rare, and still a failure.
+        (None, None) => Err("Word produced no output.".to_string()),
     }
 }
 
@@ -4551,6 +4607,77 @@ mod tests {
         fn a_path_with_no_file_name_is_refused() {
             let err = atomic_replace(std::path::Path::new("/"), b"NEW").expect_err("must refuse");
             assert!(!err.is_empty());
+        }
+    }
+
+    use crate::word_outcome;
+    use crate::word_save_format;
+
+    /// [WORD] The save-format constants are AppleScript, not English.
+    ///
+    /// Two shipped as prose and were rejected by the compiler, not by Word:
+    /// "format Microsoft Word 97-2004 document" and "format rtf format" both
+    /// raise -2741 at compile time, so PDF to .doc and PDF to .rtf could never
+    /// have run on any Mac. Every value below was checked with `osacompile`
+    /// against a real Word install; this pins them so the next tidy-up of the
+    /// wording has to notice.
+    #[test]
+    /// A written document beats a complaint about it.
+    ///
+    /// Reported from a real session: a conversion showed a Word error and the
+    /// converted file was sitting on the Desktop. The automation's exit status
+    /// covers everything it did, including closing Word, so a failure after the
+    /// save was reported as a failure of the save.
+    #[test]
+    fn a_document_that_exists_is_a_success_whatever_word_said() {
+        let out = word_outcome(Some(vec![1, 2, 3]), Some("AppleEvent timed out. (-1712)".into()));
+        assert_eq!(out, Ok(vec![1, 2, 3]));
+    }
+
+    #[test]
+    fn a_document_with_no_complaint_is_still_a_success() {
+        assert_eq!(word_outcome(Some(vec![9]), None), Ok(vec![9]));
+    }
+
+    #[test]
+    fn nothing_written_reports_what_went_wrong() {
+        let out = word_outcome(None, Some("Word conversion failed: boom".into()));
+        assert_eq!(out, Err("Word conversion failed: boom".to_string()));
+    }
+
+    #[test]
+    fn nothing_written_and_nothing_said_is_still_a_failure() {
+        // Never silently succeed with no bytes: the caller would hand the user
+        // an empty file and call it converted.
+        assert!(word_outcome(None, None).is_err());
+    }
+
+    #[test]
+    fn word_save_formats_are_the_verified_constants() {
+        assert_eq!(word_save_format("pdf"), Some("format PDF"));
+        assert_eq!(word_save_format("docx"), Some("format document"));
+        assert_eq!(word_save_format("doc"), Some("format document97"));
+        assert_eq!(word_save_format("rtf"), Some("format rtf"));
+        assert_eq!(word_save_format("txt"), Some("format plain text"));
+    }
+
+    #[test]
+    fn word_save_format_refuses_what_word_cannot_write() {
+        assert_eq!(word_save_format("epub"), None);
+        assert_eq!(word_save_format(""), None);
+    }
+
+    /// The shapes that do not compile, kept as an executable record of the bug.
+    #[test]
+    fn word_save_formats_carry_no_spaces_in_their_tail() {
+        // A constant made of several bare words is what -2741 objects to: the
+        // parser reaches the second one and stops. Every accepted value is
+        // either a single trailing token or a known-good multiword constant.
+        for fmt in ["pdf", "docx", "doc", "rtf", "txt"] {
+            let c = word_save_format(fmt).unwrap();
+            assert!(c.starts_with("format "), "{c} should start with the format keyword");
+            assert!(!c.contains("97-2004"), "{c} still carries the prose spelling");
+            assert!(!c.ends_with(" format"), "{c} still carries the doubled keyword");
         }
     }
 }

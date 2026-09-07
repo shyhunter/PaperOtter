@@ -11,12 +11,22 @@ import type { DragState } from '@/types/file';
  * @param onFileDrop Called with the first supported file and any others dropped
  *   alongside it. The extras drive batch processing; an empty array is the
  *   ordinary single-file case. Called with '' when nothing dropped was supported.
+ * @param accepts What the open tool can actually work on. Defaults to anything
+ *   the app supports. Without it the card turned green for a file the tool then
+ *   refused, which reads as the drop having failed rather than been declined.
  */
-export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) => void) {
+export function useFileDrop(
+  onFileDrop: (path: string, alsoDropped: string[]) => void,
+  accepts: (path: string) => boolean = isSupportedFile,
+) {
   const [dragState, setDragState] = useState<DragState>('idle');
   // Use ref to avoid re-registering the listener on every render
   const onFileDropRef = useRef(onFileDrop);
   useEffect(() => { onFileDropRef.current = onFileDrop; }, [onFileDrop]);
+  // Same reason: the listener is registered once, so the predicate has to be
+  // read at event time or it would freeze on the first tool opened.
+  const acceptsRef = useRef(accepts);
+  useEffect(() => { acceptsRef.current = accepts; }, [accepts]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -34,7 +44,7 @@ export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) =>
             // paths not yet available — show neutral state; will update on 'over'
             setDragState('over-invalid');
           } else {
-            const valid = paths.some(isSupportedFile);
+            const valid = paths.some(acceptsRef.current);
             setDragState(valid ? 'over-valid' : 'over-invalid');
           }
 
@@ -42,7 +52,7 @@ export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) =>
           // Update validity as cursor moves (in case paths became available)
           const paths = (event.payload as { paths?: string[] }).paths ?? [];
           if (paths.length > 0) {
-            const valid = paths.some(isSupportedFile);
+            const valid = paths.some(acceptsRef.current);
             setDragState(valid ? 'over-valid' : 'over-invalid');
           }
 
@@ -51,7 +61,7 @@ export function useFileDrop(onFileDrop: (path: string, alsoDropped: string[]) =>
           setDragState('idle');
           // Unsupported files are dropped from the list rather than failing the
           // whole drop: a folder of scans easily picks up a stray .DS_Store.
-          const supported = paths.filter(isSupportedFile);
+          const supported = paths.filter(acceptsRef.current);
           if (supported.length > 0) {
             // Tauri gives a dragged-in file no filesystem grant, and the
             // consumer reads it immediately — so the grant has to land first.

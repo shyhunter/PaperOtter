@@ -10,15 +10,16 @@
  * `_other` pairs and are read through `plural()`, never `t()`.
  */
 export const en = {
+  'documentConverter.usingEngines': 'Using: {engines}',
+  'documentConverter.engineBuiltIn': 'Built-in (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browser export (HTML to PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Background',
   'signatureBackground.none': 'None',
   'signatureBackground.white': 'White',
   'signatureBackground.cream': 'Cream',
   'signatureBackground.grey': 'Grey',
   'signatureBackground.custom': 'Custom colour',
-  'signatureBackground.pickFromPage': 'Pick from page',
-  'signatureBackground.pickingCancel': 'Cancel',
-  'signatureBackground.pickingHint': 'Click anywhere on the page to match its colour. Escape to cancel.',
   'signatureBackground.removeBg': 'Remove background',
   'signatureBackground.removeBgHint': 'Makes the paper behind an uploaded signature transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ export const en = {
     'HEIC photos can only be opened on macOS for now: convert it to JPEG first.',
   'file.unsafeName':
     "This filename contains characters that aren't supported. Please rename the file and try again.",
+  'file.needsImage': 'This tool works on images. To shrink a PDF, use {tool}.',
+  'file.needsPdf': 'This tool works on PDFs. To shrink a picture, use {tool}.',
 
 
   // ── Image compare ───────────────────────────────────────────────────────
@@ -297,6 +300,7 @@ export const en = {
   // ── redactPdf ───────────────────────────────────────────────────────────
   'redactPdf.applyingRedactions': 'Applying redactions…',
   'redactPdf.redactPdf': 'Redact PDF',
+  'redactPdf.willFlattenPages': 'Applying flattens the marked pages to images. Text on them will no longer be selectable or searchable.',
   'redactPdf.redactedPagesHaveBeenFlattened': 'Redacted pages have been flattened to images. Text on those pages is no longer selectable.',
   'redactPdf.renderingPagesAndRemovingContent': 'Rendering pages and removing content permanently',
   'redactPdf.selectAPdfToPermanently': 'Select a PDF to permanently redact sensitive content.',
@@ -333,6 +337,7 @@ export const en = {
 
   // ── signPdf ─────────────────────────────────────────────────────────────
   'signPdf.addASignatureToYour': 'Add a signature to your PDF document.',
+  'signPdf.couldNotPlaceSignature': 'This signature could not be placed. Pick another one, or create a new one.',
   'signPdf.couldNotReadThePdf': 'Could not read the PDF file.',
   'signPdf.signPdf': 'Sign PDF',
 
@@ -627,6 +632,8 @@ export const en = {
   'landingCard.loadingFile': 'Loading file…',
   'landingCard.openFile': 'Open file',
   'landingCard.pdfJpgPngWebp': 'PDF, JPG, PNG, WebP',
+  'landingCard.jpgPngWebp': 'JPG, PNG, WebP, HEIC',
+  'landingCard.pdfOnly': 'PDF',
   'landingCard.pickADifferentFile': 'Pick a Different File',
   'landingCard.repairWithRepairPdf': 'Repair with Repair PDF →',
 
@@ -842,6 +849,7 @@ export const en = {
   'toolSidebar.closePanel': 'Close panel',
   'toolSidebar.openPanel': 'Open panel',
   'editorView.tryToRepair': 'Try to repair',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Drag the signature into place on the page, and use the corners to resize it. Delete removes it.',
   'toolSidebarPanel.couldNotDrawTheSignature': 'Could not draw the signature. Try a different style or a shorter name.',
   'toolSidebarPanel.alreadyMarked': 'Already marked',
   'toolSidebarPanel.markThisOne': 'Mark this one',
@@ -1089,6 +1097,7 @@ export const en = {
   'exportPanel.exportAsFormat': 'Export as {format}',
   'exportPanel.savedAsFormat': 'Saved as {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Typography options',
+  'imageBlockLayer.deleteStamp': 'Delete this stamp',
   'imageBlockLayer.resizeFromCorner': 'Resize from {corner}',
   'imageCompareStep.qualityValue': 'Quality: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compression: {level}/9',
@@ -1152,6 +1161,8 @@ export const en = {
   'toolSidebarPanel.opacity': 'Opacity: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'A box this pale is hard to see on a white page. The content underneath is still permanently removed.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} conversion',
+  'toolSidebarPanel.resizingSelectedPages': 'Resizing {count} selected pages.',
+  'toolSidebarPanel.resizingAllPages': 'Resizing all {count} pages. Select pages first to resize only those.',
   'toolSidebarPanel.rotatingAllPages': 'Rotating all {count} pages',
   'toolSidebarPanel.rotatingPage': 'Rotating page {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotating {count} selected pages',

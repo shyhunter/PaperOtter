@@ -100,6 +100,45 @@ describe('scrollable page grids', () => {
     expect(broken, 'column roots that trap their own action bar').toEqual([]);
   });
 
+  /**
+   * The named columns that end in an action bar.
+   *
+   * UI-05c sweeps for a pattern; this one names the files, and that is the
+   * point. Convert Document's compare step slipped past the sweep because its
+   * body declared no overflow at all, so there was no scroll pane to find, and
+   * its root did carry overflow-hidden, which the sweep reads as proof the
+   * root can shrink. It can. The body could not, so the column overran and the
+   * root clipped the Save button off the bottom of the window: rendered, on
+   * screen, invisible. Reported as "doc to PDF showed no save step".
+   *
+   * Every heuristic broad enough to catch that also flagged eight healthy
+   * components, because a `<div className="flex-1"/>` spacer inside an action
+   * bar is indistinguishable from a trapped body without parsing the JSX. A
+   * guard that cries wolf eight times in nine teaches people to ignore it, so
+   * this asks a narrower question of a list that has to be maintained by hand.
+   */
+  const COLUMNS_ENDING_IN_AN_ACTION_BAR = [
+    'src/components/convert-doc/ConvertCompareStep.tsx',
+    'src/components/convert-doc/ConvertConfigStep.tsx',
+    'src/components/ImageConfigureStep.tsx',
+  ];
+
+  it('[UI-05d] a column that ends in an action bar can shrink', () => {
+    const broken: string[] = [];
+    for (const file of COLUMNS_ENDING_IN_AN_ACTION_BAR) {
+      const src = readFileSync(file, 'utf8');
+      const roots = columnRootsWithBody(src);
+      // Guard the guard: a path that stops matching must fail loudly rather
+      // than quietly certify nothing.
+      expect(roots.length, `${file}: expected a flex column root`).toBeGreaterThan(0);
+      const outermost = roots[0];
+      if (!/\bmin-h-0\b/.test(outermost.tag)) {
+        broken.push(`${file}: column root cannot shrink, so its action bar can be clipped`);
+      }
+    }
+    expect(broken, 'columns whose action bar can be clipped away').toEqual([]);
+  });
+
   it('[UI-05b] every flex scroll container can shrink below its content', () => {
     const broken: string[] = [];
     for (const file of files) {

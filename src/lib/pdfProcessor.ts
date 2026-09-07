@@ -285,6 +285,63 @@ export async function getPdfCompressibility(sourcePath: string): Promise<PdfComp
   return getPdfCompressibilityFromBytes(await readFile(sourcePath));
 }
 
+/** What resizePagesInDocument needs, which is the resize half of the options. */
+export interface PageResizeOptions {
+  pagePreset: PdfPagePreset;
+  customWidthMm: number | null;
+  customHeightMm: number | null;
+  /** Zero-based indices to resize. An empty list resizes nothing. */
+  selectedPageIndices: number[];
+  onProgress?: (current: number, total: number) => void;
+}
+
+/**
+ * Resizes pages in place, scaling their content to fit and centring it.
+ *
+ * Shared rather than inlined in processPdf, because the editor's compress panel
+ * needs the same thing from bytes it already holds. It had no resize at all --
+ * the standalone tool's page-size controls simply were not there -- and a second
+ * implementation of scale-to-fit is how the preview and the output come to
+ * disagree about what a page looks like.
+ *
+ * Mutates the document rather than returning bytes: processPdf has one loaded
+ * already and goes on to use it, and a round trip through save/load for every
+ * resize would cost the larger documents the most.
+ */
+export function resizePagesInDocument(pdfDoc: PDFDocument, options: PageResizeOptions): void {
+  const [targetW, targetH] = getTargetPageSize(
+    options.pagePreset,
+    options.customWidthMm,
+    options.customHeightMm,
+  );
+  const pages = pdfDoc.getPages();
+  const indices = options.selectedPageIndices;
+
+  for (let i = 0; i < indices.length; i++) {
+    const idx = indices[i];
+    if (idx < 0 || idx >= pages.length) continue;
+
+    const page = pages[idx];
+    const { width: origW, height: origH } = page.getSize();
+
+    // Scale-to-fit: uniform scale preserving aspect ratio, always fully visible
+    const scale = Math.min(targetW / origW, targetH / origH);
+
+    // Order matters: setSize first, then scale, then translate.
+    // translateContent offset is relative to new page dimensions.
+    page.setSize(targetW, targetH);
+    page.scaleContent(scale, scale);
+
+    // Center the scaled content within the new page
+    const xOffset = (targetW - origW * scale) / 2;
+    const yOffset = (targetH - origH * scale) / 2;
+    page.translateContent(xOffset, yOffset);
+
+    // Report progress after each page resize
+    options.onProgress?.(i + 1, indices.length);
+  }
+}
+
 export async function processPdf(
   sourcePath: string,
   options: PdfProcessingOptions,
@@ -302,37 +359,7 @@ export async function processPdf(
 
   // 4. Apply per-page resize if enabled
   if (options.resizeEnabled && options.selectedPageIndices.length > 0) {
-    const [targetW, targetH] = getTargetPageSize(
-      options.pagePreset,
-      options.customWidthMm,
-      options.customHeightMm,
-    );
-    const pages = pdfDoc.getPages();
-    const indices = options.selectedPageIndices;
-
-    for (let i = 0; i < indices.length; i++) {
-      const idx = indices[i];
-      if (idx < 0 || idx >= pages.length) continue;
-
-      const page = pages[idx];
-      const { width: origW, height: origH } = page.getSize();
-
-      // Scale-to-fit: uniform scale preserving aspect ratio, always fully visible
-      const scale = Math.min(targetW / origW, targetH / origH);
-
-      // Order matters: setSize first, then scale, then translate.
-      // translateContent offset is relative to new page dimensions.
-      page.setSize(targetW, targetH);
-      page.scaleContent(scale, scale);
-
-      // Center the scaled content within the new page
-      const xOffset = (targetW - origW * scale) / 2;
-      const yOffset = (targetH - origH * scale) / 2;
-      page.translateContent(xOffset, yOffset);
-
-      // Report progress after each page resize
-      options.onProgress?.(i + 1, indices.length);
-    }
+    resizePagesInDocument(pdfDoc, options);
   }
 
 

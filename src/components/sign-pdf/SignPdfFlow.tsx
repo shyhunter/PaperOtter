@@ -162,7 +162,20 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
           />
         )}
 
-        {/* Step 2: Place signature on page */}
+        {/* Step 2: Place signature on page.
+            The guard below used to be the whole story, so anything it turned
+            away rendered nothing at all while the step bar said Place -- a
+            blank window with no control on it. A saved signature carried over
+            from the editor's old list had an empty dataUrl, which is falsy, so
+            picking one did exactly that. */}
+        {step === 2 && !(pdfBytes && signatureDataUrl) && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+            <p className="text-sm text-foreground">{t('signPdf.couldNotPlaceSignature')}</p>
+            <Button variant="outline" size="sm" onClick={() => goToStep(1)}>
+              {t('common.back')}
+            </Button>
+          </div>
+        )}
         {step === 2 && pdfBytes && signatureDataUrl && (
           <SignaturePlaceStep
             pdfBytes={pdfBytes}

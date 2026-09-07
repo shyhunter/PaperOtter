@@ -16,15 +16,16 @@ import type { Dictionary } from '@/i18n/en';
  * - Placeholders such as {size} and {count} must survive verbatim.
  */
 export const fr: Dictionary = {
+  'documentConverter.usingEngines': 'Utilise : {engines}',
+  'documentConverter.engineBuiltIn': 'Intégré (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Export navigateur (HTML vers PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Arrière-plan',
   'signatureBackground.none': 'Aucun',
   'signatureBackground.white': 'Blanc',
   'signatureBackground.cream': 'Crème',
   'signatureBackground.grey': 'Gris',
   'signatureBackground.custom': 'Couleur personnalisée',
-  'signatureBackground.pickFromPage': 'Prélever sur la page',
-  'signatureBackground.pickingCancel': 'Annuler',
-  'signatureBackground.pickingHint': 'Cliquez sur la page pour reprendre sa couleur. Échap pour annuler.',
   'signatureBackground.removeBg': 'Supprimer l\'arrière-plan',
   'signatureBackground.removeBgHint': 'Rend transparent le papier derrière une signature importée.',
   // ── Common ────────────────────────────────────────────────────────────────
@@ -78,6 +79,8 @@ export const fr: Dictionary = {
     'Les photos HEIC ne peuvent être ouvertes que sous macOS pour l’instant: convertissez-la d’abord en JPEG.',
   'file.unsafeName':
     'Ce nom de fichier contient des caractères non pris en charge. Renommez le fichier et réessayez.',
+  'file.needsImage': 'Cet outil traite les images. Pour réduire un PDF, utilisez « {tool} ».',
+  'file.needsPdf': 'Cet outil traite les PDF. Pour réduire une image, utilisez « {tool} ».',
 
   // ── Compare ───────────────────────────────────────────────────────────────
   'imageCompare.before': 'Avant',
@@ -417,6 +420,7 @@ export const fr: Dictionary = {
   'redactPdf.removeRedaction': 'Retirer le caviardage',
   'redactPdf.applyingRedactions': 'Application des caviardages…',
   'redactPdf.redactPdf': 'Caviarder le PDF',
+  'redactPdf.willFlattenPages': 'L’application aplatit les pages marquées en images. Le texte qu’elles contiennent ne sera plus sélectionnable ni consultable.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Les pages caviardées ont été converties en images. Le texte de ces pages n’est plus sélectionnable.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -464,6 +468,7 @@ export const fr: Dictionary = {
 
   // ── Signatures ────────────────────────────────────────────────────────────
   'signPdf.addASignatureToYour': 'Ajouter une signature à votre document PDF.',
+  'signPdf.couldNotPlaceSignature': 'Cette signature n’a pas pu être placée. Choisissez-en une autre ou créez-en une nouvelle.',
   'signPdf.couldNotReadThePdf': 'Impossible de lire le fichier PDF.',
   'signPdf.signPdf': 'Signer le PDF',
   'signPdf.clear': 'Effacer',
@@ -851,6 +856,7 @@ export const fr: Dictionary = {
   'toolSidebarPanel.markThisOne': 'Marquer celui-ci',
   'toolSidebarPanel.redacting': 'Caviardage…',
   'toolSidebarPanel.apply': 'Appliquer',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Faites glisser la signature à sa place sur la page et redimensionnez-la par les coins. Le bouton de suppression la retire.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossible de tracer la signature. Essayez un autre style ou un nom plus court.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Fichier le plus petit: idéal pour l’écran',
@@ -1007,6 +1013,7 @@ export const fr: Dictionary = {
   'exportPanel.exportAsFormat': 'Exporter en {format}',
   'exportPanel.savedAsFormat': 'Enregistré en {format} ({size} Mo)',
   'exportPanel.typographyOptions': 'Options de typographie',
+  'imageBlockLayer.deleteStamp': 'Supprimer ce tampon',
   'imageBlockLayer.resizeFromCorner': 'Redimensionner depuis {corner}',
   'imageCompareStep.qualityValue': 'Qualité : {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compression : {level}/9',
@@ -1067,6 +1074,8 @@ export const fr: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacité : {percent} %',
   'toolSidebarPanel.paleBoxWarning': 'Un cadre aussi pâle est difficile à voir sur une page blanche. Le contenu situé dessous est malgré tout définitivement supprimé.',
   'toolSidebarPanel.pdfaConversion': 'Conversion PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': '{count} pages sélectionnées seront redimensionnées.',
+  'toolSidebarPanel.resizingAllPages': 'Les {count} pages seront redimensionnées. Sélectionnez d’abord des pages pour n’en redimensionner que certaines.',
   'toolSidebarPanel.rotatingAllPages': 'Rotation des {count} pages',
   'toolSidebarPanel.rotatingPage': 'Rotation de la page {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotation de {count} pages sélectionnées',

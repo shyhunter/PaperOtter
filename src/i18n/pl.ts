@@ -19,15 +19,16 @@ import type { Dictionary } from '@/i18n/en';
  * render "2 stron", which is wrong.
  */
 export const pl: Dictionary = {
+  'documentConverter.usingEngines': 'Używa: {engines}',
+  'documentConverter.engineBuiltIn': 'Wbudowane (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Eksport z przeglądarki (HTML do PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Tło',
   'signatureBackground.none': 'Brak',
   'signatureBackground.white': 'Białe',
   'signatureBackground.cream': 'Kremowe',
   'signatureBackground.grey': 'Szare',
   'signatureBackground.custom': 'Kolor własny',
-  'signatureBackground.pickFromPage': 'Pobierz ze strony',
-  'signatureBackground.pickingCancel': 'Anuluj',
-  'signatureBackground.pickingHint': 'Kliknij stronę, aby dopasować jej kolor. Escape, aby anulować.',
   'signatureBackground.removeBg': 'Usuń tło',
   'signatureBackground.removeBgHint': 'Sprawia, że papier za wgranym podpisem staje się przezroczysty.',
   'count.page_one': '{count} strona', 'count.page_few': '{count} strony',
@@ -65,6 +66,8 @@ export const pl: Dictionary = {
     'Zdjęcia HEIC można na razie otwierać tylko w systemie macOS: najpierw przekonwertuj je na JPEG.',
   'file.unsafeName':
     'Ta nazwa pliku zawiera nieobsługiwane znaki. Zmień nazwę pliku i spróbuj ponownie.',
+  'file.needsImage': 'To narzędzie działa na obrazach. Aby zmniejszyć PDF, użyj „{tool}”.',
+  'file.needsPdf': 'To narzędzie działa na plikach PDF. Aby zmniejszyć obraz, użyj „{tool}”.',
   'imageCompare.before': 'Przed', 'imageCompare.after': 'Po', 'imageCompare.original': 'Oryginał',
   'imageCompare.processed': 'Przetworzony', 'imageCompare.regenerating': 'Ponowne tworzenie…',
   'compare.copyStats': 'Skopiuj dane przetwarzania do schowka',
@@ -207,7 +210,7 @@ export const pl: Dictionary = {
   'pdfToJpg.selectPages': 'Wybierz strony',
   'pdfToJpgFlow.extractingSelectedPages': 'Wyodrębnianie wybranych stron…',
   'pdfToJpgFlow.conversionFailed': 'Konwersja nie powiodła się.',
-  'convertDoc.converted': 'Przekonwertowano', 'convertDoc.processAnother': 'Przetwórz kolejny plik', 'convertDoc.byChapter': 'Według rozdziałów',
+  'convertDoc.converted': 'Przekonwertowano', 'convertDoc.processAnother': 'Przetwórz inny plik', 'convertDoc.byChapter': 'Według rozdziałów',
   'convertDoc.detectingTools': 'Wyszukiwanie programów…',
   'convertDoc.documentConversionRequiresACompatible':
     'Konwersja dokumentów wymaga zgodnego programu, np. Microsoft Word lub LibreOffice.',
@@ -297,6 +300,7 @@ export const pl: Dictionary = {
   'redactPdf.removeRedaction': 'Usuń zaczernienie',
   'redactPdf.applyingRedactions': 'Stosowanie zaczernień…',
   'redactPdf.redactPdf': 'Zaczernij PDF',
+  'redactPdf.willFlattenPages': 'Zastosowanie spłaszcza zaznaczone strony do obrazów. Tekstu na nich nie będzie już można zaznaczyć ani przeszukać.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Zaczernione strony zostały zamienione na obrazy. Tekstu na tych stronach nie można już zaznaczyć.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -331,6 +335,7 @@ export const pl: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Obróć wybrane strony w lewo',
   'rotate.rotateSelectedPagesRight': 'Obróć wybrane strony w prawo',
   'signPdf.addASignatureToYour': 'Dodaj podpis do dokumentu PDF.',
+  'signPdf.couldNotPlaceSignature': 'Nie udało się umieścić tego podpisu. Wybierz inny lub utwórz nowy.',
   'signPdf.couldNotReadThePdf': 'Nie udało się odczytać pliku PDF.', 'signPdf.signPdf': 'Podpisz PDF',
   'signPdf.clear': 'Wyczyść', 'signPdf.createNew': 'Utwórz nowy',
   'signPdf.createOrSelectSignature': 'Utwórz lub wybierz podpis', 'signPdf.deleteSignature': 'Usuń podpis',
@@ -551,6 +556,7 @@ export const pl: Dictionary = {
   'toolSidebar.targetFileSize': 'Docelowy rozmiar pliku',
   'toolSidebarPanel.alreadyMarked': 'Już zaznaczone', 'toolSidebarPanel.markThisOne': 'Zaznacz to',
   'toolSidebarPanel.redacting': 'Zaczernianie…', 'toolSidebarPanel.apply': 'Zastosuj',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Przeciągnij podpis na miejsce na stronie, a rozmiar zmień za rogi. Przycisk usuwania go kasuje.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Nie udało się narysować podpisu. Spróbuj innego stylu lub krótszego imienia.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Najmniejszy plik: najlepszy do oglądania na ekranie',
@@ -672,6 +678,7 @@ export const pl: Dictionary = {
   'exportPanel.exportAsFormat': 'Eksportuj jako {format}',
   'exportPanel.savedAsFormat': 'Zapisano jako {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opcje typografii',
+  'imageBlockLayer.deleteStamp': 'Usuń ten stempel',
   'imageBlockLayer.resizeFromCorner': 'Zmień rozmiar od: {corner}',
   'imageCompareStep.qualityValue': 'Jakość: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Kompresja: {level}/9',
@@ -732,6 +739,8 @@ export const pl: Dictionary = {
   'toolSidebarPanel.opacity': 'Krycie: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Tak jasny prostokąt jest ledwo widoczny na białej stronie. Treść pod spodem i tak zostaje nieodwracalnie usunięta.',
   'toolSidebarPanel.pdfaConversion': 'Konwersja PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Zmieniony zostanie rozmiar {count} zaznaczonych stron.',
+  'toolSidebarPanel.resizingAllPages': 'Zmieniony zostanie rozmiar wszystkich {count} stron. Zaznacz strony, aby zmienić tylko wybrane.',
   'toolSidebarPanel.rotatingAllPages': 'Obracanie wszystkich stron ({count})',
   'toolSidebarPanel.rotatingPage': 'Obracanie strony {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Obracanie wybranych stron ({count})',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resizeFromCorner, type Corner } from '@/lib/blockResize';
+import { resizeFromCorner, type Corner, nextStampPosition, STAMP_DROP_X, STAMP_DROP_Y } from '@/lib/blockResize';
 
 // PDF coordinates: y is the bottom edge and grows upward.
 const BLOCK = { x: 100, y: 100, width: 200, height: 50 };
@@ -78,5 +78,49 @@ describe('resizeFromCorner', () => {
     for (const corner of Object.keys(OPPOSITE) as Corner[]) {
       expect(resizeFromCorner(BLOCK, corner, 0, 0, MIN)).toEqual(BLOCK);
     }
+  });
+});
+
+/**
+ * [STAMP] A second stamp has to be findable.
+ *
+ * Reported from Edit PDF: "it copy and paste the signature and suddenly I have
+ * many signatures of same one". Every placement landed on one fixed point, so
+ * pressing Place again dropped an identical copy exactly on top of the first.
+ * Nothing moved and nothing looked different, so it read as the button
+ * duplicating the signature by itself -- and the copies underneath could not be
+ * selected apart, or deleted, without reverting the whole document.
+ */
+describe('nextStampPosition', () => {
+  it('[STAMP-01] the first stamp lands on the drop point', () => {
+    expect(nextStampPosition(0)).toEqual({ x: STAMP_DROP_X, y: STAMP_DROP_Y });
+  });
+
+  it('[STAMP-02] a second stamp does not land on the first', () => {
+    // The whole report in one assertion.
+    expect(nextStampPosition(1)).not.toEqual(nextStampPosition(0));
+  });
+
+  it('[STAMP-03] steps down the page as the screen sees it', () => {
+    // +x and -y: PDF y counts up from the bottom, so a stamp that appears
+    // lower has the smaller y.
+    const a = nextStampPosition(0);
+    const b = nextStampPosition(1);
+    expect(b.x).toBeGreaterThan(a.x);
+    expect(b.y).toBeLessThan(a.y);
+  });
+
+  it('[STAMP-04] cycles rather than walking off the page', () => {
+    // Twenty stamps stepping forever would put the last ones past the edge,
+    // where they are just as unreachable as they were when stacked.
+    const many = Array.from({ length: 20 }, (_, i) => nextStampPosition(i));
+    for (const p of many) {
+      expect(p.x).toBeLessThan(STAMP_DROP_X + 120);
+      expect(p.y).toBeGreaterThan(0);
+    }
+  });
+
+  it('[STAMP-05] a negative count is treated as an empty page', () => {
+    expect(nextStampPosition(-3)).toEqual(nextStampPosition(0));
   });
 });

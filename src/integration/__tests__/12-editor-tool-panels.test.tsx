@@ -12,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
 import { ToolSidebar } from '@/components/pdf-editor/ToolSidebar';
+import { isPdfEncrypted } from '@/lib/pdfEncryption';
 import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
@@ -105,6 +106,14 @@ vi.mock('@/lib/pdfEditor', async (importOriginal) => {
 });
 
 vi.mock('@/lib/pdfTextSearch', () => ({ findTextMatches: vi.fn().mockResolvedValue([]) }));
+
+// Both password panels ask this about the open document. The fixture is a plain
+// PDF, so the default is the honest answer for it; TP-11b turns it round to
+// reach the state the fixture cannot be in.
+vi.mock('@/lib/pdfEncryption', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/pdfEncryption')>()),
+  isPdfEncrypted: vi.fn().mockResolvedValue(false),
+}));
 
 vi.mock('@/lib/pdfRedact', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/pdfRedact')>();
@@ -937,6 +946,38 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
   });
 
+  it('TP-14b — the Redact panel says what applying will cost, before it is pressed', async () => {
+    // Redaction replaces each marked page with a flat image, so the text on it
+    // stops being selectable and searchable. The standalone tool says so, but
+    // only on its Save step, after the work is done. In the editor Apply writes
+    // straight into the open document, so the warning has to arrive while there
+    // is still a decision to make.
+    let latestCtx: EditorCtx | null = null;
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness onContextReady={(ctx) => { latestCtx = ctx; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    // Nothing marked yet, so there is nothing to warn about.
+    expect(screen.queryByText(/flattens the marked pages/i)).not.toBeInTheDocument();
+
+    // Mark something, and it appears -- the half that matters, and the half an
+    // absence-only assertion would pass without.
+    act(() => {
+      latestCtx!.setRedactionDraft([{
+        id: 'r1', pageIndex: 0, x: 10, y: 10, width: 20, height: 5, source: 'drawn',
+      }]);
+    });
+
+    expect(await screen.findByText(/flattens the marked pages/i)).toBeInTheDocument();
+  });
+
   it('TP-14 — the Redact panel offers the shared colours', async () => {
     const user = userEvent.setup();
 
@@ -1226,6 +1267,137 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(cropPdf).toHaveBeenCalledTimes(1));
   });
 
+  it('TP-05b — the Compress panel offers page resize, as the standalone tool does', async () => {
+    // Found by comparing each editor panel against the tool it stands in for:
+    // Compress in the editor had the compression half only, so the editor could
+    // not change a page's size at all. Off by default, as it is in the
+    // standalone: it rewrites every page it touches.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    const toggle = screen.getByLabelText(/resize pages/i);
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByLabelText(/page size/i), 'hidden until asked for').not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(screen.getByLabelText(/page size/i)).toBeInTheDocument();
+  });
+
+  it('TP-05c — a custom page size asks for both sides in millimetres', async () => {
+    // Both, because getTargetPageSize refuses a half-specified custom size
+    // rather than guessing the other side. See [RESIZE-06].
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByLabelText(/resize pages/i));
+
+    expect(screen.queryByLabelText(/width/i), 'only for a custom size').not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/page size/i), 'custom');
+
+    expect(screen.getByLabelText(/width/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/height/i)).toBeInTheDocument();
+  });
+
+  it('TP-05d — the Compress panel can save and reuse a setting', async () => {
+    // The last of the gaps the panel comparison turned up. Saved settings
+    // existed only in the standalone tool, so a limit saved for a portal was
+    // unreachable if the document had been opened in the editor -- which
+    // defeats the point of saving it.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    // The control that keeps the current settings under a name.
+    expect(await screen.findByText(/save these settings/i)).toBeInTheDocument();
+  });
+
+  it('TP-11b — Protect warns about a document that is already encrypted', async () => {
+    // qpdf refuses one, so the answer has to arrive before two passwords and an
+    // acknowledgement have been typed. The standalone checks at file-pick time;
+    // here the document is already open, so the check is on the bytes in hand.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Protect PDF'));
+
+    // The fixture is a plain PDF, so no warning -- and the form is usable.
+    await waitFor(() =>
+      expect(screen.queryByText(/already password-protected/i)).not.toBeInTheDocument());
+    expect(screen.getByPlaceholderText(/enter password/i)).toBeInTheDocument();
+
+    // And with an encrypted one it appears. Asserting only the absence would
+    // pass with the warning never rendered at all, which is the failure mode of
+    // every guard written from one side.
+    vi.mocked(isPdfEncrypted).mockResolvedValue(true);
+    cleanup();
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+    await user.click(screen.getByTitle('Protect PDF'));
+
+    expect(await screen.findByText(/already password-protected/i)).toBeInTheDocument();
+    vi.mocked(isPdfEncrypted).mockResolvedValue(false);
+  });
+
+  it('TP-12b — Unlock says when there is nothing to unlock', async () => {
+    // A password field for a document with no password rejects every password,
+    // correct ones included.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Unlock PDF'));
+
+    expect(await screen.findByText(/not password-protected/i)).toBeInTheDocument();
+  });
+
+  it('TP-13b — Repair explains what it does before it is run', async () => {
+    // Repair always "succeeds": it re-processes through Ghostscript whatever
+    // state the file was in. Without the explanation the result reads as a
+    // verdict on the document rather than a description of a process that ran.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Repair PDF'));
+
+    expect(screen.getByText(/re-processing through ghostscript/i)).toBeInTheDocument();
+  });
+
   // TP-06: Sign Panel
   it('TP-06 — Sign panel shows signature text input, style buttons, and place button', async () => {
     const user = userEvent.setup();
@@ -1253,8 +1425,36 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Save button
     expect(screen.getByText('Save')).toBeInTheDocument();
 
-    // Click-to-place mode button
-    expect(screen.getByText('Click-to-place mode')).toBeInTheDocument();
+    // A stamp is dragged, and the panel says so. There used to be a
+    // "Click-to-place mode" button here that switched the editor to its text
+    // tool, so clicking the page made an empty text box instead of placing the
+    // signature -- two controls that both claimed to place it and neither of
+    // which let you choose where.
+    expect(screen.getByText(/drag the signature into place/i)).toBeInTheDocument();
+    expect(screen.queryByText(/click-to-place/i)).not.toBeInTheDocument();
+  });
+
+  it('TP-06b — the Sign panel offers all three ways to make a signature', async () => {
+    // Draw and Upload existed only in Sign PDF, so a signature made with a
+    // stylus or scanned from paper could not be used in the editor at all.
+    // Reported alongside the shared-list request: "as well as the create new
+    // options too".
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    for (const label of ['Draw', 'Type', 'Upload']) {
+      expect(screen.getByRole('button', { name: label }), label).toBeInTheDocument();
+    }
+
+    // Type is the tab that opens, so its controls are the ones on screen.
+    expect(screen.getByPlaceholderText('Your Name')).toBeInTheDocument();
   });
 
   it('TP-06b — Typing a name shows signature preview and enables Place', async () => {
@@ -1585,7 +1785,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-13: Redact Click-to-Place mode toggle
-  it('TP-14 — Sign panel click-to-place toggles editor mode', async () => {
+  // Renumbered: this was a second TP-14, sharing the id with the Redact colour
+  // test above, so a failure named TP-14 pointed at either of two panels.
+  //
+  // Placing a stamp needs a canvas to draw the signature and an image decode to
+  // measure it, and jsdom has neither, so the offset that stops two stamps
+  // landing on the same point is covered as a pure function instead: see
+  // [STAMP] in blockResize.test.ts.
+  it('TP-16 — the Sign panel no longer switches the editor to its text tool', async () => {
     let latestCtx: EditorCtx | null = null;
     const user = userEvent.setup();
 
@@ -1596,12 +1803,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     );
 
     await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
-
     await user.click(screen.getByTitle('Sign PDF'));
 
-    await user.click(screen.getByText('Click-to-place mode'));
-
-    expect(latestCtx!.state.editorMode).toBe('text');
-    expect(screen.getByText('Placement Mode Active')).toBeInTheDocument();
+    expect(latestCtx!.state.editorMode).not.toBe('text');
   });
 });

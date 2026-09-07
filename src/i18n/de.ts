@@ -15,15 +15,16 @@ import type { Dictionary } from '@/i18n/en';
  * - Placeholders such as {size} and {count} must survive verbatim.
  */
 export const de: Dictionary = {
+  'documentConverter.usingEngines': 'Verwendet: {engines}',
+  'documentConverter.engineBuiltIn': 'Integriert (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browser-Export (HTML zu PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Hintergrund',
   'signatureBackground.none': 'Keiner',
   'signatureBackground.white': 'Weiß',
   'signatureBackground.cream': 'Creme',
   'signatureBackground.grey': 'Grau',
   'signatureBackground.custom': 'Eigene Farbe',
-  'signatureBackground.pickFromPage': 'Von Seite wählen',
-  'signatureBackground.pickingCancel': 'Abbrechen',
-  'signatureBackground.pickingHint': 'Klicken Sie auf die Seite, um deren Farbe zu übernehmen. Escape zum Abbrechen.',
   'signatureBackground.removeBg': 'Hintergrund entfernen',
   'signatureBackground.removeBgHint': 'Macht das Papier hinter einer hochgeladenen Unterschrift transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
@@ -67,6 +68,8 @@ export const de: Dictionary = {
     'HEIC-Fotos lassen sich derzeit nur unter macOS öffnen: wandeln Sie das Bild zuerst in JPEG um.',
   'file.unsafeName':
     'Dieser Dateiname enthält Zeichen, die nicht unterstützt werden. Bitte benennen Sie die Datei um und versuchen Sie es erneut.',
+  'file.needsImage': 'Dieses Werkzeug arbeitet mit Bildern. Um ein PDF zu verkleinern, verwenden Sie „{tool}“.',
+  'file.needsPdf': 'Dieses Werkzeug arbeitet mit PDFs. Um ein Bild zu verkleinern, verwenden Sie „{tool}“.',
 
   // ── Image compare ─────────────────────────────────────────────────────────
   'imageCompare.before': 'Vorher',
@@ -220,7 +223,7 @@ export const de: Dictionary = {
 
   // ── Document conversion ───────────────────────────────────────────────────
   'convertDoc.converted': 'Umgewandelt',
-  'convertDoc.processAnother': 'Weitere Datei verarbeiten',
+  'convertDoc.processAnother': 'Andere Datei verarbeiten',
   'convertDoc.byChapter': 'Nach Kapitel',
   'convertDoc.detectingTools': 'Programme werden gesucht…',
   'convertDoc.documentConversionRequiresACompatible':
@@ -249,8 +252,8 @@ export const de: Dictionary = {
   // ── Crop ──────────────────────────────────────────────────────────────────
   'cropPdf.cropMargins': 'Ränder zuschneiden',
   'cropPdf.cropPdf': 'PDF zuschneiden',
-  'cropPdf.cropPreview': 'Beschnitt-Vorschau',
-  'cropPdf.cropping': 'Wird beschnitten…',
+  'cropPdf.cropPreview': 'Zuschnitt-Vorschau',
+  'cropPdf.cropping': 'Wird zugeschnitten…',
   'cropPdf.equalMargins': 'Gleiche Ränder',
   'cropPdf.loadingPreview': 'Vorschau wird geladen…',
   'cropPdf.selectAPdfToCrop': 'Wählen Sie ein PDF, um die Ränder zuzuschneiden.',
@@ -307,6 +310,7 @@ export const de: Dictionary = {
   'redactPdf.removeRedaction': 'Schwärzung entfernen',
   'redactPdf.applyingRedactions': 'Schwärzungen werden angewendet…',
   'redactPdf.redactPdf': 'PDF schwärzen',
+  'redactPdf.willFlattenPages': 'Beim Anwenden werden die markierten Seiten in Bilder umgewandelt. Text darauf lässt sich danach nicht mehr auswählen oder durchsuchen.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Geschwärzte Seiten wurden in Bilder umgewandelt. Der Text auf diesen Seiten lässt sich nicht mehr markieren.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -350,6 +354,7 @@ export const de: Dictionary = {
 
   // ── Signatures ────────────────────────────────────────────────────────────
   'signPdf.addASignatureToYour': 'Fügen Sie Ihrem PDF-Dokument eine Unterschrift hinzu.',
+  'signPdf.couldNotPlaceSignature': 'Diese Unterschrift konnte nicht platziert werden. Wählen Sie eine andere oder erstellen Sie eine neue.',
   'signPdf.couldNotReadThePdf': 'Die PDF-Datei konnte nicht gelesen werden.',
   'signPdf.signPdf': 'PDF unterschreiben',
   'signPdf.clear': 'Löschen',
@@ -623,7 +628,7 @@ export const de: Dictionary = {
   'step.signature': 'Unterschrift',
   'step.repair': 'Reparieren',
   'step.edit': 'Bearbeiten',
-  'step.crop': 'Beschneiden',
+  'step.crop': 'Zuschneiden',
   'step.organize': 'Organisieren',
   'step.place': 'Platzieren',
   'step.redact': 'Schwärzen',
@@ -702,7 +707,7 @@ export const de: Dictionary = {
   'tool.cropPdf.step2': 'Eine PDF-Datei öffnen',
   'tool.organizePdf.name': 'PDF organisieren',
   'tool.organizePdf.desc': 'Seiten neu ordnen, löschen oder duplizieren',
-  'tool.organizePdf.step1': 'Beschnittenes PDF speichern',
+  'tool.organizePdf.step1': 'Zugeschnittenes PDF speichern',
   'tool.organizePdf.step2': 'Eine PDF-Datei öffnen',
   'tool.signPdf.name': 'PDF unterschreiben',
   'tool.signPdf.desc': 'PDF-Seiten mit einer sichtbaren Unterschrift versehen',
@@ -836,6 +841,7 @@ export const de: Dictionary = {
   'toolSidebar.openPanel': 'Bereich öffnen',
   'toolSidebar.targetFileSize': 'Ziel-Dateigröße',
   'editorView.tryToRepair': 'Reparatur versuchen',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Ziehen Sie die Unterschrift an die gewünschte Stelle und ändern Sie die Größe an den Ecken. Löschen entfernt sie.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Die Unterschrift konnte nicht gezeichnet werden. Versuchen Sie einen anderen Stil oder einen kürzeren Namen.',
   'toolSidebarPanel.alreadyMarked': 'Bereits markiert',
@@ -878,7 +884,7 @@ export const de: Dictionary = {
   'rotateImageFlow.rotationFailed': 'Das Drehen ist fehlgeschlagen.',
   'watermarkFlow.failedToApplyWatermark': 'Das Wasserzeichen konnte nicht angewendet werden.',
   'pageNumbersFlow.failedToAddPageNumbers': 'Die Seitenzahlen konnten nicht hinzugefügt werden.',
-  'cropPdfFlow.cropFailed': 'Das Beschneiden ist fehlgeschlagen.',
+  'cropPdfFlow.cropFailed': 'Das Zuschneiden ist fehlgeschlagen.',
   'documentConverter.noConversionToolsDetected': 'Keine Umwandlungsprogramme gefunden.',
   'pdfMerge.atLeast2PdfsAre': 'Zum Zusammenführen werden mindestens 2 PDFs benötigt.',
   'pdfUtils.thisFileAppearsToBe':
@@ -932,7 +938,7 @@ export const de: Dictionary = {
   'signaturePlaceStep.applySignature': 'Unterschrift anwenden',
   'watermarkFlow.applyWatermark': 'Wasserzeichen anwenden',
   'pageNumbersConfigureStep.applyPageNumbers': 'Seitenzahlen anwenden',
-  'cropPdfFlow.applyCrop': 'Beschnitt anwenden',
+  'cropPdfFlow.applyCrop': 'Zuschnitt anwenden',
   'convertDocFlow.word972003Document': 'Word-97-2003-Dokument',
   'convertDocFlow.richTextFormat': 'Rich Text Format',
   'convertDocFlow.wordDocument': 'Word-Dokument',
@@ -1044,6 +1050,7 @@ export const de: Dictionary = {
   'exportPanel.exportAsFormat': 'Als {format} exportieren',
   'exportPanel.savedAsFormat': 'Als {format} gespeichert ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-Optionen',
+  'imageBlockLayer.deleteStamp': 'Diesen Stempel löschen',
   'imageBlockLayer.resizeFromCorner': 'Größe ändern ab {corner}',
   'imageCompareStep.qualityValue': 'Qualität: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Verkleinerung: {level}/9',
@@ -1104,6 +1111,8 @@ export const de: Dictionary = {
   'toolSidebarPanel.opacity': 'Deckkraft: {percent} %',
   'toolSidebarPanel.paleBoxWarning': 'Ein so blasses Feld ist auf einer weißen Seite kaum zu erkennen. Der darunterliegende Inhalt wird dennoch unwiderruflich entfernt.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-Umwandlung',
+  'toolSidebarPanel.resizingSelectedPages': '{count} ausgewählte Seiten werden angepasst.',
+  'toolSidebarPanel.resizingAllPages': 'Alle {count} Seiten werden angepasst. Wählen Sie zuerst Seiten aus, um nur diese anzupassen.',
   'toolSidebarPanel.rotatingAllPages': 'Alle {count} Seiten werden gedreht',
   'toolSidebarPanel.rotatingPage': 'Seite {page} wird gedreht',
   'toolSidebarPanel.rotatingSelectedPages': '{count} ausgewählte Seiten werden gedreht',

@@ -20,15 +20,16 @@ import type { Dictionary } from '@/i18n/en';
  * plural helper uses Intl.PluralRules rather than an n === 1 test.
  */
 export const tr: Dictionary = {
+  'documentConverter.usingEngines': 'Kullanılan: {engines}',
+  'documentConverter.engineBuiltIn': 'Yerleşik (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Tarayıcı dışa aktarımı (HTML - PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Arka plan',
   'signatureBackground.none': 'Yok',
   'signatureBackground.white': 'Beyaz',
   'signatureBackground.cream': 'Krem',
   'signatureBackground.grey': 'Gri',
   'signatureBackground.custom': 'Özel renk',
-  'signatureBackground.pickFromPage': 'Sayfadan seç',
-  'signatureBackground.pickingCancel': 'İptal',
-  'signatureBackground.pickingHint': 'Rengini eşlemek için sayfaya tıklayın. İptal için Escape.',
   'signatureBackground.removeBg': 'Arka planı kaldır',
   'signatureBackground.removeBgHint': 'Yüklenen bir imzanın arkasındaki kağıdı saydam yapar.',
   'common.cancel': 'İptal',
@@ -80,6 +81,8 @@ export const tr: Dictionary = {
     'HEIC fotoğrafları şimdilik yalnızca macOS’ta açılabiliyor: önce JPEG’e dönüştürün.',
   'file.unsafeName':
     'Bu dosya adı desteklenmeyen karakterler içeriyor. Lütfen dosyayı yeniden adlandırıp tekrar deneyin.',
+  'file.needsImage': 'Bu araç görüntülerle çalışır. Bir PDF’i küçültmek için “{tool}” aracını kullanın.',
+  'file.needsPdf': 'Bu araç PDF dosyalarıyla çalışır. Bir görüntüyü küçültmek için “{tool}” aracını kullanın.',
 
   'imageCompare.before': 'Önce',
   'imageCompare.after': 'Sonra',
@@ -348,6 +351,7 @@ export const tr: Dictionary = {
   'redactPdf.removeRedaction': 'Karartmayı kaldır',
   'redactPdf.applyingRedactions': 'Karartmalar uygulanıyor…',
   'redactPdf.redactPdf': 'PDF’i karart',
+  'redactPdf.willFlattenPages': 'Uygulandığında işaretli sayfalar görüntüye dönüştürülür. Üzerlerindeki metin artık seçilemez ve aranamaz.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Karartılan sayfalar görüntüye dönüştürüldü. Bu sayfalardaki metin artık seçilemez.',
   'redactPdf.renderingPagesAndRemovingContent': 'Sayfalar yeniden çiziliyor ve içerik kalıcı olarak siliniyor',
@@ -379,6 +383,7 @@ export const tr: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Seçili sayfaları sola döndür',
   'rotate.rotateSelectedPagesRight': 'Seçili sayfaları sağa döndür',
   'signPdf.addASignatureToYour': 'PDF belgenize bir imza ekleyin.',
+  'signPdf.couldNotPlaceSignature': 'Bu imza yerleştirilemedi. Başka bir imza seçin ya da yeni bir tane oluşturun.',
   'signPdf.couldNotReadThePdf': 'PDF dosyası okunamadı.', 'signPdf.signPdf': 'PDF’i imzala',
   'signPdf.clear': 'Temizle', 'signPdf.createNew': 'Yeni oluştur',
   'signPdf.createOrSelectSignature': 'İmza oluştur veya seç', 'signPdf.deleteSignature': 'İmzayı sil',
@@ -603,6 +608,7 @@ export const tr: Dictionary = {
   'toolSidebar.targetFileSize': 'Hedef dosya boyutu',
   'toolSidebarPanel.alreadyMarked': 'Zaten işaretli', 'toolSidebarPanel.markThisOne': 'Bunu işaretle',
   'toolSidebarPanel.redacting': 'Karartılıyor…', 'toolSidebarPanel.apply': 'Uygula',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'İmzayı sayfada istediğiniz yere sürükleyin, köşelerden boyutlandırın. Silme düğmesi onu kaldırır.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'İmza çizilemedi. Başka bir stil veya daha kısa bir ad deneyin.',
   'toolSidebarPanel.smallestFileBestForScreen': 'En küçük dosya: ekranda görüntülemek için en iyisi',
@@ -724,6 +730,7 @@ export const tr: Dictionary = {
   'exportPanel.exportAsFormat': '{format} olarak dışa aktar',
   'exportPanel.savedAsFormat': '{format} olarak kaydedildi ({size} MB)',
   'exportPanel.typographyOptions': 'Tipografi seçenekleri',
+  'imageBlockLayer.deleteStamp': 'Bu damgayı sil',
   'imageBlockLayer.resizeFromCorner': '{corner} köşesinden yeniden boyutlandır',
   'imageCompareStep.qualityValue': 'Kalite: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Sıkıştırma: {level}/9',
@@ -784,6 +791,8 @@ export const tr: Dictionary = {
   'toolSidebarPanel.opacity': 'Saydamlık: %{percent}',
   'toolSidebarPanel.paleBoxWarning': 'Bu kadar açık renkli bir kutu beyaz sayfada zor görülür. Altındaki içerik yine de kalıcı olarak kaldırılır.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} dönüştürme',
+  'toolSidebarPanel.resizingSelectedPages': 'Seçili {count} sayfa yeniden boyutlandırılacak.',
+  'toolSidebarPanel.resizingAllPages': 'Tüm {count} sayfa yeniden boyutlandırılacak. Yalnızca bazılarını boyutlandırmak için önce sayfa seçin.',
   'toolSidebarPanel.rotatingAllPages': '{count} sayfanın tümü döndürülüyor',
   'toolSidebarPanel.rotatingPage': '{page}. sayfa döndürülüyor',
   'toolSidebarPanel.rotatingSelectedPages': 'Seçili {count} sayfa döndürülüyor',

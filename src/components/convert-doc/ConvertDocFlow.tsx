@@ -149,6 +149,7 @@ export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
           sourceFormat={sourceFormat}
           onSave={handleSave}
           onStartOver={handleStartOver}
+          onBack={() => goToStep(1)}
         />
       )}
 

@@ -9,6 +9,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useEditorContext } from '@/context/EditorContext';
 import type { ImageBlock } from '@/types/editor';
 import { resizeFromCorner, type Corner } from '@/lib/blockResize';
+import { X } from 'lucide-react';
 import { t } from '@/i18n';
 
 interface ImageBlockLayerProps {
@@ -83,6 +84,7 @@ export function ImageBlockLayer({ pageIndex, pageHeight, zoom }: ImageBlockLayer
           onSelect={selectBlock}
           onUpdate={updateImageBlock}
           onDirty={markDirty}
+          onDelete={() => { deleteImageBlock(pageIndex, block.id); markDirty(); }}
         />
       ))}
     </div>
@@ -98,10 +100,11 @@ interface ImageBlockViewProps {
   onSelect: (id: string | null) => void;
   onUpdate: (pageIdx: number, block: ImageBlock) => void;
   onDirty: () => void;
+  onDelete: () => void;
 }
 
 function ImageBlockView({
-  block, pageIndex, pageHeight, zoom, isSelected, onSelect, onUpdate, onDirty,
+  block, pageIndex, pageHeight, zoom, isSelected, onSelect, onUpdate, onDirty, onDelete,
 }: ImageBlockViewProps) {
   const [isDragging, setIsDragging] = useState(false);
   const startRef = useRef<{ mouseX: number; mouseY: number; block: ImageBlock } | null>(null);
@@ -194,6 +197,42 @@ function ImageBlockView({
         draggable={false}
         style={{ width: '100%', height: '100%', display: 'block', pointerEvents: 'none' }}
       />
+
+      {/* Delete has always worked from the keyboard, and nothing on screen said
+          so, so a signature dropped in the wrong place looked permanent.
+          Reported as "I want to be able to delete the placed signature on page
+          too". Sits outside the top-right corner so it does not cover the
+          stamp or collide with the resize handle. */}
+      {isSelected && (
+        <button
+          type="button"
+          data-testid="image-block-delete"
+          title={t('imageBlockLayer.deleteStamp')}
+          aria-label={t('imageBlockLayer.deleteStamp')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          style={{
+            position: 'absolute',
+            top: -12,
+            insetInlineEnd: -12,
+            width: 22,
+            height: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ef4444',
+            color: 'white',
+            border: '1px solid white',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            lineHeight: 1,
+            padding: 0,
+          }}
+        >
+          <X style={{ width: 12, height: 12 }} aria-hidden="true" />
+        </button>
+      )}
 
       {isSelected && CORNERS.map(({ corner, style, cursor }) => (
         <div

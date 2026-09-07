@@ -13,15 +13,16 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal usted throughout; buttons take the infinitive.
  */
 export const es: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrado (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Exportación del navegador (HTML a PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Fondo',
   'signatureBackground.none': 'Ninguno',
   'signatureBackground.white': 'Blanco',
   'signatureBackground.cream': 'Crema',
   'signatureBackground.grey': 'Gris',
   'signatureBackground.custom': 'Color personalizado',
-  'signatureBackground.pickFromPage': 'Tomar de la página',
-  'signatureBackground.pickingCancel': 'Cancelar',
-  'signatureBackground.pickingHint': 'Haga clic en la página para igualar su color. Escape para cancelar.',
   'signatureBackground.removeBg': 'Quitar el fondo',
   'signatureBackground.removeBgHint': 'Hace transparente el papel detrás de una firma subida.',
   'common.cancel': 'Cancelar',
@@ -73,6 +74,8 @@ export const es: Dictionary = {
     'Por ahora las fotos HEIC solo se pueden abrir en macOS: conviértala primero a JPEG.',
   'file.unsafeName':
     'Este nombre de archivo contiene caracteres no admitidos. Cámbielo e inténtelo de nuevo.',
+  'file.needsImage': 'Esta herramienta trabaja con imágenes. Para reducir un PDF, use «{tool}».',
+  'file.needsPdf': 'Esta herramienta trabaja con PDF. Para reducir una imagen, use «{tool}».',
 
   'imageCompare.before': 'Antes',
   'imageCompare.after': 'Después',
@@ -389,6 +392,7 @@ export const es: Dictionary = {
   'redactPdf.removeRedaction': 'Quitar la censura',
   'redactPdf.applyingRedactions': 'Aplicando la censura…',
   'redactPdf.redactPdf': 'Censurar PDF',
+  'redactPdf.willFlattenPages': 'Al aplicar, las páginas marcadas se convierten en imágenes. Su texto dejará de poder seleccionarse o buscarse.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Las páginas censuradas se han convertido en imágenes. El texto de esas páginas ya no se puede seleccionar.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -431,6 +435,7 @@ export const es: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Girar a la izquierda las páginas seleccionadas',
   'rotate.rotateSelectedPagesRight': 'Girar a la derecha las páginas seleccionadas',
   'signPdf.addASignatureToYour': 'Añadir una firma a su documento PDF.',
+  'signPdf.couldNotPlaceSignature': 'No se pudo colocar esta firma. Elija otra o cree una nueva.',
   'signPdf.couldNotReadThePdf': 'No se pudo leer el archivo PDF.',
   'signPdf.signPdf': 'Firmar PDF',
   'signPdf.clear': 'Borrar',
@@ -671,6 +676,7 @@ export const es: Dictionary = {
   'toolSidebar.targetFileSize': 'Tamaño de archivo objetivo',
   'toolSidebarPanel.alreadyMarked': 'Ya marcado', 'toolSidebarPanel.markThisOne': 'Marcar este',
   'toolSidebarPanel.redacting': 'Censurando…', 'toolSidebarPanel.apply': 'Aplicar',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Arrastre la firma hasta su sitio en la página y cambie el tamaño desde las esquinas. El botón de eliminar la quita.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'No se pudo dibujar la firma. Pruebe otro estilo o un nombre más corto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Archivo más pequeño: ideal para pantalla',
@@ -793,6 +799,7 @@ export const es: Dictionary = {
   'exportPanel.exportAsFormat': 'Exportar como {format}',
   'exportPanel.savedAsFormat': 'Guardado como {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opciones de tipografía',
+  'imageBlockLayer.deleteStamp': 'Eliminar este sello',
   'imageBlockLayer.resizeFromCorner': 'Redimensionar desde {corner}',
   'imageCompareStep.qualityValue': 'Calidad: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compresión: {level}/9',
@@ -853,6 +860,8 @@ export const es: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacidad: {percent} %',
   'toolSidebarPanel.paleBoxWarning': 'Un recuadro tan claro apenas se ve en una página blanca. El contenido de debajo se elimina de forma permanente igualmente.',
   'toolSidebarPanel.pdfaConversion': 'Conversión a PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Se cambiará el tamaño de {count} páginas seleccionadas.',
+  'toolSidebarPanel.resizingAllPages': 'Se cambiará el tamaño de las {count} páginas. Seleccione páginas primero para cambiar solo esas.',
   'toolSidebarPanel.rotatingAllPages': 'Girando las {count} páginas',
   'toolSidebarPanel.rotatingPage': 'Girando la página {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Girando {count} páginas seleccionadas',

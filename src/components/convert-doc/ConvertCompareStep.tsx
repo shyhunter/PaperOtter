@@ -32,6 +32,8 @@ interface ConvertCompareStepProps {
   sourceFormat: ConvertFormat;
   onSave: () => void;
   onStartOver: () => void;
+  /** Back to Configure, keeping the file, the way the other Compare steps do. */
+  onBack: () => void;
 }
 
 function getConvertedFileName(sourceFileName: string, outputFormat: ConvertFormat, archive?: boolean): string {
@@ -46,6 +48,7 @@ export function ConvertCompareStep({
   sourceFormat,
   onSave,
   onStartOver,
+  onBack,
 }: ConvertCompareStepProps) {
   const sizeChange = result.originalSize - result.outputSize;
   const sizeChangePct = result.originalSize > 0
@@ -55,7 +58,13 @@ export function ConvertCompareStep({
   const convertedFileName = getConvertedFileName(sourceFileName, result.outputFormat, result.archive);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    /* min-h-0 is load-bearing. A flex child will not shrink below its content
+       by default, so without it this column keeps its natural height, the
+       action bar underneath is pushed past the bottom of the window, and the
+       Save button simply is not there. #116 fixed exactly this in
+       ConvertConfigStep and ImageConfigureStep; this sibling was missed, and
+       it is the step that owns Save. */
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       {/* Stats bar */}
       <div className="flex items-center gap-4 px-4 py-3 text-xs border-b border-border bg-muted/30 flex-none">
         <span className="font-medium text-foreground tabular-nums whitespace-nowrap">
@@ -80,7 +89,7 @@ export function ConvertCompareStep({
       </div>
 
       {/* Comparison cards */}
-      <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex flex-1 min-h-0 items-center justify-center overflow-y-auto p-6">
         <div className="w-full max-w-lg space-y-4">
           {/* Original card */}
           <div className="rounded-lg border border-border bg-card p-4">
@@ -121,17 +130,27 @@ export function ConvertCompareStep({
         </div>
       </div>
 
-      {/* Bottom strip */}
+      {/* Bottom strip -- Back | spacer | Process another | Save, the same shape
+          and the same order as the other two Compare steps. This one had no
+          Back at all, so the only way out of a conversion you wanted to adjust
+          was to throw it away and start from the file picker. */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
+          {t('common.back')}
+        </Button>
+
         <div className="flex-1" />
+
         <button
           type="button"
+          data-testid="process-another-btn"
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
           {t('convertDoc.processAnother')}
         </button>
-        <Button size="sm" onClick={onSave} className="flex-none">
+
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
           {t('common.saveEllipsis')}
         </Button>
       </div>

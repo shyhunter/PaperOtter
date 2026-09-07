@@ -93,6 +93,25 @@ const LABEL_FIELD = /(?:label|hint):\s*'((?:[^'\\]|\\.){3,160})'/g;
 // an identifier the renderer depends on, not copy.
 const FALLBACK = /\?[^'\n]{0,80}?:\s*'([A-Z][^']{4,140})'/g;
 
+/**
+ * A display string pushed into a list.
+ *
+ * The engine summary under Convert Document read
+ * "Using: Built-in (Markdown/HTML/JSON), Browser export (HTML to PDF)..." in
+ * English in every language, built by pushing literals into an array. None of
+ * the patterns above look inside a push, so a whole sentence assembled a piece
+ * at a time was invisible to a guard written to catch exactly that.
+ *
+ * Narrow on purpose: across the whole app this matches six strings, four of
+ * them product names already listed above and two of them Calibre command-line
+ * flags, which are arguments and not prose. Excluded by shape rather than by
+ * name so a new flag does not have to be remembered here.
+ */
+const LIST_PUSH = /\.push\(\s*'([^']{4,160})'\s*\)/g;
+
+/** A command-line switch is an argument, not something to translate. */
+const CLI_FLAG = /^--?[a-z0-9-]+$/i;
+
 /** A dotted lower-camel token is a translation key, not prose. */
 const KEY_SHAPED = /^[a-z][A-Za-z0-9]*\.[A-Za-z0-9_.]+$/;
 
@@ -106,7 +125,7 @@ const DEVELOPER_MESSAGES = /must be used within|is not a function|invariant/i;
 function findings(text: string): string[] {
   const found: string[] = [];
   const patterns = [JSX_TEXT, TEXT_PROP, TOAST, DESCRIPTION, NAME_FIELD, ERROR_SETTER,
-                    TERNARY, LABEL_FIELD, FALLBACK];
+                    TERNARY, LABEL_FIELD, FALLBACK, LIST_PUSH];
   for (const rx of patterns) {
     rx.lastIndex = 0;
     let m: RegExpExecArray | null;
@@ -118,6 +137,7 @@ function findings(text: string): string[] {
         if (!/[a-z]{2}/.test(value)) continue;      // needs real words
         if (KEY_SHAPED.test(value)) continue;       // already a translation key
         if (DEVELOPER_MESSAGES.test(value)) continue;
+        if (CLI_FLAG.test(value)) continue;
         if (PROPER_NOUNS.has(value)) continue;
         if (ALLOWLIST.has(value)) continue;
         found.push(value);

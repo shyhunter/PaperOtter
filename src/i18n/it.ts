@@ -11,15 +11,16 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal lei; buttons take the imperative, as Italian software does.
  */
 export const it: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrato (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Esportazione del browser (da HTML a PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Sfondo',
   'signatureBackground.none': 'Nessuno',
   'signatureBackground.white': 'Bianco',
   'signatureBackground.cream': 'Crema',
   'signatureBackground.grey': 'Grigio',
   'signatureBackground.custom': 'Colore personalizzato',
-  'signatureBackground.pickFromPage': 'Preleva dalla pagina',
-  'signatureBackground.pickingCancel': 'Annulla',
-  'signatureBackground.pickingHint': 'Fare clic sulla pagina per riprenderne il colore. Esc per annullare.',
   'signatureBackground.removeBg': 'Rimuovi lo sfondo',
   'signatureBackground.removeBgHint': 'Rende trasparente la carta dietro una firma caricata.',
   'common.cancel': 'Annulla', 'common.save': 'Salva', 'common.back': 'Indietro',
@@ -46,6 +47,8 @@ export const it: Dictionary = {
     'Per ora le foto HEIC si possono aprire solo su macOS: le converta prima in JPEG.',
   'file.unsafeName':
     'Questo nome file contiene caratteri non supportati. Lo rinomini e riprovi.',
+  'file.needsImage': 'Questo strumento lavora sulle immagini. Per ridurre un PDF, usi «{tool}».',
+  'file.needsPdf': 'Questo strumento lavora sui PDF. Per ridurre un’immagine, usi «{tool}».',
   'imageCompare.before': 'Prima', 'imageCompare.after': 'Dopo', 'imageCompare.original': 'Originale',
   'imageCompare.processed': 'Elaborato', 'imageCompare.regenerating': 'Rigenerazione…',
   'compare.copyStats': 'Copia le statistiche negli appunti',
@@ -282,6 +285,7 @@ export const it: Dictionary = {
   'redactPdf.removeRedaction': 'Rimuovi l’oscuramento',
   'redactPdf.applyingRedactions': 'Applicazione degli oscuramenti…',
   'redactPdf.redactPdf': 'Oscura PDF',
+  'redactPdf.willFlattenPages': 'L’applicazione appiattisce in immagini le pagine contrassegnate. Il testo su di esse non sarà più selezionabile né ricercabile.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Le pagine oscurate sono state convertite in immagini. Il testo di quelle pagine non è più selezionabile.',
   'redactPdf.renderingPagesAndRemovingContent':
@@ -316,6 +320,7 @@ export const it: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Ruota a sinistra le pagine selezionate',
   'rotate.rotateSelectedPagesRight': 'Ruota a destra le pagine selezionate',
   'signPdf.addASignatureToYour': 'Aggiunga una firma al suo documento PDF.',
+  'signPdf.couldNotPlaceSignature': 'Non è stato possibile inserire questa firma. Ne scelga un’altra o ne crei una nuova.',
   'signPdf.couldNotReadThePdf': 'Impossibile leggere il file PDF.', 'signPdf.signPdf': 'Firma PDF',
   'signPdf.clear': 'Cancella', 'signPdf.createNew': 'Crea nuova',
   'signPdf.createOrSelectSignature': 'Crea o scegli una firma', 'signPdf.deleteSignature': 'Elimina firma',
@@ -544,6 +549,7 @@ export const it: Dictionary = {
   'toolSidebar.targetFileSize': 'Dimensione desiderata del file',
   'toolSidebarPanel.alreadyMarked': 'Già segnato', 'toolSidebarPanel.markThisOne': 'Segna questo',
   'toolSidebarPanel.redacting': 'Oscuramento…', 'toolSidebarPanel.apply': 'Applica',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Trascini la firma al suo posto sulla pagina e la ridimensioni dagli angoli. Il pulsante di eliminazione la rimuove.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossibile disegnare la firma. Provi un altro stile o un nome più corto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'File più piccolo: ideale per lo schermo',
@@ -666,6 +672,7 @@ export const it: Dictionary = {
   'exportPanel.exportAsFormat': 'Esporta come {format}',
   'exportPanel.savedAsFormat': 'Salvato come {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opzioni tipografiche',
+  'imageBlockLayer.deleteStamp': 'Elimina questo timbro',
   'imageBlockLayer.resizeFromCorner': 'Ridimensiona da {corner}',
   'imageCompareStep.qualityValue': 'Qualità: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressione: {level}/9',
@@ -726,6 +733,8 @@ export const it: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacità: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Un riquadro così chiaro è difficile da vedere su una pagina bianca. Il contenuto sottostante viene comunque rimosso definitivamente.',
   'toolSidebarPanel.pdfaConversion': 'Conversione PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Verranno ridimensionate {count} pagine selezionate.',
+  'toolSidebarPanel.resizingAllPages': 'Verranno ridimensionate tutte le {count} pagine. Selezioni prima delle pagine per ridimensionare solo quelle.',
   'toolSidebarPanel.rotatingAllPages': 'Rotazione di tutte le {count} pagine',
   'toolSidebarPanel.rotatingPage': 'Rotazione della pagina {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotazione di {count} pagine selezionate',
