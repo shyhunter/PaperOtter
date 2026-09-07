@@ -7,16 +7,54 @@
  * - Modified/new images: embedded and drawn with drawImage()
  *
  * Image coordinates use PDF bottom-left origin throughout.
+ *
+ * ## Two coordinate spaces, and which is which
+ *
+ * The editor renders each page through pdf.js `getViewport`, which applies the
+ * page's /Rotate, and every overlay positions itself against those dimensions.
+ * So anything the user placed by pointing at the page -- an image block, a
+ * signature stamp, a text box they clicked into being -- is in the frame the
+ * reader sees. pdf-lib draws in the unturned space underneath, so those have to
+ * be mapped back on the way out. `placeVisual` below does that.
+ *
+ * Text that came out of the document is the other case. `getTextContent` hands
+ * back transforms in the page's own space, so extracted blocks are already raw
+ * and are drawn as they are. On a page with a /Rotate their overlay boxes are
+ * drawn in the wrong place on screen, because the layer positions them against
+ * the rotated dimensions -- a separate defect, in a different layer, and one
+ * that cannot be fixed here: extraction reads the font size out of
+ * `transform[3]`, which on a rotated page holds part of the rotation rather
+ * than a size, so those blocks are wrong before anything is drawn at all.
+ * Editing existing text on a turned page needs its own work.
+ *
+ * On an unrotated page the two spaces are identical and `placeVisual` is the
+ * identity, which is why this changes nothing for almost every document.
  */
 
 import {
   PDFDocument,
   StandardFonts,
+  degrees,
   rgb,
   type PDFPage,
   type PDFFont,
 } from 'pdf-lib';
+import { normalisedRotation, visualToRaw } from '@/lib/pdfPageNumbers';
 import type { PageEditState, ImageBlock } from '@/types/editor';
+
+/**
+ * A point the user pointed at, in the page's own coordinates, with the angle to
+ * draw at so it faces the reader the right way up.
+ *
+ * The viewer turns the page by its /Rotate, so drawing at that same angle has
+ * the two cancel out. Identical to what the page numberer and the signature
+ * placer do, and deliberately the same helpers, so the three cannot drift.
+ */
+function placeVisual(page: PDFPage, vx: number, vy: number): { x: number; y: number; rotation: 0 | 90 | 180 | 270 } {
+  const { width: rawW, height: rawH } = page.getSize();
+  const rotation = normalisedRotation(page);
+  return { ...visualToRaw(vx, vy, rawW, rawH, rotation), rotation };
+}
 
 /** Base font -> variant mapping for pdf-lib StandardFonts */
 const FONT_VARIANTS: Record<string, Record<string, keyof typeof StandardFonts>> = {
@@ -152,21 +190,40 @@ export async function applyAllEdits(
         drawX = block.x + block.width - textWidth;
       }
 
+      // A box the user clicked into being is in the frame they were looking at,
+      // so it is mapped back like an image block. A block that came out of the
+      // document already carries the page's own coordinates and is left alone:
+      // see the note at the top of this file for why those two differ, and why
+      // this distinction costs nothing on an unrotated page.
+      const place = block.isNew
+        ? placeVisual(page, drawX, block.y)
+        : { x: drawX, y: block.y, rotation: 0 as const };
+
       page.drawText(block.text, {
-        x: drawX,
-        y: block.y,
+        x: place.x,
+        y: place.y,
         size: block.fontSize,
         font,
         color: textColor,
+        rotate: degrees(place.rotation),
       });
 
       // Draw underline if enabled
       if (block.underline) {
         const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
         const underlineY = block.y - block.fontSize * 0.15;
+        // Both ends mapped, not one end plus a width: on a turned page the
+        // line runs along a different axis, and the two mapped points carry
+        // that between them.
+        const from = block.isNew
+          ? placeVisual(page, drawX, underlineY)
+          : { x: drawX, y: underlineY };
+        const to = block.isNew
+          ? placeVisual(page, drawX + textWidth, underlineY)
+          : { x: drawX + textWidth, y: underlineY };
         page.drawLine({
-          start: { x: drawX, y: underlineY },
-          end: { x: drawX + textWidth, y: underlineY },
+          start: { x: from.x, y: from.y },
+          end: { x: to.x, y: to.y },
           thickness: Math.max(0.5, block.fontSize * 0.05),
           color: textColor,
         });
@@ -175,15 +232,22 @@ export async function applyAllEdits(
 
     // ── Image edits ─────────────────────────────────────────────────────
 
-    // Cover deleted images with white rectangles using stored bounds
+    // Cover deleted images with white rectangles using stored bounds.
+    // Image blocks are only ever created in the editor -- nothing extracts one
+    // from the document -- so their bounds are in the frame the reader sees,
+    // and the cover has to be mapped like the stamp it is covering. An
+    // unmapped cover on a turned page whites out a different part of the page
+    // and leaves the thing it was hiding on show.
     for (const deleted of pageEdit.deletedImageBlocks ?? []) {
+      const cover = placeVisual(page, deleted.x - 1, deleted.y - 1);
       page.drawRectangle({
-        x: deleted.x - 1,
-        y: deleted.y - 1,
+        x: cover.x,
+        y: cover.y,
         width: deleted.width + 2,
         height: deleted.height + 2,
         color: rgb(1, 1, 1),
         borderWidth: 0,
+        rotate: degrees(cover.rotation),
       });
     }
 
@@ -207,13 +271,15 @@ async function applyImageEditsToPage(
 
     // Cover original position with white rectangle for modified (non-new) images
     if (!block.isNew) {
+      const cover = placeVisual(page, block.x - 1, block.y - 1);
       page.drawRectangle({
-        x: block.x - 1,
-        y: block.y - 1,
+        x: cover.x,
+        y: cover.y,
         width: block.width + 2,
         height: block.height + 2,
         color: rgb(1, 1, 1),
         borderWidth: 0,
+        rotate: degrees(cover.rotation),
       });
     }
 
@@ -234,12 +300,17 @@ async function applyImageEditsToPage(
       ? await doc.embedPng(finalBytes)
       : await doc.embedJpg(finalBytes);
 
-    // Draw at the block's position/size (PDF bottom-left origin)
+    // Draw where the user put it, as they saw the page. Before this, a stamp
+    // dropped on a turned page was written at the same numbers in the unturned
+    // space underneath, so it came out somewhere else entirely and lying on its
+    // side. Reported for signatures; every image block had it.
+    const { x, y, rotation } = placeVisual(page, block.x, block.y);
     page.drawImage(embeddedImg, {
-      x: block.x,
-      y: block.y,
+      x,
+      y,
       width: block.width,
       height: block.height,
+      rotate: degrees(rotation),
     });
   }
 }
@@ -384,21 +455,40 @@ export async function applyTextEdits(
       }
 
       const textColor = parseColor(block.color);
+      // A box the user clicked into being is in the frame they were looking at,
+      // so it is mapped back like an image block. A block that came out of the
+      // document already carries the page's own coordinates and is left alone:
+      // see the note at the top of this file for why those two differ, and why
+      // this distinction costs nothing on an unrotated page.
+      const place = block.isNew
+        ? placeVisual(page, drawX, block.y)
+        : { x: drawX, y: block.y, rotation: 0 as const };
+
       page.drawText(block.text, {
-        x: drawX,
-        y: block.y,
+        x: place.x,
+        y: place.y,
         size: block.fontSize,
         font,
         color: textColor,
+        rotate: degrees(place.rotation),
       });
 
       // Draw underline if enabled
       if (block.underline) {
         const textWidth = font.widthOfTextAtSize(block.text, block.fontSize);
         const underlineY = block.y - block.fontSize * 0.15;
+        // Both ends mapped, not one end plus a width: on a turned page the
+        // line runs along a different axis, and the two mapped points carry
+        // that between them.
+        const from = block.isNew
+          ? placeVisual(page, drawX, underlineY)
+          : { x: drawX, y: underlineY };
+        const to = block.isNew
+          ? placeVisual(page, drawX + textWidth, underlineY)
+          : { x: drawX + textWidth, y: underlineY };
         page.drawLine({
-          start: { x: drawX, y: underlineY },
-          end: { x: drawX + textWidth, y: underlineY },
+          start: { x: from.x, y: from.y },
+          end: { x: to.x, y: to.y },
           thickness: Math.max(0.5, block.fontSize * 0.05),
           color: textColor,
         });
