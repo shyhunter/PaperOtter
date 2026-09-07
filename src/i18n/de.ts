@@ -353,6 +353,7 @@ export const de: Dictionary = {
 
   // ── Signatures ────────────────────────────────────────────────────────────
   'signPdf.addASignatureToYour': 'Fügen Sie Ihrem PDF-Dokument eine Unterschrift hinzu.',
+  'signPdf.couldNotPlaceSignature': 'Diese Unterschrift konnte nicht platziert werden. Wählen Sie eine andere oder erstellen Sie eine neue.',
   'signPdf.couldNotReadThePdf': 'Die PDF-Datei konnte nicht gelesen werden.',
   'signPdf.signPdf': 'PDF unterschreiben',
   'signPdf.clear': 'Löschen',

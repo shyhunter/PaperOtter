@@ -336,6 +336,7 @@ export const en = {
 
   // ── signPdf ─────────────────────────────────────────────────────────────
   'signPdf.addASignatureToYour': 'Add a signature to your PDF document.',
+  'signPdf.couldNotPlaceSignature': 'This signature could not be placed. Pick another one, or create a new one.',
   'signPdf.couldNotReadThePdf': 'Could not read the PDF file.',
   'signPdf.signPdf': 'Sign PDF',
 

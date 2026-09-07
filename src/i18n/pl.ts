@@ -334,6 +334,7 @@ export const pl: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Obróć wybrane strony w lewo',
   'rotate.rotateSelectedPagesRight': 'Obróć wybrane strony w prawo',
   'signPdf.addASignatureToYour': 'Dodaj podpis do dokumentu PDF.',
+  'signPdf.couldNotPlaceSignature': 'Nie udało się umieścić tego podpisu. Wybierz inny lub utwórz nowy.',
   'signPdf.couldNotReadThePdf': 'Nie udało się odczytać pliku PDF.', 'signPdf.signPdf': 'Podpisz PDF',
   'signPdf.clear': 'Wyczyść', 'signPdf.createNew': 'Utwórz nowy',
   'signPdf.createOrSelectSignature': 'Utwórz lub wybierz podpis', 'signPdf.deleteSignature': 'Usuń podpis',

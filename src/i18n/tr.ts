@@ -382,6 +382,7 @@ export const tr: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Seçili sayfaları sola döndür',
   'rotate.rotateSelectedPagesRight': 'Seçili sayfaları sağa döndür',
   'signPdf.addASignatureToYour': 'PDF belgenize bir imza ekleyin.',
+  'signPdf.couldNotPlaceSignature': 'Bu imza yerleştirilemedi. Başka bir imza seçin ya da yeni bir tane oluşturun.',
   'signPdf.couldNotReadThePdf': 'PDF dosyası okunamadı.', 'signPdf.signPdf': 'PDF’i imzala',
   'signPdf.clear': 'Temizle', 'signPdf.createNew': 'Yeni oluştur',
   'signPdf.createOrSelectSignature': 'İmza oluştur veya seç', 'signPdf.deleteSignature': 'İmzayı sil',

@@ -319,6 +319,7 @@ export const it: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Ruota a sinistra le pagine selezionate',
   'rotate.rotateSelectedPagesRight': 'Ruota a destra le pagine selezionate',
   'signPdf.addASignatureToYour': 'Aggiunga una firma al suo documento PDF.',
+  'signPdf.couldNotPlaceSignature': 'Non è stato possibile inserire questa firma. Ne scelga un’altra o ne crei una nuova.',
   'signPdf.couldNotReadThePdf': 'Impossibile leggere il file PDF.', 'signPdf.signPdf': 'Firma PDF',
   'signPdf.clear': 'Cancella', 'signPdf.createNew': 'Crea nuova',
   'signPdf.createOrSelectSignature': 'Crea o scegli una firma', 'signPdf.deleteSignature': 'Elimina firma',

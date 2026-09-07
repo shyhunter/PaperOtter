@@ -321,6 +321,7 @@ export const nl: Dictionary = {
   'rotate.rotateSelectedPagesLeft': 'Geselecteerde pagina’s naar links draaien',
   'rotate.rotateSelectedPagesRight': 'Geselecteerde pagina’s naar rechts draaien',
   'signPdf.addASignatureToYour': 'Voeg een handtekening toe aan uw PDF-document.',
+  'signPdf.couldNotPlaceSignature': 'Deze handtekening kon niet worden geplaatst. Kies een andere of maak een nieuwe.',
   'signPdf.couldNotReadThePdf': 'Kon het PDF-bestand niet lezen.', 'signPdf.signPdf': 'PDF ondertekenen',
   'signPdf.clear': 'Wissen', 'signPdf.createNew': 'Nieuwe maken',
   'signPdf.createOrSelectSignature': 'Handtekening maken of kiezen',

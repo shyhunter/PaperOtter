@@ -58,7 +58,56 @@ export async function rasteriseSignature(
   fontSizePt: number,
   color: string,
 ): Promise<SignatureRaster | null> {
+  const drawn = await drawSignature(text, fontCss, fontSizePt, color);
+  if (!drawn) return null;
+
+  const dataUrl = drawn.canvas.toDataURL('image/png');
+  const base64 = dataUrl.split(',')[1];
+  if (!base64) return null;
+
+  return {
+    bytes: Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)),
+    ...signatureBlockSize(drawn.canvas.width, drawn.canvas.height, fontSizePt),
+  };
+}
+
+/**
+ * The same drawing, as a PNG data URL.
+ *
+ * Saved signatures are stored as data URLs and the editor places raw bytes, so
+ * both forms are needed and only one of them may do the drawing.
+ */
+export async function rasteriseSignatureDataUrl(
+  text: string,
+  fontCss: string,
+  fontSizePt: number,
+  color: string,
+): Promise<string | null> {
+  const drawn = await drawSignature(text, fontCss, fontSizePt, color);
+  return drawn ? drawn.canvas.toDataURL('image/png') : null;
+}
+
+/**
+ * The CSS stack for a font value the editor's old localStorage list stored.
+ *
+ * Those entries kept the recipe rather than the image, so hydrating one means
+ * turning its font value back into something canvas can draw with.
+ */
+export const LEGACY_SIGNATURE_FONT_CSS: Record<string, string> = {
+  cursive: "'Dancing Script', 'Brush Script MT', cursive",
+  serif: "'Georgia', 'Times New Roman', serif",
+  sans: "'Helvetica Neue', Arial, sans-serif",
+};
+
+/** Draws the text and hands back the canvas, or null if there is nothing on it. */
+async function drawSignature(
+  text: string,
+  fontCss: string,
+  fontSizePt: number,
+  color: string,
+): Promise<{ canvas: HTMLCanvasElement } | null> {
   if (!text.trim()) return null;
+  if (typeof document === 'undefined') return null;
 
   const pixelSize = fontSizePt * SIGNATURE_RASTER_SCALE;
   const font = `${pixelSize}px ${fontCss}`;
@@ -99,12 +148,5 @@ export async function rasteriseSignature(
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(text, pad, pad + ascent);
 
-  const dataUrl = canvas.toDataURL('image/png');
-  const base64 = dataUrl.split(',')[1];
-  if (!base64) return null;
-
-  return {
-    bytes: Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)),
-    ...signatureBlockSize(width, height, fontSizePt),
-  };
+  return { canvas };
 }

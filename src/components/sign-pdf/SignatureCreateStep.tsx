@@ -65,6 +65,10 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
   }, []);
 
   const handleSavedClick = useCallback((sig: SavedSignature) => {
+    // An entry with no image cannot be placed, and handing one on is what sent
+    // the flow to a blank Place step. Hydration should have drawn or dropped
+    // these on load; this is the case it could not draw.
+    if (!sig.dataUrl) return;
     onSignatureSelected(sig.dataUrl);
   }, [onSignatureSelected]);
 
@@ -74,7 +78,11 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
   }, [deleteSignature]);
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-6">
+    /* min-h-0 with flex-1, or the column refuses to shrink below its content
+       and the overflow never engages -- the same shape as every other scroll
+       area in the app. Without it, Use This Signature sat below the window with
+       no way to reach it as soon as a few signatures had been saved. */
+    <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
       {/* Header.
           Back belongs in the bottom bar with the other twenty-one tools, not
           beside the title: this was the only step in the app that put it there,
@@ -93,7 +101,10 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
             <p className="text-sm text-muted-foreground">{t('signPdf.noSavedSignatures')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          /* Two rows visible, the rest scrolled. Ten saved signatures is the
+             stored maximum and four rows of them pushed the create area off
+             the screen entirely. */
+          <div className="grid max-h-[15.5rem] grid-cols-2 gap-3 overflow-y-auto pe-1 sm:grid-cols-3">
             {signatures.map((sig) => (
               <div
                 key={sig.id}
