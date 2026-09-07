@@ -1705,7 +1705,7 @@ async fn convert_with_word(
     // killed at -1712; on Windows, SaveAs2 can succeed and Close, Quit or the
     // COM release fail after it. Either way the work is done and the only
     // thing wrong is the verdict.
-    #[allow(unused_mut, unused_assignments)]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     let mut automation_error: Option<String> = None;
 
     #[cfg(target_os = "macos")]
@@ -1810,6 +1810,10 @@ async fn convert_with_word(
 /// that had converted perfectly well.
 ///
 /// An empty file is not a document, so it is filtered out before this sees it.
+#[cfg_attr(
+    not(any(target_os = "macos", target_os = "windows")),
+    allow(dead_code)
+)]
 fn word_outcome(bytes: Option<Vec<u8>>, error: Option<String>) -> Result<Vec<u8>, String> {
     match (bytes, error) {
         (Some(bytes), _) => Ok(bytes),
