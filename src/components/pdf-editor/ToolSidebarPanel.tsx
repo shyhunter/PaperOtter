@@ -1570,14 +1570,9 @@ function SignPanel() {
           </div>
         </div>
 
-        {/* The page the editor is showing, so its colour can be sampled
-            directly rather than matched by eye. */}
         <SignatureBackground
           value={sigBackground}
           onChange={setSigBackground}
-          pageCanvas={typeof document !== 'undefined'
-            ? document.querySelector<HTMLCanvasElement>('[data-editor-page] canvas, .editor-page canvas, canvas')
-            : null}
           className="mt-3"
         />
       </div>

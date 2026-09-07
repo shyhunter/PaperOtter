@@ -298,9 +298,16 @@ export function SignaturePlaceStep({
             className="absolute inset-0"
             style={{ cursor: isDragging.current ? 'grabbing' : 'default' }}
           >
+            {/* ring, not border: a border is inside the box, so the image only
+                got width - 4 by height - 4 while sigSize.height was computed
+                from the full width. The content box then had a different aspect
+                to the signature, object-contain letterboxed it, and the chosen
+                background stopped short of the edges -- wider the wider the
+                signature. A ring is painted outside the layout box, so the
+                image gets the whole rectangle. */}
             <div
               onMouseDown={handleMouseDown}
-              className="absolute border-2 border-primary/50 bg-primary/5"
+              className="absolute ring-2 ring-primary/50 bg-primary/5"
               style={{
                 left: sigPos.x,
                 top: sigPos.y,
@@ -310,10 +317,15 @@ export function SignaturePlaceStep({
                 userSelect: 'none',
               }}
             >
+              {/* fill, not contain: pdf-lib draws the image stretched into the
+                  rectangle handleApply computes from sigSize, so contain showed
+                  a preview the saved page would not match. The box keeps the
+                  signature's aspect on its own, so this changes nothing but the
+                  disagreement. */}
               <img
                 src={composited}
                 alt={t('signPdf.signature')}
-                className="pointer-events-none h-full w-full object-contain"
+                className="pointer-events-none h-full w-full object-fill"
                 draggable={false}
               />
 
@@ -338,7 +350,6 @@ export function SignaturePlaceStep({
           <SignatureBackground
             value={background}
             onChange={setBackground}
-            pageCanvas={pageBoxRef.current?.querySelector('canvas') ?? null}
             className="mb-4"
           />
 

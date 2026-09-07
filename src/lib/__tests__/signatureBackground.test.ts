@@ -13,8 +13,6 @@ import { describe, it, expect } from 'vitest';
 import {
   luminance,
   keyOutBackground,
-  sampleAverageColour,
-  toHex,
   DEFAULT_KEY_THRESHOLD,
 } from '@/lib/signatureBackground';
 
@@ -94,35 +92,5 @@ describe('keyOutBackground', () => {
     const px = fill(1, 1, 0, 0, 0, 40);
     keyOutBackground(px);
     expect(px[3]).toBeLessThanOrEqual(40);
-  });
-});
-
-describe('sampleAverageColour', () => {
-  it('[SIG-11] reads a flat patch exactly', () => {
-    expect(sampleAverageColour(fill(5, 5, 250, 245, 230), 5, 5, 2, 2)).toBe('#faf5e6');
-  });
-
-  it('[SIG-12] averages out a single stray pixel, which is why it is not a point sample', () => {
-    const px = fill(5, 5, 255, 255, 255);
-    px[(2 * 5 + 2) * 4] = 0; px[(2 * 5 + 2) * 4 + 1] = 0; px[(2 * 5 + 2) * 4 + 2] = 0;
-    const avg = sampleAverageColour(px, 5, 5, 2, 2, 2);
-    expect(avg).not.toBe('#000000');
-    expect(avg).not.toBe('#ffffff');
-  });
-
-  it('[SIG-13] clamps at the edges instead of reading outside the image', () => {
-    expect(sampleAverageColour(fill(3, 3, 10, 20, 30), 3, 3, 0, 0, 5)).toBe('#0a141e');
-  });
-
-  it('[SIG-14] returns null when the patch is entirely transparent', () => {
-    expect(sampleAverageColour(fill(3, 3, 0, 0, 0, 0), 3, 3, 1, 1)).toBeNull();
-  });
-});
-
-describe('toHex', () => {
-  it('[SIG-15] pads and clamps', () => {
-    expect(toHex(0, 0, 0)).toBe('#000000');
-    expect(toHex(255, 255, 255)).toBe('#ffffff');
-    expect(toHex(-20, 300, 15)).toBe('#00ff0f');
   });
 });

@@ -25,9 +25,6 @@ export const de: Dictionary = {
   'signatureBackground.cream': 'Creme',
   'signatureBackground.grey': 'Grau',
   'signatureBackground.custom': 'Eigene Farbe',
-  'signatureBackground.pickFromPage': 'Von Seite wählen',
-  'signatureBackground.pickingCancel': 'Abbrechen',
-  'signatureBackground.pickingHint': 'Klicken Sie auf die Seite, um deren Farbe zu übernehmen. Escape zum Abbrechen.',
   'signatureBackground.removeBg': 'Hintergrund entfernen',
   'signatureBackground.removeBgHint': 'Macht das Papier hinter einer hochgeladenen Unterschrift transparent.',
   // ── Common ────────────────────────────────────────────────────────────────
