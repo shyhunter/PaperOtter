@@ -31,6 +31,9 @@ import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } fr
 import { nextStampPosition } from '@/lib/blockResize';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
+import { SavedSettingsRow, SaveSettingAs } from '@/components/destinations/DestinationPicker';
+import { targetSizeInput, type DestinationRequirement } from '@/lib/destinations';
+import { useDestinations } from '@/hooks/useDestinations';
 import {
   getPdfCompressibilityFromBytes,
   estimateOutputSizeBytes,
@@ -341,6 +344,12 @@ function CompressPanel() {
   const [customWidthMm, setCustomWidthMm] = useState('210');
   const [customHeightMm, setCustomHeightMm] = useState('297');
 
+  // Saved settings. The same list the standalone tool keeps, so a setting saved
+  // for a portal is there whichever way the document was opened -- which is the
+  // whole point of a saved setting, and the editor had none of it.
+  const [destination, setDestination] = useState<DestinationRequirement | null>(null);
+  const { destinations, save: saveDestination, remove: removeDestination } = useDestinations();
+
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [compressionResult, setCompressionResult] = useState<{
@@ -444,6 +453,61 @@ function CompressPanel() {
     return 'prepress';
   }, [targetActive, targetSizeValue, unit, baseBytes, preset]);
 
+  /**
+   * Apply a saved setting by moving the controls, not by overriding them.
+   *
+   * The same rule the standalone tool follows, for the same reason: the user
+   * can see exactly what was set and change any of it, because a saved setting
+   * is a starting point for their document rather than a mode the app enters.
+   */
+  const applyDestination = useCallback((d: DestinationRequirement | null) => {
+    setDestination(d);
+    if (!d) return;
+
+    // Target size and quality are alternatives, so only the one it was saved
+    // in comes back; restoring both would leave the panel in a state nobody
+    // filled in.
+    if (d.maxBytes !== undefined) {
+      const { value, unit: u } = targetSizeInput(d.maxBytes);
+      setUseTargetSize(true);
+      setTargetSizeValue(value);
+      setTargetUnit(u);
+    } else if (d.qualityLevel !== undefined) {
+      setUseTargetSize(false);
+      const zone = QUALITY_ZONES.find((z) => z.quality === d.qualityLevel);
+      if (zone) setPreset(zone.value);
+    }
+
+    if (d.pageSize !== undefined) {
+      setResizeEnabled(true);
+      setPagePreset(d.pageSize);
+    } else {
+      // Saved with resizing off, so it goes back off. Leaving a previous
+      // setting's A4 in place would silently resize a document this one never
+      // asked to resize.
+      setResizeEnabled(false);
+    }
+  }, []);
+
+  /** Save what the controls currently say, under the user's own name. */
+  const saveCurrentAsDestination = useCallback((name: string) => {
+    const parsed = parseInt(targetSizeValue, 10);
+    const maxBytes = useTargetSize && !isNaN(parsed) && parsed > 0
+      ? parsed * (unit === 'MB' ? 1024 * 1024 : 1024)
+      : undefined;
+    void saveDestination({
+      name,
+      maxBytes,
+      // The zones are the four real presets; 'custom' is not one of them, so
+      // this narrowing can never drop a quality that was actually offered.
+      qualityLevel: !useTargetSize
+        ? QUALITY_ZONES.find((z) => z.value === preset)?.quality as
+            Exclude<PdfQualityLevel, 'custom'> | undefined
+        : undefined,
+      pageSize: resizeEnabled && pagePreset !== 'custom' ? pagePreset : undefined,
+    });
+  }, [targetSizeValue, useTargetSize, unit, preset, resizeEnabled, pagePreset, saveDestination]);
+
   // Which pages the resize touches. A selection in the Pages panel is what the
   // user pointed at, the same rule the Rotate panel follows; with no selection
   // it means the whole document, because that is what "resize pages" reads as.
@@ -524,6 +588,19 @@ function CompressPanel() {
   return (
     <div className="space-y-3">
       <PanelHeader toolId="compress-pdf" />
+
+      {/* Saved settings, above the controls they rewrite -- the arrangement the
+          standalone tool uses. Renders nothing until something has been saved,
+          so a first run is not given a heading over a dead control. */}
+      <SavedSettingsRow
+        destinations={destinations}
+        selectedId={destination?.id ?? null}
+        onSelect={applyDestination}
+        onRemove={(id) => {
+          void removeDestination(id);
+          if (destination?.id === id) setDestination(null);
+        }}
+      />
 
       {/* Current file size */}
       <div className="rounded bg-muted/30 p-2 flex justify-between text-[10px]">
@@ -741,6 +818,12 @@ function CompressPanel() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Keeping the current controls under a name, below the controls being
+          kept. Sits after resize because a saved setting captures that too. */}
+      <div className="border-t pt-2">
+        <SaveSettingAs onSave={saveCurrentAsDestination} hasSaved={destinations.length > 0} />
       </div>
 
       {/* Compression result feedback */}
@@ -2210,6 +2293,14 @@ function RepairPanel() {
   const [resultInfo, setResultInfo] = useState<{ originalSize: number; resultSize: number } | null>(null);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
 
+  // Within 5% of where it started: the same rule the standalone tool applies,
+  // and the only signal available -- Ghostscript reports no diagnosis, it
+  // simply rewrites whatever it is given.
+  const isFileSizeSimilar =
+    resultInfo !== null &&
+    resultInfo.originalSize > 0 &&
+    Math.abs(resultInfo.resultSize - resultInfo.originalSize) / resultInfo.originalSize < 0.05;
+
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
     setResultInfo(null);
@@ -2246,12 +2337,34 @@ function RepairPanel() {
         {t('pdfEditor.attemptToFixCorruptedOr')}
       </p>
 
+      {/* What repair actually does, which the standalone tool explains and this
+          panel did not. Repair always "succeeds" -- it re-processes the file
+          through Ghostscript whatever state it was in -- so without this the
+          result reads as a verdict on the document rather than as a description
+          of a process that ran. */}
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        {t('repairPdf.repairExplanation')}
+      </p>
+
       {resultInfo && (
-        <ToolResultFeedback
-          originalSize={resultInfo.originalSize}
-          resultSize={resultInfo.resultSize}
-          toolLabel="PDF repair"
-        />
+        <>
+          <ToolResultFeedback
+            originalSize={resultInfo.originalSize}
+            resultSize={resultInfo.resultSize}
+            toolLabel="PDF repair"
+          />
+          {/* A file that came back the same size did not have much wrong with
+              it. Saying so is the difference between "repaired" and "nothing
+              needed repairing", which the size alone does not tell anyone. */}
+          {isFileSizeSimilar && (
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {t('repairPdf.noIssuesDetectedFileAppears')}
+            </p>
+          )}
+          <p className="text-[10px] italic leading-relaxed text-muted-foreground/70">
+            {t('repairPdf.repairCompleteIfTheDocument')}
+          </p>
+        </>
       )}
 
       <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} isProcessing={isProcessing} />
@@ -2269,8 +2382,45 @@ function RepairPanel() {
 
 // ── Protect Panel ────────────────────────────────────────────────────
 
+/**
+ * Whether the open document carries an /Encrypt dictionary.
+ *
+ * Both password panels need the same answer, from opposite sides: Protect
+ * cannot encrypt a document that already is, and Unlock has nothing to do for
+ * one that is not. Neither could ask before, so Protect let a whole form be
+ * filled in for a job that would fail, and Unlock offered a password prompt
+ * with no correct answer.
+ *
+ * Null while the answer is still being worked out, so nothing is claimed before
+ * it is known. A read that throws is reported as "not encrypted": the panels
+ * use this to warn, and a warning invented from a failed read is worse than no
+ * warning at all -- the tools themselves still refuse properly.
+ */
+function useEncryptedDocument(pdfBytes: Uint8Array): boolean | null {
+  const [encrypted, setEncrypted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setEncrypted(null);
+    import('@/lib/pdfEncryption')
+      .then(({ isPdfEncrypted }) => isPdfEncrypted(pdfBytes))
+      .then((result) => { if (!cancelled) setEncrypted(result); })
+      .catch(() => { if (!cancelled) setEncrypted(false); });
+    return () => { cancelled = true; };
+  }, [pdfBytes]);
+
+  return encrypted;
+}
+
 function ProtectPanel() {
   const { state } = useEditorContext();
+  // A document that is already encrypted cannot be encrypted again: qpdf
+  // refuses with "User password is specified. Need an Owner password or both."
+  // and leaves a zero-byte file. The standalone tool checks this when the file
+  // is picked; here the document is already open, so the check belongs on the
+  // bytes in hand -- and the answer has to arrive before two passwords and an
+  // acknowledgement have been typed, not after.
+  const alreadyProtected = useEncryptedDocument(state.pdfBytes);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
@@ -2357,6 +2507,15 @@ function ProtectPanel() {
     <div className="space-y-3">
       <PanelHeader toolId="protect-pdf" />
 
+      {/* Said before the form, not after it: qpdf refuses a document that is
+          already encrypted, and it is not worth two passwords and a tick box to
+          find that out. */}
+      {alreadyProtected === true && (
+        <p className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">
+          {t('protectPdf.alreadyProtected')}
+        </p>
+      )}
+
       <div className="space-y-2">
         <div>
           <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
@@ -2436,6 +2595,9 @@ function ProtectPanel() {
 
 function UnlockPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
+  // The other side of the same question the Protect panel asks. A password
+  // prompt for a document with no password is a prompt with no correct answer.
+  const isProtected = useEncryptedDocument(state.pdfBytes);
   const [password, setPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
@@ -2471,6 +2633,14 @@ function UnlockPanel() {
   return (
     <div className="space-y-3">
       <PanelHeader toolId="unlock-pdf" />
+
+      {/* Nothing to unlock is worth saying: the alternative is a password field
+          that will reject every password, correct ones included. */}
+      {isProtected === false && !success && (
+        <p className="rounded border border-border bg-muted/40 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
+          {t('unlockPdf.notProtected')}
+        </p>
+      )}
 
       <div>
         <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
