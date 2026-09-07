@@ -1262,6 +1262,29 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.queryByText(/click-to-place/i)).not.toBeInTheDocument();
   });
 
+  it('TP-06b — the Sign panel offers all three ways to make a signature', async () => {
+    // Draw and Upload existed only in Sign PDF, so a signature made with a
+    // stylus or scanned from paper could not be used in the editor at all.
+    // Reported alongside the shared-list request: "as well as the create new
+    // options too".
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    for (const label of ['Draw', 'Type', 'Upload']) {
+      expect(screen.getByRole('button', { name: label }), label).toBeInTheDocument();
+    }
+
+    // Type is the tab that opens, so its controls are the ones on screen.
+    expect(screen.getByPlaceholderText('Your Name')).toBeInTheDocument();
+  });
+
   it('TP-06b — Typing a name shows signature preview and enables Place', async () => {
     const user = userEvent.setup();
 

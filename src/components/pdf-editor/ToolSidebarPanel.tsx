@@ -21,6 +21,8 @@ import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type 
 import { rasteriseSignatureDataUrl, signatureBlockSize } from '@/lib/signatureRaster';
 import { useSavedSignatures } from '@/hooks/useSavedSignatures';
 import { SignatureBackground, type SignatureBg } from '@/components/SignatureBackground';
+import { SignatureCanvas } from '@/components/sign-pdf/SignatureCanvas';
+import { SignatureUpload } from '@/components/sign-pdf/SignatureUpload';
 import { applySignatureBackground } from '@/lib/signatureBackground';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { TextMatch } from '@/lib/pdfTextSearch';
@@ -1395,6 +1397,18 @@ function signatureFontLabel(value: SignatureFontValue): string {
   return labels[value];
 }
 
+/**
+ * The three ways to make a signature, in the order Sign PDF lists them.
+ *
+ * A function would be needed for translated labels; these are keys, resolved at
+ * render, for the reason PRESETS in SignatureBackground gives.
+ */
+const SIGNATURE_TABS = [
+  { id: 'draw', key: 'signatureCreateStep.draw' },
+  { id: 'type', key: 'signatureCreateStep.type' },
+  { id: 'upload', key: 'signatureCreateStep.upload' },
+] as const;
+
 // Saved signatures live in the shared store, the same one Sign PDF reads.
 //
 // This panel used to keep its own list in localStorage under
@@ -1419,6 +1433,12 @@ function SignPanel() {
   // to a canvas, so the colour can be taken off the page rather than guessed.
   const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
   const { signatures: savedSignatures, saveSignature, deleteSignature } = useSavedSignatures();
+  // Draw and Upload were only ever in Sign PDF, so a signature made with a
+  // stylus or scanned from paper could not be used in the editor at all --
+  // and, before the shared store, could not even be seen here.
+  const [sigTab, setSigTab] = useState<'draw' | 'type' | 'upload'>('type');
+  // What Draw or Upload produced, waiting to be placed or saved.
+  const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
 
   const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
@@ -1475,6 +1495,9 @@ function SignPanel() {
     markDirty();
   }, [state.currentPage, state.pages, sigSize, addImageBlock, markDirty]);
 
+  /** Whether there is a signature to place at all, on whichever tab is open. */
+  const canPlace = sigTab === 'type' ? sigText.trim().length > 0 : pendingDataUrl !== null;
+
   /** Draws what is typed in the panel, then places it. */
   const handlePlaceTyped = useCallback(async () => {
     if (!sigText.trim()) return;
@@ -1505,11 +1528,60 @@ function SignPanel() {
     });
   }, [sigText, selectedFontCss, sigSize, sigColor, sigBackground, saveSignature]);
 
+  /** Place whatever the open tab produced. */
+  const handlePlace = useCallback(() => {
+    if (sigTab === 'type') return void handlePlaceTyped();
+    if (pendingDataUrl) return void placeSignatureImage(pendingDataUrl, sigBackground);
+  }, [sigTab, pendingDataUrl, sigBackground, handlePlaceTyped, placeSignatureImage]);
+
+  /** Save whatever the open tab produced, into the list both tools read. */
+  const handleSave = useCallback(async () => {
+    if (sigTab === 'type') return handleSaveSignature();
+    if (!pendingDataUrl) return;
+    await saveSignature({
+      // Drawn and uploaded signatures have no text to name themselves with, so
+      // they get the numbered name Sign PDF offers for the same reason.
+      name: t('signatureCreateStep.signatureN', { n: savedSignatures.length + 1 }),
+      type: sigTab === 'draw' ? 'drawn' : 'uploaded',
+      dataUrl: pendingDataUrl,
+      background: sigBackground,
+    });
+  }, [sigTab, pendingDataUrl, sigBackground, savedSignatures.length, saveSignature, handleSaveSignature]);
+
   return (
     <div className="space-y-3">
       <PanelHeader toolId="sign-pdf" />
 
+      {/* The same three ways to make a signature that Sign PDF offers. */}
+      <div className="flex gap-1">
+        {SIGNATURE_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => { setSigTab(tab.id); setPendingDataUrl(null); }}
+            className={`flex-1 rounded border py-1 text-[10px] transition-colors ${
+              sigTab === tab.id
+                ? 'border-primary bg-primary/10 font-medium'
+                : 'border-border hover:bg-muted/50'
+            }`}
+          >
+            {t(tab.key)}
+          </button>
+        ))}
+      </div>
+
+      {sigTab === 'draw' && (
+        <SignatureCanvas
+          color={sigColor}
+          onComplete={setPendingDataUrl}
+          onClear={() => setPendingDataUrl(null)}
+        />
+      )}
+
+      {sigTab === 'upload' && <SignatureUpload onComplete={setPendingDataUrl} />}
+
       {/* Type signature */}
+      {sigTab === 'type' && (
       <div className="space-y-2">
         <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.typeYourSignature')}</label>
         <input
@@ -1587,27 +1659,27 @@ function SignPanel() {
           </div>
         </div>
 
-        <SignatureBackground
-          value={sigBackground}
-          onChange={setSigBackground}
-          className="mt-3"
-        />
       </div>
+      )}
+
+      {/* Outside the tabs: what sits behind the signature applies to a drawn or
+          uploaded one just as much as a typed one. */}
+      <SignatureBackground value={sigBackground} onChange={setSigBackground} />
 
       {/* Place + Save buttons */}
       <div className="flex gap-1.5">
         <button
           type="button"
-          onClick={handlePlaceTyped}
-          disabled={!sigText.trim()}
+          onClick={handlePlace}
+          disabled={!canPlace}
           className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t('pdfEditor.placeOnPage')}
         </button>
         <button
           type="button"
-          onClick={handleSaveSignature}
-          disabled={!sigText.trim()}
+          onClick={handleSave}
+          disabled={!canPlace}
           className="py-1.5 px-2 text-xs rounded border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           title={t('pdfEditor.saveSignatureForReuse')}
         >
