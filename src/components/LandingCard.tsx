@@ -14,7 +14,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { DragState, SupportedFormat } from '@/types/file';
-import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { t } from '@/i18n';
 
 interface LandingCardProps {
@@ -27,8 +26,6 @@ interface LandingCardProps {
    */
   acceptedFormats?: readonly SupportedFormat[];
   onPickerClick: () => void;
-  recentDirs?: string[];
-  onRecentDirClick?: (filePath: string) => void;
   invalidDropError?: string | null;
   emptyFileError?: string | null;
   corruptFileError?: string | null;
@@ -63,8 +60,6 @@ export function LandingCard({
   onCorruptPdfDismiss,
   onCorruptPdfRepair,
   onPickerClick,
-  recentDirs,
-  onRecentDirClick,
   invalidDropError,
   emptyFileError,
   corruptFileError,
@@ -182,17 +177,10 @@ export function LandingCard({
           </CardContent>
         </Card>
 
-        {/* Recent dirs button — below the card, left-aligned */}
-        {(recentDirs?.length ?? 0) > 0 && (
-          <div className="w-full flex justify-start">
-            <RecentDirsButton
-              dirs={recentDirs ?? []}
-              onFileSelected={onRecentDirClick ?? (() => {})}
-              disabled={isLoading}
-              acceptedFormats={acceptedFormats}
-            />
-          </div>
-        )}
+        {/* Recent lives in ToolHeader, once, on every tool screen. It used to be
+            repeated here as well, so the two compress tools -- the only ones
+            that use this card -- showed it twice on their first step while the
+            other twenty showed it once. */}
 
         {/* Inline error slot — emptyFileError > corruptFileError > invalidDropError */}
         {inlineError && (

@@ -773,8 +773,6 @@ function StandardToolFlow() {
           isLoading={isLoading}
           acceptedFormats={acceptedFormats}
           onPickerClick={handlePickerClick}
-          recentDirs={recentDirs}
-          onRecentDirClick={handleFileSelected}
           invalidDropError={invalidDropError}
           emptyFileError={emptyFileError}
           corruptFileError={corruptFileError}
