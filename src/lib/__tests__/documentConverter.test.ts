@@ -10,7 +10,7 @@ import {
   canAttemptConversion,
   requiredEngineFor,
   installableEnginesFor,
-  requirementFor, getBestEngine, getAvailableOutputFormats, buildCalibreArgs } from '@/lib/documentConverter';
+  requirementFor, getBestEngine, getAvailableOutputFormats, buildCalibreArgs, enginesFor } from '@/lib/documentConverter';
 import type { ConverterAvailability } from '@/types/converter';
 
 function avail(partial: Partial<ConverterAvailability>): ConverterAvailability {
@@ -318,5 +318,58 @@ describe('describing what to install', () => {
 
   it('[CONV-13f] nothing to suggest for an impossible pairing', () => {
     expect(requirementFor('md', 'epub', 'linux')).toBeNull();
+  });
+});
+
+/**
+ * [WORDMAC] Word goes last on macOS, and nowhere else.
+ *
+ * Word on macOS is sandboxed. Asked to write anywhere it has not been granted,
+ * it opens a Grant File Access dialog and waits, so the automation is killed at
+ * -1712 with the document still open. That is Word's behaviour and not
+ * something this app can work around: suppressing alerts does not help, because
+ * it is not an alert, and writing to Downloads instead of a temp folder does not
+ * help either, because it asks for that folder too.
+ *
+ * On Windows, Word is driven over COM and has none of this, so the ordering
+ * there is deliberately left alone. Demoting it everywhere to fix one platform
+ * would take the better engine away from the platform that was working.
+ */
+describe('engine order by platform', () => {
+  it('[WORDMAC-01] macOS tries LibreOffice before Word', () => {
+    const order = enginesFor('pdf', 'macos');
+    expect(order.indexOf('libreoffice')).toBeLessThan(order.indexOf('word'));
+  });
+
+  it('[WORDMAC-02] Windows keeps Word ahead of LibreOffice', () => {
+    const order = enginesFor('pdf', 'windows');
+    expect(order.indexOf('word')).toBeLessThan(order.indexOf('libreoffice'));
+  });
+
+  it('[WORDMAC-03] Word is demoted, not removed', () => {
+    // A Mac without LibreOffice has no other engine that can write .doc or
+    // .rtf at all, and Word often does succeed -- more often now that a written
+    // document counts as success even when the script is killed after it.
+    for (const format of ['pdf', 'doc', 'rtf', 'docx', 'txt', 'odt'] as const) {
+      expect(enginesFor(format, 'macos'), format).toContain('word');
+    }
+  });
+
+  it('[WORDMAC-04] a Mac with only Word still uses Word', () => {
+    expect(getBestEngine('doc', avail({ word: true }), 'docx')).toBe('word');
+  });
+
+  it('[WORDMAC-05] nothing else about the order moves', () => {
+    // Only Word's position changes. webview stays first for PDF, which is what
+    // renders an HTML source like a real browser, and calibre stays last.
+    const mac = enginesFor('pdf', 'macos');
+    expect(mac[0]).toBe('webview');
+    expect(mac.filter((e) => e !== 'word')).toEqual(
+      enginesFor('pdf', 'windows').filter((e) => e !== 'word'),
+    );
+  });
+
+  it('[WORDMAC-06] Linux is untouched, having no Word to reorder', () => {
+    expect(enginesFor('pdf', 'linux')).toEqual(enginesFor('pdf', 'windows'));
   });
 });

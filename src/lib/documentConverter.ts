@@ -7,6 +7,10 @@
  *   3. LibreOffice (if installed)
  *   4. Calibre   (for ebook formats, if installed)
  *
+ * On macOS that order is rearranged by enginesFor(): Word is sandboxed there and
+ * stalls on a permission dialog the app cannot answer, so LibreOffice is tried
+ * first when it exists. Windows keeps the order above.
+ *
  * Never tells the user to "install X" — only shows what's possible with
  * whatever they already have on their machine.
  */
@@ -108,6 +112,31 @@ const ENGINE_INPUT_SUPPORT: Record<ConverterEngine, ConvertFormat[]> = {
 };
 
 /**
+ * The engines for a format, in the order this platform should try them.
+ *
+ * The stored order puts Word ahead of LibreOffice, which is right on Windows,
+ * where Word is driven over COM and behaves. It is wrong on macOS: Word there is
+ * sandboxed, and asked to write anywhere it has not been granted it opens a
+ * Grant File Access dialog and waits, so the automation is killed at -1712 with
+ * the document still open. That is Word's behaviour, not something this app can
+ * work around, and it was reported as the conversion hanging and then failing.
+ *
+ * So on macOS LibreOffice goes first when it is installed. Word stays in the
+ * list rather than being removed: on a Mac without LibreOffice it is the only
+ * engine that can produce .doc or .rtf at all, it often does succeed, and now
+ * that a written document counts as success even when the script is killed
+ * afterwards, it succeeds more often than the error suggested.
+ *
+ * Windows ordering is deliberately untouched.
+ */
+export function enginesFor(outputFormat: ConvertFormat, platform: Platform = currentPlatform()): ConverterEngine[] {
+  const candidates = ENGINE_SUPPORT[outputFormat] ?? [];
+  if (platform !== 'macos') return candidates;
+  const demoted = candidates.filter((e) => e !== 'word');
+  return candidates.includes('word') ? [...demoted, 'word'] : candidates;
+}
+
+/**
  * Find the best available engine for a given output format.
  * Returns null if no engine can handle it.
  */
@@ -116,8 +145,7 @@ export function getBestEngine(
   availability: ConverterAvailability,
   inputFormat?: ConvertFormat,
 ): ConverterEngine | null {
-  const candidates = ENGINE_SUPPORT[outputFormat] ?? [];
-  for (const engine of candidates) {
+  for (const engine of enginesFor(outputFormat)) {
     if (!availability[engine]) continue;
     // The engine must also be able to *read* the source — otherwise it emits garbage.
     if (inputFormat && !ENGINE_INPUT_SUPPORT[engine].includes(inputFormat)) continue;

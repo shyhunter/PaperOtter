@@ -1695,6 +1695,19 @@ async fn convert_with_word(
     ));
     let output_path_str = output_path.to_string_lossy().to_string();
 
+    // What the automation said went wrong, if it said anything.
+    //
+    // Held rather than returned on the spot, because a non-zero exit does not
+    // mean no document was written. Reported from a real session: a conversion
+    // showed a Word error and the converted file was on the Desktop anyway.
+    // On macOS the script does `save as` and then hangs on Word's sandbox
+    // permission dialog, so the save had already happened when osascript was
+    // killed at -1712; on Windows, SaveAs2 can succeed and Close, Quit or the
+    // COM release fail after it. Either way the work is done and the only
+    // thing wrong is the verdict.
+    #[allow(unused_mut, unused_assignments)]
+    let mut automation_error: Option<String> = None;
+
     #[cfg(target_os = "macos")]
     {
         let word_format = match word_save_format(output_format.as_str()) {
@@ -1725,7 +1738,8 @@ async fn convert_with_word(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format_word_automation_error(&stderr));
+            // Held, not returned: see the note on usable_output below.
+            automation_error = Some(format_word_automation_error(&stderr));
         }
     }
 
@@ -1767,7 +1781,7 @@ async fn convert_with_word(
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Word conversion failed: {}", stderr));
+            automation_error = Some(format!("Word conversion failed: {}", stderr));
         }
     }
 
@@ -1779,12 +1793,29 @@ async fn convert_with_word(
 
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
-        let bytes = std::fs::read(&output_path)
-            .map_err(|e| format!("Failed to read Word output: {}", e))?;
-
+        let bytes = std::fs::read(&output_path).ok().filter(|b| !b.is_empty());
         let _ = std::fs::remove_file(&output_path);
 
-        Ok(tauri::ipc::Response::new(bytes))
+        word_outcome(bytes, automation_error).map(tauri::ipc::Response::new)
+    }
+}
+
+/// Whether a Word run counts as a success, given what it wrote and what it said.
+///
+/// A document that exists wins over a complaint about it. The automation reports
+/// failure for things that happen after the save: on macOS the script is killed
+/// at -1712 while Word waits on its sandbox permission dialog, by which point
+/// `save as` has already run; on Windows SaveAs2 can succeed and `Close`, `Quit`
+/// or the COM release fail behind it. Reported as an error shown next to a file
+/// that had converted perfectly well.
+///
+/// An empty file is not a document, so it is filtered out before this sees it.
+fn word_outcome(bytes: Option<Vec<u8>>, error: Option<String>) -> Result<Vec<u8>, String> {
+    match (bytes, error) {
+        (Some(bytes), _) => Ok(bytes),
+        (None, Some(err)) => Err(err),
+        // Nothing written and nothing said: rare, and still a failure.
+        (None, None) => Err("Word produced no output.".to_string()),
     }
 }
 
@@ -4575,6 +4606,7 @@ mod tests {
         }
     }
 
+    use crate::word_outcome;
     use crate::word_save_format;
 
     /// [WORD] The save-format constants are AppleScript, not English.
@@ -4585,6 +4617,37 @@ mod tests {
     /// have run on any Mac. Every value below was checked with `osacompile`
     /// against a real Word install; this pins them so the next tidy-up of the
     /// wording has to notice.
+    #[test]
+    /// A written document beats a complaint about it.
+    ///
+    /// Reported from a real session: a conversion showed a Word error and the
+    /// converted file was sitting on the Desktop. The automation's exit status
+    /// covers everything it did, including closing Word, so a failure after the
+    /// save was reported as a failure of the save.
+    #[test]
+    fn a_document_that_exists_is_a_success_whatever_word_said() {
+        let out = word_outcome(Some(vec![1, 2, 3]), Some("AppleEvent timed out. (-1712)".into()));
+        assert_eq!(out, Ok(vec![1, 2, 3]));
+    }
+
+    #[test]
+    fn a_document_with_no_complaint_is_still_a_success() {
+        assert_eq!(word_outcome(Some(vec![9]), None), Ok(vec![9]));
+    }
+
+    #[test]
+    fn nothing_written_reports_what_went_wrong() {
+        let out = word_outcome(None, Some("Word conversion failed: boom".into()));
+        assert_eq!(out, Err("Word conversion failed: boom".to_string()));
+    }
+
+    #[test]
+    fn nothing_written_and_nothing_said_is_still_a_failure() {
+        // Never silently succeed with no bytes: the caller would hand the user
+        // an empty file and call it converted.
+        assert!(word_outcome(None, None).is_err());
+    }
+
     #[test]
     fn word_save_formats_are_the_verified_constants() {
         assert_eq!(word_save_format("pdf"), Some("format PDF"));
