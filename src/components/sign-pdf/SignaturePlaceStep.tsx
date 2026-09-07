@@ -249,8 +249,11 @@ export function SignaturePlaceStep({
 
       const result = await addSignature(pdfBytes, {
         imageBytes,
-        x: pdfX,
-        y: pdfY,
+        // A position on this page, expressed so it can mean the same thing on
+        // pages of other sizes. pdf.js applies /Rotate to the viewport, so
+        // these dimensions are already the ones the reader sees.
+        xRatio: pdfX / pageDims.pdfWidth,
+        yRatio: pdfY / pageDims.pdfHeight,
         width: pdfSigWidth,
         height: pdfSigHeight,
         pageIndices,
