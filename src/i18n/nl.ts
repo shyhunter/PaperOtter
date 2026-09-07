@@ -56,6 +56,8 @@ export const nl: Dictionary = {
     'HEIC-foto’s kunnen voorlopig alleen op macOS worden geopend: zet de foto eerst om naar JPEG.',
   'file.unsafeName':
     'Deze bestandsnaam bevat tekens die niet worden ondersteund. Hernoem het bestand en probeer het opnieuw.',
+  'file.needsImage': 'Dit gereedschap werkt met afbeeldingen. Gebruik ‘{tool}’ om een PDF te verkleinen.',
+  'file.needsPdf': 'Dit gereedschap werkt met PDF-bestanden. Gebruik ‘{tool}’ om een afbeelding te verkleinen.',
   'imageCompare.before': 'Voor', 'imageCompare.after': 'Na', 'imageCompare.original': 'Origineel',
   'imageCompare.processed': 'Verwerkt', 'imageCompare.regenerating': 'Opnieuw maken…',
   'compare.copyStats': 'Verwerkingsgegevens naar klembord kopiëren',

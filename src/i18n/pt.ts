@@ -61,6 +61,8 @@ export const pt: Dictionary = {
     'As fotografias HEIC do iPhone só podem ser abertas no macOS, por enquanto. No iPhone, em Definições › Câmara › Formatos, escolha «Mais compatível» para tirar fotografias em JPEG.',
   'file.unsafeName':
     'O nome deste ficheiro contém caracteres que não podem ser utilizados em segurança. Mude-lhe o nome e tente novamente.',
+  'file.needsImage': 'Esta ferramenta trabalha com imagens. Para reduzir um PDF, utilize «{tool}».',
+  'file.needsPdf': 'Esta ferramenta trabalha com PDF. Para reduzir uma imagem, utilize «{tool}».',
   'imageCompare.before': 'Antes', 'imageCompare.after': 'Depois',
   'imageCompare.original': 'Original', 'imageCompare.processed': 'Processado',
   'imageCompare.regenerating': 'A regenerar…',

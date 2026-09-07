@@ -50,6 +50,8 @@ export const it: Dictionary = {
     'Per ora le foto HEIC si possono aprire solo su macOS: le converta prima in JPEG.',
   'file.unsafeName':
     'Questo nome file contiene caratteri non supportati. Lo rinomini e riprovi.',
+  'file.needsImage': 'Questo strumento lavora sulle immagini. Per ridurre un PDF, usi «{tool}».',
+  'file.needsPdf': 'Questo strumento lavora sui PDF. Per ridurre un’immagine, usi «{tool}».',
   'imageCompare.before': 'Prima', 'imageCompare.after': 'Dopo', 'imageCompare.original': 'Originale',
   'imageCompare.processed': 'Elaborato', 'imageCompare.regenerating': 'Rigenerazione…',
   'compare.copyStats': 'Copia le statistiche negli appunti',

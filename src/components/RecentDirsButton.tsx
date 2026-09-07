@@ -3,25 +3,37 @@ import { open } from '@/lib/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { extensionsForFormats } from '@/lib/fileValidation';
+import type { SupportedFormat } from '@/types/file';
 import { t } from '@/i18n';
 
 interface RecentDirButtonProps {
   dirs: string[];
   onFileSelected: (filePath: string) => void;
   disabled?: boolean;
+  /**
+   * What the open tool works on. This sits beside the Open button on the same
+   * screen, so a wider list here would just reopen the door the picker closed.
+   */
+  acceptedFormats?: readonly SupportedFormat[];
 }
 
-async function openFromDir(dir: string): Promise<string | null> {
+async function openFromDir(dir: string, formats: readonly SupportedFormat[]): Promise<string | null> {
   const result = await open({
     multiple: false,
     directory: false,
     defaultPath: dir,
-    filters: [{ name: t('filter.supportedFiles'), extensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'] }],
+    filters: [{ name: t('filter.supportedFiles'), extensions: extensionsForFormats(formats) }],
   });
   return typeof result === 'string' ? result : null;
 }
 
-export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirButtonProps) {
+export function RecentDirsButton({
+  dirs,
+  onFileSelected,
+  disabled,
+  acceptedFormats = ['pdf', 'image'],
+}: RecentDirButtonProps) {
   if (dirs.length === 0) return null;
 
   return (
@@ -49,7 +61,7 @@ export function RecentDirsButton({ dirs, onFileSelected, disabled }: RecentDirBu
                 key={dir}
                 title={dir}
                 onClick={async () => {
-                  const filePath = await openFromDir(dir);
+                  const filePath = await openFromDir(dir, acceptedFormats);
                   if (filePath) onFileSelected(filePath);
                 }}
                 className={cn(

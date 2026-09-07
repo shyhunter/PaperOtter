@@ -36,6 +36,8 @@ export const en = {
     'HEIC photos can only be opened on macOS for now: convert it to JPEG first.',
   'file.unsafeName':
     "This filename contains characters that aren't supported. Please rename the file and try again.",
+  'file.needsImage': 'This tool works on images. To shrink a PDF, use {tool}.',
+  'file.needsPdf': 'This tool works on PDFs. To shrink a picture, use {tool}.',
 
 
   // ── Image compare ───────────────────────────────────────────────────────
@@ -631,6 +633,8 @@ export const en = {
   'landingCard.loadingFile': 'Loading file…',
   'landingCard.openFile': 'Open file',
   'landingCard.pdfJpgPngWebp': 'PDF, JPG, PNG, WebP',
+  'landingCard.jpgPngWebp': 'JPG, PNG, WebP, HEIC',
+  'landingCard.pdfOnly': 'PDF',
   'landingCard.pickADifferentFile': 'Pick a Different File',
   'landingCard.repairWithRepairPdf': 'Repair with Repair PDF →',
 

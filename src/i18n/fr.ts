@@ -82,6 +82,8 @@ export const fr: Dictionary = {
     'Les photos HEIC ne peuvent être ouvertes que sous macOS pour l’instant: convertissez-la d’abord en JPEG.',
   'file.unsafeName':
     'Ce nom de fichier contient des caractères non pris en charge. Renommez le fichier et réessayez.',
+  'file.needsImage': 'Cet outil traite les images. Pour réduire un PDF, utilisez « {tool} ».',
+  'file.needsPdf': 'Cet outil traite les PDF. Pour réduire une image, utilisez « {tool} ».',
 
   // ── Compare ───────────────────────────────────────────────────────────────
   'imageCompare.before': 'Avant',

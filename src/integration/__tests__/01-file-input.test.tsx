@@ -81,13 +81,24 @@ afterEach(cleanup);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function setup() {
+/**
+ * Enter a tool from the dashboard.
+ *
+ * The tool matters. Compress PDF and Compress Image are one flow that branches
+ * on the file, and until the tool scoped what it would accept, this suite could
+ * open Compress PDF and hand it a JPEG and watch the app switch tools underneath
+ * the user -- which is what a reporter eventually noticed from the other side,
+ * as Compress Image offering them PDFs.
+ */
+async function setup(tool: RegExp = /compress pdf/i) {
   const user = userEvent.setup();
   render(<App />);
-  // Select Compress PDF from the dashboard to enter the tool flow
-  await user.click(screen.getAllByRole('button', { name: /compress pdf/i })[0]);
+  await user.click(screen.getAllByRole('button', { name: tool })[0]);
   return { user };
 }
+
+/** The tool the image cases belong in. */
+const COMPRESS_IMAGE = /compress image/i;
 
 /**
  * Click "Open file" with a mocked return path.
@@ -114,7 +125,15 @@ describe('Suite 01 — File Input', () => {
     await setup();
     expect(screen.getByText('Open file')).toBeInTheDocument();
     expect(screen.getByText('Drop file here')).toBeInTheDocument();
-    expect(screen.getByText('PDF, JPG, PNG, WebP')).toBeInTheDocument();
+    // Named for the tool that is open, not for everything the app can read.
+    expect(screen.getByText('PDF')).toBeInTheDocument();
+  });
+
+  // FI-01b ───────────────────────────────────────────────────────────────────
+  it('FI-01b — Compress Image names images, not PDFs', async () => {
+    await setup(COMPRESS_IMAGE);
+    expect(screen.getByText('JPG, PNG, WebP, HEIC')).toBeInTheDocument();
+    expect(screen.queryByText('PDF, JPG, PNG, WebP')).not.toBeInTheDocument();
   });
 
   // FI-02 ────────────────────────────────────────────────────────────────────
@@ -146,7 +165,7 @@ describe('Suite 01 — File Input', () => {
 
   // FI-05 ────────────────────────────────────────────────────────────────────
   it('FI-05 — selecting a JPEG file navigates to the Image Configure step', async () => {
-    const { user } = await setup();
+    const { user } = await setup(COMPRESS_IMAGE);
     await pickFile(user, '/Users/test/photo.jpg');
     // Image Configure shows a quality slider, not a radio group
     expect(screen.getByRole('slider')).toBeInTheDocument();
@@ -154,14 +173,14 @@ describe('Suite 01 — File Input', () => {
 
   // FI-06 ────────────────────────────────────────────────────────────────────
   it('FI-06 — selecting a PNG file navigates to the Image Configure step', async () => {
-    const { user } = await setup();
+    const { user } = await setup(COMPRESS_IMAGE);
     await pickFile(user, '/Users/test/image.png');
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 
   // FI-07 ────────────────────────────────────────────────────────────────────
   it('FI-07 — selecting a WebP file navigates to the Image Configure step', async () => {
-    const { user } = await setup();
+    const { user } = await setup(COMPRESS_IMAGE);
     await pickFile(user, '/Users/test/animation.webp');
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
@@ -216,7 +235,7 @@ describe('Suite 01 — File Input', () => {
   // Decoding needs macOS Image I/O; a build without it must say so at the moment
   // the file arrives, not after the user has configured a whole job.
   it('FI-11 — opening a HEIC photo on macOS goes to the Image Configure step', async () => {
-    const { user } = await setup();
+    const { user } = await setup(COMPRESS_IMAGE);
     await pickFile(user, '/Users/test/IMG_4032.heic');
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
@@ -224,7 +243,7 @@ describe('Suite 01 — File Input', () => {
   // FI-12 ────────────────────────────────────────────────────────────────────
   it('FI-12 — opening a HEIC photo without a decoder explains what to do instead', async () => {
     vi.mocked(fileValidation.isHeicDecodable).mockReturnValue(false);
-    const { user } = await setup();
+    const { user } = await setup(COMPRESS_IMAGE);
 
     vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/IMG_4032.heic');
     await user.click(screen.getByText('Open file'));
@@ -235,5 +254,48 @@ describe('Suite 01 — File Input', () => {
     // Must not have advanced into the image flow
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
+  });
+
+  // FI-13 ────────────────────────────────────────────────────────────────────
+  // Reported as "Compress image opens also pdfs, I was not expecting that".
+  // The picker's filter was the visible half; this is the other half, because a
+  // filter is only a hint -- both dialogs have a way to reach a hidden file, and
+  // drag-and-drop has no filter at all.
+  it('FI-13 — Compress Image refuses a PDF and says which tool takes it', async () => {
+    const { user } = await setup(COMPRESS_IMAGE);
+
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/document.pdf');
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    await screen.findByText(/works on images/i, {}, { timeout: 2000 });
+    // Names the tool that does handle it rather than leaving the user to guess.
+    expect(screen.getByText(/Compress PDF/)).toBeInTheDocument();
+    // And stayed put: no PDF job started under the image tool's name.
+    expect(screen.queryByRole('button', { name: /generate preview/i })).not.toBeInTheDocument();
+  });
+
+  // FI-14 ────────────────────────────────────────────────────────────────────
+  it('FI-14 — Compress PDF refuses an image and says which tool takes it', async () => {
+    const { user } = await setup();
+
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/photo.jpg');
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    await screen.findByText(/works on PDFs/i, {}, { timeout: 2000 });
+    expect(screen.getByText(/Compress Image/)).toBeInTheDocument();
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+  });
+
+  // FI-15 ────────────────────────────────────────────────────────────────────
+  it('FI-15 — the picker is told what the open tool accepts', async () => {
+    const { user } = await setup(COMPRESS_IMAGE);
+    vi.mocked(openFilePicker).mockResolvedValueOnce(null);
+    await user.click(screen.getByText('Open file'));
+    await act(async () => {});
+
+    // The dialog itself is the OS's, so what can be checked here is the request.
+    expect(vi.mocked(openFilePicker)).toHaveBeenCalledWith(['image']);
   });
 });

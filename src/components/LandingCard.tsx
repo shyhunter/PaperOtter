@@ -13,13 +13,19 @@ import { Upload, FolderOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { DragState } from '@/types/file';
+import type { DragState, SupportedFormat } from '@/types/file';
 import { RecentDirsButton } from '@/components/RecentDirsButton';
 import { t } from '@/i18n';
 
 interface LandingCardProps {
   dragState: DragState;
   isLoading: boolean;
+  /**
+   * What the open tool actually works on. The card used to name every format
+   * the app supports whatever tool you were in, which read as a promise the
+   * tool did not keep.
+   */
+  acceptedFormats?: readonly SupportedFormat[];
   onPickerClick: () => void;
   recentDirs?: string[];
   onRecentDirClick?: (filePath: string) => void;
@@ -35,6 +41,15 @@ interface LandingCardProps {
   onCorruptPdfRepair?: () => void;
 }
 
+/** The formats named under the Open button, in the tool's own order. */
+function formatsHint(formats: readonly SupportedFormat[]): string {
+  const onlyImages = formats.length === 1 && formats[0] === 'image';
+  const onlyPdf = formats.length === 1 && formats[0] === 'pdf';
+  if (onlyImages) return t('landingCard.jpgPngWebp');
+  if (onlyPdf) return t('landingCard.pdfOnly');
+  return t('landingCard.pdfJpgPngWebp');
+}
+
 /** Format bytes as a rounded MB string, e.g. "105 MB" */
 function formatMB(bytes: number): string {
   return `${Math.round(bytes / (1024 * 1024))} MB`;
@@ -43,6 +58,7 @@ function formatMB(bytes: number): string {
 export function LandingCard({
   dragState,
   isLoading,
+  acceptedFormats = ['pdf', 'image'],
   corruptPdfBlock,
   onCorruptPdfDismiss,
   onCorruptPdfRepair,
@@ -112,7 +128,7 @@ export function LandingCard({
                 </div>
                 <div className="text-center">
                   <p className="text-base font-medium text-foreground">{t('landingCard.openFile')}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{t('landingCard.pdfJpgPngWebp')}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{formatsHint(acceptedFormats)}</p>
                 </div>
               </button>
 
@@ -173,6 +189,7 @@ export function LandingCard({
               dirs={recentDirs ?? []}
               onFileSelected={onRecentDirClick ?? (() => {})}
               disabled={isLoading}
+              acceptedFormats={acceptedFormats}
             />
           </div>
         )}

@@ -1,10 +1,29 @@
 import { t } from '@/i18n';
 import type { SupportedFormat } from '@/types/file';
 
-const SUPPORTED_EXTENSIONS = new Set([
-  'pdf', 'jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif',
-  'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
-]);
+/**
+ * The extensions each format covers, and the only place they are written down.
+ *
+ * detectFormat and the open-dialog filters both read from here. When they were
+ * separate lists the dialog for a tool that takes images offered PDFs as well,
+ * so choosing one dropped you into a different tool than the one you opened.
+ */
+export const EXTENSIONS_BY_FORMAT: Record<SupportedFormat, readonly string[]> = {
+  pdf: ['pdf'],
+  image: ['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif'],
+  document: ['docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html'],
+};
+
+const SUPPORTED_EXTENSIONS = new Set(Object.values(EXTENSIONS_BY_FORMAT).flat());
+
+/**
+ * The extensions to put in an open dialog for a tool that accepts `formats`.
+ *
+ * Order follows the tool's own list, so the format a tool is named after leads.
+ */
+export function extensionsForFormats(formats: readonly SupportedFormat[]): string[] {
+  return formats.flatMap((f) => [...EXTENSIONS_BY_FORMAT[f]]);
+}
 
 /** Hard limit: 100 MB in bytes */
 export const FILE_SIZE_LIMIT_BYTES = 100 * 1024 * 1024; // 104857600
@@ -34,9 +53,9 @@ export function isSupportedFile(filePath: string): boolean {
 
 export function detectFormat(filePath: string): SupportedFormat | null {
   const ext = getExtension(filePath);
-  if (ext === 'pdf') return 'pdf';
-  if (['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'bmp', 'gif', 'heic', 'heif'].includes(ext)) return 'image';
-  if (['docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html'].includes(ext)) return 'document';
+  for (const [format, extensions] of Object.entries(EXTENSIONS_BY_FORMAT)) {
+    if (extensions.includes(ext)) return format as SupportedFormat;
+  }
   return null;
 }
 

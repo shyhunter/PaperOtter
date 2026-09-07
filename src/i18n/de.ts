@@ -71,6 +71,8 @@ export const de: Dictionary = {
     'HEIC-Fotos lassen sich derzeit nur unter macOS öffnen: wandeln Sie das Bild zuerst in JPEG um.',
   'file.unsafeName':
     'Dieser Dateiname enthält Zeichen, die nicht unterstützt werden. Bitte benennen Sie die Datei um und versuchen Sie es erneut.',
+  'file.needsImage': 'Dieses Werkzeug arbeitet mit Bildern. Um ein PDF zu verkleinern, verwenden Sie „{tool}“.',
+  'file.needsPdf': 'Dieses Werkzeug arbeitet mit PDFs. Um ein Bild zu verkleinern, verwenden Sie „{tool}“.',
 
   // ── Image compare ─────────────────────────────────────────────────────────
   'imageCompare.before': 'Vorher',

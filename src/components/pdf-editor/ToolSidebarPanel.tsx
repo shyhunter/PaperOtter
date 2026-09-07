@@ -1476,7 +1476,11 @@ function SignPanel() {
       isNew: true,
     });
     markDirty();
-  }, [state.currentPage, sigSize, addImageBlock, markDirty]);
+    // sigBackground belongs here: without it the callback is only rebuilt when
+    // the page or the size changes, so choosing a background and pressing Place
+    // stamps the signature with whatever background was set when the callback
+    // was last made -- for a first choice, none at all.
+  }, [state.currentPage, sigSize, sigBackground, addImageBlock, markDirty]);
 
   const handleSaveSignature = useCallback(() => {
     if (!sigText.trim()) return;

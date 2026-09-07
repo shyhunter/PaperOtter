@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -15,7 +15,7 @@ import { StepErrorBoundary, AppErrorBoundary } from '@/components/ErrorBoundary'
 import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import { useLocale } from '@/i18n/context';
-import type { ToolId } from '@/types/tools';
+import { TOOL_REGISTRY, type ToolId } from '@/types/tools';
 import { useFileDrop } from '@/hooks/useFileDrop';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
@@ -47,7 +47,7 @@ import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
 import { UpdateChecker } from '@/components/UpdateChecker';
 import { EditorView } from '@/components/pdf-editor/EditorView';
 import { getPdfCompressibility } from '@/lib/pdfProcessor';
-import type { FileEntry, AppStep, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
+import type { FileEntry, AppStep, SupportedFormat, PdfProcessingOptions, PdfQualityLevel, ImageProcessingOptions, ImageOutputFormat } from '@/types/file';
 import { t } from '@/i18n';
 import { useBatchProcessor } from '@/hooks/useBatchProcessor';
 import { BatchSummaryStep } from '@/components/batch/BatchSummaryStep';
@@ -355,7 +355,14 @@ function DedicatedToolFlow() {
 }
 
 function StandardToolFlow() {
-  const { goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
+  const { activeTool, goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
+  // Compress PDF and Compress Image are one flow that branches on the file, so
+  // without this the tool you opened decided nothing: the picker offered every
+  // type, and dropping a PDF on Compress Image quietly started a PDF job.
+  const acceptedFormats = useMemo<readonly SupportedFormat[]>(
+    () => (activeTool !== null ? TOOL_REGISTRY[activeTool].acceptsFormats : ['pdf', 'image']),
+    [activeTool],
+  );
   const [fileEntry, setFileEntry] = useState<FileEntry | null>(null);
   const [currentStep, setCurrentStep] = useState<AppStep>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -446,6 +453,23 @@ function StandardToolFlow() {
       return;
     }
 
+    // The picker filters by tool, but a filter is only a hint -- drag-and-drop
+    // and the recent-folders dialog can still hand this a file of the other
+    // kind, and accepting it would start the sibling tool's job under this
+    // tool's name.
+    if (!acceptedFormats.includes(format)) {
+      // Name the tool that does take this file: refusing it without saying
+      // where it belongs leaves the user to guess between twenty-two cards.
+      const takesImages = acceptedFormats.includes('image');
+      setInvalidDropError(
+        takesImages
+          ? t('file.needsImage', { tool: t(TOOL_REGISTRY['compress-pdf'].name) })
+          : t('file.needsPdf', { tool: t(TOOL_REGISTRY['compress-image'].name) }),
+      );
+      setTimeout(() => setInvalidDropError(null), 3500);
+      return;
+    }
+
     // HEIC decoding needs macOS Image I/O. Say so here rather than letting the
     // user configure a whole job and fail at the last step.
     if (isHeicPath(filePath) && !isHeicDecodable()) {
@@ -517,7 +541,7 @@ function StandardToolFlow() {
       setIsLoading(false);
       setCurrentStep(1);
     }, 600);
-  }, [addRecentDir]);
+  }, [addRecentDir, acceptedFormats]);
 
   // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
   useEffect(() => {
@@ -610,7 +634,17 @@ function StandardToolFlow() {
     setFileSizeLimitBytes(null);
   }, []);
 
-  const dragState = useFileDrop(handleFileSelected);
+  // Same list the picker uses, so hovering a file the tool cannot take shows
+  // the refusal colour rather than promising a drop that will be turned away.
+  const acceptsDroppedFile = useCallback(
+    (path: string) => {
+      const format = detectFormat(path);
+      return format !== null && acceptedFormats.includes(format);
+    },
+    [acceptedFormats],
+  );
+
+  const dragState = useFileDrop(handleFileSelected, acceptsDroppedFile);
 
   const handlePickerClick = useCallback(async () => {
     try {
@@ -623,7 +657,7 @@ function StandardToolFlow() {
         handleFileSelected(e2eFile);
         return;
       }
-      const filePath = await openFilePicker();
+      const filePath = await openFilePicker(acceptedFormats);
       if (filePath) {
         handleFileSelected(filePath);
       }
@@ -633,7 +667,7 @@ function StandardToolFlow() {
         description: t('app.pleaseTryAgain'),
       });
     }
-  }, [handleFileSelected]);
+  }, [handleFileSelected, acceptedFormats]);
 
   const handleGeneratePreview = useCallback(
     (options: Omit<PdfProcessingOptions, 'onProgress'>) => {
@@ -737,6 +771,7 @@ function StandardToolFlow() {
         <LandingCard
           dragState={dragState}
           isLoading={isLoading}
+          acceptedFormats={acceptedFormats}
           onPickerClick={handlePickerClick}
           recentDirs={recentDirs}
           onRecentDirClick={handleFileSelected}

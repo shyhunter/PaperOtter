@@ -69,6 +69,8 @@ export const pl: Dictionary = {
     'Zdjęcia HEIC można na razie otwierać tylko w systemie macOS: najpierw przekonwertuj je na JPEG.',
   'file.unsafeName':
     'Ta nazwa pliku zawiera nieobsługiwane znaki. Zmień nazwę pliku i spróbuj ponownie.',
+  'file.needsImage': 'To narzędzie działa na obrazach. Aby zmniejszyć PDF, użyj „{tool}”.',
+  'file.needsPdf': 'To narzędzie działa na plikach PDF. Aby zmniejszyć obraz, użyj „{tool}”.',
   'imageCompare.before': 'Przed', 'imageCompare.after': 'Po', 'imageCompare.original': 'Oryginał',
   'imageCompare.processed': 'Przetworzony', 'imageCompare.regenerating': 'Ponowne tworzenie…',
   'compare.copyStats': 'Skopiuj dane przetwarzania do schowka',

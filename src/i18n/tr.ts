@@ -84,6 +84,8 @@ export const tr: Dictionary = {
     'HEIC fotoğrafları şimdilik yalnızca macOS’ta açılabiliyor: önce JPEG’e dönüştürün.',
   'file.unsafeName':
     'Bu dosya adı desteklenmeyen karakterler içeriyor. Lütfen dosyayı yeniden adlandırıp tekrar deneyin.',
+  'file.needsImage': 'Bu araç görüntülerle çalışır. Bir PDF’i küçültmek için “{tool}” aracını kullanın.',
+  'file.needsPdf': 'Bu araç PDF dosyalarıyla çalışır. Bir görüntüyü küçültmek için “{tool}” aracını kullanın.',
 
   'imageCompare.before': 'Önce',
   'imageCompare.after': 'Sonra',
