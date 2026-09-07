@@ -15,9 +15,24 @@ export function useRecentDirs() {
       const valid: string[] = [];
       for (const d of saved) {
         try {
+          // Only a clean `false` means the folder is gone.
           if (await exists(d)) valid.push(d);
         } catch {
-          // Forbidden path or OS error — treat as stale, skip silently
+          // A throw here is the capability scope refusing to look, not an
+          // answer about the folder. fs:allow-exists covers Documents,
+          // Downloads, Desktop and Temp, so a folder anywhere else -- iCloud
+          // Drive, a working directory in $HOME, an external disk -- was
+          // recorded on use and then silently dropped on the next launch.
+          // Worse, `$DESKTOP/**` matches the children of Desktop and not
+          // Desktop itself, so even that vanished. A real list of five came
+          // back as one.
+          //
+          // Keeping it costs nothing and loses nothing: the entry is only ever
+          // used as the starting folder for the file dialog, which is an OS
+          // window that the scope does not bind, and whatever is chosen there
+          // is granted to the app by the dialog plugin. So a folder this
+          // process may not stat is still one the user can open from.
+          valid.push(d);
         }
       }
       setDirs(valid);
