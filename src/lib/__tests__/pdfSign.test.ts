@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PDFDocument, PDFRawStream, decodePDFRawStream, degrees } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
+import { pageContent, imageMatrix } from '@/test/pdfContent';
 import { addSignature } from '@/lib/pdfSign';
 
 /**
@@ -38,66 +39,20 @@ async function makeDoc(specs: { size: readonly [number, number]; rotate?: number
   return new Uint8Array(await doc.save());
 }
 
-/** A PDF transform [a b c d e f]: (x,y) -> (ax + cy + e, bx + dy + f). */
-type Matrix = [number, number, number, number, number, number];
-
-/** The matrix for A(B(p)) -- B applied first, which is the order `cm` composes in. */
-function compose(A: Matrix, B: Matrix): Matrix {
-  const [aA, bA, cA, dA, eA, fA] = A;
-  const [aB, bB, cB, dB, eB, fB] = B;
-  return [
-    aA * aB + cA * bB,
-    bA * aB + dA * bB,
-    aA * cB + cA * dB,
-    bA * cB + dA * dB,
-    aA * eB + cA * fB + eA,
-    bA * eB + dA * fB + fA,
-  ];
-}
-
-/** The page's drawing operators, with any compressed stream inflated. */
-function contentText(doc: PDFDocument, pageIndex: number): string {
-  const page = doc.getPages()[pageIndex];
-  // A page nothing was ever drawn on has no /Contents at all, which is itself
-  // the answer for the untouched-page case.
-  const contents = page.node.normalizedEntries().Contents;
-  if (!contents) return '';
-  return contents.asArray().map((ref) => {
-    const stream = doc.context.lookup(ref);
-    // pdf-lib's own appended stream survives a save uncompressed; the page's
-    // content comes back as a Flate raw stream, and that is where the drawing
-    // ops end up after a round trip.
-    const bytes = stream instanceof PDFRawStream
-      ? decodePDFRawStream(stream).decode()
-      : (stream as { getUnencodedContents?: () => Uint8Array }).getUnencodedContents?.();
-    return bytes ? new TextDecoder('latin1').decode(bytes) : '';
-  }).join('\n');
-}
-
 /**
  * The rectangle the signature occupies on one page, read back out of the saved
  * file, in that page's own coordinates.
  *
  * Read back rather than taken from the call arguments, because the arguments
- * are what this is testing. pdf-lib writes the placement as a chain of `cm`
- * matrices -- translate, rotate, scale, skew -- before the image is drawn, so
- * all of them have to be composed; the last one alone is only the scale, and
- * would put every signature at the origin.
+ * are what this is testing. See src/test/pdfContent.ts for why that needs
+ * inflating and matrix composition.
  */
 async function drawnRect(bytes: Uint8Array, pageIndex: number) {
   const doc = await PDFDocument.load(bytes);
   const { width: rawW, height: rawH } = doc.getPages()[pageIndex].getSize();
 
-  const text = contentText(doc, pageIndex);
-  const drawIndex = text.indexOf(' Do');
-  if (drawIndex < 0) return null;
-
-  const matrices = [...text.slice(0, drawIndex).matchAll(
-    /(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) cm/g,
-  )].map((m) => m.slice(1).map(Number) as Matrix);
-  if (matrices.length === 0) return null;
-
-  const total = matrices.reduce(compose);
+  const total = imageMatrix(pageContent(doc, pageIndex));
+  if (!total) return null;
 
   // The image is drawn into the unit square, so its corners through the
   // transform give the rectangle that actually landed on the page.

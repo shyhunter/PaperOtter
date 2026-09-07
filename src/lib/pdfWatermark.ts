@@ -1,6 +1,7 @@
 // Adds a text watermark to every page of a PDF using pdf-lib.
 import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage } from 'pdf-lib';
 import { hexToRgb } from '@/lib/colorPresets';
+import { normalisedRotation, visualToRaw } from '@/lib/pdfPageNumbers';
 
 export interface WatermarkOptions {
   text: string;
@@ -39,13 +40,22 @@ function clamp01(n: number): number {
 
 /**
  * Where the text's baseline-left origin has to go for its *centre* to land on
- * the requested point.
+ * the requested point, and which way up to draw it.
  *
  * The position is stored as a centre because that is what the user drags: the
  * grab point and the anchor have to be the same thing, or the watermark jumps
  * out from under the cursor on the first pixel of movement. pdf-lib draws from
  * a baseline-left origin and rotates about that origin, so the offset back to
  * it has to be rotated too.
+ *
+ * All of that is worked out in the frame the reader sees and then mapped back,
+ * because /Rotate turns the page at display time and pdf-lib draws in the
+ * unturned space underneath. centerX and centerY come from a drag on the
+ * rendered page, where pdf.js has already applied the rotation, so on a turned
+ * page they were being multiplied by the wrong edge -- and the text was drawn
+ * at the angle the user picked in a space the viewer then turned again, so a
+ * -45 degree watermark came out on the other diagonal. The same defect page
+ * numbers and signatures had.
  *
  * Shared by the full-document and single-page-preview paths so the preview
  * cannot drift from the output the user actually gets.
@@ -54,8 +64,14 @@ export function computeWatermarkPlacement(
   page: PDFPage,
   font: PDFFont,
   options: WatermarkOptions,
-): { x: number; y: number } {
-  const { width, height } = page.getSize();
+): { x: number; y: number; rotation: number } {
+  const { width: rawW, height: rawH } = page.getSize();
+  const pageRotation = normalisedRotation(page);
+  // A quarter turn swaps what the reader perceives as width and height.
+  const quarter = pageRotation === 90 || pageRotation === 270;
+  const width = quarter ? rawH : rawW;
+  const height = quarter ? rawW : rawH;
+
   const textWidth = font.widthOfTextAtSize(options.text, options.fontSize);
   // Cap height is the visual middle of capitals far better than the full font
   // box, which includes descender space a watermark rarely uses.
@@ -68,19 +84,22 @@ export function computeWatermarkPlacement(
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
 
-  // Rotate the half-extent vector (-w/2, -h/2) by the same angle pdf-lib will
-  // apply, then step from the centre by it.
+  // Rotate the half-extent vector (-w/2, -h/2) by the angle the reader will see,
+  // then step from the centre by it.
   const dx = -textWidth / 2;
   const dy = -textHeight / 2;
 
-  return {
-    x: cx + dx * cos - dy * sin,
-    y: cy + dx * sin + dy * cos,
-  };
+  const vx = cx + dx * cos - dy * sin;
+  const vy = cy + dx * sin + dy * cos;
+
+  const { x, y } = visualToRaw(vx, vy, rawW, rawH, pageRotation);
+  // The viewer's own rotation cancels the page's share, leaving the text at the
+  // angle that was chosen.
+  return { x, y, rotation: options.rotation + pageRotation };
 }
 
 function drawWatermark(page: PDFPage, font: PDFFont, options: WatermarkOptions): void {
-  const { x, y } = computeWatermarkPlacement(page, font, options);
+  const { x, y, rotation } = computeWatermarkPlacement(page, font, options);
   const { r, g, b } = hexToRgb(options.color);
 
   page.drawText(options.text, {
@@ -90,7 +109,7 @@ function drawWatermark(page: PDFPage, font: PDFFont, options: WatermarkOptions):
     font,
     color: rgb(r, g, b),
     opacity: options.opacity,
-    rotate: degrees(options.rotation),
+    rotate: degrees(rotation),
   });
 }
 

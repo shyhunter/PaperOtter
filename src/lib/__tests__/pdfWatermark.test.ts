@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import { addWatermark, addWatermarkSinglePage, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
 import { createMinimalPdf, createContentPdf } from '@/test/fixtures';
+import { pageContent, textMatrix, matrixAngle, rawToVisual, visualSize } from '@/test/pdfContent';
 
 // ─── addWatermark ─────────────────────────────────────────────────────────────
 
@@ -141,12 +142,31 @@ describe('addWatermark — placement', () => {
 
   it('WM-POS-03: position is a fraction of the page, so mixed page sizes agree', async () => {
     // Stored as 0..1 rather than points: a document whose pages differ in size
-    // would otherwise put the watermark in a different place on each one.
-    const src = await createContentPdf(1);
-    const result = await addWatermark(src, { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.25, centerY: 0.25 });
+    // would otherwise put the watermark in a different place on each one, which
+    // is what happened to signatures, see [SIGPLACE].
+    //
+    // Measured rather than merely surviving: this test used to assert only the
+    // page count, which every possible placement satisfies.
+    const doc = await PDFDocument.create();
+    doc.addPage([595, 842]);
+    doc.addPage([842, 595]);
+    const result = await addWatermark(
+      new Uint8Array(await doc.save()),
+      { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.25, centerY: 0.25 },
+    );
 
-    const doc = await PDFDocument.load(result);
-    expect(doc.getPageCount()).toBe(1);
+    // The requested centre is what should agree. pdf-lib draws from the text's
+    // baseline-left origin, which sits a fixed number of points away from that
+    // centre, so it is the offset that is constant -- comparing origins as
+    // fractions would fail on correct output.
+    const out = await PDFDocument.load(result);
+    const offsets = out.getPages().map((page, i) => {
+      const { width, height } = page.getSize();
+      const m = textMatrix(pageContent(out, i))!;
+      return { dx: m[4] - 0.25 * width, dy: m[5] - 0.25 * height };
+    });
+    expect(offsets[0].dx, 'same point on both pages, across').toBeCloseTo(offsets[1].dx, 1);
+    expect(offsets[0].dy, 'same point on both pages, up').toBeCloseTo(offsets[1].dy, 1);
   });
 
   it('WM-POS-04: the preview places the watermark exactly where the output does', async () => {
@@ -170,5 +190,99 @@ describe('addWatermark — placement', () => {
 
     const doc = await PDFDocument.load(result);
     expect(doc.getPageCount()).toBe(1);
+  });
+});
+
+// ─── addWatermark on a turned page ───────────────────────────────────────────
+//
+// [WM-ROT] /Rotate turns a page at display time and pdf-lib draws in the
+// unturned space underneath, so a placement that ignores it lands somewhere
+// else and at the wrong angle. Page numbers had this defect and signatures had
+// it; this is the third stamper, checked after the signature one was fixed.
+//
+// The specific failure: centerX and centerY come from a drag on the rendered
+// page, where pdf.js has already applied the rotation, so on a quarter-turned
+// page they were multiplied by the wrong edge -- and a -45 degree watermark was
+// drawn at -45 in a space the viewer then turned again, putting it on the
+// other diagonal from the one the preview showed.
+
+const ROTATIONS = [0, 90, 180, 270] as const;
+
+/** Where the watermark's text origin ended up, as a fraction of the visible page. */
+async function visualOriginFraction(bytes: Uint8Array, rotation: number) {
+  const doc = await PDFDocument.load(bytes);
+  const { width: rawW, height: rawH } = doc.getPages()[0].getSize();
+  const m = textMatrix(pageContent(doc, 0));
+  if (!m) return null;
+
+  const { vx, vy } = rawToVisual(m[4], m[5], rawW, rawH, rotation);
+  const { visW, visH } = visualSize(rawW, rawH, rotation);
+  return { fx: vx / visW, fy: vy / visH, rawAngle: matrixAngle(m) };
+}
+
+/** One A4 page, optionally turned, with something on it. */
+async function turnedPage(rotation: number): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([595, 842]);
+  if (rotation) page.setRotation(degrees(rotation));
+  return new Uint8Array(await doc.save());
+}
+
+describe('addWatermark — turned pages', () => {
+  const OPTIONS = { ...DEFAULT_WATERMARK_OPTIONS, centerX: 0.25, centerY: 0.75 };
+
+  it('[WM-ROT-01] the reader sees the angle that was chosen, on every rotation', async () => {
+    // Drawn at the chosen angle plus the page's own, so the viewer's turn
+    // cancels the page's share. Before this, a -45 diagonal came out as +45 on
+    // a quarter-turned page.
+    for (const rotation of ROTATIONS) {
+      const out = await addWatermark(await turnedPage(rotation), OPTIONS);
+      const got = (await visualOriginFraction(out, rotation))!;
+      const visualAngle = ((got.rawAngle - rotation) % 360 + 360) % 360;
+      expect(visualAngle, `rotation ${rotation}`).toBe(((OPTIONS.rotation % 360) + 360) % 360);
+    }
+  });
+
+  it('[WM-ROT-02] lands in the same place on the page whichever way it is turned', async () => {
+    // The offset from the requested centre to the text's baseline-left origin
+    // depends only on the text and the angle, so it is the same vector on every
+    // rotation once the whole placement is worked out in the visible frame.
+    // Comparing the offset rather than the origin keeps the assertion free of
+    // font metrics, which would just restate the implementation.
+    const offsets = [];
+    for (const rotation of ROTATIONS) {
+      const out = await addWatermark(await turnedPage(rotation), OPTIONS);
+      const got = (await visualOriginFraction(out, rotation))!;
+      const { visW, visH } = visualSize(595, 842, rotation);
+      offsets.push({
+        rotation,
+        dx: got.fx * visW - OPTIONS.centerX * visW,
+        dy: got.fy * visH - OPTIONS.centerY * visH,
+      });
+    }
+
+    for (const o of offsets.slice(1)) {
+      expect(o.dx, `rotation ${o.rotation} across`).toBeCloseTo(offsets[0].dx, 1);
+      expect(o.dy, `rotation ${o.rotation} up`).toBeCloseTo(offsets[0].dy, 1);
+    }
+  });
+
+  it('[WM-ROT-03] the preview on a turned page matches the document', async () => {
+    // addWatermarkSinglePage copies the page, and copyPages carries /Rotate, so
+    // the preview only agrees if both go through the same placement.
+    const src = await turnedPage(90);
+    const full = await visualOriginFraction(await addWatermark(src, OPTIONS), 90);
+    const preview = await visualOriginFraction(await addWatermarkSinglePage(src, OPTIONS, 0), 90);
+
+    expect(preview!.fx).toBeCloseTo(full!.fx, 4);
+    expect(preview!.fy).toBeCloseTo(full!.fy, 4);
+    expect(preview!.rawAngle).toBe(full!.rawAngle);
+  });
+
+  it('[WM-ROT-04] an unturned page is drawn exactly as it always was', async () => {
+    // The fix must not move the watermark on the ordinary page, which is every
+    // page in almost every document.
+    const out = (await visualOriginFraction(await addWatermark(await turnedPage(0), OPTIONS), 0))!;
+    expect(out.rawAngle).toBe(OPTIONS.rotation);
   });
 });
