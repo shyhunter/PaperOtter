@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { SignatureBackground, type SignatureBg } from '@/components/SignatureBackground';
+import { applySignatureBackground } from '@/lib/signatureBackground';
 import { PagePreview, type PageDimensions } from '@/components/shared/PagePreview';
 import { addSignature } from '@/lib/pdfSign';
 import { PDFDocument } from 'pdf-lib';
@@ -54,6 +56,16 @@ export function SignaturePlaceStep({
 }: SignaturePlaceStepProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // What sits behind the signature, and the copy that carries it.
+  //
+  // Composited here rather than at save time so the overlay shows exactly what
+  // lands on the page: a background chosen against a preview that does not have
+  // it is a guess.
+  const [background, setBackground] = useState<SignatureBg>(null);
+  const [composited, setComposited] = useState(signatureDataUrl);
+  const pageBoxRef = useRef<HTMLDivElement | null>(null);
+
   const [pageDims, setPageDims] = useState<PageDimensions | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -233,7 +245,7 @@ export function SignaturePlaceStep({
       // CRITICAL: PDF y=0 is bottom; screen y=0 is top
       const pdfY = pageDims.pdfHeight - (sigPos.y + sigSize.height) * scaleY;
 
-      const imageBytes = dataUrlToBytes(signatureDataUrl);
+      const imageBytes = dataUrlToBytes(composited);
 
       const result = await addSignature(pdfBytes, {
         imageBytes,
@@ -250,7 +262,17 @@ export function SignaturePlaceStep({
     } finally {
       setIsProcessing(false);
     }
-  }, [pageDims, sigPos, sigSize, signatureDataUrl, pdfBytes, pageIndex, totalPages, rangeMode, customRange, onComplete]);
+  }, [pageDims, sigPos, sigSize, composited, pdfBytes, pageIndex, totalPages, rangeMode, customRange, onComplete]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!background) { setComposited(signatureDataUrl); return; }
+    (async () => {
+      const withBg = await applySignatureBackground(signatureDataUrl, background);
+      if (!cancelled) setComposited(withBg);
+    })();
+    return () => { cancelled = true; };
+  }, [signatureDataUrl, background]);
+
 
   const corners = ['nw', 'ne', 'sw', 'se'];
   const cornerPositions: Record<string, React.CSSProperties> = {
@@ -263,7 +285,7 @@ export function SignaturePlaceStep({
   return (
     <div className="flex flex-1 gap-4 overflow-hidden p-4">
       {/* Left: Page preview with signature overlay */}
-      <div className="flex flex-1 flex-col items-center overflow-auto">
+      <div ref={pageBoxRef} className="flex flex-1 flex-col items-center overflow-auto">
         <PagePreview
           pdfBytes={pdfBytes}
           pageIndex={pageIndex}
@@ -289,7 +311,7 @@ export function SignaturePlaceStep({
               }}
             >
               <img
-                src={signatureDataUrl}
+                src={composited}
                 alt={t('signPdf.signature')}
                 className="pointer-events-none h-full w-full object-contain"
                 draggable={false}
@@ -313,6 +335,13 @@ export function SignaturePlaceStep({
       {/* Right: Controls panel */}
       <div className="flex w-64 flex-col gap-4 rounded-lg border border-border bg-card p-4">
         {/* Page navigation */}
+          <SignatureBackground
+            value={background}
+            onChange={setBackground}
+            pageCanvas={pageBoxRef.current?.querySelector('canvas') ?? null}
+            className="mb-4"
+          />
+
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             {t('signPdf.pageNavigation')}

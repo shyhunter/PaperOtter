@@ -19,6 +19,8 @@ import {
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
 import { rasteriseSignature } from '@/lib/signatureRaster';
+import { SignatureBackground, type SignatureBg } from '@/components/SignatureBackground';
+import { applySignatureBackground } from '@/lib/signatureBackground';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { TextMatch } from '@/lib/pdfTextSearch';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
@@ -1420,6 +1422,9 @@ function SignPanel() {
   const [sigFont, setSigFont] = useState<SignatureFontValue>(SIGNATURE_FONTS[0].value);
   const [sigColor, setSigColor] = useState('#1A365D');
   const [sigSize, setSigSize] = useState(24);
+  // What sits behind the signature on the page. The editor renders the document
+  // to a canvas, so the colour can be taken off the page rather than guessed.
+  const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
   const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
   const [showSaved, setShowSaved] = useState(false);
 
@@ -1443,6 +1448,20 @@ function SignPanel() {
     }
     setPlaceError(null);
 
+    // A typed signature is drawn on a transparent canvas, so it only gains a
+    // background if one was asked for.
+    let imageBytes = raster.bytes;
+    if (sigBackground) {
+      const blob = new Blob([raster.bytes as BlobPart], { type: 'image/png' });
+      const url = await new Promise<string>((resolve) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.readAsDataURL(blob);
+      });
+      const withBg = await applySignatureBackground(url, sigBackground);
+      imageBytes = new Uint8Array(await (await fetch(withBg)).arrayBuffer());
+    }
+
     addImageBlock(pageIndex, {
       id: crypto.randomUUID(),
       pageIndex,
@@ -1450,7 +1469,7 @@ function SignPanel() {
       y: 100,
       width: raster.width,
       height: raster.height,
-      imageBytes: raster.bytes,
+      imageBytes,
       rotation: 0,
       flipH: false,
       flipV: false,
@@ -1546,6 +1565,17 @@ function SignPanel() {
             />
           </div>
         </div>
+
+        {/* The page the editor is showing, so its colour can be sampled
+            directly rather than matched by eye. */}
+        <SignatureBackground
+          value={sigBackground}
+          onChange={setSigBackground}
+          pageCanvas={typeof document !== 'undefined'
+            ? document.querySelector<HTMLCanvasElement>('[data-editor-page] canvas, .editor-page canvas, canvas')
+            : null}
+          className="mt-3"
+        />
       </div>
 
       {/* Place + Save buttons */}

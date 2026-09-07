@@ -44,6 +44,10 @@ export function SignatureBackground({
   value, onChange, pageCanvas, onPickingChange, className,
 }: Props) {
   const [picking, setPicking] = useState(false);
+  // Names the thing it sets, without repeating the ink picker's wording. Two
+  // controls in one panel both called "custom colour" cannot be told apart by
+  // anyone reading the labels, whether by eye or by screen reader.
+  const customLabel = t('signatureBackground.label');
   const cleanup = useRef<(() => void) | null>(null);
 
   const stopPicking = useCallback(() => {
@@ -124,7 +128,10 @@ export function SignatureBackground({
         </button>
 
         {PRESETS.map((p) => {
-          const label = t(p.key);
+          // Qualified with what it sets. The ink picker in the same panel has
+          // its own White, and two controls with one name is ambiguous to read
+          // and impossible to address by voice or screen reader.
+          const label = `${t('signatureBackground.label')}: ${t(p.key)}`;
           return (
           <button
             key={p.colour}
@@ -142,16 +149,18 @@ export function SignatureBackground({
           );
         })}
 
+        {/* Qualified for the same reason as the swatches: the ink picker beside
+            this one also offers a custom colour. */}
         <label
           className="flex h-7 items-center gap-1 rounded-md border border-border px-1.5 text-[11px] text-muted-foreground hover:bg-accent"
-          title={t('signatureBackground.custom')}
+          title={customLabel}
         >
           <input
             type="color"
             value={value ?? '#ffffff'}
             onChange={(e) => onChange(e.target.value)}
             className="h-4 w-4 cursor-pointer border-0 bg-transparent p-0"
-            aria-label={t('signatureBackground.custom')}
+            aria-label={customLabel}
           />
         </label>
 
