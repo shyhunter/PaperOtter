@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 import { SignatureCanvas } from './SignatureCanvas';
 import { SignatureTyped } from './SignatureTyped';
 import { SignatureUpload } from './SignatureUpload';
@@ -74,17 +75,11 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
-        >
-          {t('common.back')}
-        </button>
-        <h2 className="text-lg font-semibold text-foreground">{t('signPdf.createOrSelectSignature')}</h2>
-      </div>
+      {/* Header.
+          Back belongs in the bottom bar with the other twenty-one tools, not
+          beside the title: this was the only step in the app that put it there,
+          so the control moved between steps of the same job. */}
+      <h2 className="text-lg font-semibold text-foreground">{t('signPdf.createOrSelectSignature')}</h2>
 
       {/* Saved Signatures */}
       <section>
@@ -230,6 +225,11 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
           </div>
         </div>
       )}
+      <div className="mt-2 flex items-center gap-3 border-t bg-background px-4 py-3">
+        <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+          {t('common.back')}
+        </Button>
+      </div>
     </div>
   );
 }

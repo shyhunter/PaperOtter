@@ -387,16 +387,19 @@ export function hasAnyConverter(availability: ConverterAvailability): boolean {
  * Used in the UI to show what the user can do without installing anything extra.
  */
 export function getCapabilitySummary(availability: ConverterAvailability): string {
+  // Product names stay as they are: Calibre is Calibre in every language, and
+  // translating one would make it harder to go and find, not easier. Only the
+  // words around them are text.
   const engines: string[] = [];
-  if (availability.builtin) engines.push('Built-in (Markdown/HTML/JSON)');
-  if (availability.webview) engines.push('Browser export (HTML→PDF)');
-  if (availability.textutil) engines.push('textutil (macOS)');
+  if (availability.builtin) engines.push(t('documentConverter.engineBuiltIn'));
+  if (availability.webview) engines.push(t('documentConverter.engineBrowser'));
+  if (availability.textutil) engines.push(t('documentConverter.engineTextutil'));
   if (availability.word) engines.push('Microsoft Word');
   if (availability.libreoffice) engines.push('LibreOffice');
   if (availability.calibre) engines.push('Calibre');
   if (availability.pandoc) engines.push('Pandoc');
   if (engines.length === 0) return t('documentConverter.noConversionToolsDetected');
-  return `Using: ${engines.join(', ')}`;
+  return t('documentConverter.usingEngines', { engines: engines.join(', ') });
 }
 
 // ── Calibre CLI argument builder ────────────────────────────────────────────

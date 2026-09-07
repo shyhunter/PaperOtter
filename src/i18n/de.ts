@@ -15,6 +15,10 @@ import type { Dictionary } from '@/i18n/en';
  * - Placeholders such as {size} and {count} must survive verbatim.
  */
 export const de: Dictionary = {
+  'documentConverter.usingEngines': 'Verwendet: {engines}',
+  'documentConverter.engineBuiltIn': 'Integriert (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browser-Export (HTML zu PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Hintergrund',
   'signatureBackground.none': 'Keiner',
   'signatureBackground.white': 'Weiß',

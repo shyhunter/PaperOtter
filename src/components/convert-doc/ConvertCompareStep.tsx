@@ -55,7 +55,13 @@ export function ConvertCompareStep({
   const convertedFileName = getConvertedFileName(sourceFileName, result.outputFormat, result.archive);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    /* min-h-0 is load-bearing. A flex child will not shrink below its content
+       by default, so without it this column keeps its natural height, the
+       action bar underneath is pushed past the bottom of the window, and the
+       Save button simply is not there. #116 fixed exactly this in
+       ConvertConfigStep and ImageConfigureStep; this sibling was missed, and
+       it is the step that owns Save. */
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       {/* Stats bar */}
       <div className="flex items-center gap-4 px-4 py-3 text-xs border-b border-border bg-muted/30 flex-none">
         <span className="font-medium text-foreground tabular-nums whitespace-nowrap">
@@ -80,7 +86,7 @@ export function ConvertCompareStep({
       </div>
 
       {/* Comparison cards */}
-      <div className="flex flex-1 items-center justify-center p-6">
+      <div className="flex flex-1 min-h-0 items-center justify-center overflow-y-auto p-6">
         <div className="w-full max-w-lg space-y-4">
           {/* Original card */}
           <div className="rounded-lg border border-border bg-card p-4">

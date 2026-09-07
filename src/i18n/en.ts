@@ -10,6 +10,10 @@
  * `_other` pairs and are read through `plural()`, never `t()`.
  */
 export const en = {
+  'documentConverter.usingEngines': 'Using: {engines}',
+  'documentConverter.engineBuiltIn': 'Built-in (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browser export (HTML to PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Background',
   'signatureBackground.none': 'None',
   'signatureBackground.white': 'White',

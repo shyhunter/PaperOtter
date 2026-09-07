@@ -13,6 +13,10 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal usted throughout; buttons take the infinitive.
  */
 export const es: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrado (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Exportación del navegador (HTML a PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Fondo',
   'signatureBackground.none': 'Ninguno',
   'signatureBackground.white': 'Blanco',

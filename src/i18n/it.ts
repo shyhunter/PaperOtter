@@ -11,6 +11,10 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal lei; buttons take the imperative, as Italian software does.
  */
 export const it: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrato (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Esportazione del browser (da HTML a PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Sfondo',
   'signatureBackground.none': 'Nessuno',
   'signatureBackground.white': 'Bianco',

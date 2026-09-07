@@ -20,6 +20,10 @@ import type { Dictionary } from '@/i18n/en';
  * plural helper uses Intl.PluralRules rather than an n === 1 test.
  */
 export const tr: Dictionary = {
+  'documentConverter.usingEngines': 'Kullanılan: {engines}',
+  'documentConverter.engineBuiltIn': 'Yerleşik (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Tarayıcı dışa aktarımı (HTML - PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Arka plan',
   'signatureBackground.none': 'Yok',
   'signatureBackground.white': 'Beyaz',

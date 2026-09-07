@@ -18,6 +18,10 @@ import type { Dictionary } from '@/i18n/en';
  * rather than relying on the verb to carry it.
  */
 export const pt: Dictionary = {
+  'documentConverter.usingEngines': 'Usa: {engines}',
+  'documentConverter.engineBuiltIn': 'Integrado (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Exportação do navegador (HTML para PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Fundo',
   'signatureBackground.none': 'Nenhum',
   'signatureBackground.white': 'Branco',

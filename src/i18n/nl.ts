@@ -17,6 +17,10 @@ import type { Dictionary } from '@/i18n/en';
  * - Formal u; buttons take the infinitive, as Dutch software does.
  */
 export const nl: Dictionary = {
+  'documentConverter.usingEngines': 'Gebruikt: {engines}',
+  'documentConverter.engineBuiltIn': 'Ingebouwd (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Browserexport (HTML naar PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Achtergrond',
   'signatureBackground.none': 'Geen',
   'signatureBackground.white': 'Wit',

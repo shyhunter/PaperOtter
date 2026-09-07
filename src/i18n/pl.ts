@@ -19,6 +19,10 @@ import type { Dictionary } from '@/i18n/en';
  * render "2 stron", which is wrong.
  */
 export const pl: Dictionary = {
+  'documentConverter.usingEngines': 'Używa: {engines}',
+  'documentConverter.engineBuiltIn': 'Wbudowane (Markdown/HTML/JSON)',
+  'documentConverter.engineBrowser': 'Eksport z przeglądarki (HTML do PDF)',
+  'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Tło',
   'signatureBackground.none': 'Brak',
   'signatureBackground.white': 'Białe',
