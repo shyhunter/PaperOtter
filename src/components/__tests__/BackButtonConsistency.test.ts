@@ -57,6 +57,30 @@ describe('the Back control', () => {
     expect(total, 'sanity: found Back controls across the flows').toBeGreaterThan(15);
   });
 
+  it('[BACK-03] every Compare step has a Back at all', () => {
+    // BACK-01 and BACK-02 check how a Back is built and where it sits, which
+    // says nothing about one that was never written. Convert Document's Compare
+    // step had no Back: the only way out of a conversion you wanted to adjust
+    // was the Process-another link, which discards it and returns to the file
+    // picker. Reported as "the back button is missing there too".
+    //
+    // The three Compare steps are one screen in three flows -- same strip, same
+    // order, Back | spacer | Process another | Save -- so this is a list, not a
+    // heuristic: a heuristic broad enough to find them would flag half the app.
+    const COMPARE_STEPS = [
+      'src/components/CompareStep.tsx',
+      'src/components/ImageCompareStep.tsx',
+      'src/components/convert-doc/ConvertCompareStep.tsx',
+    ];
+
+    const missing = COMPARE_STEPS.filter((file) => {
+      const src = readFileSync(file, 'utf8');
+      return !/data-testid="back-btn"/.test(src) || backControls(src).length === 0;
+    });
+
+    expect(missing, 'Compare steps with no way back to Configure').toEqual([]);
+  });
+
   it('[BACK-02] every Back uses the shared Button, not a hand-rolled one', () => {
     const rogue: string[] = [];
     for (const file of files) {

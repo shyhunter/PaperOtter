@@ -32,6 +32,8 @@ interface ConvertCompareStepProps {
   sourceFormat: ConvertFormat;
   onSave: () => void;
   onStartOver: () => void;
+  /** Back to Configure, keeping the file, the way the other Compare steps do. */
+  onBack: () => void;
 }
 
 function getConvertedFileName(sourceFileName: string, outputFormat: ConvertFormat, archive?: boolean): string {
@@ -46,6 +48,7 @@ export function ConvertCompareStep({
   sourceFormat,
   onSave,
   onStartOver,
+  onBack,
 }: ConvertCompareStepProps) {
   const sizeChange = result.originalSize - result.outputSize;
   const sizeChangePct = result.originalSize > 0
@@ -127,17 +130,27 @@ export function ConvertCompareStep({
         </div>
       </div>
 
-      {/* Bottom strip */}
+      {/* Bottom strip -- Back | spacer | Process another | Save, the same shape
+          and the same order as the other two Compare steps. This one had no
+          Back at all, so the only way out of a conversion you wanted to adjust
+          was to throw it away and start from the file picker. */}
       <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
+          {t('common.back')}
+        </Button>
+
         <div className="flex-1" />
+
         <button
           type="button"
+          data-testid="process-another-btn"
           onClick={onStartOver}
           className="text-xs text-muted-foreground underline hover:text-foreground transition-colors flex-none"
         >
           {t('convertDoc.processAnother')}
         </button>
-        <Button size="sm" onClick={onSave} className="flex-none">
+
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
           {t('common.saveEllipsis')}
         </Button>
       </div>

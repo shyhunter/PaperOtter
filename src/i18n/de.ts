@@ -226,7 +226,7 @@ export const de: Dictionary = {
 
   // ── Document conversion ───────────────────────────────────────────────────
   'convertDoc.converted': 'Umgewandelt',
-  'convertDoc.processAnother': 'Weitere Datei verarbeiten',
+  'convertDoc.processAnother': 'Andere Datei verarbeiten',
   'convertDoc.byChapter': 'Nach Kapitel',
   'convertDoc.detectingTools': 'Programme werden gesucht…',
   'convertDoc.documentConversionRequiresACompatible':

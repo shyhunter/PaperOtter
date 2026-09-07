@@ -199,7 +199,7 @@ export const nl: Dictionary = {
   'pdfToJpg.selectPages': 'Pagina’s kiezen',
   'pdfToJpgFlow.extractingSelectedPages': 'Geselecteerde pagina’s uitpakken…',
   'pdfToJpgFlow.conversionFailed': 'Omzetten mislukt.',
-  'convertDoc.converted': 'Omgezet', 'convertDoc.processAnother': 'Nog een bestand verwerken', 'convertDoc.byChapter': 'Per hoofdstuk',
+  'convertDoc.converted': 'Omgezet', 'convertDoc.processAnother': 'Ander bestand verwerken', 'convertDoc.byChapter': 'Per hoofdstuk',
   'convertDoc.detectingTools': 'Programma’s zoeken…',
   'convertDoc.documentConversionRequiresACompatible':
     'Voor het omzetten van documenten is een geschikt programma nodig, zoals Microsoft Word of LibreOffice.',

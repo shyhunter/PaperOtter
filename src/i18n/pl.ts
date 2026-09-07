@@ -213,7 +213,7 @@ export const pl: Dictionary = {
   'pdfToJpg.selectPages': 'Wybierz strony',
   'pdfToJpgFlow.extractingSelectedPages': 'Wyodrębnianie wybranych stron…',
   'pdfToJpgFlow.conversionFailed': 'Konwersja nie powiodła się.',
-  'convertDoc.converted': 'Przekonwertowano', 'convertDoc.processAnother': 'Przetwórz kolejny plik', 'convertDoc.byChapter': 'Według rozdziałów',
+  'convertDoc.converted': 'Przekonwertowano', 'convertDoc.processAnother': 'Przetwórz inny plik', 'convertDoc.byChapter': 'Według rozdziałów',
   'convertDoc.detectingTools': 'Wyszukiwanie programów…',
   'convertDoc.documentConversionRequiresACompatible':
     'Konwersja dokumentów wymaga zgodnego programu, np. Microsoft Word lub LibreOffice.',
