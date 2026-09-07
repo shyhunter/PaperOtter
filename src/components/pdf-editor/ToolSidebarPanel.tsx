@@ -36,9 +36,10 @@ import {
   estimateOutputSizeBytes,
   getNonCompressibleReason,
   nonCompressibleMessage,
+  resizePagesInDocument,
   type PdfCompressibility,
 } from '@/lib/pdfProcessor';
-import type { PdfQualityLevel } from '@/types/file';
+import type { PdfQualityLevel, PdfPagePreset } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
 import { Loader2, Check, AlertCircle, Lock, Unlock, Expand, RotateCcw, RotateCw } from 'lucide-react';
@@ -305,8 +306,23 @@ function zoneDesc(value: ZoneValue): string {
   return descriptions[value];
 }
 
+/**
+ * The page sizes the resize offers, matching the standalone tool exactly.
+ *
+ * A function, not a constant: these labels are translated, and a module-level
+ * constant resolves them once at import, before the locale is known.
+ */
+function pageSizePresets(): { value: PdfPagePreset; label: string }[] {
+  return [
+    { value: 'A4', label: t('configureStep.a4210297Mm') },
+    { value: 'A3', label: t('configureStep.a3297420Mm') },
+    { value: 'Letter', label: t('configureStep.letter216279Mm') },
+    { value: 'custom', label: t('configureStep.custom') },
+  ];
+}
+
 function CompressPanel() {
-  const { state, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
+  const { state, selectedPages, updatePdfBytes, markDirty, setCompareMode } = useEditorContext();
   const [preset, setPreset] = useState<string>('ebook');
 
   // Target file size mode
@@ -316,6 +332,14 @@ function CompressPanel() {
 
   // Additional options
   const [downsampleImages, setDownsampleImages] = useState(true);
+
+  // Page resize. The standalone tool has had these since it shipped; this panel
+  // offered compression only, so the editor could not change a page's size at
+  // all. Off by default, as it is there: it rewrites every page it touches.
+  const [resizeEnabled, setResizeEnabled] = useState(false);
+  const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
+  const [customWidthMm, setCustomWidthMm] = useState('210');
+  const [customHeightMm, setCustomHeightMm] = useState('297');
 
   const [previewBytes, setPreviewBytes] = useState<Uint8Array | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -420,6 +444,31 @@ function CompressPanel() {
     return 'prepress';
   }, [targetActive, targetSizeValue, unit, baseBytes, preset]);
 
+  // Which pages the resize touches. A selection in the Pages panel is what the
+  // user pointed at, the same rule the Rotate panel follows; with no selection
+  // it means the whole document, because that is what "resize pages" reads as.
+  const resizeTargets = useMemo(
+    () => (selectedPages.size > 0
+      ? Array.from(selectedPages).sort((a, b) => a - b)
+      : Array.from({ length: state.pageCount }, (_, i) => i)),
+    [selectedPages, state.pageCount],
+  );
+
+  /** The document with its pages resized, as bytes ready for Ghostscript. */
+  const resizedBytes = useCallback(async (source: Uint8Array, indices: number[]) => {
+    const { PDFDocument } = await import('pdf-lib');
+    // slice(): pdf.js elsewhere in the editor transfers this buffer to its
+    // worker, and a detached one loads as an empty document.
+    const doc = await PDFDocument.load(source.slice(), { ignoreEncryption: true });
+    resizePagesInDocument(doc, {
+      pagePreset,
+      customWidthMm: pagePreset === 'custom' ? parseFloat(customWidthMm) : null,
+      customHeightMm: pagePreset === 'custom' ? parseFloat(customHeightMm) : null,
+      selectedPageIndices: indices,
+    });
+    return new Uint8Array(await doc.save({ useObjectStreams: true }));
+  }, [pagePreset, customWidthMm, customHeightMm]);
+
   const handleApply = useCallback(async () => {
     setIsProcessing(true);
     setCompressionResult(null);
@@ -433,7 +482,13 @@ function CompressPanel() {
       const source = baseline ?? state.pdfBytes;
       setBaseline(source);
       const originalSize = source.byteLength;
-      await writeFile(tempInputPath, source);
+
+      // Resize before compressing, the order processPdf uses: Ghostscript
+      // should encode the pages that are actually going to be in the file.
+      const toCompress = resizeEnabled
+        ? await resizedBytes(source, resizeTargets)
+        : source;
+      await writeFile(tempInputPath, toCompress);
 
       const gsResult: ArrayBuffer = await invoke('compress_pdf', {
         sourcePath: tempInputPath,
@@ -459,7 +514,8 @@ function CompressPanel() {
       setIsProcessing(false);
       await apply(() => Promise.reject(err));
     }
-  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes, updatePdfBytes, markDirty, apply]);
+  }, [state.pdfBytes, baseline, resolvedPreset, downsampleImages, targetActive, targetBytes,
+      resizeEnabled, resizedBytes, resizeTargets, updatePdfBytes, markDirty, apply]);
 
   const reductionPct = compressionResult
     ? Math.round((1 - compressionResult.compressedSize / compressionResult.originalSize) * 100)
@@ -614,6 +670,76 @@ function CompressPanel() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      {/* Resize pages -- the standalone tool's controls, which this panel never
+          had. Its own section rather than an "advanced option": it changes the
+          shape of the document, which compression never does. */}
+      <div className="space-y-1.5 border-t pt-2">
+        <label className="flex cursor-pointer items-center gap-2 text-[11px] font-medium">
+          <input
+            type="checkbox"
+            checked={resizeEnabled}
+            onChange={(e) => setResizeEnabled(e.target.checked)}
+          />
+          {t('configure.resizePages')}
+        </label>
+
+        {resizeEnabled && (
+          <div className="space-y-1.5 ps-5">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">
+                {t('configure.pageSize')}
+              </label>
+              <select
+                value={pagePreset}
+                onChange={(e) => setPagePreset(e.target.value as PdfPagePreset)}
+                aria-label={t('configure.pageSize')}
+                className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+              >
+                {pageSizePresets().map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {pagePreset === 'custom' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">{t('configure.widthMm')}</label>
+                  <input
+                    type="number"
+                    value={customWidthMm}
+                    onChange={(e) => setCustomWidthMm(e.target.value)}
+                    aria-label={t('configure.widthMm')}
+                    className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">{t('configure.heightMm')}</label>
+                  <input
+                    type="number"
+                    value={customHeightMm}
+                    onChange={(e) => setCustomHeightMm(e.target.value)}
+                    aria-label={t('configure.heightMm')}
+                    className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs"
+                    min={1}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Says what Apply will touch. The standalone asks for a page list;
+                here the Pages panel already holds a selection, so this reports
+                that rather than asking for the same thing twice. */}
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {selectedPages.size > 0
+                ? t('toolSidebarPanel.resizingSelectedPages', { count: selectedPages.size })
+                : t('toolSidebarPanel.resizingAllPages', { count: state.pageCount })}
+            </p>
+          </div>
         )}
       </div>
 

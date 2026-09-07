@@ -738,6 +738,8 @@ export const pl: Dictionary = {
   'toolSidebarPanel.opacity': 'Krycie: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Tak jasny prostokąt jest ledwo widoczny na białej stronie. Treść pod spodem i tak zostaje nieodwracalnie usunięta.',
   'toolSidebarPanel.pdfaConversion': 'Konwersja PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Zmieniony zostanie rozmiar {count} zaznaczonych stron.',
+  'toolSidebarPanel.resizingAllPages': 'Zmieniony zostanie rozmiar wszystkich {count} stron. Zaznacz strony, aby zmienić tylko wybrane.',
   'toolSidebarPanel.rotatingAllPages': 'Obracanie wszystkich stron ({count})',
   'toolSidebarPanel.rotatingPage': 'Obracanie strony {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Obracanie wybranych stron ({count})',

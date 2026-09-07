@@ -1110,6 +1110,8 @@ export const de: Dictionary = {
   'toolSidebarPanel.opacity': 'Deckkraft: {percent} %',
   'toolSidebarPanel.paleBoxWarning': 'Ein so blasses Feld ist auf einer weißen Seite kaum zu erkennen. Der darunterliegende Inhalt wird dennoch unwiderruflich entfernt.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-Umwandlung',
+  'toolSidebarPanel.resizingSelectedPages': '{count} ausgewählte Seiten werden angepasst.',
+  'toolSidebarPanel.resizingAllPages': 'Alle {count} Seiten werden angepasst. Wählen Sie zuerst Seiten aus, um nur diese anzupassen.',
   'toolSidebarPanel.rotatingAllPages': 'Alle {count} Seiten werden gedreht',
   'toolSidebarPanel.rotatingPage': 'Seite {page} wird gedreht',
   'toolSidebarPanel.rotatingSelectedPages': '{count} ausgewählte Seiten werden gedreht',

@@ -790,6 +790,8 @@ export const tr: Dictionary = {
   'toolSidebarPanel.opacity': 'Saydamlık: %{percent}',
   'toolSidebarPanel.paleBoxWarning': 'Bu kadar açık renkli bir kutu beyaz sayfada zor görülür. Altındaki içerik yine de kalıcı olarak kaldırılır.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} dönüştürme',
+  'toolSidebarPanel.resizingSelectedPages': 'Seçili {count} sayfa yeniden boyutlandırılacak.',
+  'toolSidebarPanel.resizingAllPages': 'Tüm {count} sayfa yeniden boyutlandırılacak. Yalnızca bazılarını boyutlandırmak için önce sayfa seçin.',
   'toolSidebarPanel.rotatingAllPages': '{count} sayfanın tümü döndürülüyor',
   'toolSidebarPanel.rotatingPage': '{page}. sayfa döndürülüyor',
   'toolSidebarPanel.rotatingSelectedPages': 'Seçili {count} sayfa döndürülüyor',

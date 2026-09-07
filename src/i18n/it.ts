@@ -732,6 +732,8 @@ export const it: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacità: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Un riquadro così chiaro è difficile da vedere su una pagina bianca. Il contenuto sottostante viene comunque rimosso definitivamente.',
   'toolSidebarPanel.pdfaConversion': 'Conversione PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Verranno ridimensionate {count} pagine selezionate.',
+  'toolSidebarPanel.resizingAllPages': 'Verranno ridimensionate tutte le {count} pagine. Selezioni prima delle pagine per ridimensionare solo quelle.',
   'toolSidebarPanel.rotatingAllPages': 'Rotazione di tutte le {count} pagine',
   'toolSidebarPanel.rotatingPage': 'Rotazione della pagina {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotazione di {count} pagine selezionate',

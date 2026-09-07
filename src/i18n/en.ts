@@ -1160,6 +1160,8 @@ export const en = {
   'toolSidebarPanel.opacity': 'Opacity: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'A box this pale is hard to see on a white page. The content underneath is still permanently removed.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level} conversion',
+  'toolSidebarPanel.resizingSelectedPages': 'Resizing {count} selected pages.',
+  'toolSidebarPanel.resizingAllPages': 'Resizing all {count} pages. Select pages first to resize only those.',
   'toolSidebarPanel.rotatingAllPages': 'Rotating all {count} pages',
   'toolSidebarPanel.rotatingPage': 'Rotating page {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'Rotating {count} selected pages',

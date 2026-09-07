@@ -796,6 +796,8 @@ export const pt: Dictionary = {
   'toolSidebarPanel.opacity': 'Opacidade: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Um retângulo tão claro é difícil de ver numa página branca. O conteúdo por baixo é removido permanentemente na mesma.',
   'toolSidebarPanel.pdfaConversion': 'Conversão PDF/A-{level}',
+  'toolSidebarPanel.resizingSelectedPages': 'Serão redimensionadas {count} páginas selecionadas.',
+  'toolSidebarPanel.resizingAllPages': 'Serão redimensionadas as {count} páginas. Selecione páginas primeiro para redimensionar apenas essas.',
   'toolSidebarPanel.rotatingAllPages': 'A rodar as {count} páginas',
   'toolSidebarPanel.rotatingPage': 'A rodar a página {page}',
   'toolSidebarPanel.rotatingSelectedPages': 'A rodar {count} páginas selecionadas',

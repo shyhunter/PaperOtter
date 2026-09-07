@@ -735,6 +735,8 @@ export const nl: Dictionary = {
   'toolSidebarPanel.opacity': 'Dekking: {percent}%',
   'toolSidebarPanel.paleBoxWarning': 'Een vak dat zo bleek is, valt op een witte pagina nauwelijks op. De inhoud eronder wordt hoe dan ook permanent verwijderd.',
   'toolSidebarPanel.pdfaConversion': 'PDF/A-{level}-conversie',
+  'toolSidebarPanel.resizingSelectedPages': '{count} geselecteerde pagina’s worden aangepast.',
+  'toolSidebarPanel.resizingAllPages': 'Alle {count} pagina’s worden aangepast. Selecteer eerst pagina’s om alleen die aan te passen.',
   'toolSidebarPanel.rotatingAllPages': 'Alle {count} pagina’s worden gedraaid',
   'toolSidebarPanel.rotatingPage': 'Pagina {page} wordt gedraaid',
   'toolSidebarPanel.rotatingSelectedPages': '{count} geselecteerde pagina’s worden gedraaid',

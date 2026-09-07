@@ -1226,6 +1226,50 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     await waitFor(() => expect(cropPdf).toHaveBeenCalledTimes(1));
   });
 
+  it('TP-05b — the Compress panel offers page resize, as the standalone tool does', async () => {
+    // Found by comparing each editor panel against the tool it stands in for:
+    // Compress in the editor had the compression half only, so the editor could
+    // not change a page's size at all. Off by default, as it is in the
+    // standalone: it rewrites every page it touches.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+
+    const toggle = screen.getByLabelText(/resize pages/i);
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByLabelText(/page size/i), 'hidden until asked for').not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(screen.getByLabelText(/page size/i)).toBeInTheDocument();
+  });
+
+  it('TP-05c — a custom page size asks for both sides in millimetres', async () => {
+    // Both, because getTargetPageSize refuses a half-specified custom size
+    // rather than guessing the other side. See [RESIZE-06].
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Compress PDF'));
+    await user.click(screen.getByLabelText(/resize pages/i));
+
+    expect(screen.queryByLabelText(/width/i), 'only for a custom size').not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/page size/i), 'custom');
+
+    expect(screen.getByLabelText(/width/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/height/i)).toBeInTheDocument();
+  });
+
   // TP-06: Sign Panel
   it('TP-06 — Sign panel shows signature text input, style buttons, and place button', async () => {
     const user = userEvent.setup();
