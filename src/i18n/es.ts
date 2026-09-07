@@ -675,6 +675,7 @@ export const es: Dictionary = {
   'toolSidebar.targetFileSize': 'Tamaño de archivo objetivo',
   'toolSidebarPanel.alreadyMarked': 'Ya marcado', 'toolSidebarPanel.markThisOne': 'Marcar este',
   'toolSidebarPanel.redacting': 'Censurando…', 'toolSidebarPanel.apply': 'Aplicar',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Arrastre la firma hasta su sitio en la página y cambie el tamaño desde las esquinas. El botón de eliminar la quita.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'No se pudo dibujar la firma. Pruebe otro estilo o un nombre más corto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Archivo más pequeño: ideal para pantalla',
@@ -797,6 +798,7 @@ export const es: Dictionary = {
   'exportPanel.exportAsFormat': 'Exportar como {format}',
   'exportPanel.savedAsFormat': 'Guardado como {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opciones de tipografía',
+  'imageBlockLayer.deleteStamp': 'Eliminar este sello',
   'imageBlockLayer.resizeFromCorner': 'Redimensionar desde {corner}',
   'imageCompareStep.qualityValue': 'Calidad: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compresión: {level}/9',

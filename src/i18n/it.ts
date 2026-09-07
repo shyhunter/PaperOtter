@@ -548,6 +548,7 @@ export const it: Dictionary = {
   'toolSidebar.targetFileSize': 'Dimensione desiderata del file',
   'toolSidebarPanel.alreadyMarked': 'Già segnato', 'toolSidebarPanel.markThisOne': 'Segna questo',
   'toolSidebarPanel.redacting': 'Oscuramento…', 'toolSidebarPanel.apply': 'Applica',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Trascini la firma al suo posto sulla pagina e la ridimensioni dagli angoli. Il pulsante di eliminazione la rimuove.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossibile disegnare la firma. Provi un altro stile o un nome più corto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'File più piccolo: ideale per lo schermo',
@@ -670,6 +671,7 @@ export const it: Dictionary = {
   'exportPanel.exportAsFormat': 'Esporta come {format}',
   'exportPanel.savedAsFormat': 'Salvato come {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opzioni tipografiche',
+  'imageBlockLayer.deleteStamp': 'Elimina questo timbro',
   'imageBlockLayer.resizeFromCorner': 'Ridimensiona da {corner}',
   'imageCompareStep.qualityValue': 'Qualità: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressione: {level}/9',

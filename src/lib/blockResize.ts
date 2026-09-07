@@ -56,3 +56,29 @@ export function resizeFromCorner(
     height,
   };
 }
+
+/** Where a new stamp lands, in PDF points, before it is dragged into place. */
+export const STAMP_DROP_X = 100;
+export const STAMP_DROP_Y = 120;
+
+/** How far each successive stamp steps, and how many steps before it repeats. */
+const STAMP_STEP = 18;
+const STAMP_CYCLE = 6;
+
+/**
+ * Where to drop the next stamp on a page that already has `existing` of them.
+ *
+ * Every placement used to land on the same point, so pressing Place twice put
+ * an identical copy in the identical spot: nothing moved, nothing looked
+ * different, and the extra copies could not be selected apart or removed.
+ * Reported as "it copy and paste the signature and suddenly I have many
+ * signatures of same one".
+ *
+ * The step cycles rather than growing without limit, so the twentieth stamp is
+ * still on the page rather than off the edge of it.
+ */
+export function nextStampPosition(existing: number): { x: number; y: number } {
+  const step = (Math.max(0, existing) % STAMP_CYCLE) * STAMP_STEP;
+  // Down and to the right on screen, which is +x and -y in PDF coordinates.
+  return { x: STAMP_DROP_X + step, y: STAMP_DROP_Y - step };
+}

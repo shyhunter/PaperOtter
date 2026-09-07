@@ -607,6 +607,7 @@ export const tr: Dictionary = {
   'toolSidebar.targetFileSize': 'Hedef dosya boyutu',
   'toolSidebarPanel.alreadyMarked': 'Zaten işaretli', 'toolSidebarPanel.markThisOne': 'Bunu işaretle',
   'toolSidebarPanel.redacting': 'Karartılıyor…', 'toolSidebarPanel.apply': 'Uygula',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'İmzayı sayfada istediğiniz yere sürükleyin, köşelerden boyutlandırın. Silme düğmesi onu kaldırır.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'İmza çizilemedi. Başka bir stil veya daha kısa bir ad deneyin.',
   'toolSidebarPanel.smallestFileBestForScreen': 'En küçük dosya: ekranda görüntülemek için en iyisi',
@@ -728,6 +729,7 @@ export const tr: Dictionary = {
   'exportPanel.exportAsFormat': '{format} olarak dışa aktar',
   'exportPanel.savedAsFormat': '{format} olarak kaydedildi ({size} MB)',
   'exportPanel.typographyOptions': 'Tipografi seçenekleri',
+  'imageBlockLayer.deleteStamp': 'Bu damgayı sil',
   'imageBlockLayer.resizeFromCorner': '{corner} köşesinden yeniden boyutlandır',
   'imageCompareStep.qualityValue': 'Kalite: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Sıkıştırma: {level}/9',

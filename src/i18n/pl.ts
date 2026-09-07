@@ -555,6 +555,7 @@ export const pl: Dictionary = {
   'toolSidebar.targetFileSize': 'Docelowy rozmiar pliku',
   'toolSidebarPanel.alreadyMarked': 'Już zaznaczone', 'toolSidebarPanel.markThisOne': 'Zaznacz to',
   'toolSidebarPanel.redacting': 'Zaczernianie…', 'toolSidebarPanel.apply': 'Zastosuj',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Przeciągnij podpis na miejsce na stronie, a rozmiar zmień za rogi. Przycisk usuwania go kasuje.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Nie udało się narysować podpisu. Spróbuj innego stylu lub krótszego imienia.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Najmniejszy plik: najlepszy do oglądania na ekranie',
@@ -676,6 +677,7 @@ export const pl: Dictionary = {
   'exportPanel.exportAsFormat': 'Eksportuj jako {format}',
   'exportPanel.savedAsFormat': 'Zapisano jako {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opcje typografii',
+  'imageBlockLayer.deleteStamp': 'Usuń ten stempel',
   'imageBlockLayer.resizeFromCorner': 'Zmień rozmiar od: {corner}',
   'imageCompareStep.qualityValue': 'Jakość: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Kompresja: {level}/9',

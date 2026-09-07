@@ -855,6 +855,7 @@ export const fr: Dictionary = {
   'toolSidebarPanel.markThisOne': 'Marquer celui-ci',
   'toolSidebarPanel.redacting': 'Caviardage…',
   'toolSidebarPanel.apply': 'Appliquer',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Faites glisser la signature à sa place sur la page et redimensionnez-la par les coins. Le bouton de suppression la retire.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossible de tracer la signature. Essayez un autre style ou un nom plus court.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Fichier le plus petit: idéal pour l’écran',
@@ -1011,6 +1012,7 @@ export const fr: Dictionary = {
   'exportPanel.exportAsFormat': 'Exporter en {format}',
   'exportPanel.savedAsFormat': 'Enregistré en {format} ({size} Mo)',
   'exportPanel.typographyOptions': 'Options de typographie',
+  'imageBlockLayer.deleteStamp': 'Supprimer ce tampon',
   'imageBlockLayer.resizeFromCorner': 'Redimensionner depuis {corner}',
   'imageCompareStep.qualityValue': 'Qualité : {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compression : {level}/9',

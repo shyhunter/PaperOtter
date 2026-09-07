@@ -18,13 +18,15 @@ import {
   type WatermarkOptions,
 } from '@/lib/pdfWatermark';
 import { addPageNumbers, addPageNumbersSinglePage, type PageNumberOptions, type NumberPosition, type NumberFormat } from '@/lib/pdfPageNumbers';
-import { rasteriseSignature } from '@/lib/signatureRaster';
+import { rasteriseSignatureDataUrl, signatureBlockSize } from '@/lib/signatureRaster';
+import { useSavedSignatures } from '@/hooks/useSavedSignatures';
 import { SignatureBackground, type SignatureBg } from '@/components/SignatureBackground';
 import { applySignatureBackground } from '@/lib/signatureBackground';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { TextMatch } from '@/lib/pdfTextSearch';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
+import { nextStampPosition } from '@/lib/blockResize';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import {
@@ -1393,30 +1395,21 @@ function signatureFontLabel(value: SignatureFontValue): string {
   return labels[value];
 }
 
-const SAVED_SIGNATURES_KEY = 'papercut_saved_signatures';
-
-interface SavedSignature {
-  text: string;
-  font: string;
-  color: string;
-  createdAt: number;
-}
-
-function loadSavedSignatures(): SavedSignature[] {
-  try {
-    const raw = localStorage.getItem(SAVED_SIGNATURES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function saveSavedSignatures(sigs: SavedSignature[]) {
-  localStorage.setItem(SAVED_SIGNATURES_KEY, JSON.stringify(sigs));
-}
+// Saved signatures live in the shared store, the same one Sign PDF reads.
+//
+// This panel used to keep its own list in localStorage under
+// 'papercut_saved_signatures' -- which is the very key useSavedSignatures
+// migrates out of and then deletes. So a signature saved here survived only
+// until the next time Sign PDF was opened, and one saved there was never
+// visible here at all. Reported as "signature should have same saved
+// signatures also by edit -> signature and vice versa".
+//
+// The shared list holds an image rather than a recipe, so it can carry drawn
+// and uploaded signatures too, which the old recipe list could not represent.
 
 function SignPanel() {
-  const { state, setEditorMode, addImageBlock, markDirty } = useEditorContext();
+  const { state, addImageBlock, markDirty } = useEditorContext();
   const [placeError, setPlaceError] = useState<string | null>(null);
-  const isTextMode = state.editorMode === 'text';
 
   const [sigText, setSigText] = useState('');
   const [sigFont, setSigFont] = useState<SignatureFontValue>(SIGNATURE_FONTS[0].value);
@@ -1425,76 +1418,92 @@ function SignPanel() {
   // What sits behind the signature on the page. The editor renders the document
   // to a canvas, so the colour can be taken off the page rather than guessed.
   const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
-  const [savedSignatures, setSavedSignatures] = useState<SavedSignature[]>(loadSavedSignatures);
+  const { signatures: savedSignatures, saveSignature, deleteSignature } = useSavedSignatures();
   const [showSaved, setShowSaved] = useState(false);
 
   const selectedFontCss = SIGNATURE_FONTS.find(f => f.value === sigFont)?.css ?? 'cursive';
 
-  // Place the signature as a rasterised stamp on the current page.
-  //
-  // Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
-  // script face, so a Script signature used to be silently swapped for italic
-  // Helvetica while the panel went on showing a script preview over it. Drawing
-  // it to a canvas in the real bundled font makes the preview and the page the
-  // same thing, for every style rather than just the two that happened to map.
-  const handlePlaceSignature = useCallback(async (text: string, font: string, color: string) => {
+  /**
+   * Puts a signature image on the current page as a draggable stamp.
+   *
+   * Not as PDF text: pdf-lib embeds only the 14 standard fonts, none of them a
+   * script face, so a Script signature used to be silently swapped for italic
+   * Helvetica while the panel went on showing a script preview over it.
+   *
+   * Each stamp is offset from the last one on that page. Every placement used
+   * to land on exactly the same point, so pressing the button twice stacked an
+   * identical copy in the identical spot -- reported as "it copy and paste the
+   * signature and suddenly I have many signatures of same one". Offsetting
+   * makes a second copy visible, and therefore removable.
+   */
+  const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
     const pageIndex = state.currentPage;
-    const fontCss = SIGNATURE_FONTS.find((f) => f.value === font)?.css ?? 'cursive';
 
-    const raster = await rasteriseSignature(text, fontCss, sigSize, color);
-    if (!raster) {
+    const composited = background ? await applySignatureBackground(dataUrl, background) : dataUrl;
+    const bytes = new Uint8Array(await (await fetch(composited)).arrayBuffer());
+
+    // The stored image carries no size of its own, so the height comes from the
+    // size control and the width follows the image's proportions.
+    const dims = await new Promise<{ w: number; h: number } | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = composited;
+    });
+    if (!dims) {
       setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
       return;
     }
     setPlaceError(null);
 
-    // A typed signature is drawn on a transparent canvas, so it only gains a
-    // background if one was asked for.
-    let imageBytes = raster.bytes;
-    if (sigBackground) {
-      const blob = new Blob([raster.bytes as BlobPart], { type: 'image/png' });
-      const url = await new Promise<string>((resolve) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result));
-        fr.readAsDataURL(blob);
-      });
-      const withBg = await applySignatureBackground(url, sigBackground);
-      imageBytes = new Uint8Array(await (await fetch(withBg)).arrayBuffer());
-    }
+    const { width, height } = signatureBlockSize(dims.w, dims.h, sigSize);
+    const { x, y } = nextStampPosition(state.pages[pageIndex]?.imageBlocks.length ?? 0);
 
     addImageBlock(pageIndex, {
       id: crypto.randomUUID(),
       pageIndex,
-      x: 100,
-      y: 100,
-      width: raster.width,
-      height: raster.height,
-      imageBytes,
+      x,
+      y,
+      width,
+      height,
+      imageBytes: bytes,
       rotation: 0,
       flipH: false,
       flipV: false,
       isNew: true,
     });
     markDirty();
-    // sigBackground belongs here: without it the callback is only rebuilt when
-    // the page or the size changes, so choosing a background and pressing Place
-    // stamps the signature with whatever background was set when the callback
-    // was last made -- for a first choice, none at all.
-  }, [state.currentPage, sigSize, sigBackground, addImageBlock, markDirty]);
+  }, [state.currentPage, state.pages, sigSize, addImageBlock, markDirty]);
 
-  const handleSaveSignature = useCallback(() => {
+  /** Draws what is typed in the panel, then places it. */
+  const handlePlaceTyped = useCallback(async () => {
     if (!sigText.trim()) return;
-    const newSig: SavedSignature = { text: sigText, font: sigFont, color: sigColor, createdAt: Date.now() };
-    const updated = [newSig, ...savedSignatures].slice(0, 5); // Keep last 5
-    setSavedSignatures(updated);
-    saveSavedSignatures(updated);
-  }, [sigText, sigFont, sigColor, savedSignatures]);
+    const dataUrl = await rasteriseSignatureDataUrl(sigText, selectedFontCss, sigSize, sigColor);
+    if (!dataUrl) {
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
+      return;
+    }
+    await placeSignatureImage(dataUrl, sigBackground);
+  }, [sigText, selectedFontCss, sigSize, sigColor, sigBackground, placeSignatureImage]);
 
-  const handleDeleteSavedSig = useCallback((idx: number) => {
-    const updated = savedSignatures.filter((_, i) => i !== idx);
-    setSavedSignatures(updated);
-    saveSavedSignatures(updated);
-  }, [savedSignatures]);
+  // Saved as the image, not as text-plus-font. The shared list is what Sign PDF
+  // shows, and it has to be able to hold a drawn or uploaded signature too --
+  // neither of which a recipe can describe.
+  const handleSaveSignature = useCallback(async () => {
+    if (!sigText.trim()) return;
+    const dataUrl = await rasteriseSignatureDataUrl(sigText, selectedFontCss, sigSize, sigColor);
+    if (!dataUrl) {
+      setPlaceError(t('toolSidebarPanel.couldNotDrawTheSignature'));
+      return;
+    }
+    setPlaceError(null);
+    await saveSignature({
+      name: sigText.trim(),
+      type: 'typed',
+      dataUrl,
+      background: sigBackground,
+    });
+  }, [sigText, selectedFontCss, sigSize, sigColor, sigBackground, saveSignature]);
 
   return (
     <div className="space-y-3">
@@ -1513,9 +1522,17 @@ function SignPanel() {
           style={{ fontFamily: selectedFontCss, fontStyle: sigFont === 'cursive' ? 'italic' : 'normal' }}
         />
 
-        {/* Live preview */}
+        {/* Live preview.
+            The panel was hardcoded to bg-white, so a chosen background never
+            appeared here and picking one looked like it had done nothing --
+            reported as the colour picker not working in this panel. The colour
+            was being stored and stamped correctly all along; there was simply
+            nothing on screen that showed it. */}
         {sigText && (
-          <div className="rounded border bg-white p-3 text-center overflow-hidden">
+          <div
+            className="rounded border p-3 text-center overflow-hidden"
+            style={{ background: sigBackground ?? '#ffffff' }}
+          >
             <span
               style={{
                 fontFamily: selectedFontCss,
@@ -1581,7 +1598,7 @@ function SignPanel() {
       <div className="flex gap-1.5">
         <button
           type="button"
-          onClick={() => { if (sigText.trim()) handlePlaceSignature(sigText, sigFont, sigColor); }}
+          onClick={handlePlaceTyped}
           disabled={!sigText.trim()}
           className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -1602,7 +1619,7 @@ function SignPanel() {
         <p className="text-[10px] leading-relaxed text-destructive">{placeError}</p>
       )}
 
-      {/* Saved signatures */}
+      {/* Saved signatures -- the same list Sign PDF shows. */}
       {savedSignatures.length > 0 && (
         <div className="space-y-1.5 border-t pt-2">
           <button
@@ -1610,61 +1627,46 @@ function SignPanel() {
             onClick={() => setShowSaved(!showSaved)}
             className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
-            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '▾' : '▸'}
+            {t('toolSidebarPanel.savedSignaturesCount', { count: savedSignatures.length })} {showSaved ? '\u25be' : '\u25b8'}
           </button>
-          {showSaved && savedSignatures.map((sig, idx) => (
-            <div key={sig.createdAt} className="flex items-center gap-1.5 p-1.5 rounded border hover:bg-muted/50 group">
+          {showSaved && savedSignatures.map((sig) => (
+            <div key={sig.id} className="flex items-center gap-1.5 rounded border p-1.5 hover:bg-muted/50 group">
               <button
                 type="button"
-                onClick={() => handlePlaceSignature(sig.text, sig.font, sig.color)}
-                className="flex-1 text-start text-xs truncate"
-                style={{
-                  fontFamily: SIGNATURE_FONTS.find(f => f.value === sig.font)?.css ?? 'cursive',
-                  color: sig.color,
-                  fontStyle: sig.font === 'cursive' ? 'italic' : 'normal',
-                }}
+                onClick={() => placeSignatureImage(sig.dataUrl, sig.background ?? null)}
+                className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                title={sig.name}
               >
-                {sig.text}
+                {/* The image itself: the list holds drawn and uploaded
+                    signatures now, which no text preview could show. */}
+                <img
+                  src={sig.dataUrl}
+                  alt={sig.name}
+                  className="h-6 w-12 flex-none object-contain"
+                />
+                <span className="truncate text-[10px] text-muted-foreground">{sig.name}</span>
               </button>
               <button
                 type="button"
-                onClick={() => handleDeleteSavedSig(idx)}
-                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 text-[10px]"
+                onClick={() => deleteSignature(sig.id)}
+                className="flex-none text-[10px] text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
                 title={t('pdfEditor.deleteSavedSignature')}
               >
-                ×
+                \u00d7
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Text mode for freehand placement */}
-      <div className="border-t pt-2">
-        <button
-          type="button"
-          onClick={() => setEditorMode(isTextMode ? 'select' : 'text')}
-          className={`w-full py-1.5 px-3 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
-            isTextMode
-              ? 'bg-green-600 text-white'
-              : 'border border-border hover:bg-muted'
-          }`}
-        >
-          {isTextMode ? (
-            <>
-              <Check className="h-3 w-3" />
-              {t('pdfEditor.placementModeActive')}
-            </>
-          ) : (
-            t('toolSidebarPanel.clickToPlaceMode')
-          )}
-        </button>
-        {isTextMode && (
-          <p className="text-[9px] text-muted-foreground mt-1">
-            {t('pdfEditor.clickAnywhereOnThePdf')}
-          </p>
-        )}
-      </div>
+      {/* Was a "Click to place mode" button that switched the editor to its
+          text tool, so clicking the page made an empty text box rather than
+          placing the signature. Two controls that both claimed to place it and
+          neither of which let you choose where. A stamp is dragged, so the only
+          thing to say is that. */}
+      <p className="border-t pt-2 text-[10px] leading-relaxed text-muted-foreground">
+        {t('toolSidebarPanel.dragTheStampIntoPlace')}
+      </p>
     </div>
   );
 }

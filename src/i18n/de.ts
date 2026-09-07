@@ -840,6 +840,7 @@ export const de: Dictionary = {
   'toolSidebar.openPanel': 'Bereich öffnen',
   'toolSidebar.targetFileSize': 'Ziel-Dateigröße',
   'editorView.tryToRepair': 'Reparatur versuchen',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Ziehen Sie die Unterschrift an die gewünschte Stelle und ändern Sie die Größe an den Ecken. Löschen entfernt sie.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Die Unterschrift konnte nicht gezeichnet werden. Versuchen Sie einen anderen Stil oder einen kürzeren Namen.',
   'toolSidebarPanel.alreadyMarked': 'Bereits markiert',
@@ -1048,6 +1049,7 @@ export const de: Dictionary = {
   'exportPanel.exportAsFormat': 'Als {format} exportieren',
   'exportPanel.savedAsFormat': 'Als {format} gespeichert ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-Optionen',
+  'imageBlockLayer.deleteStamp': 'Diesen Stempel löschen',
   'imageBlockLayer.resizeFromCorner': 'Größe ändern ab {corner}',
   'imageCompareStep.qualityValue': 'Qualität: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Verkleinerung: {level}/9',

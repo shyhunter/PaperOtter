@@ -552,6 +552,7 @@ export const nl: Dictionary = {
   'toolSidebar.targetFileSize': 'Doelbestandsgrootte',
   'toolSidebarPanel.alreadyMarked': 'Al gemarkeerd', 'toolSidebarPanel.markThisOne': 'Deze markeren',
   'toolSidebarPanel.redacting': 'Zwartlakken…', 'toolSidebarPanel.apply': 'Toepassen',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Sleep de handtekening op zijn plaats en pas de grootte aan met de hoeken. De verwijderknop haalt hem weg.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Kon de handtekening niet tekenen. Probeer een andere stijl of een kortere naam.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Kleinste bestand: het beste voor op het scherm',
@@ -673,6 +674,7 @@ export const nl: Dictionary = {
   'exportPanel.exportAsFormat': 'Exporteren als {format}',
   'exportPanel.savedAsFormat': 'Opgeslagen als {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Typografie-opties',
+  'imageBlockLayer.deleteStamp': 'Deze stempel verwijderen',
   'imageBlockLayer.resizeFromCorner': 'Formaat wijzigen vanaf {corner}',
   'imageCompareStep.qualityValue': 'Kwaliteit: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressie: {level}/9',

@@ -557,6 +557,7 @@ export const pt: Dictionary = {
   'toolSidebar.targetFileSize': 'Tamanho de ficheiro pretendido',
   'toolSidebarPanel.alreadyMarked': 'Já marcado', 'toolSidebarPanel.markThisOne': 'Marcar este',
   'toolSidebarPanel.redacting': 'A ocultar…', 'toolSidebarPanel.apply': 'Aplicar',
+  'toolSidebarPanel.dragTheStampIntoPlace': 'Arraste a assinatura para o sítio certo na página e redimensione-a pelos cantos. O botão de eliminar remove-a.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Não foi possível desenhar a assinatura. Experimente outro estilo ou um nome mais curto.',
   'toolSidebarPanel.smallestFileBestForScreen': 'Ficheiro mais pequeno: ideal para ver no ecrã',
@@ -734,6 +735,7 @@ export const pt: Dictionary = {
   'exportPanel.exportAsFormat': 'Exportar como {format}',
   'exportPanel.savedAsFormat': 'Guardado como {format} ({size} MB)',
   'exportPanel.typographyOptions': 'Opções de tipografia',
+  'imageBlockLayer.deleteStamp': 'Eliminar este carimbo',
   'imageBlockLayer.resizeFromCorner': 'Redimensionar a partir de {corner}',
   'imageCompareStep.qualityValue': 'Qualidade: {value}',
   'imageConfigureStep.compressionOutOfNine': 'Compressão: {level}/9',

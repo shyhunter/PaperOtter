@@ -1253,8 +1253,13 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     // Save button
     expect(screen.getByText('Save')).toBeInTheDocument();
 
-    // Click-to-place mode button
-    expect(screen.getByText('Click-to-place mode')).toBeInTheDocument();
+    // A stamp is dragged, and the panel says so. There used to be a
+    // "Click-to-place mode" button here that switched the editor to its text
+    // tool, so clicking the page made an empty text box instead of placing the
+    // signature -- two controls that both claimed to place it and neither of
+    // which let you choose where.
+    expect(screen.getByText(/drag the signature into place/i)).toBeInTheDocument();
+    expect(screen.queryByText(/click-to-place/i)).not.toBeInTheDocument();
   });
 
   it('TP-06b — Typing a name shows signature preview and enables Place', async () => {
@@ -1585,7 +1590,14 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
   // TP-13: Redact Click-to-Place mode toggle
-  it('TP-14 — Sign panel click-to-place toggles editor mode', async () => {
+  // Renumbered: this was a second TP-14, sharing the id with the Redact colour
+  // test above, so a failure named TP-14 pointed at either of two panels.
+  //
+  // Placing a stamp needs a canvas to draw the signature and an image decode to
+  // measure it, and jsdom has neither, so the offset that stops two stamps
+  // landing on the same point is covered as a pure function instead: see
+  // [STAMP] in blockResize.test.ts.
+  it('TP-16 — the Sign panel no longer switches the editor to its text tool', async () => {
     let latestCtx: EditorCtx | null = null;
     const user = userEvent.setup();
 
@@ -1596,12 +1608,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     );
 
     await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
-
     await user.click(screen.getByTitle('Sign PDF'));
 
-    await user.click(screen.getByText('Click-to-place mode'));
-
-    expect(latestCtx!.state.editorMode).toBe('text');
-    expect(screen.getByText('Placement Mode Active')).toBeInTheDocument();
+    expect(latestCtx!.state.editorMode).not.toBe('text');
   });
 });

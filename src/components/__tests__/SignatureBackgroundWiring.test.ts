@@ -63,3 +63,51 @@ describe('signature background wiring', () => {
       .not.toMatch(/dataUrlToBytes\(signatureDataUrl\)/);
   });
 });
+
+/**
+ * [SIGSHARE] One list of saved signatures, read by both places that sign.
+ *
+ * The editor's sign panel kept its own list in localStorage under
+ * 'papercut_saved_signatures'. That is the exact key useSavedSignatures
+ * migrates out of and then deletes, so a signature saved in the editor lasted
+ * only until the next time Sign PDF was opened, and one saved in Sign PDF was
+ * never visible in the editor at all. Reported as "signature should have same
+ * saved signatures also by edit -> signature and vice versa".
+ *
+ * The old list also stored a recipe -- text, font, colour -- so it could not
+ * represent a drawn or uploaded signature even in principle.
+ */
+describe('saved signatures', () => {
+  const EDITOR_PANEL = 'src/components/pdf-editor/ToolSidebarPanel.tsx';
+
+  it('[SIGSHARE-01] the editor reads the shared store', () => {
+    const src = readFileSync(EDITOR_PANEL, 'utf8');
+    expect(src, 'uses the shared hook').toContain("from '@/hooks/useSavedSignatures'");
+    expect(src, 'and its list').toMatch(/useSavedSignatures\(\)/);
+  });
+
+  it('[SIGSHARE-02] and keeps no private list of its own', () => {
+    const src = readFileSync(EDITOR_PANEL, 'utf8');
+    // The key appears in the migration and nowhere else. A second writer here
+    // is the bug: the migration would keep eating what this panel wrote.
+    const writes = src.split('\n').filter((line) =>
+      /localStorage\.(setItem|getItem)/.test(line) && !line.trimStart().startsWith('//'));
+    expect(writes, 'no localStorage signature list in the panel').toEqual([]);
+  });
+
+  it('[SIGSHARE-03] the migration is the only thing that touches the old key', () => {
+    const owner = 'src/hooks/useSavedSignatures.ts';
+    // Quoted, and not in a comment. The panel still names the key in the note
+    // explaining why it no longer uses it, and that note is the point.
+    const usesKey = (file: string) => readFileSync(file, 'utf8')
+      .split('\n')
+      .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
+      .some((line) => /'papercut_saved_signatures'/.test(line));
+
+    const others = [...new Set(SIGN_SURFACES.concat(EDITOR_PANEL))]
+      .filter((f) => f !== owner)
+      .filter(usesKey);
+    expect(others, 'files still using the retired key').toEqual([]);
+    expect(usesKey(owner), 'the migration still knows it').toBe(true);
+  });
+});
