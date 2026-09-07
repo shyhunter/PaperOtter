@@ -39,7 +39,12 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
         {/* Recent Folder — right-aligned, always visible */}
         {recentDirs && onRecentFileSelected && (
           <div className="ms-auto">
-            <RecentDirsButton dirs={recentDirs} onFileSelected={onRecentFileSelected} />
+            {/* The header sits inside a tool, so its picker is that tool's picker. */}
+            <RecentDirsButton
+              dirs={recentDirs}
+              onFileSelected={onRecentFileSelected}
+              acceptedFormats={activeToolDef.acceptsFormats}
+            />
           </div>
         )}
       </div>
