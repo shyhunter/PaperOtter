@@ -377,6 +377,32 @@ fn format_gs_crash_error(stderr: &str) -> String {
 /// Only called from the macOS Word-automation path, but deliberately left
 /// compiled on every platform so its unit tests keep running in CI (which is
 /// Linux). Without this, `cargo clippy -- -D warnings` fails there on dead_code.
+/// Word for Mac's AppleScript constant for a save format.
+///
+/// These are enum constants from Word's own dictionary, not prose, and two of
+/// them shipped as prose: "format Microsoft Word 97-2004 document" and
+/// "format rtf format". Neither is valid AppleScript. They do not merely fail
+/// at run time, they fail to COMPILE with -2741, so PDF to .doc and PDF to .rtf
+/// could never have worked through Word on any Mac: osascript rejected the
+/// script before Word ever saw it. Reported as
+/// "Word conversion failed: syntax error: Expected end of line, etc. but found
+/// identifier. (-2741)".
+///
+/// Every value here was checked with `osacompile` against a real Word install.
+/// The test below pins them: they look like English and are not, so the next
+/// person to tidy the wording needs something that says so.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn word_save_format(output_format: &str) -> Option<&'static str> {
+    match output_format {
+        "pdf" => Some("format PDF"),
+        "docx" => Some("format document"),
+        "doc" => Some("format document97"),
+        "rtf" => Some("format rtf"),
+        "txt" => Some("format plain text"),
+        _ => None,
+    }
+}
+
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn format_word_automation_error(stderr: &str) -> String {
     const HINT: &str =
@@ -1671,14 +1697,9 @@ async fn convert_with_word(
 
     #[cfg(target_os = "macos")]
     {
-        // Map output format to Word for Mac save format constant
-        let (word_format, _) = match output_format.as_str() {
-            "pdf" => ("format PDF", "pdf"),
-            "docx" => ("format document", "docx"),
-            "doc" => ("format Microsoft Word 97-2004 document", "doc"),
-            "rtf" => ("format rtf format", "rtf"),
-            "txt" => ("format plain text", "txt"),
-            _ => return Err(format!("Word does not support '{}' output", output_format)),
+        let word_format = match word_save_format(output_format.as_str()) {
+            Some(f) => f,
+            None => return Err(format!("Word does not support '{}' output", output_format)),
         };
 
         let applescript = format!(
@@ -4551,6 +4572,45 @@ mod tests {
         fn a_path_with_no_file_name_is_refused() {
             let err = atomic_replace(std::path::Path::new("/"), b"NEW").expect_err("must refuse");
             assert!(!err.is_empty());
+        }
+    }
+
+    use crate::word_save_format;
+
+    /// [WORD] The save-format constants are AppleScript, not English.
+    ///
+    /// Two shipped as prose and were rejected by the compiler, not by Word:
+    /// "format Microsoft Word 97-2004 document" and "format rtf format" both
+    /// raise -2741 at compile time, so PDF to .doc and PDF to .rtf could never
+    /// have run on any Mac. Every value below was checked with `osacompile`
+    /// against a real Word install; this pins them so the next tidy-up of the
+    /// wording has to notice.
+    #[test]
+    fn word_save_formats_are_the_verified_constants() {
+        assert_eq!(word_save_format("pdf"), Some("format PDF"));
+        assert_eq!(word_save_format("docx"), Some("format document"));
+        assert_eq!(word_save_format("doc"), Some("format document97"));
+        assert_eq!(word_save_format("rtf"), Some("format rtf"));
+        assert_eq!(word_save_format("txt"), Some("format plain text"));
+    }
+
+    #[test]
+    fn word_save_format_refuses_what_word_cannot_write() {
+        assert_eq!(word_save_format("epub"), None);
+        assert_eq!(word_save_format(""), None);
+    }
+
+    /// The shapes that do not compile, kept as an executable record of the bug.
+    #[test]
+    fn word_save_formats_carry_no_spaces_in_their_tail() {
+        // A constant made of several bare words is what -2741 objects to: the
+        // parser reaches the second one and stops. Every accepted value is
+        // either a single trailing token or a known-good multiword constant.
+        for fmt in ["pdf", "docx", "doc", "rtf", "txt"] {
+            let c = word_save_format(fmt).unwrap();
+            assert!(c.starts_with("format "), "{c} should start with the format keyword");
+            assert!(!c.contains("97-2004"), "{c} still carries the prose spelling");
+            assert!(!c.ends_with(" format"), "{c} still carries the doubled keyword");
         }
     }
 }
