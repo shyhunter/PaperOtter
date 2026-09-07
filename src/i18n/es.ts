@@ -392,6 +392,7 @@ export const es: Dictionary = {
   'redactPdf.removeRedaction': 'Quitar la censura',
   'redactPdf.applyingRedactions': 'Aplicando la censura…',
   'redactPdf.redactPdf': 'Censurar PDF',
+  'redactPdf.willFlattenPages': 'Al aplicar, las páginas marcadas se convierten en imágenes. Su texto dejará de poder seleccionarse o buscarse.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Las páginas censuradas se han convertido en imágenes. El texto de esas páginas ya no se puede seleccionar.',
   'redactPdf.renderingPagesAndRemovingContent':

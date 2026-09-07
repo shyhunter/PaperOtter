@@ -310,6 +310,7 @@ export const de: Dictionary = {
   'redactPdf.removeRedaction': 'Schwärzung entfernen',
   'redactPdf.applyingRedactions': 'Schwärzungen werden angewendet…',
   'redactPdf.redactPdf': 'PDF schwärzen',
+  'redactPdf.willFlattenPages': 'Beim Anwenden werden die markierten Seiten in Bilder umgewandelt. Text darauf lässt sich danach nicht mehr auswählen oder durchsuchen.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Geschwärzte Seiten wurden in Bilder umgewandelt. Der Text auf diesen Seiten lässt sich nicht mehr markieren.',
   'redactPdf.renderingPagesAndRemovingContent':

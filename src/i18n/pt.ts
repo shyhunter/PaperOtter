@@ -276,6 +276,7 @@ export const pt: Dictionary = {
   'redactPdf.removeRedaction': 'Remover ocultação',
   'redactPdf.applyingRedactions': 'A aplicar as ocultações…',
   'redactPdf.redactPdf': 'Ocultar no PDF',
+  'redactPdf.willFlattenPages': 'Ao aplicar, as páginas marcadas passam a imagens. O texto nelas deixa de poder ser selecionado ou pesquisado.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'As páginas ocultadas foram convertidas em imagens. O texto dessas páginas deixou de poder ser selecionado.',
   'redactPdf.renderingPagesAndRemovingContent':

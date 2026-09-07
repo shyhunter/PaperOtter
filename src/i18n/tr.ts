@@ -351,6 +351,7 @@ export const tr: Dictionary = {
   'redactPdf.removeRedaction': 'Karartmayı kaldır',
   'redactPdf.applyingRedactions': 'Karartmalar uygulanıyor…',
   'redactPdf.redactPdf': 'PDF’i karart',
+  'redactPdf.willFlattenPages': 'Uygulandığında işaretli sayfalar görüntüye dönüştürülür. Üzerlerindeki metin artık seçilemez ve aranamaz.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Karartılan sayfalar görüntüye dönüştürüldü. Bu sayfalardaki metin artık seçilemez.',
   'redactPdf.renderingPagesAndRemovingContent': 'Sayfalar yeniden çiziliyor ve içerik kalıcı olarak siliniyor',

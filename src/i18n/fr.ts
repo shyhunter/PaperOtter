@@ -420,6 +420,7 @@ export const fr: Dictionary = {
   'redactPdf.removeRedaction': 'Retirer le caviardage',
   'redactPdf.applyingRedactions': 'Application des caviardages…',
   'redactPdf.redactPdf': 'Caviarder le PDF',
+  'redactPdf.willFlattenPages': 'L’application aplatit les pages marquées en images. Le texte qu’elles contiennent ne sera plus sélectionnable ni consultable.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Les pages caviardées ont été converties en images. Le texte de ces pages n’est plus sélectionnable.',
   'redactPdf.renderingPagesAndRemovingContent':

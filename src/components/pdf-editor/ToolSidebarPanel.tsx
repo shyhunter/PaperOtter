@@ -2098,6 +2098,21 @@ function RedactPanel() {
         {applyError && (
           <p className="text-[10px] leading-relaxed text-destructive">{applyError}</p>
         )}
+        {/* What Apply costs, said before it is pressed.
+            Redaction replaces each marked page with a flat image, so the text
+            on it stops being selectable, searchable and extractable -- for the
+            content underneath a box that is the whole point, and for the rest
+            of the page it is a side effect worth knowing about. The standalone
+            tool says this, but only on its Save step, after the work is done;
+            here Apply writes straight into the open document, so the moment
+            that matters is before the click, not after it -- which is why this
+            is its own string rather than the standalone's, whose past tense
+            would be a lie on this side of the button. */}
+        {draft.length > 0 && (
+          <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400">
+            {t('redactPdf.willFlattenPages')}
+          </p>
+        )}
         <button
           type="button"
           onClick={handleApply}

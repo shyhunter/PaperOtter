@@ -285,6 +285,7 @@ export const it: Dictionary = {
   'redactPdf.removeRedaction': 'Rimuovi l’oscuramento',
   'redactPdf.applyingRedactions': 'Applicazione degli oscuramenti…',
   'redactPdf.redactPdf': 'Oscura PDF',
+  'redactPdf.willFlattenPages': 'L’applicazione appiattisce in immagini le pagine contrassegnate. Il testo su di esse non sarà più selezionabile né ricercabile.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Le pagine oscurate sono state convertite in immagini. Il testo di quelle pagine non è più selezionabile.',
   'redactPdf.renderingPagesAndRemovingContent':

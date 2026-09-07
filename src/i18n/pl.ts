@@ -300,6 +300,7 @@ export const pl: Dictionary = {
   'redactPdf.removeRedaction': 'Usuń zaczernienie',
   'redactPdf.applyingRedactions': 'Stosowanie zaczernień…',
   'redactPdf.redactPdf': 'Zaczernij PDF',
+  'redactPdf.willFlattenPages': 'Zastosowanie spłaszcza zaznaczone strony do obrazów. Tekstu na nich nie będzie już można zaznaczyć ani przeszukać.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Zaczernione strony zostały zamienione na obrazy. Tekstu na tych stronach nie można już zaznaczyć.',
   'redactPdf.renderingPagesAndRemovingContent':

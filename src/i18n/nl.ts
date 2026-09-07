@@ -287,6 +287,7 @@ export const nl: Dictionary = {
   'redactPdf.removeRedaction': 'Zwartlakking verwijderen',
   'redactPdf.applyingRedactions': 'Zwartlakkingen toepassen…',
   'redactPdf.redactPdf': 'PDF zwartlakken',
+  'redactPdf.willFlattenPages': 'Toepassen maakt van de gemarkeerde pagina’s afbeeldingen. De tekst erop is daarna niet meer selecteerbaar of doorzoekbaar.',
   'redactPdf.redactedPagesHaveBeenFlattened':
     'Zwartgelakte pagina’s zijn omgezet naar afbeeldingen. De tekst op die pagina’s is niet meer selecteerbaar.',
   'redactPdf.renderingPagesAndRemovingContent':

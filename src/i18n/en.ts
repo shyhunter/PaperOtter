@@ -300,6 +300,7 @@ export const en = {
   // ── redactPdf ───────────────────────────────────────────────────────────
   'redactPdf.applyingRedactions': 'Applying redactions…',
   'redactPdf.redactPdf': 'Redact PDF',
+  'redactPdf.willFlattenPages': 'Applying flattens the marked pages to images. Text on them will no longer be selectable or searchable.',
   'redactPdf.redactedPagesHaveBeenFlattened': 'Redacted pages have been flattened to images. Text on those pages is no longer selectable.',
   'redactPdf.renderingPagesAndRemovingContent': 'Rendering pages and removing content permanently',
   'redactPdf.selectAPdfToPermanently': 'Select a PDF to permanently redact sensitive content.',

@@ -937,6 +937,38 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByLabelText(/custom colour/i)).toBeInTheDocument();
   });
 
+  it('TP-14b — the Redact panel says what applying will cost, before it is pressed', async () => {
+    // Redaction replaces each marked page with a flat image, so the text on it
+    // stops being selectable and searchable. The standalone tool says so, but
+    // only on its Save step, after the work is done. In the editor Apply writes
+    // straight into the open document, so the warning has to arrive while there
+    // is still a decision to make.
+    let latestCtx: EditorCtx | null = null;
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness onContextReady={(ctx) => { latestCtx = ctx; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
+    await user.click(screen.getByTitle('Redact PDF'));
+
+    // Nothing marked yet, so there is nothing to warn about.
+    expect(screen.queryByText(/flattens the marked pages/i)).not.toBeInTheDocument();
+
+    // Mark something, and it appears -- the half that matters, and the half an
+    // absence-only assertion would pass without.
+    act(() => {
+      latestCtx!.setRedactionDraft([{
+        id: 'r1', pageIndex: 0, x: 10, y: 10, width: 20, height: 5, source: 'drawn',
+      }]);
+    });
+
+    expect(await screen.findByText(/flattens the marked pages/i)).toBeInTheDocument();
+  });
+
   it('TP-14 — the Redact panel offers the shared colours', async () => {
     const user = userEvent.setup();
 
