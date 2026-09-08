@@ -182,6 +182,21 @@ jobs:
         if: needs.detect-changes.outputs.code-changed != 'false'
         run: npm run test:browser
 
+      # The point of the walkthrough suite is that reviewing a change means
+      # watching the app do the thing, instead of repeating twenty click-throughs
+      # by hand. That only works if a passing run keeps its recordings, so these
+      # are uploaded whether the job went green or red. ~5 MB for all of them.
+      - name: Upload flow videos and step timings
+        if: always() && needs.detect-changes.outputs.code-changed != 'false'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: flow-walkthrough
+          path: |
+            test-results/**/*.webm
+            .e2e-results/step-timings/
+          retention-days: 7
+          if-no-files-found: ignore
+
       # A failure here is a layout or geometry claim, and the trace is the only
       # readable account of it -- there is no screen for anyone to look at.
       - name: Upload traces from failures
