@@ -157,12 +157,6 @@ for (const tool of WALKABLE) {
   });
 
   test(`[FLOW-02] ${tool.id} keeps a way back on screen at step 2`, async ({ page }) => {
-    // Make Searchable offers no Back on its second step at all — only the
-    // breadcrumb to the dashboard. That is a real gap against the agreed rule,
-    // not a quirk of this test, and it is marked rather than skipped so the day
-    // someone adds the control this test fails and gets promoted.
-    test.fail(tool.id === 'ocr-pdf', 'ocr-pdf step 2 has no Back control (open defect)');
-
     await driveToStepTwo(page, tool);
 
     // Located by the word on the button, not by a test id: only Compress and
