@@ -54,6 +54,18 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
     goToStep(1);
   }
 
+  // Back to the file picker, clearing what the last choice left behind: a stale
+  // error or an old result shown against a newly chosen file is worse than no
+  // feedback at all.
+  const handleBackToPick = useCallback(() => {
+    setFilePath(null);
+    setFileName('');
+    setProcessError(null);
+    setResult(null);
+    setProgress(null);
+    goToStep(0);
+  }, [goToStep]);
+
   // Recognition can take seconds per page, so the Rust side reports which page
   // it is on. Without this a long document is indistinguishable from a hang.
   useEffect(() => {
@@ -169,7 +181,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
               </div>
             )}
 
-            {isProcessing ? (
+            {isProcessing && (
               <div className="space-y-2 text-center">
                 <Loader2 className="w-5 h-5 mx-auto animate-spin text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
@@ -178,12 +190,32 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
                     : t('common.processing')}
                 </p>
               </div>
-            ) : (
-              <Button data-testid="apply-btn" onClick={handleRecognise} className="w-full">
+            )}
+
+            {/* Back, for the same reason every other tool has one on this step:
+                without it the only way out was the breadcrumb, which abandons
+                the chosen file along with the step. Disabled while recognition
+                runs rather than hidden -- a control that vanishes mid-job reads
+                as being stuck, which is the opposite of what it is for. */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleBackToPick}
+                disabled={isProcessing}
+                className="flex-none"
+              >
+                {t('common.back')}
+              </Button>
+              <Button
+                data-testid="apply-btn"
+                onClick={handleRecognise}
+                disabled={isProcessing}
+                className="flex-1"
+              >
                 <ScanText className="w-4 h-4 me-2" />
                 {t('ocr.start')}
               </Button>
-            )}
+            </div>
           </div>
         </div>
       )}
