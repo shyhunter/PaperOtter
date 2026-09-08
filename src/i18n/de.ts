@@ -841,6 +841,8 @@ export const de: Dictionary = {
   'toolSidebar.openPanel': 'Bereich öffnen',
   'toolSidebar.targetFileSize': 'Ziel-Dateigröße',
   'editorView.tryToRepair': 'Reparatur versuchen',
+  'toolSidebarPanel.signingNPages': '{count} Seiten werden unterschrieben.',
+  'toolSidebarPanel.removePlacedSignatures': '{count} platzierte aus dem Dokument entfernen',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Ziehen Sie die Unterschrift an die gewünschte Stelle und ändern Sie die Größe an den Ecken. Löschen entfernt sie.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Die Unterschrift konnte nicht gezeichnet werden. Versuchen Sie einen anderen Stil oder einen kürzeren Namen.',

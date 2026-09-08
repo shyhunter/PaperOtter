@@ -549,6 +549,8 @@ export const it: Dictionary = {
   'toolSidebar.targetFileSize': 'Dimensione desiderata del file',
   'toolSidebarPanel.alreadyMarked': 'Già segnato', 'toolSidebarPanel.markThisOne': 'Segna questo',
   'toolSidebarPanel.redacting': 'Oscuramento…', 'toolSidebarPanel.apply': 'Applica',
+  'toolSidebarPanel.signingNPages': 'Verranno firmate {count} pagine.',
+  'toolSidebarPanel.removePlacedSignatures': 'Rimuovere le {count} inserite dal documento',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Trascini la firma al suo posto sulla pagina e la ridimensioni dagli angoli. Il pulsante di eliminazione la rimuove.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossibile disegnare la firma. Provi un altro stile o un nome più corto.',

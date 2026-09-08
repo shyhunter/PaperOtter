@@ -556,6 +556,8 @@ export const pl: Dictionary = {
   'toolSidebar.targetFileSize': 'Docelowy rozmiar pliku',
   'toolSidebarPanel.alreadyMarked': 'Już zaznaczone', 'toolSidebarPanel.markThisOne': 'Zaznacz to',
   'toolSidebarPanel.redacting': 'Zaczernianie…', 'toolSidebarPanel.apply': 'Zastosuj',
+  'toolSidebarPanel.signingNPages': 'Podpisanych zostanie {count} stron.',
+  'toolSidebarPanel.removePlacedSignatures': 'Usuń {count} umieszczonych z dokumentu',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Przeciągnij podpis na miejsce na stronie, a rozmiar zmień za rogi. Przycisk usuwania go kasuje.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Nie udało się narysować podpisu. Spróbuj innego stylu lub krótszego imienia.',

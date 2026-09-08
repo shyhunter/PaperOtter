@@ -78,10 +78,13 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
   }, [deleteSignature]);
 
   return (
-    /* min-h-0 with flex-1, or the column refuses to shrink below its content
-       and the overflow never engages -- the same shape as every other scroll
-       area in the app. Without it, Use This Signature sat below the window with
-       no way to reach it as soon as a few signatures had been saved. */
+    /* Two parts, and the split is the point. The content scrolls; the bottom bar
+       does not. Making the whole step scroll fixed Use This Signature sitting
+       below the window and put Back there instead, which is the same bug moved
+       one control along -- reported as the second step having no Back at all.
+       min-h-0 on the scrolling child, or a flex item will not shrink below its
+       content and the overflow never engages. */
+    <div className="flex min-h-0 flex-1 flex-col">
     <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
       {/* Header.
           Back belongs in the bottom bar with the other twenty-one tools, not
@@ -236,8 +239,12 @@ export function SignatureCreateStep({ onSignatureSelected, onBack }: SignatureCr
           </div>
         </div>
       )}
-      <div className="mt-2 flex items-center gap-3 border-t bg-background px-4 py-3">
-        <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
+    </div>
+
+      {/* Outside the scroll area, so it is on screen however many signatures
+          are saved. flex-none, or it gives up its height to the content. */}
+      <div className="flex flex-none items-center gap-3 border-t bg-background px-4 py-3">
+        <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
       </div>

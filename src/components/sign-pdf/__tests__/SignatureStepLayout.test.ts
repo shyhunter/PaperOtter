@@ -40,6 +40,23 @@ describe('the Signature step', () => {
     expect(column, 'and it is allowed to shrink').toContain('min-h-0');
   });
 
+  it('[SIGSTEP-01b] Back is outside the scroll area, not carried off by it', () => {
+    // Making the whole step scroll fixed Use This Signature sitting below the
+    // window and put Back there instead: the bar was the last child of the
+    // scrolling column, so it went with the content. Reported as the second
+    // step having no Back button at all. The bar has to be a sibling of the
+    // scrolling area, and flex-none, or it gives its height back to the content.
+    const src = readFileSync(CREATE_STEP, 'utf8');
+    const bar = src.slice(0, src.indexOf("data-testid=\"back-btn\""));
+    const openedDivs = bar.split('<div').length - 1;
+    const closedDivs = bar.split('</div>').length - 1;
+
+    expect(openedDivs - closedDivs, 'Back sits one level in, beside the scroll area')
+      .toBe(2);
+    expect(bar.slice(bar.lastIndexOf('<div')), 'and does not give up its height')
+      .toContain('flex-none');
+  });
+
   it('[SIGSTEP-02] the saved list is capped rather than taking the screen', () => {
     // Ten is the stored maximum, which is four rows at three across.
     const grid = classNames(CREATE_STEP).find((c) => c.includes('grid-cols-2'));

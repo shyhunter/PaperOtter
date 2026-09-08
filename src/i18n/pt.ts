@@ -558,6 +558,8 @@ export const pt: Dictionary = {
   'toolSidebar.targetFileSize': 'Tamanho de ficheiro pretendido',
   'toolSidebarPanel.alreadyMarked': 'Já marcado', 'toolSidebarPanel.markThisOne': 'Marcar este',
   'toolSidebarPanel.redacting': 'A ocultar…', 'toolSidebarPanel.apply': 'Aplicar',
+  'toolSidebarPanel.signingNPages': 'Serão assinadas {count} páginas.',
+  'toolSidebarPanel.removePlacedSignatures': 'Remover as {count} colocadas do documento',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Arraste a assinatura para o sítio certo na página e redimensione-a pelos cantos. O botão de eliminar remove-a.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Não foi possível desenhar a assinatura. Experimente outro estilo ou um nome mais curto.',

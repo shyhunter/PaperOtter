@@ -1398,6 +1398,84 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText(/re-processing through ghostscript/i)).toBeInTheDocument();
   });
 
+  it('TP-06c — the Sign panel can sign more than the page in front of you', async () => {
+    // Sign PDF has offered current page / all pages / custom range since it
+    // shipped. This panel could only stamp the page you were looking at, so
+    // signing a contract meant placing it once per page by hand.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    for (const label of [/current page only/i, /all pages/i, /custom range/i]) {
+      expect(screen.getByRole('radio', { name: label }), String(label)).toBeInTheDocument();
+    }
+
+    // The range field is only asked for when a range is what was chosen, and
+    // carries its own name: sharing "Custom range" with the radio would leave
+    // two controls in one panel that cannot be told apart.
+    expect(screen.queryByLabelText(/page selector/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /custom range/i }));
+    expect(screen.getByLabelText(/page selector/i)).toBeInTheDocument();
+  });
+
+  it('TP-06d — choosing all pages says how many will be signed', async () => {
+    // Stamping 438 pages on one click is worth stating before the click, not
+    // discovering afterwards.
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await user.click(screen.getByTitle('Sign PDF'));
+    await user.click(screen.getByRole('radio', { name: /all pages/i }));
+
+    // The harness document has three pages.
+    expect(await screen.findByText(/signing 3 pages/i)).toBeInTheDocument();
+  });
+
+  it('TP-06e — placed signatures can be taken off without touching the saved list', async () => {
+    // Reported as "no possibility to delete signature in the edit mode on the
+    // pdf without deleting saved signature". The panel's only visible delete
+    // removed a saved signature, and the one on the stamp itself appears only
+    // after it has been clicked.
+    let latestCtx: EditorCtx | null = null;
+    const user = userEvent.setup();
+
+    render(
+      <ToolPanelHarness onContextReady={(ctx) => { latestCtx = ctx; }}>
+        <ToolSidebar />
+      </ToolPanelHarness>,
+    );
+
+    await vi.waitFor(() => expect(latestCtx?.state.pageCount).toBe(3));
+    await user.click(screen.getByTitle('Sign PDF'));
+
+    // Nothing placed, so nothing to offer.
+    expect(screen.queryByText(/remove .* from the document/i)).not.toBeInTheDocument();
+
+    act(() => {
+      latestCtx!.addImageBlock(0, {
+        id: 'stamp-1', pageIndex: 0, x: 10, y: 10, width: 50, height: 20,
+        imageBytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+        rotation: 0, flipH: false, flipV: false, isNew: true,
+      });
+    });
+
+    const remove = await screen.findByText(/remove 1 placed from the document/i);
+    await user.click(remove);
+
+    expect(latestCtx!.state.pages[0].imageBlocks, 'the stamp is gone').toHaveLength(0);
+  });
+
   // TP-06: Sign Panel
   it('TP-06 — Sign panel shows signature text input, style buttons, and place button', async () => {
     const user = userEvent.setup();
