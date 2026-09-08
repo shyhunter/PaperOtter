@@ -144,3 +144,82 @@ export async function expectOnScreen(control: Locator, what: string): Promise<vo
   await expect(control, `${what} is visible`).toBeVisible();
   await expect(control, `${what} is inside the viewport`).toBeInViewport({ ratio: 0.9 });
 }
+
+/**
+ * Open a tool by its registry id rather than its visible name.
+ *
+ * The id is what the contract is written against, and it survives a rename or a
+ * translation change that would silently stop a name-matching test from finding
+ * anything. `.first()` because the favourites strip repeats four cards, so an
+ * id can legitimately appear twice on the dashboard.
+ */
+export async function openToolById(
+  page: Page,
+  id: string,
+  { showsAFlow = true }: { showsAFlow?: boolean } = {},
+): Promise<void> {
+  await page.locator(`[data-tool-id="${id}"]`).first().click();
+  await expect(page.getByTestId('dashboard')).toHaveCount(0);
+  // Every tool but Edit PDF lands on a step of its own, headed by the tool's
+  // name. Edit PDF opens the file picker instead and routes to the editor, so
+  // waiting for that header there would wait for something that never comes.
+  if (showsAFlow) await expect(page.getByTestId('current-tool')).toBeVisible();
+}
+
+/** Anything a person can operate. Disabled controls are excluded by the selector. */
+const INTERACTIVE =
+  'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), ' +
+  'textarea:not([disabled]), [role="button"]:not([aria-disabled="true"])';
+
+/**
+ * L10: every interactive control in the current step can be brought on screen.
+ *
+ * The rule the user reshaped from "the primary action must be visible". Naming
+ * one control per tool means maintaining 22 lists and still missing whichever
+ * control the next regression hits; asserting *all* of them needs no list and
+ * is strictly stronger.
+ *
+ * Scrolling to reach a control is allowed — being unable to is not — so each
+ * one is scrolled to before it is judged. A control that is off screen *and*
+ * cannot be scrolled to is unreachable, which is exactly the I4 defect.
+ */
+export async function expectEveryControlReachable(page: Page, where: string): Promise<void> {
+  const controls = page.locator(INTERACTIVE);
+  const total = await controls.count();
+
+  for (let i = 0; i < total; i++) {
+    const control = controls.nth(i);
+    // Hidden by design — a collapsed menu, a panel for another step. Only what
+    // the step actually offers is in scope.
+    if (!(await control.isVisible())) continue;
+
+    const label =
+      (await control.getAttribute('data-testid')) ??
+      (await control.getAttribute('aria-label')) ??
+      (await control.textContent())?.trim().slice(0, 40) ??
+      `control ${i}`;
+
+    await control.scrollIntoViewIfNeeded();
+    await expect(control, `${where}: "${label}" can be brought on screen`).toBeInViewport({
+      ratio: 0.9,
+    });
+  }
+}
+
+/**
+ * The window itself never scrolls; only regions inside it do.
+ *
+ * Papercut is a fixed shell (`h-screen overflow-hidden`) with scrolling panes.
+ * When the document grows instead, something has escaped its pane and whatever
+ * sits at the bottom of the screen leaves with it — the shared mechanism behind
+ * D1, I4 and R1, so it is worth asserting directly rather than one symptom at a
+ * time.
+ */
+export async function expectWindowDoesNotScroll(page: Page, where: string): Promise<void> {
+  const overflow = await page.evaluate(() => ({
+    doc: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    body: document.body.scrollHeight - document.body.clientHeight,
+  }));
+  expect(overflow.doc, `${where}: the document does not scroll`).toBeLessThanOrEqual(0);
+  expect(overflow.body, `${where}: the body does not scroll`).toBeLessThanOrEqual(0);
+}
