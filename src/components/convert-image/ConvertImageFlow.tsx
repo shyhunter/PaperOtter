@@ -243,7 +243,8 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
 
         {/* Step 1: Configure format */}
         {step === 1 && previewUrl && (
-          <div className="flex flex-1 flex-col items-center overflow-y-auto p-6">
+          <>
+          <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto p-6">
             <div className="w-full max-w-md space-y-4 my-auto">
               {/* File info */}
               <div className="text-center">
@@ -314,8 +315,15 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   {processError}
                 </p>
               )}
-
-              {/* Actions */}
+            </div>
+          </div>
+          {/* Actions -- a sibling of the scrolling column, never a child of it.
+              As its last child the bar left the window along with the content
+              once the preview made the column taller than the window: Back sat
+              below the fold at 900x660 with nothing on screen to reach it.
+              Asserted now by FLOW-02 in src/browser-tests/flow-walkthrough.spec.ts. */}
+          <div className="flex-none border-t border-border bg-background p-4">
+            <div className="mx-auto w-full max-w-md">
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -351,6 +359,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               </div>
             </div>
           </div>
+          </>
         )}
 
         {/* Step 2: Save */}
