@@ -42,7 +42,6 @@ import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
 import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
 import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
-import { EditPdfFlow } from '@/components/edit-pdf/EditPdfFlow';
 import { ConvertDocFlow } from '@/components/convert-doc/ConvertDocFlow';
 import { UpdateChecker } from '@/components/UpdateChecker';
 import { EditorView } from '@/components/pdf-editor/EditorView';
@@ -125,9 +124,6 @@ function DedicatedToolFlow() {
   const [dedicatedFlowStep, setDedicatedFlowStep] = useState(0);
   const { dirs: recentDirs, addDir: addRecentDir } = useRecentDirs();
 
-  // Tracks whether the Edit PDF flow has unsaved changes (step 1 dirty state).
-  const editPdfIsDirtyRef = useRef(false);
-
   // When a file is picked from the global Recent Folder button, load it into the current tool
   const handleRecentFileSelected = useCallback((filePath: string) => {
     setPendingFiles([filePath]);
@@ -142,15 +138,6 @@ function DedicatedToolFlow() {
     setDedicatedFlowStep(0);
     goToDashboard();
   }, [goToDashboard]);
-
-  // Guards back-navigation with a confirm dialog when Edit PDF has unsaved edits.
-  const handleEditPdfBackToDashboard = useCallback(() => {
-    if (editPdfIsDirtyRef.current && dedicatedFlowStep === 1) {
-      const confirmed = window.confirm(t('app.unsavedChangesGoBackToDashboard'));
-      if (!confirmed) return;
-    }
-    handleBackToDashboard();
-  }, [handleBackToDashboard, dedicatedFlowStep]);
 
   // Merge PDF — dedicated flow
   if (activeTool === 'merge-pdf') {
@@ -302,15 +289,14 @@ function DedicatedToolFlow() {
     );
   }
 
-  // Edit PDF — dedicated flow
-  if (activeTool === 'edit-pdf') {
-    return (
-      <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleEditPdfBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
-        <EditPdfFlow onStepChange={setDedicatedFlowStep} onIsDirtyChange={(dirty) => { editPdfIsDirtyRef.current = dirty; }} />
-      </>
-    );
-  }
+  // Edit PDF has no branch here on purpose, and this is not a gap to fill.
+  // AppContent intercepts `activeTool === 'edit-pdf'` (see the effect near the
+  // foot of this file) and opens the file picker at once: a chosen file goes to
+  // openEditor, a dismissed one goes back to the dashboard, and both clear
+  // activeTool. So anything rendered here would be torn down in the same tick.
+  // A three-step flow did live here and could not be reached by anyone; it was
+  // removed rather than left to be maintained. The behaviour that replaced it is
+  // pinned by TOOL-03 in src/browser-tests/tool-contract.spec.ts.
 
   // Convert Document — dedicated flow
   if (activeTool === 'convert-doc') {
