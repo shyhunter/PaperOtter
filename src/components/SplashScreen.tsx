@@ -45,6 +45,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <div
+      data-testid="splash-screen"
       className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background transition-opacity duration-[500ms] ${
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}

@@ -60,7 +60,11 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      if (entry === '__tests__' || entry === 'e2e' || entry === 'i18n') continue;
+      // Test trees, not shipped UI. `browser-tests` joins the list for the same
+      // reason as `e2e`: a Playwright spec asserts on the English a user is
+      // meant to see, so that English is the assertion rather than a string
+      // that escaped the dictionary.
+      if (entry === '__tests__' || entry === 'e2e' || entry === 'browser-tests' || entry === 'i18n') continue;
       sourceFiles(full, out);
     } else if (/\.tsx?$/.test(entry)) {
       out.push(full);
