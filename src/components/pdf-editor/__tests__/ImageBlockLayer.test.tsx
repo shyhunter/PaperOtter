@@ -160,6 +160,24 @@ describe('ImageBlockLayer', () => {
     expect(current()).toBeDefined();
     input.remove();
   });
+
+  it('[IBL-10] clicking a block reveals a delete control that removes it', () => {
+    // Delete has worked from the keyboard since the layer was written and the
+    // button was added later, and neither was discoverable from the Sign panel,
+    // where the only visible delete removes a *saved* signature. Reported as
+    // "no possibility to delete signature in the edit mode on the pdf without
+    // deleting saved signature". The panel now carries its own control; this
+    // pins the on-canvas one it complements.
+    renderLayer(block());
+    const el = screen.getByTestId('image-block-sig-1');
+    fireEvent.mouseDown(el, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.mouseUp(el);
+    fireEvent.click(el);
+    const del = screen.queryByTestId('image-block-delete');
+    expect(del, 'delete control after selecting').not.toBeNull();
+    act(() => { fireEvent.click(del!); });
+    expect(screen.queryByTestId('image-block-sig-1'), 'block gone').toBeNull();
+  });
 });
 
 void vi;

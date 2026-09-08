@@ -29,6 +29,7 @@ import type { TextMatch } from '@/lib/pdfTextSearch';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { isAlreadyMarked, matchToRect, redactionScopes, type RedactionScope } from '@/lib/redactionScope';
 import { nextStampPosition } from '@/lib/blockResize';
+import { parsePageRange } from '@/lib/pdfUtils';
 import { DEFAULT_TEXT_COLOR, isLightColor } from '@/lib/colorPresets';
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import { SavedSettingsRow, SaveSettingAs } from '@/components/destinations/DestinationPicker';
@@ -1631,7 +1632,7 @@ const SIGNATURE_TABS = [
 // and uploaded signatures too, which the old recipe list could not represent.
 
 function SignPanel() {
-  const { state, addImageBlock, markDirty } = useEditorContext();
+  const { state, addImageBlock, deleteImageBlock, markDirty } = useEditorContext();
   const [placeError, setPlaceError] = useState<string | null>(null);
 
   const [sigText, setSigText] = useState('');
@@ -1646,6 +1647,11 @@ function SignPanel() {
   // stylus or scanned from paper could not be used in the editor at all --
   // and, before the shared store, could not even be seen here.
   const [sigTab, setSigTab] = useState<'draw' | 'type' | 'upload'>('type');
+  // Which pages a signature goes on. Sign PDF has offered this since it
+  // shipped; this panel could only ever stamp the page you were looking at,
+  // so signing a contract meant placing it once per page by hand.
+  const [applyTo, setApplyTo] = useState<'current' | 'all' | 'custom'>('current');
+  const [customRange, setCustomRange] = useState('');
   // What Draw or Upload produced, waiting to be placed or saved.
   const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
@@ -1665,9 +1671,38 @@ function SignPanel() {
    * signature and suddenly I have many signatures of same one". Offsetting
    * makes a second copy visible, and therefore removable.
    */
-  const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
-    const pageIndex = state.currentPage;
+  /** The pages a Place will stamp. */
+  const signatureTargets = useMemo(() => {
+    if (applyTo === 'all') return Array.from({ length: state.pageCount }, (_, i) => i);
+    if (applyTo === 'custom') {
+      const parsed = parsePageRange(customRange, state.pageCount);
+      // An empty or unreadable range means the page in front of you rather than
+      // nothing at all, so pressing Place never silently does nothing.
+      return parsed.length > 0 ? parsed : [state.currentPage];
+    }
+    return [state.currentPage];
+  }, [applyTo, customRange, state.pageCount, state.currentPage]);
 
+  /** Every stamp on the document, so they can be counted and cleared. */
+  const placedStamps = useMemo(
+    () => state.pages.flatMap((p, i) => p.imageBlocks.map((b) => ({ pageIndex: i, id: b.id }))),
+    [state.pages],
+  );
+
+  /**
+   * Takes every placed signature off the document.
+   *
+   * The panel's only visible delete removed a *saved* signature, and the one on
+   * the stamp itself appears only once it has been clicked, so a signature put
+   * on the wrong page looked permanent -- reported exactly that way. Clearing
+   * one at a time is also no answer once Place can stamp every page.
+   */
+  const handleRemovePlaced = useCallback(() => {
+    for (const { pageIndex, id } of placedStamps) deleteImageBlock(pageIndex, id);
+    if (placedStamps.length > 0) markDirty();
+  }, [placedStamps, deleteImageBlock, markDirty]);
+
+  const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
     const composited = background ? await applySignatureBackground(dataUrl, background) : dataUrl;
     const bytes = new Uint8Array(await (await fetch(composited)).arrayBuffer());
 
@@ -1686,23 +1721,30 @@ function SignPanel() {
     setPlaceError(null);
 
     const { width, height } = signatureBlockSize(dims.w, dims.h, sigSize);
-    const { x, y } = nextStampPosition(state.pages[pageIndex]?.imageBlocks.length ?? 0);
 
-    addImageBlock(pageIndex, {
-      id: crypto.randomUUID(),
-      pageIndex,
-      x,
-      y,
-      width,
-      height,
-      imageBytes: bytes,
-      rotation: 0,
-      flipH: false,
-      flipV: false,
-      isNew: true,
-    });
+    for (const target of signatureTargets) {
+      // Stepped per page from what that page already carries, so signing every
+      // page twice does not hide the second stamp under the first.
+      const { x, y } = nextStampPosition(state.pages[target]?.imageBlocks.length ?? 0);
+      addImageBlock(target, {
+        id: crypto.randomUUID(),
+        pageIndex: target,
+        x,
+        y,
+        width,
+        height,
+        // The same array on every page, deliberately: applyAllEdits embeds an
+        // image once per distinct buffer, so signing 438 pages costs one copy
+        // in the file rather than 438.
+        imageBytes: bytes,
+        rotation: 0,
+        flipH: false,
+        flipV: false,
+        isNew: true,
+      });
+    }
     markDirty();
-  }, [state.currentPage, state.pages, sigSize, addImageBlock, markDirty]);
+  }, [signatureTargets, state.pages, sigSize, addImageBlock, markDirty]);
 
   /** Whether there is a signature to place at all, on whichever tab is open. */
   const canPlace = sigTab === 'type' ? sigText.trim().length > 0 : pendingDataUrl !== null;
@@ -1875,6 +1917,49 @@ function SignPanel() {
           uploaded one just as much as a typed one. */}
       <SignatureBackground value={sigBackground} onChange={setSigBackground} />
 
+      {/* Which pages, in the standalone tool's own words. This panel could only
+          stamp the page you were looking at, so signing a contract meant
+          placing it once per page by hand. */}
+      <div className="space-y-1.5 border-t pt-2">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {t('signPdf.applyTo')}
+        </span>
+        {([
+          ['current', 'signPdf.currentPageOnly'],
+          ['all', 'signPdf.allPages'],
+          ['custom', 'signPdf.customRange'],
+        ] as const).map(([value, key]) => (
+          <label key={value} className="flex cursor-pointer items-center gap-2 text-[11px]">
+            <input
+              type="radio"
+              name="sig-apply-to"
+              checked={applyTo === value}
+              onChange={() => setApplyTo(value)}
+            />
+            {t(key)}
+          </label>
+        ))}
+        {applyTo === 'custom' && (
+          <input
+            type="text"
+            value={customRange}
+            onChange={(e) => setCustomRange(e.target.value)}
+            placeholder="1-3, 5"
+            // Not "Custom range": that is the radio's name, and two controls
+            // in one panel sharing an accessible name cannot be told apart by
+            // anyone reading them, by eye or by screen reader. The same
+            // collision the signature swatches had.
+            aria-label={t('signPdf.pageSelector')}
+            className="w-full rounded border bg-background px-2 py-1 text-xs"
+          />
+        )}
+        {signatureTargets.length > 1 && (
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            {t('toolSidebarPanel.signingNPages', { count: signatureTargets.length })}
+          </p>
+        )}
+      </div>
+
       {/* Place + Save buttons */}
       <div className="flex gap-1.5">
         <button
@@ -1945,9 +2030,24 @@ function SignPanel() {
           placing the signature. Two controls that both claimed to place it and
           neither of which let you choose where. A stamp is dragged, so the only
           thing to say is that. */}
-      <p className="border-t pt-2 text-[10px] leading-relaxed text-muted-foreground">
-        {t('toolSidebarPanel.dragTheStampIntoPlace')}
-      </p>
+      <div className="space-y-1.5 border-t pt-2">
+        <p className="text-[10px] leading-relaxed text-muted-foreground">
+          {t('toolSidebarPanel.dragTheStampIntoPlace')}
+        </p>
+        {/* The panel's other delete removes a saved signature, and the one on
+            the stamp only appears once it has been clicked, so a signature put
+            on the wrong page looked permanent. Clearing them one at a time is
+            also no answer now that Place can stamp every page. */}
+        {placedStamps.length > 0 && (
+          <button
+            type="button"
+            onClick={handleRemovePlaced}
+            className="w-full rounded border border-border px-2 py-1 text-[10px] hover:bg-muted"
+          >
+            {t('toolSidebarPanel.removePlacedSignatures', { count: placedStamps.length })}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

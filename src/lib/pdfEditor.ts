@@ -38,6 +38,7 @@ import {
   rgb,
   type PDFPage,
   type PDFFont,
+  type PDFImage,
 } from 'pdf-lib';
 import { normalisedRotation, visualToRaw } from '@/lib/pdfPageNumbers';
 import type { PageEditState, ImageBlock } from '@/types/editor';
@@ -135,6 +136,9 @@ export async function applyAllEdits(
 
   // Cache embedded fonts
   const fontCache = new Map<string, PDFFont>();
+  // and embedded images: the same signature on every page must not be embedded
+  // once per page.
+  const embedCache: EmbedCache = new Map();
 
   for (const pageEdit of pageEdits) {
     const pageIndex = pageEdit.pageIndex;
@@ -252,7 +256,7 @@ export async function applyAllEdits(
     }
 
     // Draw modified and new images
-    await applyImageEditsToPage(doc, page, pageEdit);
+    await applyImageEditsToPage(doc, page, pageEdit, embedCache);
   }
 
   return doc.save({ useObjectStreams: false });
@@ -261,10 +265,14 @@ export async function applyAllEdits(
 /**
  * Apply image edits to a single page.
  */
+/** Images already embedded in this save, keyed on the exact buffer given. */
+type EmbedCache = Map<Uint8Array, PDFImage>;
+
 async function applyImageEditsToPage(
   doc: PDFDocument,
   page: PDFPage,
   pageEdit: PageEditState,
+  embedCache: EmbedCache,
 ): Promise<void> {
   for (const block of pageEdit.imageBlocks) {
     if (!block.isNew && !isImageModified(block)) continue;
@@ -294,11 +302,20 @@ async function applyImageEditsToPage(
       );
     }
 
-    // Determine image type and embed
-    const isPng = isPngBytes(finalBytes);
-    const embeddedImg = isPng
-      ? await doc.embedPng(finalBytes)
-      : await doc.embedJpg(finalBytes);
+    // Determine image type and embed, once per distinct buffer.
+    //
+    // Signing every page hands the same bytes to every page's block, and
+    // pdf-lib embeds whatever it is given: without this, a signature on a
+    // 438-page contract would put 438 copies of the same PNG in the file.
+    // Keyed on the buffer itself, so two images that merely look alike are
+    // still embedded separately and nothing is shared by accident.
+    let embeddedImg = embedCache.get(finalBytes);
+    if (!embeddedImg) {
+      embeddedImg = isPngBytes(finalBytes)
+        ? await doc.embedPng(finalBytes)
+        : await doc.embedJpg(finalBytes);
+      embedCache.set(finalBytes, embeddedImg);
+    }
 
     // Draw where the user put it, as they saw the page. Before this, a stamp
     // dropped on a turned page was written at the same numbers in the unturned
@@ -508,12 +525,13 @@ export async function applyImageEdits(
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
   const pages = doc.getPages();
+  const embedCache: EmbedCache = new Map();
 
   for (const pageEdit of pageEdits) {
     const pageIndex = pageEdit.pageIndex;
     if (pageIndex < 0 || pageIndex >= pages.length) continue;
     const page = pages[pageIndex];
-    await applyImageEditsToPage(doc, page, pageEdit);
+    await applyImageEditsToPage(doc, page, pageEdit, embedCache);
   }
 
   return doc.save({ useObjectStreams: false });

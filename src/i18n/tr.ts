@@ -608,6 +608,8 @@ export const tr: Dictionary = {
   'toolSidebar.targetFileSize': 'Hedef dosya boyutu',
   'toolSidebarPanel.alreadyMarked': 'Zaten işaretli', 'toolSidebarPanel.markThisOne': 'Bunu işaretle',
   'toolSidebarPanel.redacting': 'Karartılıyor…', 'toolSidebarPanel.apply': 'Uygula',
+  'toolSidebarPanel.signingNPages': '{count} sayfa imzalanacak.',
+  'toolSidebarPanel.removePlacedSignatures': 'Belgeye yerleştirilen {count} tanesini kaldır',
   'toolSidebarPanel.dragTheStampIntoPlace': 'İmzayı sayfada istediğiniz yere sürükleyin, köşelerden boyutlandırın. Silme düğmesi onu kaldırır.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'İmza çizilemedi. Başka bir stil veya daha kısa bir ad deneyin.',

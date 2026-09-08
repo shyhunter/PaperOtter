@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PDFDocument, degrees } from 'pdf-lib';
+import { PDFDocument, PDFName, degrees } from 'pdf-lib';
 import { applyAllEdits } from '@/lib/pdfEditor';
 import { pageContent, imageMatrix, textMatrix, rawToVisual, visualSize } from '@/test/pdfContent';
 import type { PageEditState } from '@/types/editor';
@@ -75,6 +75,17 @@ async function drawnVisualRect(bytes: Uint8Array, rotation: number) {
     width: Math.max(...xs) - Math.min(...xs),
     height: Math.max(...ys) - Math.min(...ys),
   };
+}
+
+/** Image XObjects in a document. A PNG with alpha contributes two: it and its mask. */
+function countImageObjects(doc: PDFDocument): number {
+  let n = 0;
+  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+    const dict = (obj as { dict?: { get?: (k: unknown) => unknown } }).dict;
+    if (!dict?.get) continue;
+    if (String(dict.get(PDFName.of('Subtype')) ?? '') === '/Image') n++;
+  }
+  return n;
 }
 
 describe('the editor on a turned page', () => {
@@ -208,5 +219,46 @@ describe('the editor on a turned page', () => {
     const b = rawToVisual(x2, y2, RAW_W, RAW_H, 90);
     expect(a.vy, 'both ends at the same height as the reader sees it').toBeCloseTo(b.vy, 1);
     expect(b.vx, 'and it runs left to right').toBeGreaterThan(a.vx);
+  });
+
+  it('[EDITROT-09] one signature on many pages is embedded once', async () => {
+    // Signing every page hands the same buffer to every page's block. pdf-lib
+    // embeds whatever it is given, so without a cache a signature on a 438-page
+    // contract would put 438 copies of the same PNG in the file. Keyed on the
+    // buffer, so two images that merely look alike are still separate.
+    const doc = await PDFDocument.create();
+    for (let i = 0; i < 6; i++) doc.addPage([RAW_W, RAW_H]);
+    const bytes = new Uint8Array(await doc.save());
+
+    const shared = PNG_1X1;
+    const pageEdits = Array.from({ length: 6 }, (_, i) => ({
+      pageIndex: i, textBlocks: [], deletedTextBlocks: [], redactions: [],
+      imageBlocks: [{ ...imageBlock(50, 50), id: `s${i}`, pageIndex: i, imageBytes: shared }],
+    })) as unknown as PageEditState[];
+
+    const out = await applyAllEdits(bytes, pageEdits);
+    const re = await PDFDocument.load(out);
+
+    // Every page got a stamp...
+    for (let i = 0; i < 6; i++) {
+      expect(imageMatrix(pageContent(re, i)), `page ${i}`).not.toBeNull();
+    }
+    // ...from one embedding. Counted as objects, not resource names, which
+    // differ per page even when they share an object. A PNG with alpha lands as
+    // two objects, the image and its soft mask, so the figure that means
+    // something is this run against one that does not share a buffer.
+    const shared6 = countImageObjects(re);
+
+    const separate = Array.from({ length: 6 }, (_, i) => ({
+      pageIndex: i, textBlocks: [], deletedTextBlocks: [], redactions: [],
+      // A fresh copy per page: same picture, different buffer, so the cache
+      // must not treat them as one. That is what keying on the buffer buys.
+      imageBlocks: [{ ...imageBlock(50, 50), id: `d${i}`, pageIndex: i, imageBytes: PNG_1X1.slice() }],
+    })) as unknown as PageEditState[];
+    const unshared = countImageObjects(
+      await PDFDocument.load(await applyAllEdits(bytes, separate)),
+    );
+
+    expect(unshared, 'six distinct buffers embed six times').toBe(shared6 * 6);
   });
 });

@@ -553,6 +553,8 @@ export const nl: Dictionary = {
   'toolSidebar.targetFileSize': 'Doelbestandsgrootte',
   'toolSidebarPanel.alreadyMarked': 'Al gemarkeerd', 'toolSidebarPanel.markThisOne': 'Deze markeren',
   'toolSidebarPanel.redacting': 'Zwartlakken…', 'toolSidebarPanel.apply': 'Toepassen',
+  'toolSidebarPanel.signingNPages': 'Er worden {count} pagina’s ondertekend.',
+  'toolSidebarPanel.removePlacedSignatures': '{count} geplaatste uit het document verwijderen',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Sleep de handtekening op zijn plaats en pas de grootte aan met de hoeken. De verwijderknop haalt hem weg.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Kon de handtekening niet tekenen. Probeer een andere stijl of een kortere naam.',

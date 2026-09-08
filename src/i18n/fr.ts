@@ -856,6 +856,8 @@ export const fr: Dictionary = {
   'toolSidebarPanel.markThisOne': 'Marquer celui-ci',
   'toolSidebarPanel.redacting': 'Caviardage…',
   'toolSidebarPanel.apply': 'Appliquer',
+  'toolSidebarPanel.signingNPages': '{count} pages seront signées.',
+  'toolSidebarPanel.removePlacedSignatures': 'Retirer les {count} apposées du document',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Faites glisser la signature à sa place sur la page et redimensionnez-la par les coins. Le bouton de suppression la retire.',
   'toolSidebarPanel.couldNotDrawTheSignature':
     'Impossible de tracer la signature. Essayez un autre style ou un nom plus court.',

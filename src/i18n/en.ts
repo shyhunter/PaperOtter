@@ -849,6 +849,8 @@ export const en = {
   'toolSidebar.closePanel': 'Close panel',
   'toolSidebar.openPanel': 'Open panel',
   'editorView.tryToRepair': 'Try to repair',
+  'toolSidebarPanel.signingNPages': 'Signing {count} pages.',
+  'toolSidebarPanel.removePlacedSignatures': 'Remove {count} placed from the document',
   'toolSidebarPanel.dragTheStampIntoPlace': 'Drag the signature into place on the page, and use the corners to resize it. Delete removes it.',
   'toolSidebarPanel.couldNotDrawTheSignature': 'Could not draw the signature. Try a different style or a shorter name.',
   'toolSidebarPanel.alreadyMarked': 'Already marked',
