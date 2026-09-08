@@ -18,6 +18,7 @@
  * touching Rust, real files or native dialogs belongs in the WebDriver suite.
  */
 import { defineConfig, devices } from '@playwright/test';
+import { HARNESS_PLATFORM, userAgentFor } from './src/browser-tests/support/platform';
 
 export default defineConfig({
   testDir: './src/browser-tests',
@@ -36,7 +37,21 @@ export default defineConfig({
     baseURL: 'http://localhost:5174',
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // The descriptor pins a **Windows** user agent whatever the host, and
+        // `currentPlatform()` reads the user agent — so without this override
+        // every test rendered the app as Windows, silently hiding the OCR tool
+        // on a Mac. The harness declares its platform instead of inheriting
+        // one, so a run here and a run on Linux CI render the same app.
+        // See src/browser-tests/support/platform.ts for why macOS.
+        userAgent: userAgentFor(HARNESS_PLATFORM),
+      },
+    },
+  ],
   webServer: {
     // A port of its own, so a dev server someone already has running is neither
     // reused with unknown state nor killed out from under them.
