@@ -40,7 +40,9 @@ export default defineConfig({
   webServer: {
     // A port of its own, so a dev server someone already has running is neither
     // reused with unknown state nor killed out from under them.
-    command: 'npx vite --port 5174 --strictPort',
+    // The harness config, not the default one: it is what swaps `@tauri-apps/*`
+    // for the mock bridge so the real App can boot in a browser at all.
+    command: 'npx vite --config vite.config.harness.ts --port 5174 --strictPort',
     url: 'http://localhost:5174/src/browser-tests/harness.html',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
