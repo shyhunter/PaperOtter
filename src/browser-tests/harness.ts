@@ -67,6 +67,23 @@ async function redactBySearch(
 }
 
 /**
+ * Redact an explicit rectangle, with no search involved.
+ *
+ * The search path needs text; the pages where redaction costs the most are
+ * scans and photographs, which have none. This is the same `applyRedactions`
+ * with the rectangle supplied directly.
+ */
+async function redactRects(
+  bytes: number[],
+  rects: { pageIndex: number; x: number; y: number; width: number; height: number }[],
+  color?: string,
+) {
+  const full = rects.map((r, i) => ({ ...r, id: `rect-${i}`, source: 'drawn' as const }));
+  const out = await applyRedactions(toBytes(bytes), full, color);
+  return Array.from(out);
+}
+
+/**
  * The colour of one point on a rendered page.
  *
  * "The text is gone from the text layer" and "the reader cannot see it" are two
@@ -103,6 +120,7 @@ declare global {
       extractAllPagesText: (bytes: number[]) => ReturnType<typeof extractAllPagesText>;
       getPageDimensions: (bytes: number[], pageIndex: number) => ReturnType<typeof getPageDimensions>;
       redactBySearch: typeof redactBySearch;
+      redactRects: typeof redactRects;
       pixelAt: typeof pixelAt;
       pdfjsVersion: string;
     };
@@ -116,6 +134,7 @@ window.__papercut = {
   extractAllPagesText: (bytes) => extractAllPagesText(toBytes(bytes)),
   getPageDimensions: (bytes, pageIndex) => getPageDimensions(toBytes(bytes), pageIndex),
   redactBySearch,
+  redactRects,
   pixelAt,
   pdfjsVersion: pdfjsLib.version,
 };

@@ -98,10 +98,27 @@ export async function applyRedactions(
           }
         }
 
-        // Export canvas to PNG
-        const pngDataUrl = canvas.toDataURL('image/png');
-        const pngBase64 = pngDataUrl.split(',')[1];
-        const pngBytes = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
+        // Export the canvas as PNG bytes, without ever building a base64 string.
+        //
+        // `toDataURL` encodes on the main thread and cannot yield, and the
+        // base64 it returns then has to be decoded a character at a time. On a
+        // large page the two together measured as **one 2,251ms long task** --
+        // per redacted page -- during which the window paints nothing and the
+        // OS offers to close it. `toBlob` hands the encode to the browser's own
+        // thread and `arrayBuffer()` skips base64 entirely: the same pixels,
+        // measured at zero main-thread blocking for the encode itself.
+        //
+        // This does NOT make redaction responsive on a large page. What remains
+        // is pdf-lib: embedPng parsing the PNG and save serialising it, ~9s in
+        // one task on a 68-megapixel render, and that needs a worker rather than
+        // a better API. This removes the part that could be removed today.
+        const pngBlob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, 'image/png'),
+        );
+        // Loudly, not quietly: a redaction that half-worked is worse than one
+        // that failed, because the page would be embedded without its cover.
+        if (!pngBlob) throw new Error('Canvas to blob failed');
+        const pngBytes = new Uint8Array(await pngBlob.arrayBuffer());
 
         // The size the reader sees, taken from the viewport rather than from
         // getSize(). pdf.js has already applied the page's /Rotate here, so on a
