@@ -12,6 +12,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { findTextMatches } from '@/lib/pdfTextSearch';
 import { extractPageText, extractAllPagesText, getPageDimensions } from '@/lib/pdfTextExtract';
 import { applyRedactions } from '@/lib/pdfRedact';
+import { PDFDocument, PDFDict, PDFName, PDFNumber, PDFRawStream } from 'pdf-lib';
 import { matchToRect, type RedactionScope } from '@/lib/redactionScope';
 
 // Same worker wiring the app uses. Without it pdf.js silently renders nothing,
@@ -67,6 +68,56 @@ async function redactBySearch(
 }
 
 /**
+ * Redact an explicit rectangle, with no search involved.
+ *
+ * The search path needs text; the pages where redaction costs the most are
+ * scans and photographs, which have none. This is the same `applyRedactions`
+ * with the rectangle supplied directly.
+ */
+async function redactRects(
+  bytes: number[],
+  rects: { pageIndex: number; x: number; y: number; width: number; height: number }[],
+  color?: string,
+) {
+  const full = rects.map((r, i) => ({ ...r, id: `rect-${i}`, source: 'drawn' as const }));
+  const out = await applyRedactions(toBytes(bytes), full, color);
+  return Array.from(out);
+}
+
+/**
+ * Redact, then report the size of the images the output actually contains.
+ *
+ * Both halves happen here on purpose. A redacted photographic page runs to tens
+ * of megabytes, and handing those bytes back to the test runner serialises them
+ * as a JSON array of millions of numbers, which exhausts its heap. The document
+ * stays in the page; only the handful of numbers worth asserting on leave it.
+ */
+async function redactAndMeasureRasters(
+  bytes: number[],
+  rects: { pageIndex: number; x: number; y: number; width: number; height: number }[],
+  pageIndex: number,
+) {
+  const output = await redactRects(bytes, rects);
+  const doc = await PDFDocument.load(new Uint8Array(output));
+  const resources = doc.getPage(pageIndex).node.Resources();
+  const xobjects = resources?.lookup(PDFName.of('XObject'));
+
+  const rasters: { width: number; height: number }[] = [];
+  if (xobjects instanceof PDFDict) {
+    for (const [, ref] of xobjects.entries()) {
+      const stream = doc.context.lookup(ref);
+      if (!(stream instanceof PDFRawStream)) continue;
+      const w = stream.dict.lookup(PDFName.of('Width'));
+      const h = stream.dict.lookup(PDFName.of('Height'));
+      if (w instanceof PDFNumber && h instanceof PDFNumber) {
+        rasters.push({ width: w.asNumber(), height: h.asNumber() });
+      }
+    }
+  }
+  return { outputBytes: output.length, rasters };
+}
+
+/**
  * The colour of one point on a rendered page.
  *
  * "The text is gone from the text layer" and "the reader cannot see it" are two
@@ -103,6 +154,8 @@ declare global {
       extractAllPagesText: (bytes: number[]) => ReturnType<typeof extractAllPagesText>;
       getPageDimensions: (bytes: number[], pageIndex: number) => ReturnType<typeof getPageDimensions>;
       redactBySearch: typeof redactBySearch;
+      redactRects: typeof redactRects;
+      redactAndMeasureRasters: typeof redactAndMeasureRasters;
       pixelAt: typeof pixelAt;
       pdfjsVersion: string;
     };
@@ -116,6 +169,8 @@ window.__papercut = {
   extractAllPagesText: (bytes) => extractAllPagesText(toBytes(bytes)),
   getPageDimensions: (bytes, pageIndex) => getPageDimensions(toBytes(bytes), pageIndex),
   redactBySearch,
+  redactRects,
+  redactAndMeasureRasters,
   pixelAt,
   pdfjsVersion: pdfjsLib.version,
 };

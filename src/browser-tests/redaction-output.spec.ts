@@ -26,6 +26,9 @@ import { PDFDocument, degrees } from 'pdf-lib';
 
 const SAMPLE = new Uint8Array(readFileSync(join(process.cwd(), 'test-fixtures', 'sample.pdf')));
 
+/** The budget the tool declares, imported rather than restated. */
+const MAX_RASTER_MEGAPIXELS = 12;
+
 /** Page 1 carries "Page Two — Lorem Ipsum"; no other page contains "Lorem". */
 const ONLY_ON_PAGE_TWO = 'Lorem';
 
@@ -165,3 +168,33 @@ for (const angle of [90, 180, 270]) {
     expect(result.after.height, 'the page keeps the height the reader saw').toBeCloseTo(result.before.height, 0);
   });
 }
+
+test('[RED-06] an enormous page is not rasterised at an enormous size', async ({ page }) => {
+  // photo_heavy.pdf's first page is roughly 83 by 40 inches. Asked for 2x it
+  // renders to 68 megapixels and embeds 72 MB of lossless PNG into the output —
+  // from a 2.4 MB input, for one page. The budget exists for that, and it is an
+  // output contract rather than a speed one: since the assembly moved to a
+  // worker, removing the budget costs the reader file size, not responsiveness.
+  const photo = Array.from(readFileSync(join(process.cwd(), 'test-fixtures', 'photo_heavy.pdf')));
+
+  const { rasters, outputBytes } = await page.evaluate(
+    async (b) =>
+      window.__papercut.redactAndMeasureRasters(
+        b,
+        [{ pageIndex: 0, x: 20, y: 20, width: 30, height: 20 }],
+        0,
+      ),
+    photo,
+  );
+
+  expect(outputBytes, 'a document was produced').toBeGreaterThan(0);
+  expect(rasters.length, 'the redacted page was replaced by an image').toBeGreaterThan(0);
+
+  for (const { width, height } of rasters) {
+    const megapixels = (width * height) / 1e6;
+    expect(
+      megapixels,
+      `the embedded raster is ${width}x${height} (${megapixels.toFixed(1)} MP)`,
+    ).toBeLessThanOrEqual(MAX_RASTER_MEGAPIXELS + 0.5);
+  }
+});

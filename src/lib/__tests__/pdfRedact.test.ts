@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { resolveRedactionFill, DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 
 /**
@@ -36,29 +35,18 @@ describe('resolveRedactionFill', () => {
 
 // ─── The replacement page's size ─────────────────────────────────────────────
 //
-// [RD-ROT] Redaction replaces each page with a flat image of it. pdf.js renders
-// through a viewport that has already applied /Rotate, so on a turned page that
-// image is landscape while getSize() still reports the portrait box underneath
-// -- and the replacement page carries no /Rotate of its own. Built at the raw
-// size, a landscape render was squashed into a portrait sheet and the content
-// came out turned.
+// [RD-ROT-01] used to live here: a source guard that regexed this file for
+// `pageWidth = viewport.width / renderScale`, because applyRedactions needs a
+// real canvas to render and encode, "which jsdom does not provide, so the
+// end-to-end behaviour belongs on the manual pass".
 //
-// A source guard rather than a run: applyRedactions needs a real canvas to
-// render and encode a PNG, which jsdom does not provide, so the end-to-end
-// behaviour belongs on the manual pass. What this can do is stop the two
-// dimensions being swapped back.
-describe('the redacted page size', () => {
-  it('[RD-ROT-01] comes from the viewport that was rendered, not the raw page box', () => {
-    const src = readFileSync('src/lib/pdfRedact.ts', 'utf8');
-    // lastIndexOf: the first addPage in the file is the untouched-page path,
-    // which copies the original and keeps its /Rotate. Only the replacement
-    // page is built from dimensions.
-    const addPage = src.slice(src.lastIndexOf('outputDoc.addPage('));
-
-    expect(src, 'sized from the render').toMatch(/pageWidth = viewport\.width \/ renderScale/);
-    expect(src, 'and its height').toMatch(/pageHeight = viewport\.height \/ renderScale/);
-    expect(addPage.slice(0, 60), 'the page is built from those').toContain('[pageWidth, pageHeight]');
-    expect(src, 'the raw box is no longer consulted for this')
-      .not.toMatch(/const \{ width: pageWidth, height: pageHeight \} = originalPage\.getSize\(\)/);
-  });
-});
+// That premise no longer holds. RED-05 in src/browser-tests/redaction-output.spec.ts
+// runs the real function in a real browser on pages turned 90, 180 and 270
+// degrees and asserts the outcome -- that the redacted page keeps the shape the
+// reader saw -- which is the thing the regex was standing in for. It also
+// catches the mistake the regex could not: rendering without the page's
+// rotation, which a correctly-shaped line of code can still do.
+//
+// The guard was removed rather than updated when this file was refactored,
+// because updating it would only have re-pinned the new wording of an
+// implementation that RED-05 already checks by result.
