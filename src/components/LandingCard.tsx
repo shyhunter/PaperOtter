@@ -90,16 +90,17 @@ export function LandingCard({
       <div className="flex flex-col items-center gap-6 w-full max-w-2xl">
 
         {/* Tagline — prominent, above the card */}
-        <p className="text-[clamp(1rem,1.5vw,1.25rem)] font-medium text-foreground text-center">
+        <h2 className="text-[clamp(1.1rem,1.8vw,1.5rem)] text-foreground text-center">
           {t('landingCard.compressResizeConvertStaysOn')}
-        </p>
+        </h2>
 
         <Card className={cardClass}>
           <div className={dragIndicatorClass} />
           <CardContent className="flex flex-col gap-0 p-0">
 
             {/* Equal-prominence layout: two halves side by side */}
-            <div className="grid grid-cols-2 divide-x divide-border">
+            <div className="grid grid-cols-2 relative">
+            <span data-drawn-divider aria-hidden="true" className="absolute left-1/2 top-4 bottom-4 -translate-x-1/2" />
 
               {/* File picker half */}
               <button
@@ -122,7 +123,7 @@ export function LandingCard({
                   <FolderOpen className="h-[clamp(2rem,3vw,3rem)] w-[clamp(2rem,3vw,3rem)]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-medium text-foreground">{t('landingCard.openFile')}</p>
+                  <h3 className="text-[clamp(1rem,1.3vw,1.15rem)] text-foreground">{t('landingCard.openFile')}</h3>
                   <p className="text-sm text-muted-foreground mt-1">{formatsHint(acceptedFormats)}</p>
                 </div>
               </button>
@@ -148,8 +149,8 @@ export function LandingCard({
                   <Upload className="h-[clamp(2rem,3vw,3rem)] w-[clamp(2rem,3vw,3rem)]" />
                 </div>
                 <div className="text-center">
-                  <p className={cn(
-                    'text-base font-medium transition-colors',
+                  <h3 className={cn(
+                    'text-[clamp(1rem,1.3vw,1.15rem)] transition-colors',
                     dragState === 'over-valid' && 'text-primary',
                     dragState === 'over-invalid' && 'text-destructive',
                     dragState === 'idle' && 'text-foreground',
@@ -157,7 +158,7 @@ export function LandingCard({
                     {dragState === 'over-valid' && t('landingCard.dropToOpen')}
                     {dragState === 'over-invalid' && t('landingCard.unsupportedFile')}
                     {dragState === 'idle' && t('landingCard.dropFileHere')}
-                  </p>
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {dragState === 'idle' ? t('landingCard.anywhereOnTheWindow') : '\u00a0'}
                   </p>

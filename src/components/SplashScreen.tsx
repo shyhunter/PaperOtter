@@ -69,7 +69,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       >
         <OtterMark
           title={t('splashScreen.papercutLogo')}
-          className="h-28 w-28 text-foreground"
+          className="h-[21rem] w-[21rem] max-w-[70vw] max-h-[45vh] text-foreground"
         />
       </div>
 

@@ -428,12 +428,12 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
         <Button
           size="sm"
           data-testid="apply-btn"
           onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
+          className="flex-1 justify-center"
         >
           {t('redactPdf.applyRedactions', { count: allRedactions.length })}
         </Button>

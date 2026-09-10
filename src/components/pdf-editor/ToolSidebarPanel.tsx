@@ -138,7 +138,8 @@ function ApplyButton({
       <button
         onClick={onClick}
         disabled={disabled || isApplying}
-        className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+        data-framed
+        className="w-full py-1.5 px-3 text-xs font-medium bg-primary text-primary-foreground hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-1.5"
       >
         {isApplying ? (
           <>
@@ -1966,7 +1967,8 @@ function SignPanel() {
           type="button"
           onClick={handlePlace}
           disabled={!canPlace}
-          className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          data-framed
+          className="flex-1 py-1.5 px-3 text-xs font-medium bg-primary text-primary-foreground hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {t('pdfEditor.placeOnPage')}
         </button>

@@ -356,26 +356,19 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
       )}
 
       {/* Stats row above panels */}
-      <div data-testid="stats-bar" className="flex items-center gap-4 px-4 py-2 text-xs border-b border-border bg-muted/30 flex-none">
-        <span className={cn(
-          'font-medium tabular-nums whitespace-nowrap',
-          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
-        )}>
+      <div data-testid="stats-bar" className="flex items-center gap-4 px-4 py-2 text-xs border-b-[3px] border-border bg-background flex-none">
+        <span className="tabular font-medium whitespace-nowrap text-foreground">
           {formatBytes(result.inputSizeBytes)}
         </span>
         <ArrowRight className="h-3 w-3 text-muted-foreground flex-none" />
-        <span className={cn(
-          'font-medium tabular-nums whitespace-nowrap',
-          grew ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400',
-        )}>
+        <span className="tabular font-medium whitespace-nowrap text-foreground">
           {formatBytes(result.outputSizeBytes)}
         </span>
         {result.inputSizeBytes > 0 && (
           <span className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-            grew
-              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+            'inline-flex items-center border-2 border-border px-2.5 py-0.5 text-xs font-semibold',
+            '[border-radius:10px_4px_11px_5px_/_5px_11px_4px_10px] text-foreground',
+            grew ? 'bg-[var(--primary)]' : 'bg-[var(--lime)]',
           )}>
             {grew
               ? t('common.percentLarger', { percent: Math.abs(savingsPct) })
@@ -494,7 +487,8 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
           {t('common.startOver')}
         </button>
 
-        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave}
+          className="min-w-[clamp(12rem,26vw,20rem)] justify-center flex-none">
           {t('common.saveEllipsis')}
         </Button>
       </div>

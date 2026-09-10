@@ -18,7 +18,7 @@ export function PrivacyModal({ open, onClose }: PrivacyModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-background text-foreground border border-border rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[85vh] overflow-y-auto">
+      <div className="bg-background text-foreground border border-border rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[85vh] overflow-y-auto" data-modal-panel>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
