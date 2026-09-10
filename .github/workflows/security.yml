@@ -50,6 +50,14 @@ jobs:
   npm-audit:
     name: Dependency audit (npm + cargo)
     runs-on: ubuntu-22.04
+    # The workflow default is contents:read. rustsec/audit-check publishes its
+    # findings as a check run, which needs checks:write — without it the audit
+    # itself passes and then the action dies on "Resource not accessible by
+    # integration", turning a clean result into a failed required check.
+    # Scoped to this job rather than raised at the workflow level.
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
