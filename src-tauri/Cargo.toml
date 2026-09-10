@@ -32,6 +32,12 @@ tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-http = "2"
 image = "0.25"
+# qpdf, statically linked. `vendored` builds qpdf, zlib and libjpeg from the
+# crate's own source tree with cc, so there is no sidecar binary, no companion
+# DLL on Windows, and no release-time download -- the three things that made the
+# Ghostscript sidecar the least-proven part of the Windows build. Apache-2.0 OR
+# MIT, so unlike Ghostscript it carries no copyleft into a commercial release.
+qpdf = { version = "0.3", features = ["vendored"] }
 webp = "0.3"
 uuid = { version = "1", features = ["v4"] }
 url = "2"

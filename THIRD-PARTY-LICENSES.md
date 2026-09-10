@@ -42,6 +42,46 @@ commercial position changes, this arrangement needs a lawyer's eye.
 
 ---
 
+## qpdf (compiled in, not a separate binary)
+
+- **Version:** 12.4.0, vendored by the `qpdf` Rust crate (`qpdf-sys` 0.3.6)
+- **Copyright:** © Jay Berkenbilt
+- **Licence:** Apache License 2.0
+- **Upstream:** https://github.com/qpdf/qpdf
+
+Used for: repairing damaged PDFs. Unlike Ghostscript, qpdf is **statically linked
+into the Papercut binary** rather than shipped as a separate executable — there is
+no sidecar file and no companion DLL on Windows.
+
+Apache-2.0 is permissive: it carries no copyleft, so it places no licence
+requirement on Papercut's own MIT source, and it would place none on a commercial
+release either. Its obligations are to keep the licence and attribution, which
+this file and `LICENSES/Apache-2.0.txt` do.
+
+### Libraries vendored inside qpdf-sys and compiled with it
+
+The crate builds two C libraries from its own source tree, so their code is in
+the shipped binary too and their notices are owed:
+
+- **zlib 1.3.1** — © 1995-2024 Jean-loup Gailly and Mark Adler, under the zlib
+  licence. Permissive; requires the copyright notice not be misrepresented and
+  altered versions be marked as such. Papercut alters nothing.
+- **libjpeg (Independent JPEG Group) 9f** — © 1991-2024 Thomas G. Lane, Guido
+  Vollbeding. The IJG licence requires, for distribution of executable code:
+
+  > **This software is based in part on the work of the Independent JPEG Group.**
+
+  That statement is made here, and this file ships inside the installer as
+  `licenses/THIRD-PARTY-LICENSES.md` (see `externalBin`/`resources` in
+  `src-tauri/tauri.conf.json`), which is what makes it accompanying
+  documentation rather than a note in the repository. It is deliberately not
+  added to `LICENSES/NOTICES.txt`: that file is generated from lockfile
+  metadata, which knows nothing about C sources vendored inside a crate, so a
+  hand-written line there would be erased by the next `notices` run.
+
+Neither is separately downloadable from Papercut because neither is a separate
+artifact: both are compiled into the same binary as the Rust code.
+
 ## Calibre (not bundled)
 
 Used optionally for ebook conversion, invoked as a separate process if the user

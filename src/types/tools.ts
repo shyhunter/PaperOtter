@@ -270,7 +270,10 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Wrench',
     acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
+    // No requiresDependency any more: repair goes through qpdf, which is linked
+    // into the binary rather than shipped alongside it. The tool used to be
+    // greyed out on a machine without Ghostscript; now there is nothing to be
+    // missing. Compress is the only tool that still needs it.
     steps: [
       { label: 'step.selectPdf', description: 'tool.repairPdf.step2' },
       { label: 'step.repair', description: 'tool.editPdf.step1' },

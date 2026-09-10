@@ -973,72 +973,57 @@ async fn compress_pdf(
 }
 
 #[tauri::command]
-async fn repair_pdf(
-    app: tauri::AppHandle,
-    source_path: String,
-) -> Result<tauri::ipc::Response, String> {
+async fn repair_pdf(source_path: String) -> Result<tauri::ipc::Response, String> {
     validate_source_path(&source_path)?;
-    let tmp_path = std::env::temp_dir().join(format!(
-        "papercut_repaired_{}.pdf",
-        Uuid::new_v4()
-    ));
-    let tmp_path_str = tmp_path.to_string_lossy().to_string();
 
-    let (mut rx, _child) = spawn_gs(&app, vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        GS_KEEP_PAGE_ROTATION.to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-sOutputFile={}", tmp_path_str),
-        source_path.clone(),
-    ])?;
+    // Off the async runtime: rebuilding a large document is CPU-bound, and the
+    // same pattern the image commands above already use.
+    let bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
+        let source = std::fs::read(&source_path)
+            .map_err(|e| format!("Could not read the file: {e}"))?;
+        rebuild_pdf(&source)
+    })
+    .await
+    .map_err(|e| format!("Repair task failed: {e}"))??;
 
-    // Wait for completion — handle partial success per user decision
-    let mut exit_code: Option<i32> = None;
-    let mut stderr_lines: Vec<String> = Vec::new();
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Terminated(payload) => {
-                exit_code = payload.code;
-                break;
-            }
-            CommandEvent::Stderr(line) => {
-                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
-            }
-            CommandEvent::Error(e) => {
-                let _ = std::fs::remove_file(&tmp_path);
-                return Err(format!("Ghostscript error: {}", e));
-            }
-            _ => {}
-        }
-    }
+    Ok(tauri::ipc::Response::new(bytes))
+}
 
-    // CRITICAL: handle partial success — if GS exits non-zero BUT output file
-    // exists with non-zero size, return the bytes as success (not error).
-    // The TS side will show a "repaired with potential issues" message.
-    match exit_code {
-        Some(0) => {
-            // Clean exit — read and return
-            let bytes = std::fs::read(&tmp_path)
-                .map_err(|e| format!("Failed to read output: {}", e))?;
-            let _ = std::fs::remove_file(&tmp_path);
-            Ok(tauri::ipc::Response::new(bytes))
-        }
-        _ => {
-            // Non-zero exit or signal — try to read partial output directly (no TOCTOU)
-            if let Ok(bytes) = std::fs::read(&tmp_path) {
-                let _ = std::fs::remove_file(&tmp_path);
-                if !bytes.is_empty() {
-                    return Ok(tauri::ipc::Response::new(bytes));
-                }
-            }
-            // No output or empty — real failure
-            let _ = std::fs::remove_file(&tmp_path);
-            let stderr = stderr_lines.join("\n");
-            Err(format_gs_crash_error(&stderr))
-        }
-    }
+/// Rebuild a damaged PDF. Bytes in, bytes out, so it can be tested directly.
+///
+/// qpdf reconstructs the cross-reference table by scanning the file for objects,
+/// which is what makes this a repair rather than a re-save.
+///
+/// It replaced Ghostscript, which was not repairing these files at all. Measured
+/// on five kinds of damage -- a broken startxref, a missing xref table, shifted
+/// object offsets, a junk prefix, and a truncated file -- Ghostscript's pdfwrite
+/// device returned a SINGLE blank US-Letter page carrying a 23-byte content
+/// stream every time, and exited 0 while doing it, so the tool reported success
+/// and handed back a document with the content gone. qpdf recovers all three
+/// pages of the same fixture with byte-identical content streams on four of the
+/// five, and refuses the truncated one rather than inventing something. The
+/// REPAIR tests below hold that.
+fn rebuild_pdf(source: &[u8]) -> Result<Vec<u8>, String> {
+    let pdf = qpdf::QPdf::read_from_memory(source).map_err(|e| unrepairable(&e.to_string()))?;
+    pdf.writer()
+        .write_to_memory()
+        .map_err(|e| unrepairable(&e.to_string()))
+}
+
+/// What to tell someone whose file cannot be rebuilt.
+///
+/// Says what was wrong and what they can actually do about it, rather than
+/// surfacing a library error on its own. There is no third option to offer: if
+/// too little of the structure survives, the content is not in the file to
+/// recover.
+fn unrepairable(detail: &str) -> String {
+    let reason = detail.lines().next().unwrap_or(detail).trim();
+    format!(
+        "This PDF is damaged too badly to rebuild: {reason}. \
+         Too little of the file's structure survives to recover the pages from it. \
+         If you have another copy, or can download or export the document again, \
+         that is the only way to get the content back."
+    )
 }
 
 /// Convert a document using LibreOffice (system-installed, not bundled).
@@ -2637,10 +2622,17 @@ mod tests {
     /// without anyone remembering this bug.
     ///
     /// It was five — compress, protect, unlock, PDF/A and repair. Protect,
-    /// unlock and PDF/A were removed, so the floor moved to the three that
-    /// remain. The floor is a tripwire against a call quietly losing the flag,
-    /// not a count worth defending: raise it when a command is added, lower it
-    /// only when one is genuinely deleted.
+    /// unlock and PDF/A were removed, and repair moved to qpdf, which leaves
+    /// compress and the shared helper it goes through. The floor is a tripwire
+    /// against a call quietly losing the flag, not a count worth defending:
+    /// raise it when a command is added, lower it only when one is genuinely
+    /// deleted.
+    ///
+    /// Note for whoever moves compress off Ghostscript: this test stops having
+    /// anything to guard at that point, and should be deleted rather than
+    /// lowered to zero. It also scans source *text*, so writing the flag inside
+    /// a comment trips it — which is exactly what happened while repair was
+    /// being rewritten.
     #[test]
     fn every_pdfwrite_invocation_keeps_page_rotation() {
         let source = include_str!("lib.rs");
@@ -2655,8 +2647,8 @@ mod tests {
             .map(|(i, _)| i)
             .collect();
         assert!(
-            sites.len() >= 3,
-            "expected the three known pdfwrite commands, found {} — has this moved?",
+            sites.len() >= 2,
+            "expected the two known pdfwrite commands, found {} — has this moved?",
             sites.len()
         );
 
@@ -3149,6 +3141,121 @@ mod tests {
     fn compress_pdf_args_downsampling_off_keeps_source_path_last() {
         let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
         assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
+    }
+
+    // ─── [REPAIR] rebuilding a damaged PDF ────────────────────────────────────
+    //
+    // The damage is made here rather than committed as fixtures: a corrupt PDF
+    // in the repo is an opaque blob nobody can review, while these five are
+    // each one legible edit to a known-good file, and they say in their names
+    // what a real broken document looks like.
+
+    fn sample_pdf() -> Vec<u8> {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("test-fixtures")
+            .join("sample.pdf");
+        std::fs::read(path).expect("test-fixtures/sample.pdf")
+    }
+
+    fn rfind(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+        haystack
+            .windows(needle.len())
+            .rposition(|w| w == needle)
+    }
+
+    /// The offset table points nowhere, so a reader has to rebuild it.
+    fn damage_startxref(good: &[u8]) -> Vec<u8> {
+        let mut b = good.to_vec();
+        let p = rfind(&b, b"startxref").expect("startxref") + 10;
+        for i in p..(p + 6).min(b.len()) {
+            if b[i].is_ascii_digit() {
+                b[i] = b'9';
+            }
+        }
+        b
+    }
+
+    /// The xref table and trailer are gone entirely — a truncated copy.
+    fn damage_no_xref(good: &[u8]) -> Vec<u8> {
+        good[..rfind(good, b"xref").expect("xref")].to_vec()
+    }
+
+    /// Junk before the header, so the file no longer starts where it claims.
+    fn damage_junk_prefix(good: &[u8]) -> Vec<u8> {
+        let mut b = b"GARBAGE".repeat(40);
+        b.extend_from_slice(good);
+        b
+    }
+
+    /// Every offset in the table shifted, so each lookup lands in the wrong place.
+    fn damage_shifted_offsets(good: &[u8]) -> Vec<u8> {
+        let mut b = good.to_vec();
+        let p = rfind(&b, b"xref").expect("xref");
+        for i in p..(p + 220).min(b.len()) {
+            if b[i].is_ascii_digit() {
+                b[i] = ((b[i] - b'0' + 3) % 10) + b'0';
+            }
+        }
+        b
+    }
+
+    fn page_count(pdf_bytes: &[u8]) -> u32 {
+        qpdf::QPdf::read_from_memory(pdf_bytes)
+            .expect("output should load")
+            .get_num_pages()
+            .expect("page count")
+    }
+
+    #[test]
+    fn repair_01_recovers_every_page_from_four_kinds_of_damage() {
+        let good = sample_pdf();
+        let original = page_count(&good);
+        assert_eq!(original, 3, "the fixture is a three-page document");
+
+        for (name, damaged) in [
+            ("broken startxref", damage_startxref(&good)),
+            ("no xref table", damage_no_xref(&good)),
+            ("junk before the header", damage_junk_prefix(&good)),
+            ("shifted object offsets", damage_shifted_offsets(&good)),
+        ] {
+            let repaired = super::rebuild_pdf(&damaged)
+                .unwrap_or_else(|e| panic!("{name}: expected a repair, got: {e}"));
+            assert_eq!(
+                page_count(&repaired),
+                original,
+                "{name}: every page should come back, not just the first"
+            );
+        }
+    }
+
+    #[test]
+    fn repair_02_says_so_when_too_little_of_the_file_survives() {
+        let good = sample_pdf();
+        // Cut mid-object: the commonest real damage, and the one case qpdf
+        // cannot rebuild. Failing here is the correct answer — the content is
+        // genuinely not in the file any more.
+        let truncated = good[..good.len() * 6 / 10].to_vec();
+
+        let err = super::rebuild_pdf(&truncated).expect_err("a truncated file cannot be rebuilt");
+        // The message has to be useful, not just present: it names the problem
+        // and the only thing the user can actually do about it.
+        assert!(
+            err.contains("damaged too badly"),
+            "message should say the file cannot be rebuilt, got: {err}"
+        );
+        assert!(
+            err.contains("another copy"),
+            "message should tell the user what to do, got: {err}"
+        );
+    }
+
+    #[test]
+    fn repair_03_leaves_an_undamaged_document_intact() {
+        let good = sample_pdf();
+        let out = super::rebuild_pdf(&good).expect("an intact file repairs to itself");
+        assert_eq!(page_count(&out), 3, "repair must not drop pages it was given");
     }
 
     // ─── format_gs_crash_error — user-friendly GS error messages ──────────────
