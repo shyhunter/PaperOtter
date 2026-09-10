@@ -1,4 +1,4 @@
-const RELEASES_URL = 'https://api.github.com/repos/shyhunter/Papercut/releases/latest';
+const RELEASES_URL = 'https://api.github.com/repos/shyhunter/PaperOtter/releases/latest';
 
 export interface LatestRelease {
   version: string;

@@ -47,8 +47,8 @@
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://api.github.com/repos/shyhunter/Papercut/releases/latest" },
-        { "url": "https://raw.githubusercontent.com/shyhunter/Papercut/main/feedback-config.json" }
+        { "url": "https://api.github.com/repos/shyhunter/PaperOtter/releases/latest" },
+        { "url": "https://raw.githubusercontent.com/shyhunter/PaperOtter/main/feedback-config.json" }
       ]
     }
   ]

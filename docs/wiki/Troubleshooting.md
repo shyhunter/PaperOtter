@@ -51,7 +51,7 @@ Try re-exporting the source PDF and protecting it again.
 
 ## Still stuck?
 
-[Open an issue](https://github.com/shyhunter/Papercut/issues/new/choose) and
+[Open an issue](https://github.com/shyhunter/PaperOtter/issues/new/choose) and
 include the exact error message. Happy to help.
 
 ---

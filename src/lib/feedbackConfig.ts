@@ -1,10 +1,10 @@
 const FEEDBACK_CONFIG_URL =
-  'https://raw.githubusercontent.com/shyhunter/Papercut/main/feedback-config.json';
+  'https://raw.githubusercontent.com/shyhunter/PaperOtter/main/feedback-config.json';
 
 /** Baked in at build time as a fallback only -- the authoritative destination
  * lives in feedback-config.json on the main branch, so it can be changed
  * without shipping a new release. */
-export const FALLBACK_FEEDBACK_URL = 'https://github.com/shyhunter/Papercut/discussions';
+export const FALLBACK_FEEDBACK_URL = 'https://github.com/shyhunter/PaperOtter/discussions';
 
 /**
  * Only github.com over https is accepted. The config file is fetched from the

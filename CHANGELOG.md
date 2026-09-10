@@ -86,7 +86,7 @@ These are the changes that stop Papercut damaging something of yours.
   professional translator.** Warnings about losing files are translated in every
   language or left in English in every language, never half-done, and a test
   enforces it. Corrections are the most useful contribution this project can
-  receive: please [open an issue](https://github.com/shyhunter/Papercut/issues).
+  receive: please [open an issue](https://github.com/shyhunter/PaperOtter/issues).
 - **The app is not code-signed.** macOS may say it is damaged and Windows may
   show a SmartScreen warning. Both are the absence of a paid certificate, not a
   problem with the download.

@@ -35,7 +35,7 @@ describe('fetchLatestRelease', () => {
         Promise.resolve({
           tag_name: 'v1.1.0',
           body: 'Bug fixes and improvements',
-          html_url: 'https://github.com/shyhunter/Papercut/releases/tag/v1.1.0',
+          html_url: 'https://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0',
         }),
     } as Response);
 
@@ -43,7 +43,7 @@ describe('fetchLatestRelease', () => {
     expect(result).toEqual({
       version: '1.1.0',
       notes: 'Bug fixes and improvements',
-      url: 'https://github.com/shyhunter/Papercut/releases/tag/v1.1.0',
+      url: 'https://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0',
     });
   });
 

@@ -9,7 +9,7 @@ and editing PDFs, images, and documents. Everything runs on your machine --
 no uploads, no cloud, no telemetry.
 
 If you're here, you're probably looking for detail that doesn't fit in the
-[README](https://github.com/shyhunter/Papercut#readme). This wiki is the
+[README](https://github.com/shyhunter/PaperOtter#readme). This wiki is the
 right place for that.
 
 ***
@@ -30,6 +30,6 @@ privacy, dependencies, and installation.
 ***
 
 <p align="center">
-<a href="https://github.com/shyhunter/Papercut/releases/latest"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
-<a href="https://github.com/shyhunter/Papercut/issues/new/choose"><img src="https://img.shields.io/badge/-Report%20an%20issue-e67700?style=for-the-badge" alt="Report an issue"></a>
+<a href="https://github.com/shyhunter/PaperOtter/releases/latest"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
+<a href="https://github.com/shyhunter/PaperOtter/issues/new/choose"><img src="https://img.shields.io/badge/-Report%20an%20issue-e67700?style=for-the-badge" alt="Report an issue"></a>
 </p>

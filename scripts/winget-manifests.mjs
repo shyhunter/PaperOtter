@@ -24,7 +24,7 @@ if (!version || !sumsPath || !outDir) {
 
 const PACKAGE_ID = 'shyhunter.PaperOtter';
 const MANIFEST_VERSION = '1.6.0';
-const REPO = 'https://github.com/shyhunter/Papercut';
+const REPO = 'https://github.com/shyhunter/PaperOtter';
 const installerName = `PaperOtter_${version}_x64-setup.exe`;
 
 const sums = readFileSync(sumsPath, 'utf8');

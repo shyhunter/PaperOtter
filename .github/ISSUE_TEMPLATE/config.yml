@@ -13,11 +13,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Feature idea or suggestion
-    url: https://github.com/shyhunter/Papercut/discussions/new?category=ideas
+    url: https://github.com/shyhunter/PaperOtter/discussions/new?category=ideas
     about: Suggest something Papercut should do. Ideas live in Discussions, not in the issue tracker.
   - name: Question about using Papercut
-    url: https://github.com/shyhunter/Papercut/discussions/new?category=q-a
+    url: https://github.com/shyhunter/PaperOtter/discussions/new?category=q-a
     about: Ask how to do something. The wiki may already answer it.
   - name: Security vulnerability
-    url: https://github.com/shyhunter/Papercut/blob/main/SECURITY.md
+    url: https://github.com/shyhunter/PaperOtter/blob/main/SECURITY.md
     about: Read this first. Please do not open a public issue for a security problem.

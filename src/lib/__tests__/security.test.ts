@@ -87,8 +87,8 @@ describe('Security — Tauri config', () => {
     ) as Array<{ identifier: string; allow?: Array<{ url?: string }> }>;
 
     const allowedUrls = [
-      'https://api.github.com/repos/shyhunter/Papercut/releases/latest',
-      'https://raw.githubusercontent.com/shyhunter/Papercut/main/feedback-config.json',
+      'https://api.github.com/repos/shyhunter/PaperOtter/releases/latest',
+      'https://raw.githubusercontent.com/shyhunter/PaperOtter/main/feedback-config.json',
     ];
 
     for (const perm of httpPerms) {

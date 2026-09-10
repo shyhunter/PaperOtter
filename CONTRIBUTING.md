@@ -10,7 +10,7 @@ happened with**, if you can share one. Papercut deals with documents, and many
 bugs only appear on a particular file.
 
 Feature ideas go to
-[Discussions](https://github.com/shyhunter/Papercut/discussions/new?category=ideas)
+[Discussions](https://github.com/shyhunter/PaperOtter/discussions/new?category=ideas)
 instead of the issue tracker. An issue list reads as a queue of promises, and
 an idea deserves somewhere it can be argued about first. The ones worth
 building get turned into issues from there.
