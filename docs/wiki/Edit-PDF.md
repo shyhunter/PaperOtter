@@ -5,7 +5,7 @@
 ## How to edit a PDF
 
 1. **Pick**: open a PDF file.
-2. **Edit**: modify text and images directly on the page canvas. Most other PDF tools (Compress, Rotate, Page Numbers, Watermark, Crop, Sign, Redact, PDF/A, Repair, Protect, Unlock) are available from the editor's sidebar too, so you can chain operations without leaving the editor.
+2. **Edit**: modify text and images directly on the page canvas. Most other PDF tools (Compress, Rotate, Page Numbers, Watermark, Crop, Sign, Redact, Repair) are available from the editor's sidebar too, so you can chain operations without leaving the editor.
 3. **Save**: write the edited PDF to disk.
 
 ## How text and image edits work
@@ -19,7 +19,7 @@ This is the single most important thing to know about this tool: **covering old 
 
 ## Why a font might not look exactly right after editing
 
-Papercut maps whatever font the original text used to the closest of three standard PDF fonts (Helvetica, Times Roman, or Courier) with the right bold/italic variant. If the original used a distinctive custom font, the edited text will look close but not pixel-identical to the surrounding text.
+PaperOtter maps whatever font the original text used to the closest of three standard PDF fonts (Helvetica, Times Roman, or Courier) with the right bold/italic variant. If the original used a distinctive custom font, the edited text will look close but not pixel-identical to the surrounding text.
 
 ---
 

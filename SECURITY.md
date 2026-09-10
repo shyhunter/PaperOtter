@@ -11,14 +11,14 @@ Once this repository is public, GitHub's private reporting (*Security → Report
 vulnerability*) will be the preferred channel; it is not available on a private
 repository, which this one currently is.
 
-Please include: what you found, how to reproduce it, the Papercut version
+Please include: what you found, how to reproduce it, the PaperOtter version
 (About dialog), and your OS. If you have a proof of concept, attach it.
 
 Expect an acknowledgement within a week. There is no bounty programme.
 
 ## What is in scope
 
-Papercut is a local desktop application. It has no server, no account system and
+PaperOtter is a local desktop application. It has no server, no account system and
 no telemetry, so the interesting surface is narrower than for a web app:
 
 - **Arbitrary code execution** via a crafted PDF, image or document. Files are
@@ -27,7 +27,7 @@ no telemetry, so the interesting surface is narrower than for a web app:
 - **Escaping the file-access scope.** The app may only read and write under
   Documents, Downloads, Desktop and the system temp directory; anything that
   reaches beyond those is a bug.
-- **Anything that makes the app reach the network.** Papercut is offline by
+- **Anything that makes the app reach the network.** PaperOtter is offline by
   design. Two outbound URLs are allow-listed: the GitHub releases endpoint for
   the update check and a feedback-config file. Any other outbound request is a
   finding.
@@ -35,7 +35,7 @@ no telemetry, so the interesting surface is narrower than for a web app:
 
 ## What is not in scope
 
-- The unsigned-binary warnings on macOS ("Papercut is damaged") and Windows
+- The unsigned-binary warnings on macOS ("PaperOtter is damaged") and Windows
   SmartScreen. These are known and expected until code signing is in place; see
   the release notes for the workaround.
 - Denial of service through deliberately enormous or malformed input, unless it
@@ -81,7 +81,7 @@ things bound it:
   `tauri 2.11.5`. There is no lockfile edit that resolves this.
 
 The unsoundness is in the `Iterator` and `DoubleEndedIterator` impls for
-`glib::VariantStrIter`, which no Papercut code calls; reaching it would require
+`glib::VariantStrIter`, which no PaperOtter code calls; reaching it would require
 GTK itself to iterate a malformed variant string array.
 
 *Re-check when:* Tauri moves to the gtk-rs 0.20 stack. Since `tauri` is a direct
@@ -92,5 +92,5 @@ reopen the alert rather than tracking it only here.
 
 ## Supported versions
 
-Only the most recent release. Papercut is pre-1.0 in practice; older betas do
+Only the most recent release. PaperOtter is pre-1.0 in practice; older betas do
 not receive fixes.

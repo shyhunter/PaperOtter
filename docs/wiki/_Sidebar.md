@@ -9,8 +9,8 @@
 ### Getting Started
 * [Required Dependencies](Required-Dependencies)
 
-### Using Papercut
-* [The four-step workflow](Using-Papercut)
+### Using PaperOtter
+* [The four-step workflow](Using-PaperOtter)
 
 ### PDF Tools
 * [Compress PDF](Compress-PDF)

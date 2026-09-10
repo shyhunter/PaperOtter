@@ -1,6 +1,34 @@
 # Changelog
 
-Grouped by what someone using Papercut would notice, not by commit.
+Grouped by what someone using PaperOtter would notice, not by commit.
+
+## Unreleased
+
+### Changed
+
+- **Papercut is now PaperOtter.** New name, new logo, and a redesigned interface.
+  The app installs as `PaperOtter.app` and its settings live in a new folder, so
+  a previous install's preferences are not carried over. Releases published under
+  the old name still work: GitHub keeps the old repository address pointing here.
+- **Feedback and crash reports go to GitHub Discussions** instead of opening an
+  email draft. Crash reports open a pre-filled discussion; nothing is posted
+  until you read it and press the button yourself.
+
+### Removed
+
+- **Protect PDF, Unlock PDF and PDF/A conversion.** All three ran through
+  Ghostscript. Its licence made a closed-source release impossible, and two of
+  the three did not work properly anyway: PDF/A claimed a conformance it did not
+  meet, and "repair" returned a blank page while reporting success. Rather than
+  ship a replacement that was worse, the features are gone.
+
+### Fixed
+
+- **Compression got better without Ghostscript, not worse.** The new in-process
+  compressor produced 29,326 bytes where Ghostscript produced 40,366 on the same
+  scanned document. The installer went from 52 MB to 24 MB.
+- **Repairing a damaged PDF** now rebuilds it with qpdf, and says so honestly
+  when a file is beyond repair instead of returning an empty document.
 
 ## v1.0.0
 

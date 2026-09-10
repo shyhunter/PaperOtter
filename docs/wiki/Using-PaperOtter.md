@@ -1,11 +1,11 @@
-# Using Papercut
+# Using PaperOtter
 
 Looking for a tool by what you're trying to *do*, not its name? See
 [Common Tasks](Common-Tasks) instead.
 
 ## The four-step workflow
 
-Every tool in Papercut follows the same flow, so once you've used one you
+Every tool in PaperOtter follows the same flow, so once you've used one you
 already know how to use them all:
 
 1. **Pick**: open a file or drop it anywhere on the window
@@ -59,12 +59,12 @@ Use the search bar to jump straight to a tool, or star any tool to pin it to
 **My Favorites** at the top: favorites can be reordered by dragging.
 
 <p align="center">
-<img src="img/dashboard.png" alt="Papercut dashboard showing PDF, image, and document tools" width="70%">
+<img src="img/dashboard.png" alt="PaperOtter dashboard showing PDF, image, and document tools" width="70%">
 </p>
 
 ## Light and dark mode
 
-Papercut follows your system theme by default, and can be toggled manually
+PaperOtter follows your system theme by default, and can be toggled manually
 from the icon in the top-right corner of the dashboard.
 
 ---

@@ -1,4 +1,4 @@
-# Contributing to Papercut
+# Contributing to PaperOtter
 
 Thanks for taking the time. This is a small project, so the process is light.
 
@@ -6,7 +6,7 @@ Thanks for taking the time. This is a small project, so the process is light.
 
 Bugs go to the [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) template. The
 two things that matter most are **how to reproduce it** and **the file it
-happened with**, if you can share one. Papercut deals with documents, and many
+happened with**, if you can share one. PaperOtter deals with documents, and many
 bugs only appear on a particular file.
 
 Feature ideas go to
