@@ -1,6 +1,6 @@
 # FAQ
 
-### Does Papercut send my files anywhere?
+### Does PaperOtter send my files anywhere?
 
 No. All processing happens locally using native code (qpdf,
 LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and
@@ -9,21 +9,21 @@ Your files never leave your machine: see the
 [Privacy section](https://github.com/shyhunter/PaperOtter#privacy) of the
 README for the full statement.
 
-### Does Papercut need an internet connection?
+### Does PaperOtter need an internet connection?
 
-No, not for document processing. Papercut makes exactly two network calls,
+No, not for document processing. PaperOtter makes exactly two network calls,
 neither of which sends any data about you or your files: an update check on
 launch, and a feedback-contact-address lookup when you open the About
 dialog.
 
 ### What happens to temporary files created during processing?
 
-They're deleted automatically once processing finishes. If Papercut crashes
+They're deleted automatically once processing finishes. If PaperOtter crashes
 before cleanup, any leftover temp files are swept on the next launch.
 
-### Why does macOS say it "could not verify" Papercut on first launch?
+### Why does macOS say it "could not verify" PaperOtter on first launch?
 
-Papercut is signed, but not yet notarised by Apple. Open it, click **Done** on
+PaperOtter is signed, but not yet notarised by Apple. Open it, click **Done** on
 the refusal, then go to **System Settings → Privacy & Security**, scroll to
 **Security**, and click **Open Anyway**. A second dialog appears: click
 **Open Anyway** there too, then authenticate with Touch ID or your admin
@@ -33,7 +33,7 @@ macOS has blocked you and expires about an hour later. See
 [Troubleshooting](Troubleshooting) for the full sequence.
 
 If you see the older _"damaged and can't be opened"_ message instead, run
-`xattr -cr /Applications/Papercut.app`.
+`xattr -cr /Applications/PaperOtter.app`.
 
 ### Why does Windows show a SmartScreen warning?
 
@@ -46,7 +46,7 @@ LibreOffice and Calibre are
 optional, only needed for DOC/ODT/RTF and EPUB/MOBI conversion respectively
 -- see [Required Dependencies](Required-Dependencies).
 
-### Is Papercut free?
+### Is PaperOtter free?
 
 Yes, it's open source under the MIT license. If it's useful to you, there's
 an optional way to
@@ -62,9 +62,9 @@ where they can be talked through before anyone commits to building them.
 
 ---
 
-See also: [Troubleshooting](Troubleshooting) · [Using Papercut](Using-Papercut)
+See also: [Troubleshooting](Troubleshooting) · [Using PaperOtter](Using-PaperOtter)
 
-### What languages does Papercut speak, and how good are the translations?
+### What languages does PaperOtter speak, and how good are the translations?
 
 Nine: English, German, Turkish, French, Spanish, Italian, Dutch, Polish and
 Portuguese. You can switch language from the icon in the top bar; your choice is

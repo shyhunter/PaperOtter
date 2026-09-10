@@ -1,9 +1,9 @@
-# Papercut
+# PaperOtter
 
 ## Your local document toolkit -> private, fast, offline.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Papercut in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels" width="760">
+  <img src="docs/demo.gif" alt="PaperOtter in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels" width="760">
 </p>
 
 <p align="center">
@@ -17,10 +17,10 @@
 ---
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-dark.png" alt="Papercut dashboard showing PDF, image, and document tools" width="100%">
+  <img src="docs/screenshots/dashboard-dark.png" alt="PaperOtter dashboard showing PDF, image, and document tools" width="100%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/dashboard-light.png" alt="Papercut dashboard in light mode" width="49%">
+  <img src="docs/screenshots/dashboard-light.png" alt="PaperOtter dashboard in light mode" width="49%">
   <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF tool - pick a file to open or drop" width="49%">
 </p>
 <p align="center">
@@ -35,7 +35,7 @@ Every tool follows the same four-step flow: Pick, Configure, Compare, Save
 
 ## Features
 
-Papercut ships with **22 tools** across three categories: all running locally on your machine.
+PaperOtter ships with **19 tools** across three categories, all running locally on your machine.
 
 **18 of the 19 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else is compiled into the app.
 
@@ -52,10 +52,7 @@ Papercut ships with **22 tools** across three categories: all running locally on
 - 🗂️ **Organize**: Reorder, delete, or duplicate pages
 - ✍️ **Sign**: Add handwritten, typed, or drawn signatures
 - ⬛ **Redact**: Permanently remove sensitive content
-- 🗄️ **PDF/A**: Convert to archival PDF/A format
 - 🛠️ **Repair**: Fix corrupted or damaged PDFs
-- 🔒 **Protect**: Add password encryption to PDFs *(see [A note on passwords](#a-note-on-passwords))*
-- 🔓 **Unlock**: Remove password protection from PDFs *(requires the password: see [A note on passwords](#a-note-on-passwords))*
 - 🖼️ **PDF to JPG**: Export PDF pages as JPEG or PNG images
 - 📄 **JPG to PDF**: Convert images into a single PDF document
 - 🔍 **Make Searchable**: Read the text on a scan so it can be searched and copied *(macOS only: see [Platform support](#platform-support))*
@@ -79,7 +76,7 @@ Papercut ships with **22 tools** across three categories: all running locally on
 > saved. Cancel mid-run and nothing further is started.
 
 > **Available in nine languages.** English, German, French, Spanish, Turkish,
-> Italian, Dutch, Polish and European Portuguese. Papercut follows your
+> Italian, Dutch, Polish and European Portuguese. PaperOtter follows your
 > operating system's language on first run and remembers an explicit choice.
 > The eight translations beyond English are community-quality and still under
 > review: if something reads wrongly, [tell us](https://github.com/shyhunter/PaperOtter/issues/new/choose).
@@ -92,16 +89,17 @@ Papercut ships with **22 tools** across three categories: all running locally on
 being worked on, what is agreed for later, and what has been decided against,
 with the reasoning, not just the verdict.
 
-Items carry the argument that produced them. Named presets say why Protect will
-never get one; the AI-preparation work says which parts are deliberately out of
-scope and what promise they would break. If you disagree with a call, the
+Items carry the argument that produced them, including the ones decided against:
+the entry on password protection says why it is not coming back, and the
+AI-preparation work says which parts are deliberately out of scope and what
+promise they would break. If you disagree with a call, the
 reasoning is there to disagree with.
 
 ---
 
 ## Languages
 
-Papercut's interface is available in nine languages: English, German, Turkish,
+PaperOtter's interface is available in nine languages: English, German, Turkish,
 French, Spanish, Italian, Dutch, Polish and Portuguese.
 
 **All nine were written with AI assistance, English included, and none has been
@@ -123,7 +121,7 @@ native speakers are the most useful contribution this project can receive.
 ## Platform support
 
 Almost everything works identically on macOS, Windows and Linux. Two things do not,
-and Papercut hides rather than greys out what it cannot run, so you will not be
+and PaperOtter hides rather than greys out what it cannot run, so you will not be
 offered a tool that cannot work on your machine:
 
 | Feature | macOS | Windows | Linux |
@@ -132,7 +130,7 @@ offered a tool that cannot work on your machine:
 | **HEIC / HEIF input** | Yes | Only with the HEIF extension installed | Only where the distribution ships libheif |
 
 OCR on Windows and Linux is planned. HEIC is bounded by patent licensing rather
-than effort: Papercut never ships an HEVC decoder, and uses the operating
+than effort: PaperOtter never ships an HEVC decoder, and uses the operating
 system's where one is licensed.
 
 ---
@@ -153,16 +151,16 @@ system's where one is licensed.
 
 The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/PaperOtter/releases). Everything you need is included: just install and go.
 
-> **Mac users:** Papercut is signed but not yet notarised by Apple, so macOS blocks the first launch. Verified on macOS 26:
+> **Mac users:** PaperOtter is signed but not yet notarised by Apple, so macOS blocks the first launch. Verified on macOS 26:
 >
-> 1. Open Papercut. macOS refuses: _**"Papercut" Not Opened**, Apple could not verify..._. Click **Done**. Do not skip this: the override does not exist until macOS has actually blocked you.
-> 2. Go to **System Settings → Privacy & Security** and scroll to **Security** at the bottom. Papercut is named there. Click **Open Anyway**. This appears for about an hour after the block, then expires.
-> 3. A second dialog asks **Open "Papercut"?** and offers three buttons. ⚠️ **The blue default is "Move to Bin" ("Move to Trash" in US English), which deletes the app.** Click **Open Anyway** instead.
+> 1. Open PaperOtter. macOS refuses: _**"PaperOtter" Not Opened**, Apple could not verify..._. Click **Done**. Do not skip this: the override does not exist until macOS has actually blocked you.
+> 2. Go to **System Settings → Privacy & Security** and scroll to **Security** at the bottom. PaperOtter is named there. Click **Open Anyway**. This appears for about an hour after the block, then expires.
+> 3. A second dialog asks **Open "PaperOtter"?** and offers three buttons. ⚠️ **The blue default is "Move to Bin" ("Move to Trash" in US English), which deletes the app.** Click **Open Anyway** instead.
 > 4. Authenticate with Touch ID or an administrator password.
 >
-> macOS remembers the decision and Papercut opens normally from then on.
+> macOS remembers the decision and PaperOtter opens normally from then on.
 >
-> If you see the older _"Papercut is damaged and can't be opened"_ message, or the hour expired, clear the quarantine flag instead: `xattr -cr /Applications/Papercut.app`
+> If you see the older _"PaperOtter is damaged and can't be opened"_ message, or the hour expired, clear the quarantine flag instead: `xattr -cr /Applications/PaperOtter.app`
 
 > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
 
@@ -181,53 +179,27 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 
 ## Privacy
 
-**Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
+**PaperOtter processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native code (qpdf, the Rust `image` crate), optional external apps (LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
+All file processing happens locally using native code (qpdf, the Rust `image` crate), optional external apps (LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. PaperOtter makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ### A note on AI
 
-Papercut has no AI features. There is no chatbot and no assistant, no model file
+PaperOtter has no AI features. There is no chatbot and no assistant, no model file
 is shipped with the app, and nothing you open is sent anywhere to be processed
 or used as training data.
 
 **Make Searchable** is the one tool that might suggest otherwise, since it reads
 the text off a scanned page. On macOS it does that through Apple's Vision
-framework, the same text recognition built into Preview and Photos. Papercut
+framework, the same text recognition built into Preview and Photos. PaperOtter
 bundles no recognition engine of its own, and the work happens on your machine
 like everything else here.
 
 This is also why the transparency duties in Article 50 of the EU AI Act, in
-force since 2 August 2026, do not attach to Papercut: it does not converse with
+force since 2 August 2026, do not attach to PaperOtter: it does not converse with
 you, it does not generate synthetic content, and it does no biometric or emotion
 recognition. That is our reading of the regulation rather than legal advice, and
 it is written down here so the reasoning is visible and can be challenged.
-
-### A note on passwords
-
-The same applies to the password you set in **Protect PDF**: it never leaves
-your machine, and Papercut never stores it. It exists in memory only long enough
-to encrypt the file: it is not written to a settings file, a log, or disk, and
-it is not sent anywhere.
-
-That has a consequence worth stating plainly. **If you forget the password, the
-file cannot be opened again: by you, by us, or by anyone.** There is no reset,
-no recovery code and no back door. This is how PDF encryption works, not a
-limitation Papercut could lift, and **Unlock PDF** cannot help: it removes
-protection from a file you already know the password for, and is not a
-password-recovery tool.
-
-So, before you protect a document:
-
-- Record the password somewhere you trust, such as a password manager.
-- Keep the unprotected original until you have confirmed the protected copy
-  opens. Papercut always writes the protected file as a **new** file and never
-  encrypts your original in place, so keeping it costs nothing.
-
-Because this loss is permanent, Papercut asks you to confirm you understand it
-before it will encrypt anything.
-
----
 
 ## Troubleshooting
 
@@ -237,7 +209,7 @@ before it will encrypt anything.
 ### LibreOffice / Calibre not found
 
 DOC/DOCX conversion and EPUB/MOBI tools need LibreOffice or Calibre installed
-and on your PATH. Papercut will show a prompt naming the missing dependency
+and on your PATH. PaperOtter will show a prompt naming the missing dependency
 if one isn't found.
 
 See the [Required Dependencies](https://github.com/shyhunter/PaperOtter/wiki/Required-Dependencies)
@@ -295,13 +267,13 @@ npm run lint
 | Image Processing | [image](https://github.com/image-rs/image) (Rust crate) | MIT OR Apache-2.0 |
 | PDF structure & repair | [qpdf](https://github.com/qpdf/qpdf) (compiled in) | Apache-2.0 |
 
-Every bundled component is permissively licensed: there is no copyleft in the installer, and nothing here restricts commercial use. LibreOffice and Calibre are not distributed with Papercut — they are called only if the user has installed them themselves.
+Every bundled component is permissively licensed: there is no copyleft in the installer, and nothing here restricts commercial use. LibreOffice and Calibre are not distributed with PaperOtter — they are called only if the user has installed them themselves.
 
 ---
 
 ## Acknowledgements
 
-Papercut is built on top of the open-source tools listed in Tech Stack above,
+PaperOtter is built on top of the open-source tools listed in Tech Stack above,
 plus optional support for [LibreOffice](https://www.libreoffice.org/) and
 [Calibre](https://calibre-ebook.com/) for document/ebook conversion. Thanks
 to all their maintainers.
@@ -320,4 +292,4 @@ Contributions are welcome! Please see the [pull request template](.github/pull_r
 
 ---
 
-If Papercut saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter): it helps keep development going.
+If PaperOtter saves you time, consider [buying me a coffee](https://buymeacoffee.com/shyhunter): it helps keep development going.

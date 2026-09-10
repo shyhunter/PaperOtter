@@ -4,30 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Compress, convert, sign and redact PDFs, images and documents on your own machine. No uploads, no account, no telemetry. Free and open source for macOS, Windows and Linux.">
-<link rel="canonical" href="https://shyhunter.github.io/Papercut/">
+<link rel="canonical" href="https://shyhunter.github.io/PaperOtter/">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://shyhunter.github.io/Papercut/">
-<meta property="og:site_name" content="Papercut">
-<meta property="og:title" content="Papercut: your local document toolkit">
-<meta property="og:description" content="Twenty-two tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry. Free and open source.">
-<meta property="og:image" content="https://shyhunter.github.io/Papercut/media/share-card.jpg">
+<meta property="og:url" content="https://shyhunter.github.io/PaperOtter/">
+<meta property="og:site_name" content="PaperOtter">
+<meta property="og:title" content="PaperOtter: your local document toolkit">
+<meta property="og:description" content="Nineteen tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry. Free and open source.">
+<meta property="og:image" content="https://shyhunter.github.io/PaperOtter/media/share-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Papercut tool grid, with a banner reading: your files never leave your device.">
+<meta property="og:image:alt" content="The PaperOtter tool grid, with a banner reading: your files never leave your device.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Papercut: your local document toolkit">
-<meta name="twitter:description" content="Twenty-two tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry.">
-<meta name="twitter:image" content="https://shyhunter.github.io/Papercut/media/share-card.jpg">
-<title>Papercut: your local document toolkit</title>
+<meta name="twitter:title" content="PaperOtter: your local document toolkit">
+<meta name="twitter:description" content="Nineteen tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry.">
+<meta name="twitter:image" content="https://shyhunter.github.io/PaperOtter/media/share-card.jpg">
+<title>PaperOtter: your local document toolkit</title>
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Papercut",
+  "name": "PaperOtter",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "macOS, Windows, Linux",
-  "url": "https://shyhunter.github.io/Papercut/",
+  "url": "https://shyhunter.github.io/PaperOtter/",
   "downloadUrl": "https://github.com/shyhunter/PaperOtter/releases/latest",
   "codeRepository": "https://github.com/shyhunter/PaperOtter",
   "license": "https://opensource.org/licenses/MIT",
@@ -49,10 +49,7 @@
     "Watermark",
     "Sign",
     "Redact",
-    "Protect",
-    "Unlock",
     "Repair",
-    "PDF/A",
     "Make searchable",
     "Edit text",
     "PDF to JPG",
@@ -69,13 +66,13 @@
 }
 </script>
 <link rel="preload" href="fonts/bricolage-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/plex-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 
 <style>
   /* Self-hosted rather than pulled from fonts.googleapis.com. A page whose
      whole claim is that nothing leaves your machine should not hand a third
      party the IP address of everyone who reads it. Bricolage Grotesque and
-     IBM Plex are both OFL 1.1; see fonts/README.md for provenance.
+     Archivo and JetBrains Mono are all OFL 1.1; see fonts/README.md for provenance.
 
      Latin subset only: the five non-ASCII characters this page uses
      (degree, middle dot, multiplication sign, ellipsis) are all in it. The
@@ -107,40 +104,79 @@
     src: url("fonts/bricolage-var.woff2") format("woff2");
   }
   @font-face {
-    font-family: "IBM Plex Sans";
+    font-family: "Archivo";
     font-style: normal;
-    font-weight: 400;
+    font-weight: 100 900;
     font-display: swap;
-    src: url("fonts/plex-sans-var.woff2") format("woff2");
+    src: url("fonts/archivo-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
   }
   @font-face {
-    font-family: "IBM Plex Sans";
+    font-family: "Archivo";
     font-style: normal;
-    font-weight: 500;
+    font-weight: 100 900;
     font-display: swap;
-    src: url("fonts/plex-sans-var.woff2") format("woff2");
+    src: url("fonts/archivo-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
   }
   @font-face {
-    font-family: "IBM Plex Sans";
+    font-family: "JetBrains Mono";
     font-style: normal;
-    font-weight: 600;
+    font-weight: 100 800;
     font-display: swap;
-    src: url("fonts/plex-sans-var.woff2") format("woff2");
+    src: url("fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
   }
   @font-face {
-    font-family: "IBM Plex Mono";
+    font-family: "JetBrains Mono";
     font-style: normal;
-    font-weight: 400;
+    font-weight: 100 800;
     font-display: swap;
-    src: url("fonts/plex-mono-400.woff2") format("woff2");
+    src: url("fonts/jetbrains-mono-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
   }
-  @font-face {
-    font-family: "IBM Plex Mono";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url("fonts/plex-mono-500.woff2") format("woff2");
+
+  /* ---------------------------------------------------------------------
+     Drawn surfaces. Mirrors the app: 3px lines, hard offset shadows, and
+     corner radii whose horizontal and vertical values differ so an edge
+     reads as drawn rather than computed.
+     --------------------------------------------------------------------- */
+  .card, .face, figure, blockquote, .panel, .note, table {
+    border: 3px solid var(--rule);
+    border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px;
+    box-shadow: var(--card-shadow);
+    background: var(--plate);
   }
+  .card:nth-child(4n+2) .face { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px; }
+  .card:nth-child(4n+3) .face { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px; }
+  .card:nth-child(4n+4) .face { border-radius: 8px 22px 11px 26px / 26px 10px 22px 8px; }
+
+  a.btn, button, .button, .cta {
+    border: 3px solid var(--rule);
+    border-radius: 12px 5px 14px 6px / 6px 14px 5px 12px;
+    box-shadow: 4px 4px 0 var(--rule);
+    transition: transform .06s linear, box-shadow .06s linear;
+  }
+  a.btn:active, button:active, .button:active, .cta:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+
+  /* The one loud thing on the page, the way yellow is the one loud thing in
+     the app: the primary download. */
+  .cta-primary, a.btn-primary {
+    background: var(--yellow);
+    color: #141210;
+  }
+
+  hr, .rule { border: none; border-top: 3px solid var(--rule); border-radius: 0 0 14px 4px / 0 0 5px 12px; }
+
+  h2 em, h1 em { font-style: normal; background: var(--yellow); color: #141210;
+                 padding: 0 .12em; border-radius: 10px 4px 11px 5px / 5px 11px 4px 10px; }
+  :root:not([data-theme="light"]) h2 em,
+  :root:not([data-theme="light"]) h1 em,
+  [data-theme="dark"] h2 em,
+  [data-theme="dark"] h1 em { background: var(--ink); color: var(--paper); }
 </style>
 
 <style>
@@ -151,43 +187,55 @@
      request count), because print marks that carry no information are just
      decoration wearing a costume. */
   :root {
-    --paper: #f6f7f4;      /* cool stock, not cream: a green-grey bias */
-    --plate: #ffffff;
-    --ink: #16181c;
-    --ink-soft: #5b6068;
-    --rule: #d5d8d1;
-    --process: #0a6f80;    /* one process ink, used for marks and links only */
-    --mark: #16181c;
+    --paper: #fdf6e8;      /* cool stock, not cream: a green-grey bias */
+    --plate: #fffdf9;
+    --ink: #141210;
+    --ink-soft: #6b645c;
+    --rule: #141210;
+    --process: #141210;    /* one process ink, used for marks and links only */
+    --mark: #141210;
     /* The dashboard's card, in sRGB. Declared here in the bare :root so it
        exists in every theme state: a token that is only used and never
        declared makes border, background and shadow all invalid, which is
        precisely how these cards came to render as bare text. */
-    --card: #ffffff;
-    --card-border: #d6d6d6;
-    --card-ink: #0a0a0a;
-    --card-muted: #5c5c5c;
-    --card-primary: #171717;
-    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / .05);
-    --verso: #0a6f80;      /* the reverse of the sheet, in process ink */
-    --verso-ink: #f2f6f6;
+    --card: #fffdf9;
+    --card-border: #141210;
+    --card-ink: #141210;
+    --card-muted: #6b645c;
+    --card-primary: #f4c423;
+    --card-shadow: 5px 5px 0 #141210;
+    --verso: #f4c423;      /* the reverse of the sheet, in process ink */
+    --verso-ink: #141210;
+    --yellow: #f4c423;
+    --sky: #8fd6f7;
+    --lilac: #c9b6ff;
+    --lime: #b8f06a;
+    --coral: #ff8a73;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper: #14161a;
-      --plate: #1b1e24;
-      --ink: #eceee9;
-      --ink-soft: #969ba3;
-      --rule: #2e333b;
-      --process: #4fc2d4;
-      --mark: #eceee9;
-      --verso: #0f333b;
-      --verso-ink: #dff1f4;
-      --card: #171717;
-      --card-border: rgba(255, 255, 255, .12);
-      --card-ink: #fafafa;
-      --card-muted: #a3a3a3;
-      --card-primary: #e5e5e5;
-      --card-shadow: none;
+      /* Black and white, the way the app's dark theme resolved: no yellow, no
+         warmth, and the drawn line becomes white so a hard shadow still reads. */
+      --paper: #121212;
+      --plate: #1c1c1c;
+      --ink: #ffffff;
+      --ink-soft: #b4b4b4;
+      --rule: #ffffff;
+      --process: #ffffff;
+      --mark: #ffffff;
+      --verso: #1c1c1c;
+      --verso-ink: #ffffff;
+      --card: #1c1c1c;
+      --card-border: #ffffff;
+      --card-ink: #ffffff;
+      --card-muted: #b4b4b4;
+      --card-primary: #ffffff;
+      --card-shadow: 5px 5px 0 #ffffff;
+      --yellow: #f4c423;
+      --sky: #7fb9d8;
+      --lilac: #b3a2e6;
+      --lime: #a7d95f;
+      --coral: #e88b78;
     }
   }
   :root[data-theme="dark"] {
@@ -208,7 +256,7 @@
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font: 16px/1.6 "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    font: 16px/1.6 "Archivo", -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -217,7 +265,7 @@
   a { color: var(--process); }
   a:focus-visible, .btn:focus-visible { outline: 2px solid var(--process); outline-offset: 3px; }
 
-  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
 
   /* ── Trim marks ─────────────────────────────────────────── */
 
@@ -244,7 +292,7 @@
     color: var(--paper);
     outline: 2px solid var(--process);
     outline-offset: 3px;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: .8rem; font-weight: 500;
     letter-spacing: .2em; text-transform: uppercase;
     line-height: 1.45; text-align: center;
@@ -282,7 +330,7 @@
 
   .spec {
     display: flex; flex-wrap: wrap; gap: .4rem 1.6rem;
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem;
     letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
     border-block: 1px solid var(--rule); padding: .6rem 0; margin-bottom: 2.5rem;
   }
@@ -291,7 +339,7 @@
   /* ── Hero ───────────────────────────────────────────────── */
 
   h1 {
-    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-family: "Bricolage Grotesque", "Archivo", sans-serif;
     font-weight: 800;
     font-size: clamp(2.4rem, 8vw, 5.2rem);
     line-height: .95;
@@ -305,7 +353,7 @@
 
   .btns { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
   .btn {
-    font-family: "IBM Plex Mono", monospace; font-size: .82rem; letter-spacing: .04em;
+    font-family: "JetBrains Mono", monospace; font-size: .82rem; letter-spacing: .04em;
     text-transform: uppercase; text-decoration: none;
     padding: .75rem 1.5rem; border: 1px solid var(--process); color: var(--paper);
     background: var(--process);
@@ -356,7 +404,7 @@
     display: flex; align-items: baseline; gap: .8rem;
     background: none; border: 0; cursor: pointer;
     padding: .95rem 0;
-    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+    font-family: "Bricolage Grotesque", "Archivo", sans-serif;
     font-weight: 700; font-size: 1.02rem; letter-spacing: -.015em;
     color: var(--ink); text-align: left;
   }
@@ -380,7 +428,7 @@
   .job-panel p:last-child { margin-bottom: 0; }
 
   .job-stat {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: .74rem; color: var(--process);
     font-variant-numeric: tabular-nums;
   }
@@ -425,7 +473,7 @@
   }
   .stage-empty p {
     margin: 0; max-width: 30ch;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: .72rem; line-height: 1.7; color: #6b6f6c;
   }
   .stage-empty strong {
@@ -436,7 +484,7 @@
 
   .fpo {
     position: absolute; top: 1rem; right: 1rem; z-index: 2;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: .56rem; font-weight: 500;
     letter-spacing: .16em; text-transform: uppercase;
     padding: .22rem .42rem;
@@ -448,7 +496,7 @@
     border-top: 1px solid var(--rule); padding-top: .55rem;
   }
   .stage-cap .mono {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
   }
 
@@ -478,7 +526,7 @@
   /* The tool columns are sections for semantics, not for structure. */
 
   .sig {
-    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .12em;
+    font-family: "JetBrains Mono", monospace; font-size: .7rem; letter-spacing: .12em;
     text-transform: uppercase; color: var(--process); margin: 0 0 .55rem;
     font-weight: 500;
     display: flex; align-items: center; gap: .55rem;
@@ -505,7 +553,7 @@
   figure { margin: 0; }
   figure img { width: 100%; height: auto; display: block; background: var(--plate); border: 1px solid var(--rule); }
   figcaption {
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem; letter-spacing: .05em;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem; letter-spacing: .05em;
     text-transform: uppercase; color: var(--ink-soft);
     display: flex; justify-content: space-between; gap: 1rem; padding-top: .5rem;
   }
@@ -576,7 +624,7 @@
 
   .os-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
   .os-tab {
-    font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .05em;
+    font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
     text-transform: uppercase; cursor: pointer;
     padding: .5rem .9rem; border: 1px solid var(--rule); border-radius: 2px;
     background: transparent; color: var(--ink-soft);
@@ -597,7 +645,7 @@
     width: 1.7rem; height: 1.7rem; border-radius: 50%;
     display: grid; place-items: center;
     background: var(--paper); border: 1px solid var(--rule);
-    font-family: "IBM Plex Mono", monospace; font-size: .74rem; color: var(--ink);
+    font-family: "JetBrains Mono", monospace; font-size: .74rem; color: var(--ink);
   }
   .step h3 {
     font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
@@ -611,11 +659,11 @@
     background: var(--plate); border: 1px solid var(--rule); border-radius: 3px;
   }
   .cmd code {
-    font-family: "IBM Plex Mono", monospace; font-size: .82rem; color: var(--ink);
+    font-family: "JetBrains Mono", monospace; font-size: .82rem; color: var(--ink);
     overflow-wrap: anywhere;
   }
   .cmd button {
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem; letter-spacing: .05em;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem; letter-spacing: .05em;
     text-transform: uppercase; cursor: pointer; flex: none;
     padding: .35rem .6rem; border: 1px solid var(--rule); border-radius: 2px;
     background: var(--paper); color: var(--ink-soft);
@@ -710,7 +758,7 @@
   }
 
   .card-how-label {
-    font-family: "IBM Plex Mono", monospace; font-size: .58rem;
+    font-family: "JetBrains Mono", monospace; font-size: .58rem;
     letter-spacing: .14em; text-transform: uppercase; opacity: .75;
   }
 
@@ -724,13 +772,13 @@
   .card-how { font-size: .78rem; line-height: 1.45; margin: 0; }
 
   .dl-note {
-    font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .04em;
+    font-family: "JetBrains Mono", monospace; font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-soft); margin: .9rem 0 0;
   }
 
   .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
   .filter {
-    font-family: "IBM Plex Mono", monospace; font-size: .74rem; letter-spacing: .05em;
+    font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
     text-transform: uppercase; cursor: pointer;
     padding: .5rem .9rem; border: 1px solid var(--rule); border-radius: 2px;
     background: transparent; color: var(--ink-soft);
@@ -740,7 +788,7 @@
   .filter[aria-pressed="true"] b { opacity: 1; }
   .filter:focus-visible { outline: 2px solid var(--process); outline-offset: 2px; }
   .filter-status {
-    font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .04em;
+    font-family: "JetBrains Mono", monospace; font-size: .7rem; letter-spacing: .04em;
     color: var(--ink-soft); margin: 0 0 1.4rem;
   }
   .card[hidden] { display: none !important; }
@@ -763,7 +811,7 @@
   table { border-collapse: collapse; width: 100%; min-width: 32rem; font-size: .92rem; }
   th, td { text-align: start; padding: .75rem .8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
   th {
-    font-family: "IBM Plex Mono", monospace; font-size: .66rem; letter-spacing: .1em;
+    font-family: "JetBrains Mono", monospace; font-size: .66rem; letter-spacing: .1em;
     text-transform: uppercase; color: var(--ink-soft); font-weight: 500;
   }
   tbody tr:last-child td { border-bottom: none; }
@@ -801,7 +849,7 @@
 
   .support-go {
     margin-top: auto; padding-top: .3rem;
-    font-family: "IBM Plex Mono", monospace; font-size: .68rem;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem;
     letter-spacing: .1em; text-transform: uppercase; color: var(--process);
   }
 
@@ -816,7 +864,7 @@
     border-top: 5px solid var(--process); margin-top: 2rem;
     padding: 1.5rem 0 4rem; display: flex; flex-wrap: wrap; gap: .6rem 1.8rem;
     justify-content: space-between;
-    font-family: "IBM Plex Mono", monospace; font-size: .7rem;
+    font-family: "JetBrains Mono", monospace; font-size: .7rem;
     letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft);
   }
   footer nav { display: flex; flex-wrap: wrap; gap: 1.4rem; }
@@ -830,7 +878,7 @@
 
   <div class="trim">
     <a class="stamp" href="https://github.com/shyhunter/PaperOtter"
-       aria-label="Papercut is free and open source. Read the source on GitHub.">
+       aria-label="PaperOtter is free and open source. Read the source on GitHub.">
       <b>Free</b><b>Open source</b>
     </a>
 
@@ -844,7 +892,7 @@
     <h1>Everything happens<br>on <em>your</em> machine.</h1>
     <p class="stand">
       Compressing a PDF, converting a scan, signing a form: the jobs you would
-      normally hand to a website. Papercut&rsquo;s <a href="#tools">twenty-two tools</a>
+      normally hand to a website. PaperOtter&rsquo;s <a href="#tools">twenty-two tools</a>
       do them on your own computer instead.
     </p>
     <div class="btns">
@@ -856,7 +904,7 @@
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
            autoplay muted loop playsinline controls preload="none"
-           aria-label="Papercut in use: choosing a tool, opening a document and saving the result">
+           aria-label="PaperOtter in use: choosing a tool, opening a document and saving the result">
       <source src="media/hero.mp4" type="video/mp4">
       Your browser cannot play this video. The screenshots below show the same thing.
     </video>
@@ -935,7 +983,7 @@
 
   <section>
     <p class="sig" id="tools">Yours, to go.</p>
-    <h2><em>Twenty-two</em> tools</h2>
+    <h2><em>Nineteen</em> tools</h2>
     <p class="lede">Twenty-one of them need nothing installed. Hover or tap a card to see how it works.</p>
     <div class="filters" role="group" aria-label="Filter tools by what you start with">
       <button class="filter" type="button" data-cat="all" aria-pressed="true">All <b>22</b></button>
@@ -953,7 +1001,7 @@
           </span>
           <span class="face verso">
             <span class="card-how-label">How it works</span>
-            <span class="card-how">Papercut re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
+            <span class="card-how">PaperOtter re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
           </span>
         </span>
       </button>
@@ -1077,32 +1125,6 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-lock" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /> </svg>
-            <span class="card-name">Protect</span>
-            <span class="card-desc">Add password encryption to a PDF</span>
-          </span>
-          <span class="face verso">
-            <span class="card-how-label">How it works</span>
-            <span class="card-how">Adds a password. Papercut never stores it and cannot recover it: lose it and the file is closed for good.</span>
-          </span>
-        </span>
-      </button>
-      <button class="card" type="button" data-cat="pdf">
-        <span class="card-inner">
-          <span class="face recto">
-            <svg class="card-icon lucide lucide-unlock" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /> </svg>
-            <span class="card-name">Unlock</span>
-            <span class="card-desc">Remove password protection from a PDF</span>
-          </span>
-          <span class="face verso">
-            <span class="card-how-label">How it works</span>
-            <span class="card-how">Removes a password you already know from a file you own.</span>
-          </span>
-        </span>
-      </button>
-      <button class="card" type="button" data-cat="pdf">
-        <span class="card-inner">
-          <span class="face recto">
             <svg class="card-icon lucide lucide-wrench" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /> </svg>
             <span class="card-name">Repair</span>
             <span class="card-desc">Fix corrupted or malformed PDFs</span>
@@ -1110,19 +1132,6 @@
           <span class="face verso">
             <span class="card-how-label">How it works</span>
             <span class="card-how">Rebuilds a damaged file&#x27;s structure so it opens again. Offered automatically when one fails to load.</span>
-          </span>
-        </span>
-      </button>
-      <button class="card" type="button" data-cat="pdf">
-        <span class="card-inner">
-          <span class="face recto">
-            <svg class="card-icon lucide lucide-archive" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="20" height="5" x="2" y="3" rx="1" /> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /> <path d="M10 12h4" /> </svg>
-            <span class="card-name">PDF/A</span>
-            <span class="card-desc">Convert PDF to archival PDF/A format</span>
-          </span>
-          <span class="face verso">
-            <span class="card-how-label">How it works</span>
-            <span class="card-how">Converts to the archival format meant for long-term storage.</span>
           </span>
         </span>
       </button>
@@ -1297,7 +1306,7 @@
         <div class="stage">
           <div class="stage-inner">
             <video id="stage-video" autoplay muted loop playsinline preload="metadata"
-                   aria-label="Papercut performing the selected job on a real document"></video>
+                   aria-label="PaperOtter performing the selected job on a real document"></video>
           </div>
         </div>
         <p class="stage-cap" id="stage-cap"></p>
@@ -1353,16 +1362,16 @@
         <p>Apple silicon or Intel, whichever this Mac is. The download page picks for you.</p>
       </li>
       <li class="step">
-        <h3>Drag Papercut into Applications</h3>
+        <h3>Drag PaperOtter into Applications</h3>
         <p>The usual dmg window. Nothing installs in the background.</p>
       </li>
       <li class="step">
         <h3>Open it once and let macOS refuse</h3>
-        <p>Papercut has no Apple developer certificate yet, so the first open is blocked: <em>&ldquo;Apple could not verify Papercut is free of malware.&rdquo;</em> Click Done. This step matters, because the button that lets you past it does not exist until macOS has actually stopped you.</p>
+        <p>PaperOtter has no Apple developer certificate yet, so the first open is blocked: <em>&ldquo;Apple could not verify PaperOtter is free of malware.&rdquo;</em> Click Done. This step matters, because the button that lets you past it does not exist until macOS has actually stopped you.</p>
       </li>
       <li class="step">
         <h3>Now go to Privacy &amp; Security</h3>
-        <p>System Settings, then Privacy &amp; Security, and scroll to the Security section at the bottom. <strong>Open Anyway</strong> is waiting there, naming Papercut. Do this within an hour of being blocked or the button expires and you start again.</p>
+        <p>System Settings, then Privacy &amp; Security, and scroll to the Security section at the bottom. <strong>Open Anyway</strong> is waiting there, naming PaperOtter. Do this within an hour of being blocked or the button expires and you start again.</p>
       </li>
       <li class="step">
         <h3>Open it a second time</h3>
@@ -1389,7 +1398,7 @@
       </li>
       <li class="step">
         <h3>Finish, and it opens</h3>
-        <p>The last screen has Run Papercut and Create desktop shortcut already ticked. Click Finish and the app starts.</p>
+        <p>The last screen has Run PaperOtter and Create desktop shortcut already ticked. Click Finish and the app starts.</p>
       </li>
       <li class="step">
         <h3>That is the whole setup</h3>
@@ -1406,13 +1415,13 @@
         <h3>Install it</h3>
         <p>The .deb goes through your package manager:</p>
         <div class="cmd">
-          <code>sudo apt install ./Papercut_1.0.0_amd64.deb</code>
-          <button type="button" data-copy="sudo apt install ./Papercut_1.0.0_amd64.deb">Copy</button>
+          <code>sudo apt install ./PaperOtter_1.0.0_amd64.deb</code>
+          <button type="button" data-copy="sudo apt install ./PaperOtter_1.0.0_amd64.deb">Copy</button>
         </div>
         <p style="margin-top:.7rem">The AppImage just needs to be executable:</p>
         <div class="cmd">
-          <code>chmod +x Papercut_1.0.0_amd64.AppImage</code>
-          <button type="button" data-copy="chmod +x Papercut_1.0.0_amd64.AppImage">Copy</button>
+          <code>chmod +x PaperOtter_1.0.0_amd64.AppImage</code>
+          <button type="button" data-copy="chmod +x PaperOtter_1.0.0_amd64.AppImage">Copy</button>
         </div>
       </li>
       <li class="step">
@@ -1433,7 +1442,7 @@
       </div>
       <div>
         <h3>Two features are macOS-only</h3>
-        <p>Reading scans and HEIC photos depend on what the operating system provides. Papercut hides what it cannot run.</p>
+        <p>Reading scans and HEIC photos depend on what the operating system provides. PaperOtter hides what it cannot run.</p>
       </div>
       <div>
         <h3>Nine languages, all AI-assisted</h3>
@@ -1454,7 +1463,7 @@
     <p class="sig">Last but not least</p>
     <h2>If it <em>saved</em> you an afternoon</h2>
     <p class="lede">
-      Papercut is free, MIT licensed, and collects nothing: no analytics, no
+      PaperOtter is free, MIT licensed, and collects nothing: no analytics, no
       telemetry, no crash reports. That is the point of it, and it has one
       consequence worth admitting: <strong>there is no way for me to know whether
       anyone is using this.</strong> Downloads are a number; they do not say
@@ -1467,7 +1476,7 @@
         <h3>Star it on GitHub</h3>
         <p>
           Free, takes a second, and it is the only signal that reaches me. It also
-          puts Papercut in front of people searching for a tool that does not want
+          puts PaperOtter in front of people searching for a tool that does not want
           their data.
         </p>
         <span class="support-go">github.com/shyhunter/PaperOtter <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
@@ -1477,7 +1486,7 @@
         <svg class="support-icon lucide lucide-map" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /> </svg>
         <h3>Read the roadmap</h3>
         <p>
-          Papercut is still being built, and it happens in the open: what is
+          PaperOtter is still being built, and it happens in the open: what is
           coming next, what was decided against, and the reasoning either way.
           If the tool you need is not on it yet, that is worth telling me.
         </p>

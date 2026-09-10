@@ -85,4 +85,4 @@ Export as **PNG** or **WebP**, not JPG: JPG has no transparency support and fill
 
 ---
 
-See also: [Using Papercut](Using-Papercut) · [Troubleshooting](Troubleshooting) · [FAQ](FAQ)
+See also: [Using PaperOtter](Using-PaperOtter) · [Troubleshooting](Troubleshooting) · [FAQ](FAQ)

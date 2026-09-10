@@ -25,7 +25,7 @@ re-compressed, and page sizes are unchanged.
 
 Repair recovers **structure**, not **content**. If parts of the file are simply
 gone — most often a download or copy that stopped partway, taking whole objects
-with it — there is nothing left to rebuild them from, and Papercut will say so
+with it — there is nothing left to rebuild them from, and PaperOtter will say so
 rather than hand you a file that looks repaired and is not.
 
 When that happens, the only real fix is another copy of the document: download or

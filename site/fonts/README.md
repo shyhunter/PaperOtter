@@ -1,7 +1,7 @@
 # Fonts
 
 Committed rather than fetched from `fonts.googleapis.com`. The page's claim is
-that Papercut sends nothing anywhere; a stylesheet that hands Google the IP
+that PaperOtter sends nothing anywhere; a stylesheet that hands Google the IP
 address of every visitor would undercut that on the download page itself.
 
 Each file is the **latin subset** Google serves for the weights the page uses.

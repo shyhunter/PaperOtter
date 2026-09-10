@@ -16,7 +16,7 @@
 - **Rotation**: defaults to -45° (the classic diagonal watermark angle), but can be set to any angle.
 - **Color**: gray, red, or blue presets.
 
-The watermark text is centered on the page and applied identically to every page: there's no per-page customization. Papercut renders a live single-page preview as you adjust these settings so you can see the effect before committing to all pages.
+The watermark text is centered on the page and applied identically to every page: there's no per-page customization. PaperOtter renders a live single-page preview as you adjust these settings so you can see the effect before committing to all pages.
 
 ## Why the watermark might look cut off or oddly placed
 

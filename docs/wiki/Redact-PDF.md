@@ -10,12 +10,12 @@
 
 ## How real redaction works (and why it's different from Crop or covering text)
 
-This is the one tool in Papercut where "security over convenience" is the explicit design goal. Any page that has at least one redaction on it is **rendered to an image** and rebuilt as a picture: the black boxes are drawn directly onto that image before it's embedded as the new page. This means:
+This is the one tool in PaperOtter where "security over convenience" is the explicit design goal. Any page that has at least one redaction on it is **rendered to an image** and rebuilt as a picture: the black boxes are drawn directly onto that image before it's embedded as the new page. This means:
 
 - Text on a redacted page is **no longer selectable, searchable, or copyable**, because it's a picture now, not text. There is nothing left underneath the black box to extract.
 - Pages with **no redactions** are left completely untouched: copied over as-is, keeping their original selectable text.
 
-This is a deliberate tradeoff. A redaction tool that just draws a black rectangle *over* live text (the way [Watermark](Watermark) draws over content, or the way [Crop PDF](Crop-PDF)'s crop box just hides content) doesn't actually delete anything: the "hidden" text is often still selectable, copyable, or extractable by anyone who knows to try. Papercut's Redact avoids that failure mode entirely by flattening the page.
+This is a deliberate tradeoff. A redaction tool that just draws a black rectangle *over* live text (the way [Watermark](Watermark) draws over content, or the way [Crop PDF](Crop-PDF)'s crop box just hides content) doesn't actually delete anything: the "hidden" text is often still selectable, copyable, or extractable by anyone who knows to try. PaperOtter's Redact avoids that failure mode entirely by flattening the page.
 
 ## Why redacted pages look slightly different from the rest of the document
 

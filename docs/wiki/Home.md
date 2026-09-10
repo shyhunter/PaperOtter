@@ -1,10 +1,10 @@
 <div align="center">
-<img alt="Papercut logo" width="200px" src="img/logo.png"/>
+<img alt="PaperOtter logo" width="200px" src="img/logo.png"/>
 
-**_Welcome to the Papercut Wiki!_**
+**_Welcome to the PaperOtter Wiki!_**
 </div>
 
-Papercut is a local desktop toolkit for compressing, resizing, converting,
+PaperOtter is a local desktop toolkit for compressing, resizing, converting,
 and editing PDFs, images, and documents. Everything runs on your machine --
 no uploads, no cloud, no telemetry.
 
@@ -21,7 +21,7 @@ For everything else, the wiki is divided into a few sections:
 
 - [**_Common Tasks_**](Common-Tasks): "how do I shrink a PDF for email", "how do I permanently black out sensitive text", and more: organized by goal, not tool name
 - [**_Getting Started_**](Required-Dependencies): what LibreOffice and Calibre are for, and how to install them per platform
-- [**_Using Papercut_**](Using-Papercut): the four-step workflow every tool follows, with a dedicated guide for each of the 21 tools: how it works, what its settings do, and why it might not behave the way you expect
+- [**_Using PaperOtter_**](Using-PaperOtter): the four-step workflow every tool follows, with a dedicated guide for each of the 21 tools: how it works, what its settings do, and why it might not behave the way you expect
 - [**_Troubleshooting_**](Troubleshooting): fixes for the most common errors
 
 There's also an [**_FAQ_**](FAQ) page answering common questions about

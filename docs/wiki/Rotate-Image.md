@@ -14,7 +14,7 @@ The image is decoded, rotated by the exact angle you chose, and re-encoded: you 
 
 ## Why the output file size might change after just rotating
 
-Since rotating re-encodes the image, the output size depends on the quality/format settings applied during that re-encode, not just the rotation itself. If you notice a size difference, check the quality and format Papercut used for the save, same as you would for [Compress Image](Compress-Image).
+Since rotating re-encodes the image, the output size depends on the quality/format settings applied during that re-encode, not just the rotation itself. If you notice a size difference, check the quality and format PaperOtter used for the save, same as you would for [Compress Image](Compress-Image).
 
 ---
 
