@@ -20,7 +20,7 @@ questions directly: find your goal, not a tool name.
 For everything else, the wiki is divided into a few sections:
 
 - [**_Common Tasks_**](Common-Tasks): "how do I shrink a PDF for email", "how do I permanently black out sensitive text", and more: organized by goal, not tool name
-- [**_Getting Started_**](Required-Dependencies): what Ghostscript, LibreOffice, and Calibre are for, and how to install them per platform
+- [**_Getting Started_**](Required-Dependencies): what LibreOffice and Calibre are for, and how to install them per platform
 - [**_Using Papercut_**](Using-Papercut): the four-step workflow every tool follows, with a dedicated guide for each of the 21 tools: how it works, what its settings do, and why it might not behave the way you expect
 - [**_Troubleshooting_**](Troubleshooting): fixes for the most common errors
 

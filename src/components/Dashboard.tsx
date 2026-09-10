@@ -149,11 +149,12 @@ export function ToolCard({
         type="button"
         data-testid="tool-card"
         data-tool-id={tool.id}
+        data-category={tool.category}
         data-disabled={disabled ? 'true' : 'false'}
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
-        className={`h-full w-full flex flex-col items-center justify-start gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+        className={`h-full w-full flex flex-col items-center justify-start gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : 'cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5'
@@ -216,11 +217,12 @@ function FavoriteCard({
         type="button"
         data-testid="tool-card"
         data-tool-id={tool.id}
+        data-favourite="true"
         data-disabled={disabled ? 'true' : 'false'}
         onClick={disabled ? undefined : (isTarget ? () => onSwapTarget(index) : onClick)}
         disabled={disabled}
         title={disabled ? disabledHint : undefined}
-        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm dark:shadow-none ${
+        className={`w-full flex flex-col items-center gap-3 border rounded-xl p-5 bg-card text-card-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : `cursor-pointer hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 dark:hover:shadow-lg dark:hover:shadow-primary/5 ${isTarget ? 'opacity-50' : ''}`
@@ -265,7 +267,7 @@ function FavoriteCard({
           className="absolute top-2 end-2 p-1.5 rounded-lg text-yellow-500 opacity-100 hover:text-yellow-600 transition-all duration-200"
           title={t('dashboard.removeFromFavorites')}
         >
-          <Star className="h-4 w-4 fill-yellow-500" />
+          <Star className="h-4 w-4 fill-card text-foreground" />
         </button>
       )}
     </div>
@@ -434,13 +436,14 @@ export function Dashboard() {
   return (
     <div data-testid="dashboard" className="flex-1 overflow-y-auto px-6 py-6 relative animate-fade-slide-in">
       <div className="max-w-5xl mx-auto w-full space-y-8">
-        {/* Header with search */}
-        <div className="space-y-4">
+        {/* Header with search — a section of its own, so it reads as part of the
+            same drawn system as the tool cards rather than as floating text. */}
+        <div data-dashboard-header className="space-y-4 border-[3px] border-border p-5 shadow-[5px_5px_0_var(--border)] [border-radius:22px_8px_26px_10px_/_10px_26px_8px_22px]">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-baseline gap-2">
                 <h1 className="text-[clamp(1.3rem,2.5vw,2rem)] font-bold text-foreground tracking-tight">
-                  Papercut
+                  PaperOtter
                 </h1>
                 <span className="text-[clamp(0.6rem,0.8vw,0.75rem)] text-muted-foreground/50 font-medium">
                   v{appVersion}
@@ -522,14 +525,14 @@ export function Dashboard() {
         {!searchQuery.trim() && favoriteTools.length > 0 && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <h2 data-section-heading className="text-xs font-semibold text-foreground uppercase">
                 {t('dashboard.myFavorites')}
               </h2>
               <p className="text-xs text-muted-foreground">
                 {t('dashboard.clickToReorderMiddotClick')}
               </p>
             </div>
-            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <div className="grid gap-4 items-stretch" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               {favoriteTools.map((tool, idx) => {
                 const formatIncompat = stagedFile != null && !tool.acceptsFormats.includes(stagedFile.format);
                 return (
@@ -563,7 +566,7 @@ export function Dashboard() {
 
           return (
             <section key={category} className="space-y-3">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <h2 data-section-heading className="text-xs font-semibold text-foreground uppercase">
                 {categoryLabel(category)}
               </h2>
               <div

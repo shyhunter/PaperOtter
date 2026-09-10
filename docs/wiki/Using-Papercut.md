@@ -34,10 +34,6 @@ result:
   JPG to PDF. A `.docx` cannot replace a `.pdf`.
 - **The number of files changes**: Merge takes several and produces one; Split
   takes one and produces many.
-- **Protect PDF**, deliberately. It is the only operation whose result can become
-  permanently unopenable (a forgotten password has no recovery), so it always
-  writes a new file and leaves your readable original alone. See
-  [Protect PDF](Protect-PDF).
 
 Converting an image only replaces the original when the format is unchanged.
 Compressing a JPG as a JPG replaces it; saving that JPG as a PNG writes a new
@@ -48,7 +44,7 @@ file, because a `.png` cannot take the place of a `.jpg`.
 The dashboard is where every tool lives, organized into three categories:
 
 **PDF Tools**
-[Compress](Compress-PDF) · [Merge](Merge-PDFs) · [Split](Split-PDF) · [Rotate](Rotate-PDF) · [PDF to JPG](PDF-to-JPG) · [JPG to PDF](JPG-to-PDF) · [Page Numbers](Page-Numbers) · [Watermark](Watermark) · [Crop](Crop-PDF) · [Organize](Organize-PDF) · [Sign](Sign-PDF) · [Redact](Redact-PDF) · [PDF/A Convert](PDF-A-Convert) · [Repair](Repair-PDF) · [Protect](Protect-PDF) · [Unlock](Unlock-PDF) · [Edit PDF](Edit-PDF)
+[Compress](Compress-PDF) · [Merge](Merge-PDFs) · [Split](Split-PDF) · [Rotate](Rotate-PDF) · [PDF to JPG](PDF-to-JPG) · [JPG to PDF](JPG-to-PDF) · [Page Numbers](Page-Numbers) · [Watermark](Watermark) · [Crop](Crop-PDF) · [Organize](Organize-PDF) · [Sign](Sign-PDF) · [Redact](Redact-PDF) · [Repair](Repair-PDF) · [Edit PDF](Edit-PDF)
 
 **Image Tools**
 [Compress](Compress-Image) · [Rotate](Rotate-Image) · [Convert](Convert-Image)

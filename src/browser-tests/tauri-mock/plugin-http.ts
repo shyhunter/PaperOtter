@@ -2,7 +2,7 @@
 import { unregistered } from './state';
 
 export async function fetch(input: string): Promise<Response> {
-  // Papercut's promise is that documents never leave the machine. A test that
+  // PaperOtter's promise is that documents never leave the machine. A test that
   // reaches the network is either testing the update check or has found a leak,
   // and both deserve to stop here rather than quietly succeed.
   unregistered('http.fetch', `url ${JSON.stringify(String(input))}`);

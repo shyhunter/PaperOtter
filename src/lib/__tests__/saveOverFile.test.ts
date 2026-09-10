@@ -58,7 +58,7 @@ describe('classifySaveFailure', () => {
     // The scope boundary. Deliberately generic: the existing fallback already
     // says "check that you have permission to write to that location", which is
     // the truth, and a user cannot act on the capability allow-list.
-    ['FORBIDDEN:not a location Papercut may write to', 'unknown'],
+    ['FORBIDDEN:not a location PaperOtter may write to', 'unknown'],
     ['WRITE_FAILED:some io error', 'unknown'],
     ['REPLACE_FAILED:some io error', 'unknown'],
   ])('[SAVE-FP-03] reads %s as %s', (raw, expected) => {

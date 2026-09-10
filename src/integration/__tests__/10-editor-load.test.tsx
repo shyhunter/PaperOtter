@@ -392,7 +392,7 @@ describe('Suite 10 — PDF Editor: Zoom Toolbar', () => {
 });
 
 describe('Suite 10 — PDF Editor: Tool Sidebar', () => {
-  it('ED-12 — ToolSidebar renders all 11 tool icons', () => {
+  it('ED-12 — ToolSidebar renders all 9 tool icons', () => {
     render(
       <EditorTestHarness>
         <ToolSidebar />
@@ -407,10 +407,7 @@ describe('Suite 10 — PDF Editor: Tool Sidebar', () => {
     expect(screen.getByTitle('Crop PDF')).toBeInTheDocument();
     expect(screen.getByTitle('Sign PDF')).toBeInTheDocument();
     expect(screen.getByTitle('Redact PDF')).toBeInTheDocument();
-    expect(screen.getByTitle('PDF/A Convert')).toBeInTheDocument();
     expect(screen.getByTitle('Repair PDF')).toBeInTheDocument();
-    expect(screen.getByTitle('Protect PDF')).toBeInTheDocument();
-    expect(screen.getByTitle('Unlock PDF')).toBeInTheDocument();
   });
 
   it('ED-13 — Clicking a tool icon expands its panel', async () => {

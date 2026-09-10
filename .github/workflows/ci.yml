@@ -329,7 +329,7 @@ jobs:
       - name: Install system dependencies (webkit + GS)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf ghostscript
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install frontend dependencies
         run: npm ci
@@ -338,15 +338,6 @@ jobs:
         run: cargo install tauri-webdriver-automation
         env:
           RUSTC_WRAPPER: sccache
-
-      - name: Prepare GS sidecar (replace placeholder with system Ghostscript wrapper)
-        run: |
-          set -euo pipefail
-          test -d src-tauri/binaries || { echo "ERROR: src-tauri/binaries not found"; exit 1; }
-          test -x /usr/bin/gs || { echo "ERROR: /usr/bin/gs not found"; exit 1; }
-          printf '#!/bin/sh\nexec /usr/bin/gs "$@"\n' > src-tauri/binaries/papercut-gs-x86_64-unknown-linux-gnu
-          chmod +x src-tauri/binaries/papercut-gs-x86_64-unknown-linux-gnu
-          echo "GS sidecar wrapper created successfully"
 
       - name: Build Tauri app (debug, for webdriver-automation plugin)
         run: npx tauri build --debug --features e2e --no-bundle

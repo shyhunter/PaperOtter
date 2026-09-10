@@ -26,7 +26,7 @@ const SRC = join(process.cwd(), 'src');
 
 /** Never translated: the product name and third-party proper nouns. */
 const PROPER_NOUNS = new Set([
-  'Papercut', 'GitHub', 'Tauri + React', 'Ghostscript', 'LibreOffice',
+  'PaperOtter', 'GitHub', 'Tauri + React', 'Ghostscript', 'LibreOffice',
   'Calibre', 'Rust', 'React', 'MIT', 'PDF', 'JPG', 'PNG', 'WebP',
   // A product name and an SPDX licence identifier. The About dialog has to
   // name the bundled AGPL component exactly, so neither half is translatable.
@@ -189,7 +189,7 @@ describe('no hardcoded user-facing English', () => {
   it('[I18N-04c] the guard does not flag type annotations or translated calls', () => {
     expect(findings('(s: State) => Partial<State>')).toEqual([]);
     expect(findings("<span>{t('common.save')}</span>")).toEqual([]);
-    expect(findings('<span>Papercut</span>')).toEqual([]);
+    expect(findings('<span>PaperOtter</span>')).toEqual([]);
     expect(findings("  name: 'tool.compressPdf.name',")).toEqual([]);
     expect(findings("{ description: 'tool.compressPdf.desc' }")).toEqual([]);
     expect(findings("throw new Error('useToolContext must be used within a provider')")).toEqual([]);

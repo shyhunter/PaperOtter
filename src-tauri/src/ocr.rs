@@ -367,7 +367,7 @@ fn check_readable(path: &str) -> Result<(), String> {
         Ok(_) => Ok(()),
         Err(e) => Err(match e.kind() {
             ErrorKind::NotFound => "This file could not be found. It may have been moved, renamed or deleted.".to_string(),
-            ErrorKind::PermissionDenied => "Papercut is not allowed to read this file. Check its permissions, or move it somewhere Papercut can reach.".to_string(),
+            ErrorKind::PermissionDenied => "PaperOtter is not allowed to read this file. Check its permissions, or move it somewhere PaperOtter can reach.".to_string(),
             // ETIMEDOUT on a local path means a file provider — iCloud Drive is
             // the common one — never answered. Naming it saves the user from
             // hunting a fault in the document.

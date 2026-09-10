@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { AboutDialog } from '@/components/AboutDialog';
 import { BuyMeACoffeeButton } from '@/components/BuyMeACoffeeButton';
 import { LanguagePicker } from '@/components/LanguagePicker';
+import { OtterMark } from '@/components/brand/OtterMark';
 import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
 
@@ -28,7 +29,8 @@ function openFilters() {
 }
 
 const ICON_BUTTON =
-  'inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 ' +
+  'inline-flex items-center justify-center border-2 border-border bg-card p-2 ' +
+  '[border-radius:11px_4px_12px_5px_/_5px_12px_4px_11px] ' +
   'text-muted-foreground transition-colors hover:text-foreground hover:border-primary/50 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
@@ -60,7 +62,15 @@ export function AppChrome() {
 
   return (
     <>
-      <div className="flex flex-none items-center justify-end gap-2 border-b border-border bg-background/95 px-3 py-1.5 backdrop-blur-sm">
+      <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-2 border-t border-border/40 border-b-[3px] border-b-border bg-background/95 px-3 py-1.5 backdrop-blur-sm">
+        {/* The icon build, not the full-detail trace: at this size the fur tufts
+            and the thin goggle frame fill in. */}
+        <OtterMark
+          variant="simple"
+          title="PaperOtter"
+          className="h-12 w-12 justify-self-start text-foreground"
+        />
+        <div className="flex items-center gap-2">
         {canReplaceDocument && (
           <button
             type="button"
@@ -84,6 +94,8 @@ export function AppChrome() {
         <LanguagePicker />
         <BuyMeACoffeeButton />
         <ThemeToggle />
+        </div>
+        <span aria-hidden="true" />
       </div>
 
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />

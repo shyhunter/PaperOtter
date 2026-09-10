@@ -36,11 +36,6 @@ Click **More info**, then **Run anyway**. Same cause as above, but for
 Windows code-signing: it's on the roadmap, not a sign of a broken
 installer.
 
-## Ghostscript is missing or crashes
-
-See [Required Dependencies](Required-Dependencies#ghostscript-bundled-used-for-pdf-compression)
-for per-platform install steps and the reinstall fallback.
-
 ## DOC/DOCX or EPUB/MOBI conversion isn't available
 
 You need [LibreOffice or Calibre](Required-Dependencies) installed and on
@@ -51,7 +46,7 @@ this happens.
 
 For **Unlock**, this means the password you entered doesn't match the one on
 the file, or the PDF itself is corrupted. For **Protect**, it usually means
-the source file is corrupted or uses a PDF feature Ghostscript can't encrypt.
+the source file is corrupted or uses a PDF feature Papercut cannot process.
 Try re-exporting the source PDF and protecting it again.
 
 ## Still stuck?

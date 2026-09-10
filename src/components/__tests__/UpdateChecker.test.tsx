@@ -44,7 +44,7 @@ describe('UpdateChecker', () => {
       url: 'https://github.com/shyhunter/Papercut/releases/tag/v1.1.0',
     });
     render(<UpdateChecker />);
-    expect(await screen.findByText(/papercut v1\.1\.0 is available/i)).toBeInTheDocument();
+    expect(await screen.findByText(/paperotter v1\.1\.0 is available/i)).toBeInTheDocument();
   });
 
   it('UC-02: renders nothing when already up to date', async () => {
@@ -80,7 +80,7 @@ describe('UpdateChecker', () => {
     const dismissButton = await screen.findByRole('button', { name: /dismiss update banner/i });
     fireEvent.click(dismissButton);
 
-    expect(screen.queryByText(/papercut v1\.1\.0 is available/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/paperotter v1\.1\.0 is available/i)).not.toBeInTheDocument();
     await waitFor(() => expect(storeSet).toHaveBeenCalledWith('update-dismissed-version', '1.1.0'));
   });
 

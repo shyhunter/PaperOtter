@@ -148,10 +148,10 @@ export const en = {
   // ── Privacy ─────────────────────────────────────────────────────────────
   'privacy.title': 'Your Privacy',
   'privacy.headline': 'Your files never leave your device.',
-  'privacy.body': 'Papercut processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
+  'privacy.body': 'PaperOtter processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
   'privacy.zeroData': 'We collect zero data: no analytics, no telemetry, no crash reports.',
   'privacy.technicalDetails': 'Technical details',
-  'privacy.detailLocal': 'All file processing runs locally via Rust, Ghostscript, LibreOffice, and Calibre',
+  'privacy.detailLocal': 'All file processing runs locally via Rust, qpdf, LibreOffice, and Calibre',
   'privacy.detailCsp': 'Content Security Policy blocks all external connections from the app\'s UI',
   'privacy.detailNoSdk': 'No analytics SDK or tracking code is included',
   'privacy.detailPasswords': 'Passwords (PDF protect/unlock) are never stored, logged, or written to disk',
@@ -160,7 +160,7 @@ export const en = {
   'common.close': 'Close',
 
   // ── App chrome ──────────────────────────────────────────────────────────
-  'chrome.about': 'About Papercut',
+  'chrome.about': 'About PaperOtter',
   'chrome.openAnother': 'Open another file',
 
   // ── rotateImage ─────────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ export const en = {
   'protectPdf.encrypting': 'Encrypting…',
   'protectPdf.enterPassword': 'Enter password',
   'protectPdf.password': 'Password',
-  'protectPdf.acknowledgePassword': 'I understand Papercut does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
+  'protectPdf.acknowledgePassword': 'I understand PaperOtter does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
   'protectPdf.savedProtectedCopy': 'Saved a protected copy. The document open here is unchanged.',
   'protectPdf.saveProtectedCopy': 'Save protected copy…',
   'protectPdf.passwordsDoNotMatch': 'Passwords do not match',
@@ -526,7 +526,7 @@ export const en = {
   'pdfEditor.allSides': 'All sides',
   'pdfEditor.applied': 'Applied',
   'pdfEditor.applyToAllPages': 'Apply to all pages',
-  'pdfEditor.attemptToFixCorruptedOr': 'Attempt to fix corrupted or malformed PDF structure using Ghostscript.',
+  'pdfEditor.attemptToFixCorruptedOr': 'Attempt to fix corrupted or malformed PDF structure using qpdf.',
   'pdfEditor.bottomCenter': 'Bottom Center',
   'pdfEditor.bottomLeft': 'Bottom Left',
   'pdfEditor.bottomRight': 'Bottom Right',
@@ -589,7 +589,7 @@ export const en = {
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
   'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. All of them, English included, were written with AI assistance, and none has been checked by a professional translator. If something reads oddly or says the wrong thing, please report it.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter speaks nine languages. All of them, English included, were written with AI assistance, and none has been checked by a professional translator. If something reads oddly or says the wrong thing, please report it.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',
@@ -608,8 +608,8 @@ export const en = {
   'crashReporter.anUnexpectedErrorOccurredYou': 'An unexpected error occurred. You can send a crash report to help us fix it.',
   'crashReporter.sendCrashReport': 'Send Crash Report',
   'crashReporter.somethingWentWrong': 'Something went wrong',
-  'crashReporter.theReportOpensAsA': 'The report opens as a draft email. Nothing is sent until you send it yourself.',
-  'crashReporter.thisWillOpenInYour': 'This will open in your email app:',
+  'crashReporter.theReportOpensAsA': 'The report opens as a draft discussion on GitHub. Nothing is posted until you post it yourself.',
+  'crashReporter.thisWillOpenInYour': 'This will open in your browser:',
 
   // ── dashboard ───────────────────────────────────────────────────────────
   'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder · Click ★ on any tool to add',
@@ -645,7 +645,7 @@ export const en = {
   'recentDirsButton.recentFolders': 'Recent folders',
 
   // ── splashScreen ────────────────────────────────────────────────────────
-  'splashScreen.papercutLogo': 'Papercut logo',
+  'splashScreen.papercutLogo': 'PaperOtter logo',
 
   // ── updateChecker ───────────────────────────────────────────────────────
   'updateChecker.dismissUpdateBanner': 'Dismiss update banner',
@@ -941,7 +941,7 @@ export const en = {
   'toolSidebarPanel.turnRight': 'Turn Right',
   'toolSidebarPanel.turnLeft': 'Turn Left',
   'docModel.thisDocumentHasNoExtractable': 'This document has no extractable text: it looks scanned or image-only.',
-  'pdfUtils.permissionDenied': 'Papercut does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
+  'pdfUtils.permissionDenied': 'PaperOtter does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
   'pdfUtils.thisFileAppearsToBe': 'This file appears to be corrupted or is not a valid PDF. Please try a different file.',
   'pdfUtils.failedToLoadPdfThe': 'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
   'pdfUtils.thisFileIsNotA': 'This file is not a valid PDF document. Please select a valid PDF file.',
@@ -1010,15 +1010,12 @@ export const en = {
   'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type: a batch has to be one type.',
 
   // ── Dependency hints ────────────────────────────────────────────────────
-  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start: reinstalling Papercut should restore it.',
-  'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
-  'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support: calibre-ebook.com/download',
   // The kind of program, not one product's name: several will do, and naming
   // only the paid one is bad advice when a free one works.
   'convertDoc.kindWordProcessor': 'a word processor such as {tools}',
   'convertDoc.kindEbookConverter': 'an ebook converter such as {tools}',
-  'convertDoc.formatMayNeed': 'May need {requirement}. Papercut could not find one, but detection is not always right: try it and see.',
+  'convertDoc.formatMayNeed': 'May need {requirement}. PaperOtter could not find one, but detection is not always right: try it and see.',
   'deps.libreoffice': 'Install LibreOffice for document conversion: libreoffice.org/download',
 
   // ── OCR ─────────────────────────────────────────────────────────────────
@@ -1089,7 +1086,7 @@ export const en = {
   'convertConfigStep.formatNamed': '{format} format',
   'convertConfigStep.zipOneFilePerHeading': '.zip, one file per heading',
   'convertImageFlow.convertToFormat': 'Convert to {format}',
-  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft email in your mail app: you choose whether to send it.',
+  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft discussion on GitHub: you choose whether to post it.',
   'cropPdfFlow.pageSizeMm': 'Page size: {width} × {height} mm',
   'dashboard.noToolsMatch': 'No tools match “{query}”',
   'editorContext.failedToAddPages': 'Failed to add pages: {error}',
@@ -1135,7 +1132,7 @@ export const en = {
   'redactPdf.matchesFound': '{matches} found',
   'redactPdf.pageCount': 'Page {page}: {count}',
   'repairPdf.originalToRepaired': 'Original: {original} → Repaired: {repaired}',
-  'repairPdf.repairExplanation': 'Repair attempts to fix structural issues in corrupted or malformed PDFs by re-processing through Ghostscript. This can resolve issues with broken cross-references, missing objects, and other structural problems.',
+  'repairPdf.repairExplanation': 'Repair attempts to fix structural issues in corrupted or malformed PDFs by re-processing through qpdf. This can resolve issues with broken cross-references, missing objects, and other structural problems.',
   'rotate.nPagesRotated': '{pages} rotated.',
   'rotate.selectPagesThenRotate': 'Select pages, then rotate them left or right.',
   'rotateImageFlow.currentDegreesClockwise': 'Current: {degrees} degrees clockwise',
@@ -1152,7 +1149,7 @@ export const en = {
   'themeToggle.dark': 'Dark',
   'themeToggle.themeNamed': 'Theme: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'has changes that have not been saved. Saving replaces the original file.',
-  'updateChecker.versionAvailable': 'Papercut v{version} is available.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} is available.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} applied successfully',
   'toolSidebarPanel.canCompressToAbout': 'Can compress to about {size} at best.',
   'toolSidebarPanel.dragOnThePageToCover': 'Drag on the page to cover something. Applying flattens those pages to an image, so the content underneath is removed from the file, not just hidden.',
@@ -1188,7 +1185,7 @@ export const en = {
   'configureStep.enableResizeToStillProcess': 'Enable page resize below to still process this file.',
   'merge.mergeAndSave': 'Merge & save',
   'pdfEditor.untitledPdf': 'Untitled.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. Ghostscript can\'t compress them further.',
+  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. PaperOtter can\'t compress them further.',
   'split.split': 'Split',
   'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
   'unsavedChangesDialog.dontSave': 'Don\'t save',

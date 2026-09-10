@@ -14,12 +14,12 @@ export function PrivacyFooter() {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <footer className="flex items-center justify-center gap-1.5 py-1.5 border-t border-border/30 text-muted-foreground">
+    <footer data-testid="privacy-footer" className="flex items-center justify-center gap-2 py-2 border-t-2 border-border/40 text-muted-foreground">
       <Lock className="h-2.5 w-2.5" aria-hidden="true" />
       <button
         type="button"
         onClick={() => setShowModal(true)}
-        className="text-[11px] hover:text-foreground transition-colors"
+        className="text-[10px] hover:text-foreground transition-colors"
       >
         {t('privacyFooter.processedLocallyPrivacy')}
       </button>

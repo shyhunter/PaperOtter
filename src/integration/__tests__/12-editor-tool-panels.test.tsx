@@ -12,13 +12,11 @@ import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { EditorProvider, useEditorContext, createEditorViewState } from '@/context/EditorContext';
 import { ToolSidebar } from '@/components/pdf-editor/ToolSidebar';
-import { isPdfEncrypted } from '@/lib/pdfEncryption';
 import { addPageNumbers, addPageNumbersSinglePage } from '@/lib/pdfPageNumbers';
 import { rotatePdf } from '@/lib/pdfRotate';
 import { cropPdf, cropPdfSinglePage } from '@/lib/pdfCrop';
 import { invoke } from '@tauri-apps/api/core';
 import { writeFile } from '@tauri-apps/plugin-fs';
-import { save as dialogSave } from '@tauri-apps/plugin-dialog';
 import { getPdfCompressibilityFromBytes } from '@/lib/pdfProcessor';
 import { colorPresets } from '@/lib/colorPresets';
 import { applyRedactions } from '@/lib/pdfRedact';
@@ -1330,59 +1328,8 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(await screen.findByText(/save these settings/i)).toBeInTheDocument();
   });
 
-  it('TP-11b — Protect warns about a document that is already encrypted', async () => {
-    // qpdf refuses one, so the answer has to arrive before two passwords and an
-    // acknowledgement have been typed. The standalone checks at file-pick time;
-    // here the document is already open, so the check is on the bytes in hand.
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Protect PDF'));
-
-    // The fixture is a plain PDF, so no warning -- and the form is usable.
-    await waitFor(() =>
-      expect(screen.queryByText(/already password-protected/i)).not.toBeInTheDocument());
-    expect(screen.getByPlaceholderText(/enter password/i)).toBeInTheDocument();
-
-    // And with an encrypted one it appears. Asserting only the absence would
-    // pass with the warning never rendered at all, which is the failure mode of
-    // every guard written from one side.
-    vi.mocked(isPdfEncrypted).mockResolvedValue(true);
-    cleanup();
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-    await user.click(screen.getByTitle('Protect PDF'));
-
-    expect(await screen.findByText(/already password-protected/i)).toBeInTheDocument();
-    vi.mocked(isPdfEncrypted).mockResolvedValue(false);
-  });
-
-  it('TP-12b — Unlock says when there is nothing to unlock', async () => {
-    // A password field for a document with no password rejects every password,
-    // correct ones included.
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Unlock PDF'));
-
-    expect(await screen.findByText(/not password-protected/i)).toBeInTheDocument();
-  });
-
-  it('TP-13b — Repair explains what it does before it is run', async () => {
-    // Repair always "succeeds": it re-processes through Ghostscript whatever
+      it('TP-13b — Repair explains what it does before it is run', async () => {
+    // Repair always "succeeds": it rebuilds the file with qpdf whatever
     // state the file was in. Without the explanation the result reads as a
     // verdict on the document rather than a description of a process that ran.
     const user = userEvent.setup();
@@ -1395,7 +1342,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Repair PDF'));
 
-    expect(screen.getByText(/re-processing through ghostscript/i)).toBeInTheDocument();
+    expect(screen.getByText(/re-processing through qpdf/i)).toBeInTheDocument();
   });
 
   it('TP-06c — the Sign panel can sign more than the page in front of you', async () => {
@@ -1663,28 +1610,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(rects).toHaveLength(1);
   });
 
-  it('TP-08 — PDF/A Convert panel shows level select and Apply', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('PDF/A Convert'));
-
-    expect(screen.getByText('PDF/A Convert')).toBeInTheDocument();
-    expect(screen.getByTitle('PDF/A conformance level')).toBeInTheDocument();
-
-    // Level options in select
-    const select = screen.getByTitle('PDF/A conformance level');
-    expect(select).toHaveValue('2'); // default is PDF/A-2
-
-    expect(screen.getByText('Apply')).toBeInTheDocument();
-  });
-
-  // TP-09: Repair Panel
+    // TP-09: Repair Panel
   it('TP-09 — Repair panel shows description and Apply button', async () => {
     const user = userEvent.setup();
 
@@ -1699,142 +1625,6 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.getByText('Repair PDF')).toBeInTheDocument();
     expect(screen.getByText(/Attempt to fix corrupted/)).toBeInTheDocument();
     expect(screen.getByText('Apply')).toBeInTheDocument();
-  });
-
-  // TP-10: Protect Panel
-  it('TP-10 — Protect panel checks the confirmation on Apply, not on every keystroke', async () => {
-    // This panel is separate code from ProtectPdfFlow and had the same defect:
-    // "Passwords do not match" from the first character of the confirmation to
-    // the last, so a correct entry was called wrong while it was being typed.
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Protect PDF'));
-
-    expect(screen.getByText('Protect PDF')).toBeInTheDocument();
-    expect(screen.getByText('Password')).toBeInTheDocument();
-    expect(screen.getByText('Confirm password')).toBeInTheDocument();
-
-    const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
-    await user.type(pwField, 'secret123');
-    await user.type(confirmField, 'different');
-
-    // Silent while typing.
-    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
-
-    await user.click(screen.getByTestId('protect-ack'));
-
-    // And reachable: gating the button on the match meant the check could never run.
-    const applyBtn = screen.getByText(/save protected copy/i).closest('button')!;
-    expect(applyBtn).not.toBeDisabled();
-
-    await user.click(applyBtn);
-    expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
-
-    // Editing again takes the complaint back down.
-    await user.type(confirmField, 'x');
-    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
-  });
-
-  it('TP-10b — Protect panel enables the button once passwords match and the warning is accepted', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Protect PDF'));
-
-    const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
-    await user.type(pwField, 'secret123');
-    await user.type(confirmField, 'secret123');
-
-    // No mismatch warning
-    expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
-
-    // Matching is not sufficient: the password is unrecoverable, and the user
-    // has to have said they know that.
-    const applyBtn = () => screen.getByText(/save protected copy/i).closest('button')!;
-    expect(applyBtn()).toBeDisabled();
-
-    await user.click(screen.getByTestId('protect-ack'));
-    expect(applyBtn()).not.toBeDisabled();
-  });
-
-  it('TP-10d — protecting writes a separate file and never touches the open document', async () => {
-    // Encrypting in place destroyed the original. The editor's Save runs
-    // applyAllEdits -- pdf-lib load+save -- which cannot write encryption: it
-    // copies the encrypted streams and keeps /Encrypt, producing a file no
-    // reader can open, and then writes it over the path the document came from.
-    // Measured: Ghostscript reports "Couldn't initialise file" on such a file
-    // even given the right password.
-    const user = userEvent.setup();
-    let ctx: EditorCtx | null = null;
-
-    render(
-      <ToolPanelHarness onContextReady={(c) => { ctx = c; }}>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Protect PDF'));
-    const before = ctx!.state.pdfBytes;
-
-    const [pwField, confirmField] = screen.getAllByPlaceholderText(/password/i);
-    await user.type(pwField, 'secret123');
-    await user.type(confirmField, 'secret123');
-    await user.click(screen.getByTestId('protect-ack'));
-
-    vi.mocked(writeFile).mockClear();
-    vi.mocked(invoke).mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer);
-    vi.mocked(dialogSave).mockResolvedValueOnce('/tmp/report-protected.pdf');
-
-    await user.click(screen.getByText(/save protected copy/i));
-
-    await waitFor(() => {
-      expect(
-        vi.mocked(writeFile).mock.calls.some(([path]) => path === '/tmp/report-protected.pdf'),
-        'no protected copy was written',
-      ).toBe(true);
-    });
-
-    // The document in the editor is untouched, so Save cannot write encrypted
-    // bytes over the original.
-    expect(ctx!.state.pdfBytes).toBe(before);
-    expect(ctx!.state.isDirty).toBe(false);
-  });
-
-  // TP-11: Unlock Panel
-  it('TP-11 — Unlock panel shows password field and enables Apply with password', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ToolPanelHarness>
-        <ToolSidebar />
-      </ToolPanelHarness>,
-    );
-
-    await user.click(screen.getByTitle('Unlock PDF'));
-
-    expect(screen.getByText('Unlock PDF')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter PDF password')).toBeInTheDocument();
-
-    // Apply disabled without password
-    const applyBtn = screen.getByText('Apply');
-    expect(applyBtn.closest('button')).toBeDisabled();
-
-    // Type a password
-    await user.type(screen.getByPlaceholderText('Enter PDF password'), 'mypassword');
-
-    // Apply should now be enabled
-    expect(applyBtn.closest('button')).not.toBeDisabled();
   });
 
   // TP-12: Panel switching — switching between tools replaces panel content
@@ -1856,10 +1646,12 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
     expect(screen.queryByText('Direction')).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText('CONFIDENTIAL')).toBeInTheDocument();
 
-    // Switch to Protect
-    await user.click(screen.getByTitle('Protect PDF'));
+    // Switch to Crop — a third panel, so the test still proves content is
+    // replaced rather than accumulated. It was Protect until that tool was
+    // removed; any third panel serves, which is why the swap is not a loss.
+    await user.click(screen.getByTitle('Crop PDF'));
     expect(screen.queryByPlaceholderText('CONFIDENTIAL')).not.toBeInTheDocument();
-    expect(screen.getByText('Confirm password')).toBeInTheDocument();
+    expect(screen.getByText('Margins (mm)')).toBeInTheDocument();
   });
 
   // TP-13: Redact Click-to-Place mode toggle

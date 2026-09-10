@@ -315,7 +315,7 @@ export interface ConversionRequirement {
   examples: string[];
 }
 
-/** Engines that come with the operating system or with Papercut, so are never
+/** Engines that come with the operating system or with PaperOtter, so are never
  *  something a user installs. If one of these can do the job, say nothing. */
 const OS_PROVIDED: readonly ConverterEngine[] = ['builtin', 'textutil', 'webview'];
 
@@ -489,7 +489,7 @@ export async function convertDocument(
     // wrong for an ebook format and sends the user to install the wrong thing.
     const pair = `${sourceFormat.toUpperCase()} to ${options.outputFormat.toUpperCase()}`;
     const req = requirementFor(options.outputFormat, sourceFormat, currentPlatform());
-    if (!req) throw new Error(`Papercut cannot convert ${pair}.`);
+    if (!req) throw new Error(`PaperOtter cannot convert ${pair}.`);
     const kind = req.kind === 'ebookConverter' ? 'an ebook converter' : 'a word processor';
     throw new Error(
       `Converting ${pair} needs ${kind} such as ${joinOr(req.examples)}, ` +

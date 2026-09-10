@@ -20,7 +20,7 @@ describe('Security — Rust static analysis', () => {
   it('every path-accepting command calls validate_source_path', () => {
     // Commands that accept source_path and must validate it
     const commands = [
-      'compress_pdf', 'protect_pdf', 'unlock_pdf', 'convert_pdfa',
+      'compress_pdf',
       'repair_pdf', 'convert_with_libreoffice', 'convert_with_calibre',
       'convert_with_textutil', 'convert_with_word', 'process_image',
     ];
@@ -47,9 +47,10 @@ describe('Security — Rust static analysis', () => {
     expect(libRs).toContain('validate_calibre_extra_args');
   });
 
-  it('password redaction function exists', () => {
-    expect(libRs).toContain('fn redact_gs_passwords');
-  });
+  // `redact_gs_passwords` was removed with the Protect and Unlock commands: it
+  // scrubbed password values out of Ghostscript's stderr, and no command passes
+  // a password to Ghostscript any more. The test below — that no debug output
+  // mentions a password at all — is the broader guard and still stands.
 
   it('startup temp sweep function exists and is called', () => {
     expect(libRs).toContain('fn sweep_papercut_temp_files');

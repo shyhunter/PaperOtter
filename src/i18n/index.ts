@@ -40,7 +40,7 @@ const dictionaries = new Map<string, Dictionary>([
 /**
  * Whether a translation has been checked by someone who speaks the language.
  *
- * The brief is blunt about why this is tracked rather than assumed: Papercut's
+ * The brief is blunt about why this is tracked rather than assumed: PaperOtter's
  * copy resists machine translation, and a subtly wrong redaction warning in a
  * privacy tool is worse than English. An unchecked translation is "a liability
  * that cannot be seen", so it is written down.

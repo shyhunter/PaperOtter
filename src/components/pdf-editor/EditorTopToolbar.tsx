@@ -81,12 +81,12 @@ export function EditorTopToolbar() {
   return (
     <div className="flex flex-col flex-none">
       {/* Row 1: Breadcrumb + Save */}
-      <div className="flex items-center h-10 px-4 border-b border-border bg-background">
+      <div className="flex items-center h-12 px-4 border-b-[3px] border-border bg-background gap-2">
         <nav className="flex items-center gap-1 text-xs">
           <button
             type="button"
             onClick={handleBackToDashboard}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center border-2 border-border bg-card px-2.5 py-1 text-xs shadow-[3px_3px_0_var(--border)] transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none text-foreground"
           >
             {t('pdfEditor.dashboard')}
           </button>
@@ -107,12 +107,12 @@ export function EditorTopToolbar() {
             type="button"
             onClick={handleSaveClick}
             disabled={!state.isDirty || isSaving}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors disabled:opacity-40 disabled:cursor-default hover:bg-muted"
+            className="flex items-center gap-1 border-2 border-border bg-card px-2.5 py-1 text-xs shadow-[3px_3px_0_var(--border)] transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-40 disabled:cursor-default disabled:shadow-none"
             title={t('pdfEditor.saveCmdS')}
           >
             <Save className="w-3.5 h-3.5" />
             {showSavedFeedback ? (
-              <span className="text-green-600">{t('pdfEditor.saved')}</span>
+              <span className="text-foreground">{t('pdfEditor.saved')}</span>
             ) : (
               <span>{t('common.save')}</span>
             )}
@@ -125,7 +125,7 @@ export function EditorTopToolbar() {
           <button
             type="button"
             onClick={handleRevert}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            className="flex items-center gap-1 border-2 border-border bg-card px-2.5 py-1 text-xs shadow-[3px_3px_0_var(--border)] transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none text-foreground"
             title={t('pdfEditor.discardAllChangesAndRestore')}
           >
             <Undo2 className="w-3.5 h-3.5" />
@@ -138,10 +138,11 @@ export function EditorTopToolbar() {
           <button
             type="button"
             onClick={() => setCompareMode(state.compareMode === 'off' ? 'floating' : 'off')}
-            className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
+            data-framed
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs transition-transform ${
               state.compareMode !== 'off'
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'hover:bg-muted text-muted-foreground'
+                ? 'bg-primary text-primary-foreground font-semibold'
+                : 'bg-card text-foreground'
             }`}
             title={t('pdfEditor.toggleCompareViewOriginalVs')}
           >

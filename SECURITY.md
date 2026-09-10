@@ -22,7 +22,7 @@ Papercut is a local desktop application. It has no server, no account system and
 no telemetry, so the interesting surface is narrower than for a web app:
 
 - **Arbitrary code execution** via a crafted PDF, image or document. Files are
-  parsed by pdf.js and pdf-lib in the webview, and by Ghostscript and the Rust
+  parsed by pdf.js and pdf-lib in the webview, and by qpdf and the Rust
   `image` crate outside it.
 - **Escaping the file-access scope.** The app may only read and write under
   Documents, Downloads, Desktop and the system temp directory; anything that
@@ -31,7 +31,7 @@ no telemetry, so the interesting surface is narrower than for a web app:
   design. Two outbound URLs are allow-listed: the GitHub releases endpoint for
   the update check and a feedback-config file. Any other outbound request is a
   finding.
-- **Bundled dependencies**, including the Ghostscript sidecar.
+- **Bundled dependencies**, including the statically linked qpdf.
 
 ## What is not in scope
 

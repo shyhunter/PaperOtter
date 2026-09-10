@@ -41,7 +41,7 @@ describe('AppChrome', () => {
   it('[AC-01] offers theme, About and Buy me a coffee', () => {
     renderChrome();
 
-    expect(screen.getByRole('button', { name: /about papercut/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /about paperotter/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /theme/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /coffee/i })).toBeInTheDocument();
   });
@@ -49,7 +49,7 @@ describe('AppChrome', () => {
   it('[AC-02] they stay reachable once a tool is open', () => {
     renderChrome((ctx) => ctx.selectTool('watermark'));
 
-    expect(screen.getByRole('button', { name: /about papercut/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /about paperotter/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /theme/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /coffee/i })).toBeInTheDocument();
   });
@@ -57,7 +57,7 @@ describe('AppChrome', () => {
   it('[AC-03] About opens from anywhere, not just the dashboard', () => {
     renderChrome((ctx) => ctx.selectTool('watermark'));
 
-    fireEvent.click(screen.getByRole('button', { name: /about papercut/i }));
+    fireEvent.click(screen.getByRole('button', { name: /about paperotter/i }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });

@@ -49,7 +49,8 @@ export function UnsavedChangesDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="unsaved-changes-title"
-        className="w-full max-w-sm rounded-lg border border-border bg-background p-5 shadow-lg"
+        data-modal-panel
+        className="w-full max-w-sm border-border p-5"
       >
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-amber-500" />

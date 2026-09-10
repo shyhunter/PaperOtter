@@ -6,41 +6,69 @@ licence, and how to obtain the corresponding source.
 
 ---
 
-## Ghostscript
+## qpdf (compiled in, not a separate binary)
 
-- **Version:** 10.06.0
-- **Copyright:** © 2025 Artifex Software, Inc.
-- **Licence:** GNU Affero General Public License v3.0 (AGPL-3.0)
-- **Upstream:** https://www.ghostscript.com/
-- **Source download:** https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/tag/gs10060
+- **Version:** 12.4.0, vendored by the `qpdf` Rust crate (`qpdf-sys` 0.3.6)
+- **Copyright:** © Jay Berkenbilt
+- **Licence:** Apache License 2.0
+- **Upstream:** https://github.com/qpdf/qpdf
 
-Used for: PDF compression, PDF/A conversion, password protect/unlock, and repair.
-Papercut invokes Ghostscript as a **separate process** via its command-line
-interface. It does not link against Ghostscript, and no Ghostscript code is
-incorporated into Papercut's own source.
+Used for: repairing damaged PDFs. Unlike Ghostscript, qpdf is **statically linked
+into the Papercut binary** rather than shipped as a separate executable — there is
+no sidecar file and no companion DLL on Windows.
 
-### Your rights under the AGPL
+Apache-2.0 is permissive: it carries no copyleft, so it places no licence
+requirement on Papercut's own MIT source, and it would place none on a commercial
+release either. Its obligations are to keep the licence and attribution, which
+this file and `LICENSES/Apache-2.0.txt` do.
 
-The Ghostscript binary distributed with Papercut is covered by the AGPL, not by
-Papercut's MIT licence. You are entitled to the complete corresponding source
-code for it. That source is the unmodified upstream release linked above; the
-exact build configuration Papercut uses is recorded in
-`src-tauri/binaries/README.md` so the binary can be reproduced.
+### Libraries vendored inside qpdf-sys and compiled with it
 
-Papercut applies no patches to Ghostscript.
+The crate builds two C libraries from its own source tree, so their code is in
+the shipped binary too and their notices are owed:
 
-### Note on commercial use
+- **zlib 1.3.1** — © 1995-2024 Jean-loup Gailly and Mark Adler, under the zlib
+  licence. Permissive; requires the copyright notice not be misrepresented and
+  altered versions be marked as such. Papercut alters nothing.
+- **libjpeg (Independent JPEG Group) 9f** — © 1991-2024 Thomas G. Lane, Guido
+  Vollbeding. The IJG licence requires, for distribution of executable code:
 
-Artifex dual-licenses Ghostscript: AGPL, or a commercial licence. If Papercut is
-ever distributed under terms incompatible with the AGPL, or embedded in a
-proprietary product, a commercial licence from Artifex would be required. Under
-Papercut's current MIT/open-source distribution, shipping the binary alongside
-this notice and the source offer above is the compliance path being relied on.
+  > **This software is based in part on the work of the Independent JPEG Group.**
 
-**This is a statement of intent, not legal advice.** If Papercut's licensing or
-commercial position changes, this arrangement needs a lawyer's eye.
+  That statement is made here, and this file ships inside the installer as
+  `licenses/THIRD-PARTY-LICENSES.md` (see `externalBin`/`resources` in
+  `src-tauri/tauri.conf.json`), which is what makes it accompanying
+  documentation rather than a note in the repository. It is deliberately not
+  added to `LICENSES/NOTICES.txt`: that file is generated from lockfile
+  metadata, which knows nothing about C sources vendored inside a crate, so a
+  hand-written line there would be erased by the next `notices` run.
 
----
+Neither is separately downloadable from Papercut because neither is a separate
+artifact: both are compiled into the same binary as the Rust code.
+
+## Signature fonts (bundled)
+
+Three handwriting faces are bundled as `woff2` in `src/assets/fonts/` and used by
+the Sign PDF tool's typed-signature option. They ship inside the application, so
+their licence and copyright notices travel with them:
+
+| Font | Copyright | Licence |
+|---|---|---|
+| Caveat | © 2014 The Caveat Project Authors — https://github.com/googlefonts/caveat | OFL-1.1 |
+| Dancing Script | © 2016 The Dancing Script Project Authors — https://github.com/googlefonts/DancingScript, with Reserved Font Name 'Dancing Script' | OFL-1.1 |
+| Great Vibes | © 2015 The Great Vibes Pro Project Authors — https://github.com/googlefonts/great-vibes | OFL-1.1 |
+| Archivo | © 2020 The Archivo Project Authors — https://github.com/Omnibus-Type/Archivo | OFL-1.1 |
+| Bricolage Grotesque | © 2022 The Bricolage Grotesque Project Authors — https://github.com/ateliertriay/bricolage | OFL-1.1 |
+| JetBrains Mono | © 2020 The JetBrains Mono Project Authors — https://github.com/JetBrains/JetBrainsMono | OFL-1.1 |
+
+The SIL Open Font License 1.1 text is in `LICENSES/OFL-1.1.txt` and ships with the
+installer. The OFL permits bundling, embedding in documents, and commercial use;
+its conditions are that the copyright and licence notice travel with the fonts
+(above), that the fonts are not sold on their own, and that a *modified* version
+must be renamed. Papercut modifies none of them and sells none of them.
+
+Note on the Reserved Font Name: it binds only a modified derivative, which is why
+"Dancing Script" may be named here and rendered in the interface.
 
 ## Calibre (not bundled)
 

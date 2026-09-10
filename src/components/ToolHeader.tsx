@@ -21,12 +21,12 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
   return (
     <div>
       {/* Breadcrumb row */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="flex items-center gap-2 px-4 py-2 border-b-[3px] border-border bg-background/95 backdrop-blur-sm">
         <button
           type="button"
           data-testid="back-to-dashboard"
           onClick={onBackToDashboard}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-2.5 py-1 [border-radius:11px_4px_12px_5px_/_5px_12px_4px_11px] shadow-[3px_3px_0_var(--border)] text-foreground transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
           aria-label={t('pdfEditor.backToDashboard')}
         >
           <ArrowLeft className="h-4 w-4" />

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfig';
+import { fetchFeedbackUrl, FALLBACK_FEEDBACK_URL } from '@/lib/feedbackConfig';
 import { getSystemInfo } from '@/lib/systemInfo';
 import { CrashReporter } from '@/components/CrashReporter';
 
@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn(() => Promise.resol
 
 vi.mock('@/lib/feedbackConfig', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/feedbackConfig')>();
-  return { ...actual, fetchFeedbackEmail: vi.fn() };
+  return { ...actual, fetchFeedbackUrl: vi.fn() };
 });
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(() => Promise.resolve('1.0.0')) }));
@@ -41,67 +41,82 @@ async function clickSend() {
 }
 
 describe('CrashReporter', () => {
-  it('CR-01: Send Crash Report opens a mailto link using the fetched address', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue('someone-else@example.com');
+  it('CR-01: Send Crash Report opens the fetched discussion URL', async () => {
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue('https://github.com/shyhunter/Other/discussions');
     renderReporter();
 
     const url = await clickSend();
 
-    expect(url.startsWith('mailto:someone-else@example.com?')).toBe(true);
-    expect(url).toContain(`subject=${encodeURIComponent('Crash: Boom went the processor')}`);
+    expect(url.startsWith('https://github.com/shyhunter/Other/discussions/new?')).toBe(true);
+    expect(new URL(url).searchParams.get('title')).toBe('Crash: Boom went the processor');
   });
 
   it('CR-02: falls back to the default address when the fetch fails', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     renderReporter();
 
     const url = await clickSend();
 
-    expect(url.startsWith(`mailto:${FALLBACK_FEEDBACK_EMAIL}?`)).toBe(true);
+    expect(url.startsWith(`${FALLBACK_FEEDBACK_URL}/new?`)).toBe(true);
   });
 
-  it('CR-03: never opens a GitHub issue URL (regression: /issues/new 404s while private)', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+  it('CR-03: goes to Discussions, never Issues (/issues/new 404s while private)', async () => {
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     renderReporter();
 
     const url = await clickSend();
 
-    expect(url).not.toContain('github.com');
+    expect(url).toContain('/discussions/new');
     expect(url).not.toContain('issues/new');
+    expect(url.startsWith('mailto:')).toBe(false);
   });
 
-  it('CR-04: the mailto body carries the error message, component stack and system info', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+  it('CR-03b: names a category that exists, or GitHub drops the user on an error', async () => {
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     renderReporter();
 
-    const body = decodeURIComponent(new URL(await clickSend()).search.split('body=')[1]);
+    const url = new URL(await clickSend());
+
+    // The repo's default set; there is no API to create categories.
+    expect(['general', 'ideas', 'q-a', 'announcements', 'polls', 'show-and-tell'])
+      .toContain(url.searchParams.get('category'));
+  });
+
+  it('CR-04: the discussion body carries the error message, component stack and system info', async () => {
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
+    renderReporter();
+
+    const body = new URL(await clickSend()).searchParams.get('body') ?? '';
 
     expect(body).toContain('Boom went the processor');
     expect(body).toContain('at PdfProcessor');
     expect(body).toContain('App Version: 1.0.0');
   });
 
-  it('CR-05: the preview describes an email, not a GitHub issue submission', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+  it('CR-05: the preview says nothing is posted until the user posts it', async () => {
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     renderReporter();
 
     fireEvent.click(screen.getByRole('button', { name: /preview what will be sent/i }));
 
-    expect(screen.queryAllByText(/GitHub/i)).toHaveLength(0);
+    // The body carries system details, so the promise that nothing leaves the
+    // machine unattended has to be on screen, not just in the code.
+    expect(screen.getByText(/nothing is posted until you post it yourself/i)).toBeInTheDocument();
+    expect(screen.queryByText(/draft email/i)).not.toBeInTheDocument();
   });
   it('CR-06: the report carries the real OS and architecture, not navigator.platform', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     vi.mocked(getSystemInfo).mockResolvedValue('macOS (aarch64)');
     renderReporter();
 
-    const body = decodeURIComponent(new URL(await clickSend()).search.split('body=')[1]);
+    const body = new URL(await clickSend()).searchParams.get('body') ?? '';
 
     expect(body).toContain('OS: macOS (aarch64)');
     expect(body).not.toContain('MacIntel');
   });
 
   it('CR-07: the preview shows the same OS string the report will carry', async () => {
-    vi.mocked(fetchFeedbackEmail).mockResolvedValue(FALLBACK_FEEDBACK_EMAIL);
+    vi.mocked(fetchFeedbackUrl).mockResolvedValue(FALLBACK_FEEDBACK_URL);
     vi.mocked(getSystemInfo).mockResolvedValue('Windows (x86_64)');
     renderReporter();
 

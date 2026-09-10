@@ -24,7 +24,8 @@
     "test:regressions:only": "wdio run src/e2e/wdio.conf.ts --suite regressions",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "test:browser": "playwright test",
-    "test:browser:ui": "playwright test --ui"
+    "test:browser:ui": "playwright test --ui",
+    "build:mac": "node scripts/build-macos.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

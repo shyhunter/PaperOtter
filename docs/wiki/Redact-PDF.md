@@ -27,4 +27,4 @@ Double-check the black box actually fully covers the sensitive area on **that ex
 
 ---
 
-See also: [Crop PDF](Crop-PDF) · [Protect PDF](Protect-PDF)
+See also: [Crop PDF](Crop-PDF)

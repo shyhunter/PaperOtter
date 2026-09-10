@@ -158,11 +158,11 @@ export const nl: Dictionary = {
   'imageCompareStep.copyStats': 'Gegevens kopiëren', 'imageCompareStep.copied': 'Gekopieerd',
   'privacy.title': 'Uw privacy', 'privacy.headline': 'Uw bestanden verlaten uw apparaat nooit.',
   'privacy.body':
-    'Papercut verwerkt alles lokaal op uw computer. Geen uploads, geen cloudopslag, geen tracking.',
+    'PaperOtter verwerkt alles lokaal op uw computer. Geen uploads, geen cloudopslag, geen tracking.',
   'privacy.zeroData': 'Wij verzamelen geen gegevens: geen analyse, geen telemetrie, geen crashrapporten.',
   'privacy.technicalDetails': 'Technische details',
   'privacy.detailLocal':
-    'Alle bestandsverwerking gebeurt lokaal via Rust, Ghostscript, LibreOffice en Calibre',
+    'Alle bestandsverwerking gebeurt lokaal via Rust, qpdf, LibreOffice en Calibre',
   'privacy.detailCsp': 'De Content Security Policy blokkeert alle externe verbindingen vanuit de interface',
   'privacy.detailNoSdk': 'Er is geen analyse-SDK of trackingcode opgenomen',
   'privacy.detailPasswords':
@@ -171,7 +171,7 @@ export const nl: Dictionary = {
     'Tijdens de verwerking worden tijdelijke bestanden gemaakt die daarna automatisch worden verwijderd',
   'privacy.detailSweep': 'Tijdelijke bestanden die na een crash zijn achtergebleven, worden bij het starten verwijderd',
   'privacyFooter.processedLocallyPrivacy': 'Lokaal verwerkt · Privacy',
-  'chrome.about': 'Over Papercut', 'chrome.openAnother': 'Ander bestand openen', 'chrome.language': 'Taal',
+  'chrome.about': 'Over PaperOtter', 'chrome.openAnother': 'Ander bestand openen', 'chrome.language': 'Taal',
 
   'rotateImage.left90': '90° naar links', 'rotateImage.right90': '90° naar rechts',
   'rotateImage.rotateImage': 'Afbeelding draaien', 'rotateImage.rotating': 'Draaien…',
@@ -271,7 +271,7 @@ export const nl: Dictionary = {
   'protectPdf.addPasswordEncryptionToA': 'Versleutel een PDF met een wachtwoord.',
   'protectPdf.confirmPassword': 'Wachtwoord bevestigen',
   'protectPdf.encrypting': 'Versleutelen…', 'protectPdf.enterPassword': 'Voer een wachtwoord in',
-  'protectPdf.acknowledgePassword': 'Ik begrijp dat Papercut dit wachtwoord niet opslaat en niet kan herstellen. Als ik het kwijtraak, kan dit bestand niet meer worden geopend.',
+  'protectPdf.acknowledgePassword': 'Ik begrijp dat PaperOtter dit wachtwoord niet opslaat en niet kan herstellen. Als ik het kwijtraak, kan dit bestand niet meer worden geopend.',
   'protectPdf.savedProtectedCopy': 'Beveiligde kopie opgeslagen. Het hier geopende document is ongewijzigd.',
   'protectPdf.saveProtectedCopy': 'Beveiligde kopie opslaan…',
   'protectPdf.password': 'Wachtwoord', 'protectPdf.passwordsDoNotMatch': 'De wachtwoorden komen niet overeen.',
@@ -446,10 +446,6 @@ export const nl: Dictionary = {
   'batch.processingFile': 'Bestand {current} van {total} verwerken: {name}',
   'batch.skippedDifferentType':
     '{count} bestand(en) van een ander type overgeslagen: een reeks moet uit één type bestaan.',
-  'deps.ghostscriptWindows':
-    'PDF comprimeren vereist Ghostscript. Download het van ghostscript.com/releases/gsdnld.html en zorg dat het in het PATH staat.',
-  'deps.ghostscriptLinux':
-    'PDF comprimeren vereist Ghostscript. Installeer het met uw pakketbeheerder, bijv. sudo apt install ghostscript',
   'deps.calibre': 'Installeer Calibre voor e-bookondersteuning: calibre-ebook.com/download',
   'deps.libreoffice': 'Installeer LibreOffice voor documentconversie: libreoffice.org/download',
   'filter.jpegImage': 'JPEG-afbeelding', 'filter.pngImage': 'PNG-afbeelding', 'filter.webpImage': 'WebP-afbeelding',
@@ -482,7 +478,7 @@ export const nl: Dictionary = {
   'pdfEditor.allMarginsMm': 'Alle marges (mm)', 'pdfEditor.allSides': 'Alle zijden',
   'pdfEditor.applied': 'Toegepast', 'pdfEditor.applyToAllPages': 'Op alle pagina’s toepassen',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Probeert een beschadigde of onjuiste PDF-structuur met Ghostscript te herstellen.',
+    'Probeert een beschadigde of onjuiste PDF-structuur met qpdf te herstellen.',
   'pdfEditor.bottomCenter': 'Onder midden', 'pdfEditor.bottomLeft': 'Onder links',
   'pdfEditor.bottomRight': 'Onder rechts',
   'pdfEditor.clickAnywhereOnThePdf': 'Klik ergens op de PDF om een tekstblok te plaatsen.',
@@ -573,7 +569,7 @@ export const nl: Dictionary = {
   'app.pleaseTryAgain': 'Probeer het opnieuw.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Alle verwerking gebeurt lokaal. Er verlaten nooit gegevens uw computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spreekt negen talen. Alle zijn met hulp van AI gemaakt, ook het Engels, en geen enkele is door een professionele vertaler nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter spreekt negen talen. Alle zijn met hulp van AI gemaakt, ook het Engels, en geen enkele is door een professionele vertaler nagekeken. Klinkt iets vreemd of klopt het niet, meld het dan.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Gemaakt met', 'aboutDialog.license': 'Licentie',
                                           'aboutDialog.includes': 'Bevat',
@@ -585,8 +581,8 @@ export const nl: Dictionary = {
     'Er is een onverwachte fout opgetreden. U kunt een foutrapport sturen zodat wij het kunnen verhelpen.',
   'crashReporter.sendCrashReport': 'Foutrapport sturen', 'crashReporter.somethingWentWrong': 'Er ging iets mis',
   'crashReporter.theReportOpensAsA':
-    'Het rapport wordt geopend als concept-e-mail. Er wordt niets verstuurd totdat u het zelf verstuurt.',
-  'crashReporter.thisWillOpenInYour': 'Dit wordt geopend in uw e-mailprogramma:',
+    'Het rapport opent als een conceptdiscussie op GitHub. Er wordt niets geplaatst totdat je het zelf plaatst.',
+  'crashReporter.thisWillOpenInYour': 'Dit wordt geopend in je browser:',
   'crashReporter.previewWhatWillBeSent': 'Bekijk wat er wordt verstuurd',
   'crashReporter.hideReportPreview': 'Voorbeeld verbergen',
   'crashReporter.hideErrorDetails': 'Foutdetails verbergen',
@@ -613,7 +609,7 @@ export const nl: Dictionary = {
   'landingCard.unsupportedFile': 'Niet-ondersteund bestand', 'landingCard.dropFileHere': 'Sleep het bestand hierheen',
   'landingCard.dropToOpen': 'Loslaten om te openen',
   'recentDirsButton.recent': 'Recent', 'recentDirsButton.recentFolders': 'Recente mappen',
-  'recentDirs.recentFolders': 'Recente mappen', 'splashScreen.papercutLogo': 'Papercut-logo',
+  'recentDirs.recentFolders': 'Recente mappen', 'splashScreen.papercutLogo': 'PaperOtter-logo',
   'updateChecker.dismissUpdateBanner': 'Updatemelding sluiten', 'updateChecker.download': 'Downloaden',
   'themeToggle.system': 'Systeem', 'themeToggle.light': 'Licht',
   'docModel.thisDocumentHasNoExtractable':
@@ -667,7 +663,7 @@ export const nl: Dictionary = {
   'convertConfigStep.formatNamed': '{format}-indeling',
   'convertConfigStep.zipOneFilePerHeading': '.zip, één bestand per kop',
   'convertImageFlow.convertToFormat': 'Converteren naar {format}',
-  'crashReporter.noDataSentAutomatically': 'Er worden geen gegevens automatisch verzonden. Het rapport opent als concept-e-mail in uw mailprogramma: u bepaalt of u het verstuurt.',
+  'crashReporter.noDataSentAutomatically': 'Er worden automatisch geen gegevens verzonden. Het rapport opent als een conceptdiscussie op GitHub: jij bepaalt of je het plaatst.',
   'cropPdfFlow.pageSizeMm': 'Paginaformaat: {width} × {height} mm',
   'dashboard.noToolsMatch': 'Geen gereedschap komt overeen met “{query}”',
   'editorContext.failedToAddPages': 'Kan pagina’s niet toevoegen: {error}',
@@ -710,7 +706,7 @@ export const nl: Dictionary = {
   'redactPdf.matchesFound': '{matches} gevonden',
   'redactPdf.pageCount': 'Pagina {page}: {count}',
   'repairPdf.originalToRepaired': 'Origineel: {original} → Gerepareerd: {repaired}',
-  'repairPdf.repairExplanation': 'Repareren probeert structurele problemen in beschadigde of onjuiste pdf-bestanden te verhelpen door ze opnieuw door Ghostscript te verwerken. Dit kan gebroken kruisverwijzingen, ontbrekende objecten en andere structurele problemen oplossen.',
+  'repairPdf.repairExplanation': 'Repareren probeert structurele problemen in beschadigde of onjuiste pdf-bestanden te verhelpen door ze opnieuw door qpdf te verwerken. Dit kan gebroken kruisverwijzingen, ontbrekende objecten en andere structurele problemen oplossen.',
   'rotate.nPagesRotated': '{pages} gedraaid.',
   'rotate.selectPagesThenRotate': 'Selecteer pagina’s en draai ze naar links of rechts.',
   'rotateImageFlow.currentDegreesClockwise': 'Huidig: {degrees} graden met de klok mee',
@@ -727,7 +723,7 @@ export const nl: Dictionary = {
   'themeToggle.dark': 'Donker',
   'themeToggle.themeNamed': 'Thema: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'bevat wijzigingen die niet zijn opgeslagen. Opslaan vervangt het originele bestand.',
-  'updateChecker.versionAvailable': 'Papercut v{version} is beschikbaar.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} is beschikbaar.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} is toegepast',
   'toolSidebarPanel.canCompressToAbout': 'Kan in het beste geval tot ongeveer {size} worden gecomprimeerd.',
   'toolSidebarPanel.dragOnThePageToCover': 'Sleep over de pagina om iets af te dekken. Bij toepassen worden die pagina’s afgevlakt tot een afbeelding, zodat de inhoud eronder uit het bestand wordt verwijderd en niet alleen verborgen.',
@@ -763,7 +759,7 @@ export const nl: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Schakel hieronder paginaformaat wijzigen in om dit bestand toch te verwerken.',
   'merge.mergeAndSave': 'Samenvoegen en opslaan',
   'pdfEditor.untitledPdf': 'Naamloos.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Deze pdf bevat {images}, al JPEG2000-gecodeerd: Ghostscript kan ze niet verder comprimeren.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Deze pdf bevat {images}, al JPEG2000-gecodeerd: PaperOtter kan ze niet verder comprimeren.',
   'split.split': 'Splitsen',
   'toolSidebarPanel.clickToPlaceMode': 'Klik-om-te-plaatsen-modus',
   'unsavedChangesDialog.dontSave': 'Niet opslaan',
@@ -775,10 +771,9 @@ export const nl: Dictionary = {
   'search.noMatches': 'Geen resultaten voor “{query}”.',
   'search.noMatchesInScan': 'Geen resultaten voor “{query}” in de tekst die uit deze scan is gelezen.',
   'search.readScanHint': 'Deze pagina bevat geen doorzoekbare tekst. Bij lezen wordt een onzichtbare tekstlaag toegevoegd; de pagina blijft er precies hetzelfde uitzien.',
-  'convertDoc.formatMayNeed': 'Mogelijk is {requirement} nodig. Papercut kon dit niet vinden, maar de detectie is niet altijd juist: probeer het gerust toch.',
+  'convertDoc.formatMayNeed': 'Mogelijk is {requirement} nodig. PaperOtter kon dit niet vinden, maar de detectie is niet altijd juist: probeer het gerust toch.',
   'convertDoc.kindEbookConverter': 'een e-bookconverter zoals {tools}',
   'convertDoc.kindWordProcessor': 'een tekstverwerker zoals {tools}',
   'dashboard.andMoreFiles': '+{count} meer',
-  'deps.ghostscriptMac': 'Voor het comprimeren van PDF’s is Ghostscript nodig; Papercut levert dit mee. De meegeleverde versie kon niet starten: Papercut opnieuw installeren zou dit moeten herstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (monospace)',
 };

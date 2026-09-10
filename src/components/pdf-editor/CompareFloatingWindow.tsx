@@ -121,7 +121,7 @@ function PreviewPanel({
       {/* Panel header */}
       <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 flex-none">
         <span className="text-sm font-semibold text-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground tabular-nums">{sizeLabel}</span>
+        <span className="tabular text-xs text-foreground">{sizeLabel}</span>
       </div>
 
       {/* Scrollable area */}
@@ -268,19 +268,20 @@ export function CompareFloatingWindow() {
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-background">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 flex-none">
-        <span className="text-sm font-semibold text-foreground">{t('pdfEditor.compareOriginalVsCurrent')}</span>
+      <div className="flex items-center justify-between px-4 py-2 border-b-[3px] border-border bg-background flex-none">
+        <h3 className="text-sm text-foreground">{t('pdfEditor.compareOriginalVsCurrent')}</h3>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="tabular text-xs text-foreground">
             {formatBytes(originalSize)} → {formatBytes(currentSize)}
           </span>
           {originalSize > 0 && (
             <span className={cn(
-              'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+              'inline-flex items-center border-2 border-border px-2.5 py-0.5 text-xs font-semibold text-foreground',
+              '[border-radius:10px_4px_11px_5px_/_5px_11px_4px_10px]',
               currentSize <= originalSize
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                ? 'bg-[var(--lime)]'
+                : 'bg-[var(--primary)]',
             )}>
               {currentSize <= originalSize
                 ? t('common.percentSmaller', { percent: Math.round(((originalSize - currentSize) / originalSize) * 100) })

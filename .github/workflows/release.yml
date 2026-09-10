@@ -114,113 +114,33 @@ jobs:
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # ── Ghostscript sidecar ───────────────────────────────────────────────
-      # Every platform must ship a Ghostscript that runs on a machine with no
-      # package manager. The binary this repo carried before 2026-08-26 was
-      # copied from Homebrew and referenced eleven libraries under
-      # /opt/homebrew, so PDF compression was broken for every real user.
-      # The macOS and Linux binaries are committed and verified self-contained
-      # (GS-SIDECAR-02 checks macOS at test time). Only Windows is produced here,
-      # because Windows Ghostscript is an installer containing an exe plus a DLL
-      # and cannot be built or extracted from a Mac.
-      #
-      # Licence: Ghostscript is AGPL-3.0. See THIRD-PARTY-LICENSES.md.
-      - name: Fetch Ghostscript sidecar (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $url = 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10060/gs10060w64.exe'
-          Invoke-WebRequest -Uri $url -OutFile gs-installer.exe -MaximumRetryCount 3
-          # P012: verify before extracting anything from it.
-          $sha = (Get-FileHash gs-installer.exe -Algorithm SHA256).Hash.ToLower()
-          Write-Host "installer sha256: $sha"
-          # Pinned from Artifex's published SHA512SUMS for the gs10060 release,
-          # cross-checked locally before being written here.
-          $expected = '8d552205c0fe87a16bac2f377c8a1b090cfcbc610db7c281bd6a646b39c9c468'
-          if ($sha -ne $expected) {
-            throw "Ghostscript installer checksum mismatch. Expected $expected, got $sha"
-          }
-          # The installer is NSIS; 7z is preinstalled on GitHub Windows runners.
-          # Windows Ghostscript is gswin64c.exe PLUS gsdll64.dll, so the DLL is
-          # placed beside the sidecar rather than the exe shipping alone.
-          7z x gs-installer.exe -ogs-extracted -y | Out-Null
-          Copy-Item gs-extracted/bin/gswin64c.exe "$env:GITHUB_WORKSPACE/src-tauri/binaries/papercut-gs-x86_64-pc-windows-msvc.exe" -Force
-          Copy-Item gs-extracted/bin/gsdll64.dll  "$env:GITHUB_WORKSPACE/src-tauri/binaries/gsdll64.dll" -Force
-          & "$env:GITHUB_WORKSPACE/src-tauri/binaries/papercut-gs-x86_64-pc-windows-msvc.exe" --version
-
-      - name: Verify a real Ghostscript is bundled
-        shell: bash
-        run: |
-          set -euo pipefail
-          case "${{ matrix.target }}" in
-            *windows*) BIN="src-tauri/binaries/papercut-gs-${{ matrix.target }}.exe" ;;
-            *)         BIN="src-tauri/binaries/papercut-gs-${{ matrix.target }}" ;;
-          esac
-          SIZE=$(wc -c < "$BIN")
-          # On macOS and Linux, Ghostscript is one self-contained binary of tens
-          # of MB, so its size is the whole story. On Windows it is two files:
-          # gswin64c.exe is a ~94 KB wrapper and gsdll64.dll is the engine, so
-          # sizing the exe alone would reject a perfectly good Ghostscript.
-          # The committed stubs are under 100 bytes either way.
-          case "${{ matrix.target }}" in
-            *windows*)
-              if [ "$SIZE" -lt 10000 ]; then
-                echo "$BIN is still a placeholder ($SIZE bytes)."
-                exit 1
-              fi
-              DLL="src-tauri/binaries/gsdll64.dll"
-              if [ ! -f "$DLL" ]; then
-                echo "$DLL is missing. gswin64c.exe is only a wrapper around it"
-                echo "and cannot start without it. Refusing to release."
-                exit 1
-              fi
-              DLL_SIZE=$(wc -c < "$DLL")
-              if [ "$DLL_SIZE" -lt 1000000 ]; then
-                echo "$DLL is not a real Ghostscript engine ($DLL_SIZE bytes)."
-                exit 1
-              fi
-              echo "$BIN: $SIZE bytes"
-              echo "$DLL: $DLL_SIZE bytes"
-              ;;
-            *)
-              if [ "$SIZE" -lt 1000000 ]; then
-                echo "$BIN is still a placeholder ($SIZE bytes)."
-                echo "Shipping this means PDF compression silently requires the user"
-                echo "to install Ghostscript themselves. Refusing to release."
-                exit 1
-              fi
-              echo "$BIN: $SIZE bytes"
-              ;;
-          esac
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Papercut ${{ github.ref_name }}'
+          releaseName: 'PaperOtter ${{ github.ref_name }}'
           releaseBody: |
-            ## Install Papercut
+            ## Install PaperOtter
 
             Click the link for your platform to download. Then open the file to install.
 
             | Platform | Installer | Download |
             |----------|-----------|----------|
-            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_aarch64.dmg) |
-            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64.dmg) |
-            | **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64-setup.exe) |
-            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
-            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
+            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_aarch64.dmg) |
+            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_x64.dmg) |
+            | **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_x64-setup.exe) |
+            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_amd64.AppImage) |
+            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_amd64.deb) |
 
             Everything you need is included: just install and go.
 
-            > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
+            > **Mac users:** If you see _"PaperOtter is damaged and can't be opened"_, open **Terminal** and run:
             > ```
-            > xattr -cr /Applications/Papercut.app
+            > xattr -cr /Applications/PaperOtter.app
             > ```
-            > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
+            > Then open PaperOtter normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
 
             > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it is safe to use.
 
@@ -262,16 +182,16 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            asset: "Papercut_{version}_aarch64.dmg"
+            asset: "PaperOtter_{version}_aarch64.dmg"
             type: dmg
           - platform: macos-14
-            asset: "Papercut_{version}_x64.dmg"
+            asset: "PaperOtter_{version}_x64.dmg"
             type: dmg
           - platform: windows-latest
-            asset: "Papercut_{version}_x64-setup.exe"
+            asset: "PaperOtter_{version}_x64-setup.exe"
             type: nsis
           - platform: ubuntu-22.04
-            asset: "Papercut_{version}_amd64.AppImage"
+            asset: "PaperOtter_{version}_amd64.AppImage"
             type: appimage
 
     runs-on: ${{ matrix.platform }}
@@ -309,27 +229,27 @@ jobs:
       - name: "macOS: Mount DMG, verify app launches, check version"
         if: matrix.type == 'dmg'
         run: |
-          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
-          test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
+          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/PaperOtter
+          test -d "/Volumes/PaperOtter/PaperOtter.app" || { echo "FAIL: PaperOtter.app not found in DMG"; exit 1; }
 
           # A broken signature is worse than no signature: macOS reports
-          # "Papercut is damaged and can't be opened" and tells the user to move
+          # "PaperOtter is damaged and can't be opened" and tells the user to move
           # it to the Trash, which reads as malware rather than as an unsigned
           # indie app. Every release up to v1.0.0-beta.9 shipped that way -- the
           # arm64 linker ad-hoc signs the executable, but nothing sealed the
           # bundle, so `codesign --verify` failed on the artifact users
           # downloaded. Checked here so it cannot come back unnoticed.
-          if ! codesign --verify --deep --strict --verbose=2 "/Volumes/Papercut/Papercut.app"; then
+          if ! codesign --verify --deep --strict --verbose=2 "/Volumes/PaperOtter/PaperOtter.app"; then
             echo "FAIL: the app bundle's signature does not verify"
-            codesign -dvv "/Volumes/Papercut/Papercut.app" || true
-            hdiutil detach /Volumes/Papercut || true
+            codesign -dvv "/Volumes/PaperOtter/PaperOtter.app" || true
+            hdiutil detach /Volumes/PaperOtter || true
             exit 1
           fi
           echo "PASS: bundle signature verifies, sidecar included"
 
-          BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
+          BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/tauri-app"
           if [ ! -x "$BINARY" ]; then
-            BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
+            BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/PaperOtter"
           fi
           if [ ! -x "$BINARY" ]; then
             echo "FAIL: No app binary found in Contents/MacOS/"
@@ -341,27 +261,27 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut running with PID: $APP_PID"
+            echo "PASS: PaperOtter running with PID: $APP_PID"
           else
-            echo "FAIL: Papercut exited prematurely"
+            echo "FAIL: PaperOtter exited prematurely"
             exit 1
           fi
 
           # Version assertion: Info.plist CFBundleShortVersionString must match tag
-          PLIST="/Volumes/Papercut/Papercut.app/Contents/Info.plist"
+          PLIST="/Volumes/PaperOtter/PaperOtter.app/Contents/Info.plist"
           BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$PLIST" 2>/dev/null || echo "")
           EXPECTED_VERSION="${{ steps.asset.outputs.version }}"
           if [ "$BUNDLE_VERSION" != "$EXPECTED_VERSION" ]; then
             echo "FAIL: Info.plist CFBundleShortVersionString=\"$BUNDLE_VERSION\" expected \"$EXPECTED_VERSION\""
             kill "$APP_PID" 2>/dev/null || true
-            hdiutil detach /Volumes/Papercut
+            hdiutil detach /Volumes/PaperOtter
             exit 1
           fi
           echo "PASS: Version in bundle: $BUNDLE_VERSION ✓"
 
           kill "$APP_PID" 2>/dev/null || true
           sleep 2
-          hdiutil detach /Volumes/Papercut
+          hdiutil detach /Volumes/PaperOtter
           echo "=== macOS smoke test PASSED ==="
 
       # ── Windows (NSIS .exe) ──
@@ -373,9 +293,9 @@ jobs:
           Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
 
           # Tauri's Cargo package name is "tauri-app"; the NSIS installer may use
-          # either the productName ("Papercut") or the Cargo binary name ("tauri-app")
+          # either the productName ("PaperOtter") or the Cargo binary name ("tauri-app")
           # for the .exe. Search for both in all plausible install locations.
-          $candidateNames = @("Papercut.exe", "tauri-app.exe")
+          $candidateNames = @("PaperOtter.exe", "tauri-app.exe")
           $searchRoots = @(
             $env:LOCALAPPDATA,
             $env:ProgramFiles,
@@ -394,7 +314,7 @@ jobs:
           }
 
           if (-Not $binary) {
-            Write-Host "FAIL: No Papercut binary found after install."
+            Write-Host "FAIL: No PaperOtter binary found after install."
             Write-Host "--- Listing $env:LOCALAPPDATA (depth 4) ---"
             Get-ChildItem -Path $env:LOCALAPPDATA -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
             exit 1
@@ -405,9 +325,9 @@ jobs:
           Start-Sleep -Seconds 8
 
           if (-Not $proc.HasExited) {
-            Write-Host "PASS: Papercut is running (PID: $($proc.Id))"
+            Write-Host "PASS: PaperOtter is running (PID: $($proc.Id))"
           } else {
-            Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
+            Write-Host "FAIL: PaperOtter exited immediately with code $($proc.ExitCode)"
             exit 1
           }
 
@@ -426,136 +346,6 @@ jobs:
           Stop-Process -Id $proc.Id -Force
           Write-Host "=== Windows smoke test PASSED ==="
 
-      # ── REL-01: ask the installed app whether Ghostscript actually resolves ──
-      #
-      # This is the check the Pre-Release Gate asked a person with a Windows
-      # machine to make by hand. It never happened, because there is no Windows
-      # machine. The app can answer for itself: --selftest resolves
-      # resource_dir() exactly as the app does, runs the bundled Ghostscript
-      # through the same sidecar and the same with_windows_dll_path wrapper, and
-      # makes it write a real PDF with pdfwrite — the device every compress in
-      # the app depends on.
-      #
-      # It runs here rather than in the build job on purpose: there the exe and
-      # gsdll64.dll sit in one folder and Ghostscript runs whatever happens. Only
-      # the installed layout separates them, and only the installed layout can
-      # fail the way this is guarding against.
-      #
-      # What it still does not cover: the webview. If Ghostscript resolves but
-      # the UI never reaches it, this passes and the app is broken. Smaller and
-      # different risk; worth stating rather than papering over.
-      - name: Windows — self-test the installed app (REL-01)
-        if: matrix.type == 'nsis'
-        shell: pwsh
-        run: |
-          $binary = $null
-          # Tauri names the executable after the Cargo package ("tauri-app"),
-          # not productName: v1.0.0-beta.9 installed
-          # %LOCALAPPDATA%\Papercut\tauri-app.exe. Searching for Papercut.exe
-          # alone finds nothing, which is why the step above carries both names.
-          $roots = @("$env:LOCALAPPDATA\Papercut", "$env:ProgramFiles\Papercut")
-          $candidateNames = @("Papercut.exe", "tauri-app.exe")
-          foreach ($root in $roots) {
-            foreach ($name in $candidateNames) {
-              $found = Get-ChildItem -Path $root -Recurse -Filter $name -ErrorAction SilentlyContinue -Depth 5 | Select-Object -First 1
-              if ($found) { $binary = $found.FullName; break }
-            }
-            if ($binary) { break }
-          }
-          if (-Not $binary) { Write-Host "FAIL: no installed Papercut.exe to self-test"; exit 1 }
-
-          Write-Host "Running: $binary --selftest"
-          $p = Start-Process -FilePath $binary -ArgumentList "--selftest" -PassThru -Wait -NoNewWindow
-          Write-Host "self-test exit code: $($p.ExitCode)"
-          if ($p.ExitCode -ne 0) {
-            Write-Host "FAIL: the installed app cannot run its bundled Ghostscript."
-            exit 1
-          }
-          Write-Host "PASS: REL-01 — bundled Ghostscript resolves and writes a PDF in the installed layout"
-
-      # ── Windows: the bundled Ghostscript must actually load and compress ──
-      #
-      # This is the check the build job cannot make. There, the exe and gsdll64.dll
-      # sit in the same folder, so gs runs whatever happens. In the *installed*
-      # layout the sidecar goes next to Papercut.exe while the DLL goes under
-      # resources\, and gswin64c.exe is only a thin wrapper around that DLL — so
-      # the interesting failure only exists after installation.
-      #
-      # Runs against the installed tree, replicating what with_windows_dll_path
-      # does in lib.rs: prepend the resource directory to the child's PATH.
-      - name: "Windows: bundled Ghostscript loads and compresses"
-        if: matrix.type == 'nsis'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $searchRoots = @($env:LOCALAPPDATA, $env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:APPDATA) | Where-Object { $_ }
-
-          $gs = $null; $dll = $null
-          foreach ($root in $searchRoots) {
-            if (-Not $gs)  { $gs  = (Get-ChildItem -Path $root -Recurse -Filter 'papercut-gs.exe' -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
-            if (-Not $dll) { $dll = (Get-ChildItem -Path $root -Recurse -Filter 'gsdll64.dll'  -ErrorAction SilentlyContinue -Depth 6 | Select-Object -First 1).FullName }
-          }
-
-          if (-Not $gs) {
-            Write-Host "FAIL: no Ghostscript sidecar in the installed app."
-            Write-Host "PDF compression would silently require the user to install Ghostscript."
-            exit 1
-          }
-          if (-Not $dll) {
-            Write-Host "FAIL: gsdll64.dll was not bundled. gs.exe is only a wrapper around it"
-            Write-Host "and cannot start without it."
-            exit 1
-          }
-          Write-Host "sidecar: $gs"
-          Write-Host "dll:     $dll"
-
-          # Exactly what with_windows_dll_path does before spawning.
-          $env:PATH = "$([System.IO.Path]::GetDirectoryName($dll));$env:PATH"
-
-          & $gs --version
-          if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: bundled Ghostscript did not start."; exit 1 }
-
-          # And that it does real work, not just print a version. This job does
-          # not check out the repo, so Ghostscript generates its own input: a
-          # PostScript page through the pdfwrite device, which is the same device
-          # PDF compression uses.
-          # Built as an array rather than a here-string: a here-string would put
-          # "%!PS" at column 0, and YAML reads a leading % as a directive.
-          $ps = @(
-            '%!PS',
-            '/Helvetica findfont 24 scalefont setfont',
-            '72 720 moveto (Papercut Ghostscript smoke test) show',
-            'showpage'
-          )
-          Set-Content -Path smoke.ps -Value $ps -Encoding ascii
-
-          # Every argument quoted, built as an array, and both paths absolute.
-          # Passed bare, -sOutputFile=out.pdf reached Ghostscript split, so it
-          # took ".pdf" for an input file and died with
-          # "/undefinedfilename in (.pdf)" on v1.0.0-beta.13 -- while the same
-          # binary had just printed its version and the app's own self-test had
-          # produced a PDF through it. A harness quoting bug, not a product one,
-          # but it fails the release either way.
-          $inPs   = Join-Path (Get-Location) 'smoke.ps'
-          $outPdf = Join-Path (Get-Location) 'out.pdf'
-          $gsArgs = @(
-            '-q', '-dNOPAUSE', '-dBATCH', '-dSAFER', '-dPDFSETTINGS=/screen',
-            '-sDEVICE=pdfwrite', "-sOutputFile=$outPdf", $inPs
-          )
-          & $gs @gsArgs
-          if ($LASTEXITCODE -ne 0 -or -Not (Test-Path $outPdf)) {
-            Write-Host "FAIL: bundled Ghostscript could not produce a PDF."
-            exit 1
-          }
-          $header = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($outPdf)[0..4])
-          if ($header -ne "%PDF-") {
-            Write-Host "FAIL: output is not a PDF (header: '$header')"
-            exit 1
-          }
-          Write-Host "PASS: bundled Ghostscript produced a valid PDF ($((Get-Item $outPdf).Length) bytes)"
-          Write-Host "=== Windows Ghostscript smoke test PASSED ==="
-
-      # ── Linux (AppImage) ──
       - name: "Linux: Install display dependencies"
         if: matrix.type == 'appimage'
         run: |
@@ -578,9 +368,9 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
+            echo "PASS: PaperOtter AppImage is running (PID: $APP_PID)"
           else
-            echo "FAIL: Papercut AppImage exited prematurely"
+            echo "FAIL: PaperOtter AppImage exited prematurely"
             kill "$XVFB_PID" 2>/dev/null || true
             exit 1
           fi

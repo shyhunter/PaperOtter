@@ -7,6 +7,7 @@
  * on top of them means anything.
  */
 import { test, expect } from '@playwright/test';
+import { TOOL_REGISTRY } from '@/types/tools';
 import { bootApp, openTool, openToolWithFile, tauriCalls, expectOnScreen, withFile } from './support/app';
 
 test('[APP-BOOT-01] the app boots past the splash to a dashboard of enabled tools', async ({ page }) => {
@@ -20,7 +21,14 @@ test('[APP-BOOT-01] the app boots past the splash to a dashboard of enabled tool
   const toolIds = await page.evaluate(() => [
     ...new Set([...document.querySelectorAll('[data-tool-id]')].map((e) => e.getAttribute('data-tool-id'))),
   ]);
-  expect(toolIds.length, 'tools offered on the dashboard').toBeGreaterThanOrEqual(21);
+  // Counted from the registry rather than written down. This said "at least 21"
+  // until three tools were removed, at which point the number was simply wrong —
+  // and a hardcoded count is wrong in the other direction too, passing quietly
+  // when a tool goes missing. The harness pins macOS, so nothing is hidden by
+  // the platform gate and every declared tool should be on screen.
+  expect(toolIds.length, 'tools offered on the dashboard').toBe(
+    Object.keys(TOOL_REGISTRY).length,
+  );
 
   // With every dependency present, nothing should be greyed out. This is the
   // assertion that caught the harness running the app in a degraded state.

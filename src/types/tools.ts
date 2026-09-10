@@ -10,8 +10,6 @@ export type ToolId =
   | 'rotate-pdf'
   | 'pdf-to-jpg'
   | 'jpg-to-pdf'
-  | 'protect-pdf'
-  | 'unlock-pdf'
   | 'rotate-image'
   | 'convert-image'
   | 'page-numbers'
@@ -20,7 +18,6 @@ export type ToolId =
   | 'organize-pdf'
   | 'sign-pdf'
   | 'redact-pdf'
-  | 'pdfa-convert'
   | 'repair-pdf'
   | 'ocr-pdf'
   | 'edit-pdf'
@@ -35,7 +32,7 @@ export interface ToolStep {
   description: TranslationKey;
 }
 
-export type DependencyName = 'ghostscript' | 'calibre' | 'libreoffice';
+export type DependencyName = 'calibre' | 'libreoffice';
 
 export interface ToolDefinition {
   id: ToolId;
@@ -72,7 +69,9 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'FileDown',
     acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
+    // Nothing external any more: compression happens in-process, with the
+    // `image` crate for the pictures and qpdf for the structure. This tool used
+    // to be greyed out on a machine whose Ghostscript would not start.
     steps: [
       { label: 'step.pick', description: 'tool.compressPdf.step1' },
       { label: 'step.configure', description: 'tool.compressPdf.step2' },
@@ -159,34 +158,6 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'step.pickImages', description: 'tool.jpgToPdf.step1' },
       { label: 'step.configure', description: 'tool.jpgToPdf.step2' },
       { label: 'step.save', description: 'tool.jpgToPdf.step3' },
-    ],
-  },
-  'protect-pdf': {
-    id: 'protect-pdf',
-    name: 'tool.protectPdf.name',
-    description: 'tool.protectPdf.desc',
-    category: 'pdf',
-    icon: 'Lock',
-    acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
-    steps: [
-      { label: 'step.pick', description: 'tool.protectPdf.step1' },
-      { label: 'step.password', description: 'tool.protectPdf.step2' },
-      { label: 'step.save', description: 'tool.protectPdf.step3' },
-    ],
-  },
-  'unlock-pdf': {
-    id: 'unlock-pdf',
-    name: 'tool.unlockPdf.name',
-    description: 'tool.unlockPdf.desc',
-    category: 'pdf',
-    icon: 'Unlock',
-    acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
-    steps: [
-      { label: 'step.pick', description: 'tool.unlockPdf.step1' },
-      { label: 'step.password', description: 'tool.unlockPdf.step2' },
-      { label: 'step.save', description: 'tool.unlockPdf.step3' },
     ],
   },
   'rotate-image': {
@@ -294,20 +265,6 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
       { label: 'step.save', description: 'tool.pdfaConvert.step1' },
     ],
   },
-  'pdfa-convert': {
-    id: 'pdfa-convert',
-    name: 'tool.pdfaConvert.name',
-    description: 'tool.pdfaConvert.desc',
-    category: 'pdf',
-    icon: 'Archive',
-    acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
-    steps: [
-      { label: 'step.selectPdf', description: 'tool.pdfaConvert.step2' },
-      { label: 'step.configure', description: 'tool.pdfaConvert.step2' },
-      { label: 'step.save', description: 'tool.repairPdf.step1' },
-    ],
-  },
   'repair-pdf': {
     id: 'repair-pdf',
     name: 'tool.repairPdf.name',
@@ -315,7 +272,10 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'Wrench',
     acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
+    // No requiresDependency any more: repair goes through qpdf, which is linked
+    // into the binary rather than shipped alongside it. The tool used to be
+    // greyed out on a machine without Ghostscript; now there is nothing to be
+    // missing. Compress is the only tool that still needs it.
     steps: [
       { label: 'step.selectPdf', description: 'tool.repairPdf.step2' },
       { label: 'step.repair', description: 'tool.editPdf.step1' },
@@ -389,8 +349,5 @@ export const EDITOR_SIDEBAR_TOOLS: ToolId[] = [
   'sign-pdf',
   'redact-pdf',
   'ocr-pdf',
-  'pdfa-convert',
   'repair-pdf',
-  'protect-pdf',
-  'unlock-pdf',
 ];

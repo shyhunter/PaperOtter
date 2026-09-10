@@ -219,12 +219,12 @@ export const tr: Dictionary = {
   'privacy.title': 'Gizliliğiniz',
   'privacy.headline': 'Dosyalarınız cihazınızdan hiç çıkmaz.',
   'privacy.body':
-    'Papercut her şeyi bilgisayarınızda yerel olarak işler. Yükleme yok, bulut depolama yok, izleme yok.',
+    'PaperOtter her şeyi bilgisayarınızda yerel olarak işler. Yükleme yok, bulut depolama yok, izleme yok.',
   'privacy.zeroData':
     'Hiçbir veri toplamıyoruz: analiz yok, telemetri yok, çökme raporu yok.',
   'privacy.technicalDetails': 'Teknik ayrıntılar',
   'privacy.detailLocal':
-    'Tüm dosya işlemleri Rust, Ghostscript, LibreOffice ve Calibre ile yerel olarak çalışır',
+    'Tüm dosya işlemleri Rust, qpdf, LibreOffice ve Calibre ile yerel olarak çalışır',
   'privacy.detailCsp': 'Content Security Policy, arayüzden tüm dış bağlantıları engeller',
   'privacy.detailNoSdk': 'Hiçbir analiz SDK’sı veya izleme kodu içermez',
   'privacy.detailPasswords':
@@ -234,7 +234,7 @@ export const tr: Dictionary = {
   'privacy.detailSweep': 'Çökme sonrası kalan geçici dosyalar uygulama açılışında temizlenir',
   'privacyFooter.processedLocallyPrivacy': 'Yerel olarak işlendi · Gizlilik',
 
-  'chrome.about': 'Papercut hakkında',
+  'chrome.about': 'PaperOtter hakkında',
   'chrome.openAnother': 'Başka bir dosya aç',
   'chrome.language': 'Dil',
 
@@ -335,7 +335,7 @@ export const tr: Dictionary = {
   'protectPdf.addPasswordEncryptionToA': 'Bir PDF’i parolayla şifreleyin.',
   'protectPdf.confirmPassword': 'Parolayı doğrula',
   'protectPdf.encrypting': 'Şifreleniyor…', 'protectPdf.enterPassword': 'Parola girin',
-  'protectPdf.acknowledgePassword': 'Papercut’ın bu parolayı saklamadığını ve kurtaramayacağını anlıyorum. Parolayı kaybedersem bu dosya bir daha açılamaz.',
+  'protectPdf.acknowledgePassword': 'PaperOtter’ın bu parolayı saklamadığını ve kurtaramayacağını anlıyorum. Parolayı kaybedersem bu dosya bir daha açılamaz.',
   'protectPdf.savedProtectedCopy': 'Korumalı kopya kaydedildi. Burada açık olan belge değişmedi.',
   'protectPdf.saveProtectedCopy': 'Korumalı kopyayı kaydet…',
   'protectPdf.password': 'Parola', 'protectPdf.passwordsDoNotMatch': 'Parolalar eşleşmiyor.',
@@ -503,10 +503,6 @@ export const tr: Dictionary = {
   'batch.couldNotBeProcessed': '{files} işlenemedi',
   'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor: {name}',
   'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı: bir küme tek türden olmalıdır.',
-  'deps.ghostscriptWindows':
-    'PDF sıkıştırmak için Ghostscript gerekir. ghostscript.com/releases/gsdnld.html adresinden indirin ve PATH’te olduğundan emin olun.',
-  'deps.ghostscriptLinux':
-    'PDF sıkıştırmak için Ghostscript gerekir. Paket yöneticinizle kurun, örn. sudo apt install ghostscript',
   'deps.calibre': 'E-kitap desteği için Calibre kurun: calibre-ebook.com/download',
   'deps.libreoffice': 'Belge dönüştürme için LibreOffice kurun: libreoffice.org/download',
   'filter.jpegImage': 'JPEG görüntüsü', 'filter.pngImage': 'PNG görüntüsü', 'filter.webpImage': 'WebP görüntüsü',
@@ -540,7 +536,7 @@ export const tr: Dictionary = {
   'pdfEditor.allMarginsMm': 'Tüm kenar boşlukları (mm)', 'pdfEditor.allSides': 'Tüm kenarlar',
   'pdfEditor.applied': 'Uygulandı', 'pdfEditor.applyToAllPages': 'Tüm sayfalara uygula',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Bozuk veya hatalı PDF yapısını Ghostscript ile onarmayı dener.',
+    'Bozuk veya hatalı PDF yapısını qpdf ile onarmayı dener.',
   'pdfEditor.bottomCenter': 'Alt orta', 'pdfEditor.bottomLeft': 'Alt sol', 'pdfEditor.bottomRight': 'Alt sağ',
   'pdfEditor.clickAnywhereOnThePdf': 'Metin bloğu yerleştirmek için PDF’in herhangi bir yerine tıklayın.',
   'pdfEditor.compareFullSize': 'Tam boyutta karşılaştır', 'pdfEditor.compressed': 'Sıkıştırıldı',
@@ -628,7 +624,7 @@ export const tr: Dictionary = {
   'app.pleaseTryAgain': 'Lütfen yeniden deneyin.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tüm işlemler yerel olarak yapılır. Hiçbir veri bilgisayarınızdan çıkmaz.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut dokuz dil konuşur. İngilizce dahil hepsi yapay zekâ desteğiyle hazırlanmıştır ve hiçbiri profesyonel bir çevirmen tarafından denetlenmemiştir. Bir şey tuhaf geliyor ya da yanlış anlatıyorsa lütfen bildirin.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter dokuz dil konuşur. İngilizce dahil hepsi yapay zekâ desteğiyle hazırlanmıştır ve hiçbiri profesyonel bir çevirmen tarafından denetlenmemiştir. Bir şey tuhaf geliyor ya da yanlış anlatıyorsa lütfen bildirin.',
   'aboutDialog.roadmap': 'Yol haritası',
   'aboutDialog.builtWith': 'Şununla geliştirildi', 'aboutDialog.license': 'Lisans',
                                                    'aboutDialog.includes': 'İçerir',
@@ -641,8 +637,8 @@ export const tr: Dictionary = {
     'Beklenmeyen bir hata oluştu. Düzeltmemize yardımcı olmak için bir hata raporu gönderebilirsiniz.',
   'crashReporter.sendCrashReport': 'Hata raporu gönder', 'crashReporter.somethingWentWrong': 'Bir şeyler ters gitti',
   'crashReporter.theReportOpensAsA':
-    'Rapor bir e-posta taslağı olarak açılır. Siz göndermeden hiçbir şey gönderilmez.',
-  'crashReporter.thisWillOpenInYour': 'Bu, e-posta uygulamanızda açılacak:',
+    'Rapor GitHub\'da bir tartışma taslağı olarak açılır. Siz göndermeden hiçbir şey yayınlanmaz.',
+  'crashReporter.thisWillOpenInYour': 'Bu, tarayıcınızda açılacak:',
   'crashReporter.previewWhatWillBeSent': 'Gönderilecekleri önizle',
   'crashReporter.hideReportPreview': 'Rapor önizlemesini gizle',
   'crashReporter.hideErrorDetails': 'Hata ayrıntılarını gizle',
@@ -668,7 +664,7 @@ export const tr: Dictionary = {
   'landingCard.unsupportedFile': 'Desteklenmeyen dosya', 'landingCard.dropFileHere': 'Dosyayı buraya bırakın',
   'landingCard.dropToOpen': 'Açmak için bırakın',
   'recentDirsButton.recent': 'Son kullanılanlar', 'recentDirsButton.recentFolders': 'Son kullanılan klasörler',
-  'recentDirs.recentFolders': 'Son kullanılan klasörler', 'splashScreen.papercutLogo': 'Papercut logosu',
+  'recentDirs.recentFolders': 'Son kullanılan klasörler', 'splashScreen.papercutLogo': 'PaperOtter logosu',
   'updateChecker.dismissUpdateBanner': 'Güncelleme bildirimini kapat', 'updateChecker.download': 'İndir',
   'themeToggle.system': 'Sistem', 'themeToggle.light': 'Açık',
   'docModel.thisDocumentHasNoExtractable':
@@ -722,7 +718,7 @@ export const tr: Dictionary = {
   'convertConfigStep.formatNamed': '{format} biçimi',
   'convertConfigStep.zipOneFilePerHeading': '.zip, her başlık için bir dosya',
   'convertImageFlow.convertToFormat': '{format} biçimine dönüştür',
-  'crashReporter.noDataSentAutomatically': 'Hiçbir veri kendiliğinden gönderilmez. Rapor, e-posta uygulamanızda taslak olarak açılır: göndermeye siz karar verirsiniz.',
+  'crashReporter.noDataSentAutomatically': 'Hiçbir veri otomatik olarak gönderilmez. Rapor GitHub\'da bir tartışma taslağı olarak açılır: yayınlayıp yayınlamayacağınıza siz karar verirsiniz.',
   'cropPdfFlow.pageSizeMm': 'Sayfa boyutu: {width} × {height} mm',
   'dashboard.noToolsMatch': '“{query}” ile eşleşen araç yok',
   'editorContext.failedToAddPages': 'Sayfalar eklenemedi: {error}',
@@ -765,7 +761,7 @@ export const tr: Dictionary = {
   'redactPdf.matchesFound': '{matches} bulundu',
   'redactPdf.pageCount': 'Sayfa {page}: {count}',
   'repairPdf.originalToRepaired': 'Özgün: {original} → Onarılmış: {repaired}',
-  'repairPdf.repairExplanation': 'Onarım, bozuk ya da hatalı biçimlendirilmiş PDF dosyalarındaki yapısal sorunları Ghostscript ile yeniden işleyerek gidermeye çalışır. Bozuk çapraz başvurular, eksik nesneler ve diğer yapısal sorunlar böyle çözülebilir.',
+  'repairPdf.repairExplanation': 'Onarım, bozuk ya da hatalı biçimlendirilmiş PDF dosyalarındaki yapısal sorunları qpdf ile yeniden işleyerek gidermeye çalışır. Bozuk çapraz başvurular, eksik nesneler ve diğer yapısal sorunlar böyle çözülebilir.',
   'rotate.nPagesRotated': '{pages} döndürüldü.',
   'rotate.selectPagesThenRotate': 'Sayfaları seçin, sonra sola ya da sağa döndürün.',
   'rotateImageFlow.currentDegreesClockwise': 'Şu an: saat yönünde {degrees} derece',
@@ -782,7 +778,7 @@ export const tr: Dictionary = {
   'themeToggle.dark': 'Koyu',
   'themeToggle.themeNamed': 'Tema: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'kaydedilmemiş değişiklikler içeriyor. Kaydetmek özgün dosyanın yerine geçer.',
-  'updateChecker.versionAvailable': 'Papercut v{version} yayımlandı.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} yayımlandı.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} başarıyla uygulandı',
   'toolSidebarPanel.canCompressToAbout': 'En iyi durumda yaklaşık {size} boyutuna sıkıştırılabilir.',
   'toolSidebarPanel.dragOnThePageToCover': 'Bir yeri kapatmak için sayfa üzerinde sürükleyin. Uygulandığında bu sayfalar tek bir görüntüye düzleştirilir; altta kalan içerik yalnızca gizlenmez, dosyadan tamamen kaldırılır.',
@@ -818,7 +814,7 @@ export const tr: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Bu dosyayı yine de işlemek için aşağıdan sayfa yeniden boyutlandırmayı açın.',
   'merge.mergeAndSave': 'Birleştir ve kaydet',
   'pdfEditor.untitledPdf': 'Adsız.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu: Ghostscript bunları daha fazla sıkıştıramaz.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu: PaperOtter bunları daha fazla sıkıştıramaz.',
   'split.split': 'Böl',
   'toolSidebarPanel.clickToPlaceMode': 'Tıkla-yerleştir kipi',
   'unsavedChangesDialog.dontSave': 'Kaydetme',

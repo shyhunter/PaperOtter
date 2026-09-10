@@ -94,3 +94,10 @@ docs/superpowers/
 
 # Translation export: regenerate with scripts/export-translations.mjs.
 translations.csv
+
+# Logo source art — not shared
+brand/source/
+
+# Logo/design preview pages — throwaway, and mark-preview inlines the SVG 16 times
+brand/*-preview.html
+docs/quality/neo-brutalist-preview.html

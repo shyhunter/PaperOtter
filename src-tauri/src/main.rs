@@ -13,12 +13,6 @@ fn main() {
         }
     });
 
-    // `--selftest` proves the installed layout can actually run Ghostscript, and
-    // exits. It exists so REL-01 can be answered by the CI Windows runner, which
-    // already installs the real artifact, instead of requiring a Windows machine
-    // nobody has. Checked here rather than treated as a file path above: it is
-    // not a PDF, so the filter would drop it silently.
-    let selftest = args.iter().any(|a| a == "--selftest");
 
-    tauri_app_lib::run_with_file(open_file, selftest)
+    tauri_app_lib::run_with_file(open_file)
 }

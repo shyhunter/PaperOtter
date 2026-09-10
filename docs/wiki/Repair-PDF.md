@@ -10,14 +10,28 @@
 
 ## How repair works
 
-Repair runs the file through [Ghostscript](https://ghostscript.com/)'s standard PDF re-writer (`pdfwrite`), the same core engine used for compression, but here the point isn't shrinking the file, it's that re-serializing a PDF from scratch fixes many structural problems along the way (broken cross-reference tables, malformed object streams, and similar low-level corruption).
+Repair uses [qpdf](https://github.com/qpdf/qpdf), which rebuilds a document's
+**cross-reference table** by scanning the file for the objects it actually
+contains, instead of trusting the offsets the file claims. That is what fixes the
+commonest kinds of damage: a broken `startxref` pointer, a missing or truncated
+xref table, object offsets that no longer line up, or junk prepended to the file
+so it no longer starts where it says it does.
 
-Papercut also handles **partial success**: if Ghostscript exits with a non-zero (error) status but still managed to write a non-empty output file, that output is returned rather than treated as a hard failure: a partially-repaired file is usually far more useful than nothing. Only a genuine empty/no-output result counts as a real failure.
+Your pages come back as they were. qpdf preserves the existing page content
+rather than re-rendering it, so text stays selectable, images are not
+re-compressed, and page sizes are unchanged.
 
-## Why repair might not fully fix a file
+## Why repair might not fix a file
 
-Repair works well for structural corruption Ghostscript can re-parse and rewrite: it can't recover data that's fundamentally missing or unreadable (e.g. a file truncated mid-download, with entire objects gone). If a repaired file still has visible issues, that's usually a sign the damage was in content Ghostscript couldn't reconstruct, not something a second repair pass would fix.
+Repair recovers **structure**, not **content**. If parts of the file are simply
+gone — most often a download or copy that stopped partway, taking whole objects
+with it — there is nothing left to rebuild them from, and Papercut will say so
+rather than hand you a file that looks repaired and is not.
+
+When that happens, the only real fix is another copy of the document: download or
+export it again from wherever it came from. A second repair pass will not help,
+because the missing bytes are not recoverable from what remains.
 
 ---
 
-See also: [Compress PDF](Compress-PDF) · [PDF-A Convert](PDF-A-Convert)
+See also: [Compress PDF](Compress-PDF)

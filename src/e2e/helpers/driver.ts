@@ -423,7 +423,7 @@ export function ghostscriptPids(): number[] {
   // not silently return an empty list — and therefore a passing test — on the
   // platform whose build shape it did not anticipate.
   const candidates = [
-    'src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/gs',
+    'src-tauri/target/debug/bundle/macos/PaperOtter.app/Contents/MacOS/gs',
     'src-tauri/target/debug/gs',
   ].map((rel) => join(process.cwd(), rel));
 

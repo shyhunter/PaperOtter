@@ -301,7 +301,7 @@ export function ConfigureStep({
   return (
     <div data-testid="configure-step" className="flex flex-1 flex-col min-h-0">
       <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
-      <div className="w-full max-w-[clamp(24rem,45vw,36rem)] space-y-4 my-auto">
+      <div className="w-full max-w-[clamp(28rem,80vw,58rem)] space-y-4 mx-auto py-2">
 
         {/* File name header */}
         <div className="text-center">
@@ -387,7 +387,7 @@ export function ConfigureStep({
                     className={cn(
                       'h-full transition-colors',
                       zone.quality === activeZone.quality
-                        ? 'bg-primary/30'
+                        ? 'bg-[var(--primary)]'
                         : 'bg-muted',
                     )}
                     style={{ width: `${zone.max - zone.min}%` }}
@@ -463,7 +463,7 @@ export function ConfigureStep({
                       data-testid="custom-target-unit"
                       onClick={() => setCustomUnit((u) => u === 'MB' ? 'KB' : 'MB')}
                       disabled={isProcessing || isNonCompressible}
-                      className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/80 disabled:opacity-50 min-w-[3.5rem]"
+                      className="border-2 border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 min-w-[3.5rem]"
                     >
                       {customUnit}
                     </button>
@@ -675,7 +675,7 @@ export function ConfigureStep({
       </div>
 
       {/* Sticky bottom action bar */}
-      <div className="border-t bg-background px-6 py-3 flex items-center gap-3 flex-none">
+      <div className="border-t-[3px] bg-background px-6 py-3 flex items-center gap-3 flex-none">
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
           {t('common.back')}
         </Button>
@@ -695,9 +695,11 @@ export function ConfigureStep({
           data-testid="generate-preview-btn"
           onClick={handleSubmit}
           disabled={isProcessing || isNonCompressible}
+          className="min-w-[clamp(12rem,26vw,20rem)] justify-center"
         >
           {isProcessing ? t('common.processing') : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
         </Button>
+        <div className="flex-1" />
       </div>
     </div>
   );

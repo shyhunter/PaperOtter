@@ -13,8 +13,9 @@
  * of them. The user is left on a working-looking screen with nothing on it and
  * no statement of what went wrong.
  *
- * Unlock is the one tool that must accept an encrypted file, and Protect
- * already refuses one (PP-10). Every other PDF tool has to say so up front.
+ * Every PDF tool has to say so up front. Unlock used to be the exception —
+ * accepting an encrypted file was its whole purpose — but Protect and Unlock
+ * were removed, so there is no longer a tool that legitimately takes one.
  */
 import { describe, it, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
@@ -69,8 +70,8 @@ beforeEach(() => {
 /**
  * Every PDF tool that cannot work on an encrypted document.
  *
- * Unlock is absent because accepting one is its whole purpose, and Protect
- * because PP-10 already covers it.
+ * Which is now every PDF tool there is: Unlock, the one that legitimately
+ * accepted an encrypted document, was removed along with Protect.
  */
 const TOOLS: Array<[string, RegExp]> = [
   ['Rotate PDF', /rotate pdf/i],
@@ -83,7 +84,6 @@ const TOOLS: Array<[string, RegExp]> = [
   ['Sign PDF', /sign pdf/i],
   ['Redact PDF', /redact pdf/i],
   ['Repair PDF', /repair pdf/i],
-  ['PDF/A Convert', /pdf\/a/i],
 ];
 
 describe('Suite 16 — a locked PDF is refused, not silently emptied', () => {

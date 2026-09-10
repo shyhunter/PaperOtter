@@ -46,7 +46,7 @@ import {
 import type { PdfQualityLevel, PdfPagePreset } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Lock, Unlock, Expand, RotateCcw, RotateCw } from 'lucide-react';
+import { Loader2, Check, AlertCircle, Expand, RotateCcw, RotateCw } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
@@ -138,7 +138,8 @@ function ApplyButton({
       <button
         onClick={onClick}
         disabled={disabled || isApplying}
-        className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+        data-framed
+        className="w-full py-1.5 px-3 text-xs font-medium bg-primary text-primary-foreground hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-1.5"
       >
         {isApplying ? (
           <>
@@ -1966,7 +1967,8 @@ function SignPanel() {
           type="button"
           onClick={handlePlace}
           disabled={!canPlace}
-          className="flex-1 py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          data-framed
+          className="flex-1 py-1.5 px-3 text-xs font-medium bg-primary text-primary-foreground hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {t('pdfEditor.placeOnPage')}
         </button>
@@ -2309,84 +2311,6 @@ function RedactPanel() {
   );
 }
 
-function PdfaPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
-  const [pdfaLevel, setPdfaLevel] = useState<string>('2');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [resultInfo, setResultInfo] = useState<{ originalSize: number; resultSize: number } | null>(null);
-  const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
-
-  const handleApply = useCallback(async () => {
-    setIsProcessing(true);
-    setResultInfo(null);
-    const originalSize = state.pdfBytes.byteLength;
-    try {
-      const { tempDir, join } = await import('@tauri-apps/api/path');
-      const tmpBase = await tempDir();
-      const ts = Date.now();
-      const tempInputPath = await join(tmpBase, `papercut_pdfa_${ts}.pdf`);
-
-      const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      await writeFile(tempInputPath, state.pdfBytes);
-
-      const bytes: Uint8Array = await invoke('convert_pdfa', {
-        sourcePath: tempInputPath,
-        pdfaLevel,
-      });
-
-      await remove(tempInputPath).catch(() => {});
-
-      const result = new Uint8Array(bytes);
-      setIsProcessing(false);
-      setResultInfo({ originalSize, resultSize: result.byteLength });
-      await apply(() => Promise.resolve(result));
-    } catch (err) {
-      setIsProcessing(false);
-      await apply(() => Promise.reject(err));
-    }
-  }, [state.pdfBytes, pdfaLevel, apply]);
-
-  return (
-    <div className="space-y-3">
-      <PanelHeader toolId="pdfa-convert" />
-
-      <div>
-        <label className="text-[10px] font-medium text-muted-foreground">{t('pdfEditor.pdfALevel')}</label>
-        <select
-          value={pdfaLevel}
-          onChange={(e) => setPdfaLevel(e.target.value)}
-          className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-          title={t('pdfEditor.pdfAConformanceLevel')}
-        >
-          <option value="1">{t('pdfEditor.pdfA1MostCompatible')}</option>
-          <option value="2">{t('pdfEditor.pdfA2Recommended')}</option>
-          <option value="3">{t('pdfEditor.pdfA3FullFeatures')}</option>
-        </select>
-      </div>
-
-      {resultInfo && (
-        <ToolResultFeedback
-          originalSize={resultInfo.originalSize}
-          resultSize={resultInfo.resultSize}
-          toolLabel={t('toolSidebarPanel.pdfaConversion', { level: pdfaLevel })}
-        />
-      )}
-
-      <ToolSidebarPreview originalBytes={state.pdfBytes} previewBytes={null} isProcessing={isProcessing} />
-
-      <ApplyButton
-        onClick={handleApply}
-        disabled={false}
-        isApplying={isApplying || isProcessing}
-        success={success}
-        error={error}
-      />
-    </div>
-  );
-}
-
-// ── Repair Panel ─────────────────────────────────────────────────────
-
 function RepairPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -2481,304 +2405,6 @@ function RepairPanel() {
 }
 
 // ── Protect Panel ────────────────────────────────────────────────────
-
-/**
- * Whether the open document carries an /Encrypt dictionary.
- *
- * Both password panels need the same answer, from opposite sides: Protect
- * cannot encrypt a document that already is, and Unlock has nothing to do for
- * one that is not. Neither could ask before, so Protect let a whole form be
- * filled in for a job that would fail, and Unlock offered a password prompt
- * with no correct answer.
- *
- * Null while the answer is still being worked out, so nothing is claimed before
- * it is known. A read that throws is reported as "not encrypted": the panels
- * use this to warn, and a warning invented from a failed read is worse than no
- * warning at all -- the tools themselves still refuse properly.
- */
-function useEncryptedDocument(pdfBytes: Uint8Array): boolean | null {
-  const [encrypted, setEncrypted] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setEncrypted(null);
-    import('@/lib/pdfEncryption')
-      .then(({ isPdfEncrypted }) => isPdfEncrypted(pdfBytes))
-      .then((result) => { if (!cancelled) setEncrypted(result); })
-      .catch(() => { if (!cancelled) setEncrypted(false); });
-    return () => { cancelled = true; };
-  }, [pdfBytes]);
-
-  return encrypted;
-}
-
-function ProtectPanel() {
-  const { state } = useEditorContext();
-  // A document that is already encrypted cannot be encrypted again: qpdf
-  // refuses with "User password is specified. Need an Owner password or both."
-  // and leaves a zero-byte file. The standalone tool checks this when the file
-  // is picked; here the document is already open, so the check belongs on the
-  // bytes in hand -- and the answer has to arrive before two passwords and an
-  // acknowledgement have been typed, not after.
-  const alreadyProtected = useEncryptedDocument(state.pdfBytes);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [savedTo, setSavedTo] = useState<string | null>(null);
-  const [protectError, setProtectError] = useState<string | null>(null);
-
-  const passwordsMatch = password.length > 0 && password === confirmPassword;
-
-  // Reported on a real build: the mismatch warning appeared on the first
-  // keystroke of the confirmation and only cleared on the last, so a correct
-  // entry was called wrong for the whole time it was being typed. Checked on
-  // the button now — which also means the button cannot be gated on the same
-  // condition, or the only control that could report the problem is disabled
-  // by it. Same fix as ProtectPdfFlow; these two panels are separate code.
-  const [showMismatch, setShowMismatch] = useState(false);
-  const canSubmit = password.length > 0 && confirmPassword.length > 0 && acknowledged;
-
-  // This panel writes a separate protected file rather than encrypting the
-  // document open in the editor, and that is not a stylistic choice.
-  //
-  // Saving in the editor runs `applyAllEdits`, which is pdf-lib
-  // `load({ ignoreEncryption: true })` followed by `save()`. pdf-lib cannot
-  // write encryption: it copies the encrypted streams verbatim and keeps the
-  // /Encrypt dictionary, producing a file that no reader can open — measured,
-  // Ghostscript reports "Couldn't initialise file" on the result even with the
-  // correct password. And the editor's Save writes to the path the document was
-  // opened from, with no dialog. So encrypting in place and saving destroyed the
-  // user's original outright: not "locked and the password forgotten", but gone.
-  //
-  // Writing a copy also avoids leaving the editor holding bytes it cannot
-  // render or hand to any other tool.
-  const handleProtect = useCallback(async () => {
-    if (!canSubmit) return;
-    if (!passwordsMatch) {
-      setShowMismatch(true);
-      return;
-    }
-    setShowMismatch(false);
-    setIsProcessing(true);
-    setProtectError(null);
-    setSavedTo(null);
-
-    try {
-      // Pending page edits live in state.pages and are applied at save time.
-      // They have to be baked in before encryption, because nothing can apply
-      // them afterwards.
-      const { applyAllEdits } = await import('@/lib/pdfEditor');
-      const flattened = await applyAllEdits(state.pdfBytes, state.pages);
-
-      const { tempDir, join } = await import('@tauri-apps/api/path');
-      const tmpBase = await tempDir();
-      const tempInputPath = await join(tmpBase, `papercut_protect_${Date.now()}.pdf`);
-
-      const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      await writeFile(tempInputPath, flattened);
-
-      const bytes: Uint8Array = await invoke('protect_pdf', {
-        sourcePath: tempInputPath,
-        ownerPassword: password,
-        userPassword: password,
-      });
-
-      await remove(tempInputPath).catch(() => {});
-
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const base = (state.fileName || 'document.pdf').replace(/\.pdf$/i, '');
-      const target = await save({
-        defaultPath: `${base}-protected.pdf`,
-        filters: [{ name: t('filter.pdfDocument'), extensions: ['pdf'] }],
-      });
-      if (!target) return;
-
-      await writeFile(target, new Uint8Array(bytes));
-      setSavedTo(target);
-    } catch (err) {
-      setProtectError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [state.pdfBytes, state.pages, state.fileName, password, passwordsMatch, canSubmit]);
-
-  return (
-    <div className="space-y-3">
-      <PanelHeader toolId="protect-pdf" />
-
-      {/* Said before the form, not after it: qpdf refuses a document that is
-          already encrypted, and it is not worth two passwords and a tick box to
-          find that out. */}
-      {alreadyProtected === true && (
-        <p className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">
-          {t('protectPdf.alreadyProtected')}
-        </p>
-      )}
-
-      <div className="space-y-2">
-        <div>
-          <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setShowMismatch(false); }}
-            className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-            placeholder={t('protectPdf.enterPassword')}
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.confirmPassword')}</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => { setConfirmPassword(e.target.value); setShowMismatch(false); }}
-            className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-            placeholder={t('protectPdf.confirmPassword')}
-          />
-        </div>
-        {showMismatch && (
-          <p className="text-[10px] text-destructive">{t('protectPdf.passwordsDoNotMatch')}</p>
-        )}
-
-        <label className="flex items-start gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            data-testid="protect-ack"
-            checked={acknowledged}
-            onChange={(e) => setAcknowledged(e.target.checked)}
-            disabled={isProcessing}
-            className="mt-0.5 h-3 w-3 flex-none accent-primary"
-          />
-          <span className="text-[10px] text-muted-foreground leading-snug">
-            {t('protectPdf.acknowledgePassword')}
-          </span>
-        </label>
-      </div>
-
-      {savedTo ? (
-        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
-            <Check className="h-3 w-3" />
-            {t('protectPdf.savedProtectedCopy')}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-center py-3">
-          <Lock className="h-8 w-8 text-muted-foreground" />
-        </div>
-      )}
-
-      {protectError && (
-        <p className="text-[10px] text-destructive">{protectError}</p>
-      )}
-
-      <button
-        onClick={handleProtect}
-        disabled={!canSubmit || isProcessing}
-        className="w-full py-1.5 px-3 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {t('common.applying')}
-          </>
-        ) : (
-          t('protectPdf.saveProtectedCopy')
-        )}
-      </button>
-    </div>
-  );
-}
-
-// ── Unlock Panel ─────────────────────────────────────────────────────
-
-function UnlockPanel() {
-  const { state, updatePdfBytes, markDirty } = useEditorContext();
-  // The other side of the same question the Protect panel asks. A password
-  // prompt for a document with no password is a prompt with no correct answer.
-  const isProtected = useEncryptedDocument(state.pdfBytes);
-  const [password, setPassword] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { apply, isApplying, success, error } = useApply(null, updatePdfBytes, markDirty);
-
-  const handleApply = useCallback(async () => {
-    if (!password) return;
-    setIsProcessing(true);
-    try {
-      const { tempDir, join } = await import('@tauri-apps/api/path');
-      const tmpBase = await tempDir();
-      const ts = Date.now();
-      const tempInputPath = await join(tmpBase, `papercut_unlock_${ts}.pdf`);
-
-      const { writeFile, remove } = await import('@tauri-apps/plugin-fs');
-      await writeFile(tempInputPath, state.pdfBytes);
-
-      const bytes: Uint8Array = await invoke('unlock_pdf', {
-        sourcePath: tempInputPath,
-        password,
-      });
-
-      await remove(tempInputPath).catch(() => {});
-
-      const result = new Uint8Array(bytes);
-      setIsProcessing(false);
-      await apply(() => Promise.resolve(result));
-    } catch (err) {
-      setIsProcessing(false);
-      await apply(() => Promise.reject(err));
-    }
-  }, [state.pdfBytes, password, apply]);
-
-  return (
-    <div className="space-y-3">
-      <PanelHeader toolId="unlock-pdf" />
-
-      {/* Nothing to unlock is worth saying: the alternative is a password field
-          that will reject every password, correct ones included. */}
-      {isProtected === false && !success && (
-        <p className="rounded border border-border bg-muted/40 px-2 py-1.5 text-[10px] leading-relaxed text-muted-foreground">
-          {t('unlockPdf.notProtected')}
-        </p>
-      )}
-
-      <div>
-        <label className="text-[10px] font-medium text-muted-foreground">{t('protectPdf.password')}</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full mt-0.5 px-2 py-1 text-xs border rounded bg-background"
-          placeholder={t('pdfEditor.enterPdfPassword')}
-        />
-      </div>
-
-      {success ? (
-        <div className="rounded border border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-medium text-green-700 dark:text-green-400">
-            <Check className="h-3 w-3" />
-            {t('pdfEditor.pdfPasswordProtectionRemoved')}
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-center py-3">
-          <Unlock className="h-8 w-8 text-muted-foreground" />
-        </div>
-      )}
-
-      <ApplyButton
-        onClick={handleApply}
-        disabled={!password}
-        isApplying={isApplying || isProcessing}
-        success={success}
-        error={error}
-      />
-    </div>
-  );
-}
-
-
-// ── Make Searchable (OCR) Panel ──────────────────────────────────────
 
 function OcrPanel() {
   const { state, updatePdfBytes, markDirty } = useEditorContext();
@@ -2926,14 +2552,8 @@ export function ToolSidebarPanel({ toolId }: ToolSidebarPanelProps) {
       return <SignPanel />;
     case 'redact-pdf':
       return <RedactPanel />;
-    case 'pdfa-convert':
-      return <PdfaPanel />;
     case 'repair-pdf':
       return <RepairPanel />;
-    case 'protect-pdf':
-      return <ProtectPanel />;
-    case 'unlock-pdf':
-      return <UnlockPanel />;
     case 'ocr-pdf':
       return <OcrPanel />;
     default:

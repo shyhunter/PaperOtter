@@ -21,16 +21,16 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            asset: "Papercut_{version}_aarch64.dmg"
+            asset: "PaperOtter_{version}_aarch64.dmg"
             type: dmg
           - platform: macos-14
-            asset: "Papercut_{version}_x64.dmg"
+            asset: "PaperOtter_{version}_x64.dmg"
             type: dmg
           - platform: windows-latest
-            asset: "Papercut_{version}_x64-setup.exe"
+            asset: "PaperOtter_{version}_x64-setup.exe"
             type: nsis
           - platform: ubuntu-22.04
-            asset: "Papercut_{version}_amd64.AppImage"
+            asset: "PaperOtter_{version}_amd64.AppImage"
             type: appimage
 
     runs-on: ${{ matrix.platform }}
@@ -74,16 +74,16 @@ jobs:
       - name: "macOS: Mount DMG and verify app launches"
         if: matrix.type == 'dmg'
         run: |
-          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
-          test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
+          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/PaperOtter
+          test -d "/Volumes/PaperOtter/PaperOtter.app" || { echo "FAIL: PaperOtter.app not found in DMG"; exit 1; }
 
           echo "=== Contents/MacOS/ ==="
-          ls -la /Volumes/Papercut/Papercut.app/Contents/MacOS/
+          ls -la /Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/
 
           # The main binary is "tauri-app" (Cargo package name).
-          BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
+          BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/tauri-app"
           if [ ! -x "$BINARY" ]; then
-            BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
+            BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/PaperOtter"
           fi
           if [ ! -x "$BINARY" ]; then
             echo "FAIL: No app binary found in Contents/MacOS/"
@@ -97,15 +97,15 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut running with PID: $APP_PID"
+            echo "PASS: PaperOtter running with PID: $APP_PID"
           else
-            echo "FAIL: Papercut exited prematurely"
+            echo "FAIL: PaperOtter exited prematurely"
             exit 1
           fi
 
           kill "$APP_PID" 2>/dev/null || true
           sleep 2
-          hdiutil detach /Volumes/Papercut
+          hdiutil detach /Volumes/PaperOtter
           echo "=== macOS smoke test PASSED ==="
 
       # ── Windows (NSIS .exe) ──
@@ -119,9 +119,9 @@ jobs:
 
           # Search common install locations for the binary
           $searchPaths = @(
-            "$env:LOCALAPPDATA\Papercut\Papercut.exe",
-            "$env:LOCALAPPDATA\Programs\Papercut\Papercut.exe",
-            "$env:ProgramFiles\Papercut\Papercut.exe"
+            "$env:LOCALAPPDATA\PaperOtter\PaperOtter.exe",
+            "$env:LOCALAPPDATA\Programs\PaperOtter\PaperOtter.exe",
+            "$env:ProgramFiles\PaperOtter\PaperOtter.exe"
           )
 
           $binary = $null
@@ -134,12 +134,12 @@ jobs:
 
           if (-Not $binary) {
             Write-Host "Not in common paths, searching..."
-            $found = Get-ChildItem -Path "$env:LOCALAPPDATA" -Recurse -Filter "Papercut.exe" -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 1
+            $found = Get-ChildItem -Path "$env:LOCALAPPDATA" -Recurse -Filter "PaperOtter.exe" -ErrorAction SilentlyContinue -Depth 3 | Select-Object -First 1
             if ($found) { $binary = $found.FullName }
           }
 
           if (-Not $binary) {
-            Write-Host "FAIL: Papercut.exe not found after install"
+            Write-Host "FAIL: PaperOtter.exe not found after install"
             exit 1
           }
 
@@ -150,10 +150,10 @@ jobs:
           Start-Sleep -Seconds 8
 
           if (-Not $proc.HasExited) {
-            Write-Host "PASS: Papercut is running (PID: $($proc.Id))"
+            Write-Host "PASS: PaperOtter is running (PID: $($proc.Id))"
             Stop-Process -Id $proc.Id -Force
           } else {
-            Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
+            Write-Host "FAIL: PaperOtter exited immediately with code $($proc.ExitCode)"
             exit 1
           }
           Write-Host "=== Windows smoke test PASSED ==="
@@ -182,9 +182,9 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
+            echo "PASS: PaperOtter AppImage is running (PID: $APP_PID)"
           else
-            echo "FAIL: Papercut AppImage exited prematurely"
+            echo "FAIL: PaperOtter AppImage exited prematurely"
             kill "$XVFB_PID" 2>/dev/null || true
             exit 1
           fi

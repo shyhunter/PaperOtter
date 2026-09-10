@@ -9,7 +9,7 @@ interface StepBarProps {
 
 export function StepBar({ steps, current }: StepBarProps) {
   return (
-    <header className="flex items-center justify-center gap-0 border-b border-border bg-background/95 backdrop-blur-sm px-6 py-0 h-14">
+    <header className="flex items-center justify-center gap-0 border-b-[3px] border-border bg-background/95 backdrop-blur-sm px-6 py-0 h-14">
       <div className="flex items-center gap-0">
         {steps.map((step, i) => {
           const isActive = i === current;
@@ -35,24 +35,26 @@ export function StepBar({ steps, current }: StepBarProps) {
                 {/* Step number indicator */}
                 <span
                   className={cn(
-                    'flex h-[clamp(1.5rem,2.5vw,2.5rem)] w-[clamp(1.5rem,2.5vw,2.5rem)] items-center justify-center rounded-full text-[clamp(0.7rem,1vw,1rem)] font-semibold transition-colors',
+                    'flex h-[clamp(1.4rem,2.2vw,2rem)] w-[clamp(1.4rem,2.2vw,2rem)] items-center justify-center',
+                    'border-2 border-border text-[clamp(0.7rem,1vw,1rem)] font-semibold transition-colors',
+                    '[border-radius:9px_4px_10px_5px_/_5px_10px_4px_9px]',
                     isActive && 'bg-primary text-primary-foreground',
-                    isComplete && 'bg-primary/20 text-primary',
-                    isLocked && 'bg-muted/60 text-muted-foreground/40',
+                    isComplete && 'bg-[var(--lime)] text-foreground',
+                    isLocked && 'bg-card text-muted-foreground/40',
                   )}
                 >
                   {isComplete ? (
                     // Checkmark for completed steps
                     <svg
                       viewBox="0 0 12 12"
-                      className="h-3 w-3"
+                      className="h-3.5 w-3.5"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth={2}
+                      strokeWidth={2.4}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <polyline points="2,6 5,9 10,3" />
+                      <path d="M2.2 6.4 Q3.6 7.4 4.8 9.1 Q7 5.2 9.9 2.9" />
                     </svg>
                   ) : (
                     i + 1
@@ -76,8 +78,8 @@ export function StepBar({ steps, current }: StepBarProps) {
               {i < steps.length - 1 && (
                 <div
                   className={cn(
-                    'w-8 h-px mx-1 transition-colors',
-                    i < current ? 'bg-primary/40' : 'bg-border',
+                    'w-8 h-[2px] mx-1 transition-colors',
+                    i < current ? 'bg-[var(--lime)]' : 'bg-border/50',
                   )}
                 />
               )}

@@ -170,12 +170,12 @@ export const de: Dictionary = {
   'privacy.title': 'Ihre Privatsphäre',
   'privacy.headline': 'Ihre Dateien verlassen Ihr Gerät nicht.',
   'privacy.body':
-    'Papercut verarbeitet alles lokal auf Ihrem Computer. Keine Uploads, kein Cloud-Speicher, kein Tracking.',
+    'PaperOtter verarbeitet alles lokal auf Ihrem Computer. Keine Uploads, kein Cloud-Speicher, kein Tracking.',
   'privacy.zeroData':
     'Wir erheben keinerlei Daten: keine Analyse, keine Telemetrie, keine Absturzberichte.',
   'privacy.technicalDetails': 'Technische Details',
   'privacy.detailLocal':
-    'Die gesamte Dateiverarbeitung läuft lokal über Rust, Ghostscript, LibreOffice und Calibre',
+    'Die gesamte Dateiverarbeitung läuft lokal über Rust, qpdf, LibreOffice und Calibre',
   'privacy.detailCsp':
     'Die Content Security Policy blockiert alle externen Verbindungen aus der Benutzeroberfläche',
   'privacy.detailNoSdk': 'Es ist kein Analyse-SDK und kein Tracking-Code enthalten',
@@ -187,7 +187,7 @@ export const de: Dictionary = {
     'Nach einem Absturz zurückgebliebene temporäre Dateien werden beim Start der App entfernt',
 
   // ── App chrome ────────────────────────────────────────────────────────────
-  'chrome.about': 'Über Papercut',
+  'chrome.about': 'Über PaperOtter',
   'chrome.openAnother': 'Andere Datei öffnen',
   'chrome.language': 'Sprache',
 
@@ -295,7 +295,7 @@ export const de: Dictionary = {
   'protectPdf.confirmPassword': 'Passwort bestätigen',
   'protectPdf.encrypting': 'Wird verschlüsselt…',
   'protectPdf.enterPassword': 'Passwort eingeben',
-  'protectPdf.acknowledgePassword': 'Ich verstehe, dass Papercut dieses Passwort nicht speichert und es nicht wiederherstellen kann. Wenn ich es verliere, lässt sich diese Datei nicht mehr öffnen.',
+  'protectPdf.acknowledgePassword': 'Ich verstehe, dass PaperOtter dieses Passwort nicht speichert und es nicht wiederherstellen kann. Wenn ich es verliere, lässt sich diese Datei nicht mehr öffnen.',
   'protectPdf.savedProtectedCopy': 'Geschützte Kopie gespeichert. Das hier geöffnete Dokument bleibt unverändert.',
   'protectPdf.saveProtectedCopy': 'Geschützte Kopie speichern…',
   'protectPdf.password': 'Passwort',
@@ -508,7 +508,7 @@ export const de: Dictionary = {
   'pdfEditor.applied': 'Angewendet',
   'pdfEditor.applyToAllPages': 'Auf alle Seiten anwenden',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Versucht, eine beschädigte oder fehlerhafte PDF-Struktur mit Ghostscript zu reparieren.',
+    'Versucht, eine beschädigte oder fehlerhafte PDF-Struktur mit qpdf zu reparieren.',
   'pdfEditor.bottomCenter': 'Unten mittig',
   'pdfEditor.bottomLeft': 'Unten links',
   'pdfEditor.bottomRight': 'Unten rechts',
@@ -566,7 +566,7 @@ export const de: Dictionary = {
     'Diese Datei scheint beschädigt zu sein. Bitte versuchen Sie es mit einer anderen Datei.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Die gesamte Verarbeitung findet lokal statt. Es verlassen keinerlei Daten Ihren Computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spricht neun Sprachen. Alle wurden mit KI-Unterstützung erstellt, auch das Englische, und keine wurde professionell geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter spricht neun Sprachen. Alle wurden mit KI-Unterstützung erstellt, auch das Englische, und keine wurde professionell geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
@@ -581,8 +581,8 @@ export const de: Dictionary = {
   'crashReporter.sendCrashReport': 'Fehlerbericht senden',
   'crashReporter.somethingWentWrong': 'Etwas ist schiefgelaufen',
   'crashReporter.theReportOpensAsA':
-    'Der Bericht wird als E-Mail-Entwurf geöffnet. Es wird nichts gesendet, bis Sie ihn selbst abschicken.',
-  'crashReporter.thisWillOpenInYour': 'Dies wird in Ihrem E-Mail-Programm geöffnet:',
+    'Der Bericht wird als Diskussionsentwurf auf GitHub geöffnet. Es wird nichts veröffentlicht, bevor du es selbst tust.',
+  'crashReporter.thisWillOpenInYour': 'Dies wird in deinem Browser geöffnet:',
   'dashboard.dropFileToGetStarted': 'Datei ablegen, um zu beginnen',
   'dashboard.myFavorites': 'Meine Favoriten',
   'dashboard.readyToProcessChooseA': 'Bereit: wählen Sie unten ein Werkzeug',
@@ -776,10 +776,6 @@ export const de: Dictionary = {
     '{count} Datei(en) eines anderen Typs übersprungen: ein Stapel muss aus einem Typ bestehen.',
 
   // ── Dependency hints ──────────────────────────────────────────────────────
-  'deps.ghostscriptWindows':
-    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
-  'deps.ghostscriptLinux':
-    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Installation über Ihre Paketverwaltung, z. B. sudo apt install ghostscript',
   'deps.calibre': 'Installieren Sie Calibre für E-Book-Unterstützung: calibre-ebook.com/download',
   'deps.libreoffice': 'Installieren Sie LibreOffice für die Dokumentumwandlung: libreoffice.org/download',
 
@@ -855,7 +851,7 @@ export const de: Dictionary = {
   'recentDirs.recentFolders': 'Zuletzt verwendete Ordner',
   'support.buyMeACoffee': 'Spendieren Sie mir einen Kaffee',
   'privacyFooter.processedLocallyPrivacy': 'Lokal verarbeitet · Datenschutz',
-  'splashScreen.papercutLogo': 'Papercut-Logo',
+  'splashScreen.papercutLogo': 'PaperOtter-Logo',
   'updateChecker.dismissUpdateBanner': 'Update-Hinweis ausblenden',
   'updateChecker.download': 'Herunterladen',
   'landingCard.repairWithRepairPdf': 'Mit „PDF reparieren“ beheben →',
@@ -1042,7 +1038,7 @@ export const de: Dictionary = {
   'convertConfigStep.formatNamed': 'Format {format}',
   'convertConfigStep.zipOneFilePerHeading': '.zip, eine Datei je Überschrift',
   'convertImageFlow.convertToFormat': 'In {format} umwandeln',
-  'crashReporter.noDataSentAutomatically': 'Es werden keine Daten automatisch gesendet. Der Bericht öffnet sich als E-Mail-Entwurf in Ihrem Mail-Programm: Sie entscheiden, ob Sie ihn senden.',
+  'crashReporter.noDataSentAutomatically': 'Es werden keine Daten automatisch gesendet. Der Bericht wird als Diskussionsentwurf auf GitHub geöffnet: du entscheidest, ob du ihn veröffentlichst.',
   'cropPdfFlow.pageSizeMm': 'Seitengröße: {width} × {height} mm',
   'dashboard.noToolsMatch': 'Keine Werkzeuge für „{query}“',
   'editorContext.failedToAddPages': 'Seiten konnten nicht hinzugefügt werden: {error}',
@@ -1085,7 +1081,7 @@ export const de: Dictionary = {
   'redactPdf.matchesFound': '{matches} gefunden',
   'redactPdf.pageCount': 'Seite {page}: {count}',
   'repairPdf.originalToRepaired': 'Original: {original} → Repariert: {repaired}',
-  'repairPdf.repairExplanation': 'Die Reparatur versucht, strukturelle Fehler in beschädigten oder fehlerhaften PDFs durch eine erneute Verarbeitung mit Ghostscript zu beheben. Das kann defekte Querverweise, fehlende Objekte und andere Strukturprobleme lösen.',
+  'repairPdf.repairExplanation': 'Die Reparatur versucht, strukturelle Fehler in beschädigten oder fehlerhaften PDFs durch eine erneute Verarbeitung mit qpdf zu beheben. Das kann defekte Querverweise, fehlende Objekte und andere Strukturprobleme lösen.',
   'rotate.nPagesRotated': '{pages} gedreht.',
   'rotate.selectPagesThenRotate': 'Wählen Sie Seiten aus und drehen Sie sie nach links oder rechts.',
   'rotateImageFlow.currentDegreesClockwise': 'Aktuell: {degrees} Grad im Uhrzeigersinn',
@@ -1102,7 +1098,7 @@ export const de: Dictionary = {
   'themeToggle.dark': 'Dunkel',
   'themeToggle.themeNamed': 'Design: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'hat ungespeicherte Änderungen. Beim Speichern wird die Originaldatei ersetzt.',
-  'updateChecker.versionAvailable': 'Papercut v{version} ist verfügbar.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} ist verfügbar.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} erfolgreich angewendet',
   'toolSidebarPanel.canCompressToAbout': 'Verkleinerbar auf bestenfalls etwa {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Ziehen Sie auf der Seite, um etwas abzudecken. Beim Anwenden werden diese Seiten zu einem Bild reduziert, sodass der darunterliegende Inhalt aus der Datei entfernt und nicht nur verborgen wird.',
@@ -1138,7 +1134,7 @@ export const de: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Aktivieren Sie unten die Seitenskalierung, um diese Datei dennoch zu verarbeiten.',
   'merge.mergeAndSave': 'Zusammenführen und speichern',
   'pdfEditor.untitledPdf': 'Ohne Titel.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Ghostscript kann sie nicht weiter verkleinern.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: PaperOtter kann sie nicht weiter verkleinern.',
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
@@ -1150,10 +1146,9 @@ export const de: Dictionary = {
   'search.noMatches': 'Keine Treffer für „{query}“.',
   'search.noMatchesInScan': 'Keine Treffer für „{query}“ im Text, der aus diesem Scan gelesen wurde.',
   'search.readScanHint': 'Diese Seite enthält keinen durchsuchbaren Text. Beim Lesen wird eine unsichtbare Textebene hinzugefügt; das Aussehen der Seite bleibt unverändert.',
-  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. Papercut konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig: versuchen Sie es einfach.',
+  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. PaperOtter konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig: versuchen Sie es einfach.',
   'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
   'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
   'dashboard.andMoreFiles': '+{count} weitere',
-  'deps.ghostscriptMac': 'Zum Verkleinern von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden: eine Neuinstallation von Papercut sollte sie wiederherstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (Monospace)',
 };
