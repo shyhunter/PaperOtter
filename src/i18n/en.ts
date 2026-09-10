@@ -608,8 +608,8 @@ export const en = {
   'crashReporter.anUnexpectedErrorOccurredYou': 'An unexpected error occurred. You can send a crash report to help us fix it.',
   'crashReporter.sendCrashReport': 'Send Crash Report',
   'crashReporter.somethingWentWrong': 'Something went wrong',
-  'crashReporter.theReportOpensAsA': 'The report opens as a draft email. Nothing is sent until you send it yourself.',
-  'crashReporter.thisWillOpenInYour': 'This will open in your email app:',
+  'crashReporter.theReportOpensAsA': 'The report opens as a draft discussion on GitHub. Nothing is posted until you post it yourself.',
+  'crashReporter.thisWillOpenInYour': 'This will open in your browser:',
 
   // ── dashboard ───────────────────────────────────────────────────────────
   'dashboard.clickToReorderMiddotClick': 'Click ⠿ to reorder · Click ★ on any tool to add',
@@ -1086,7 +1086,7 @@ export const en = {
   'convertConfigStep.formatNamed': '{format} format',
   'convertConfigStep.zipOneFilePerHeading': '.zip, one file per heading',
   'convertImageFlow.convertToFormat': 'Convert to {format}',
-  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft email in your mail app: you choose whether to send it.',
+  'crashReporter.noDataSentAutomatically': 'No data is sent automatically. The report opens as a draft discussion on GitHub: you choose whether to post it.',
   'cropPdfFlow.pageSizeMm': 'Page size: {width} × {height} mm',
   'dashboard.noToolsMatch': 'No tools match “{query}”',
   'editorContext.failedToAddPages': 'Failed to add pages: {error}',

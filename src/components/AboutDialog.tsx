@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 import { resolveResource } from '@tauri-apps/api/path';
-import { fetchFeedbackEmail, FALLBACK_FEEDBACK_EMAIL } from '@/lib/feedbackConfig';
+import { fetchFeedbackUrl, FALLBACK_FEEDBACK_URL } from '@/lib/feedbackConfig';
 import { t } from '@/i18n';
 
 const GITHUB_REPO_URL = 'https://github.com/shyhunter/Papercut';
@@ -20,7 +20,7 @@ interface AboutDialogProps {
 
 export function AboutDialog({ open, onClose }: AboutDialogProps) {
   const [version, setVersion] = useState(APP_VERSION_FALLBACK);
-  const [feedbackEmail, setFeedbackEmail] = useState(FALLBACK_FEEDBACK_EMAIL);
+  const [feedbackUrl, setFeedbackUrl] = useState(FALLBACK_FEEDBACK_URL);
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +32,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
 
   useEffect(() => {
     if (!open) return;
-    fetchFeedbackEmail().then(setFeedbackEmail);
+    fetchFeedbackUrl().then(setFeedbackUrl);
   }, [open]);
 
   // Ghostscript ships inside the app under the AGPL, which requires the licence
@@ -71,7 +71,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
       aria-modal="true"
       aria-label={t('chrome.about')}
     >
-      <div className="relative mx-4 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl space-y-5">
+      <div data-modal-panel className="relative mx-4 w-full max-w-sm border-border bg-card p-6 space-y-5">
         {/* Close button */}
         <button
           type="button"
@@ -150,7 +150,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <button
             type="button"
             onClick={() =>
-              openUrl(`mailto:${feedbackEmail}?subject=PaperOtter%20Feedback`).catch(() => {})
+              openUrl(feedbackUrl).catch(() => {})
             }
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >

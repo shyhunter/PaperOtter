@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { fetchFeedbackEmail } from '@/lib/feedbackConfig';
+import { fetchFeedbackUrl, newDiscussionUrl } from '@/lib/feedbackConfig';
 import { getSystemInfo } from '@/lib/systemInfo';
 import { t } from '@/i18n';
 
@@ -87,8 +87,10 @@ export function CrashReporter({
   const handleSend = useCallback(async () => {
     const body = await buildReportBody();
     const title = `Crash: ${errorMessage.slice(0, 80)}`;
-    const email = await fetchFeedbackEmail();
-    const url = `mailto:${email}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+    // Opens GitHub's compose form with the fields filled in. Nothing is posted
+    // until the user reads the report and presses the button themselves --
+    // these bodies carry system details, and a discussion is public.
+    const url = newDiscussionUrl(await fetchFeedbackUrl(), title, body);
 
     try {
       await openUrl(url);
