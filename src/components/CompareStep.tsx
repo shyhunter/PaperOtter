@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Ban, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
@@ -173,9 +174,8 @@ function PreviewPanel({
             <span className="text-sm text-muted-foreground">{t('compare.unavailable')}</span>
           </div>
         ) : isRendering || !handle ? (
-          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-            <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">{t('compare.rendering')}</span>
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center">
+            <OtterLoader label={t('compare.rendering')} />
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>

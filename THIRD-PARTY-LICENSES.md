@@ -57,6 +57,9 @@ their licence and copyright notices travel with them:
 | Caveat | © 2014 The Caveat Project Authors — https://github.com/googlefonts/caveat | OFL-1.1 |
 | Dancing Script | © 2016 The Dancing Script Project Authors — https://github.com/googlefonts/DancingScript, with Reserved Font Name 'Dancing Script' | OFL-1.1 |
 | Great Vibes | © 2015 The Great Vibes Pro Project Authors — https://github.com/googlefonts/great-vibes | OFL-1.1 |
+| Archivo | © 2020 The Archivo Project Authors — https://github.com/Omnibus-Type/Archivo | OFL-1.1 |
+| Bricolage Grotesque | © 2022 The Bricolage Grotesque Project Authors — https://github.com/ateliertriay/bricolage | OFL-1.1 |
+| JetBrains Mono | © 2020 The JetBrains Mono Project Authors — https://github.com/JetBrains/JetBrainsMono | OFL-1.1 |
 
 The SIL Open Font License 1.1 text is in `LICENSES/OFL-1.1.txt` and ships with the
 installer. The OFL permits bundling, embedding in documents, and commercial use;

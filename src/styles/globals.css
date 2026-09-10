@@ -13,7 +13,7 @@
      Declared for BOTH themes on purpose. A lone `color-scheme: dark` would fix
      dark mode by breaking light mode. */
   color-scheme: light;
-  --radius: 0.625rem;
+  --radius: 0.55rem;
   /* shadcn/ui CSS vars will be populated by `npx shadcn init` */
 
   /* The light page is off-white, not white, and the surfaces that sat just
@@ -25,28 +25,28 @@
      --muted-foreground is 0.48 rather than 0.556: on this background 0.556
      measures 4.34:1, under the 4.5:1 WCAG AA asks for body text. 0.48 is
      5.99:1. See UI-07. */
-  --background: oklch(0.97 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.93 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.48 0 0);
-  --accent: oklch(0.93 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: oklch(0.97 0.016 88);
+  --foreground: oklch(0.145 0.012 60);
+  --card: oklch(0.995 0.007 88);
+  --card-foreground: oklch(0.145 0.012 60);
+  --popover: oklch(0.995 0.007 88);
+  --popover-foreground: oklch(0.145 0.012 60);
+  --primary: oklch(0.87 0.155 92);
+  --primary-foreground: oklch(0.145 0.012 60);
+  --secondary: oklch(0.93 0.022 88);
+  --secondary-foreground: oklch(0.205 0.012 60);
+  --muted: oklch(0.93 0.022 88);
+  --muted-foreground: oklch(0.48 0.015 70);
+  --accent: oklch(0.92 0.045 90);
+  --accent-foreground: oklch(0.205 0.012 60);
   --destructive: oklch(0.577 0.245 27.325);
   /* 0.88, not the 0.922 it was: the muted surfaces moved to 0.93, and a border
      at 0.922 sitting on one of them is a difference of 0.008 -- no outline at
      all. This keeps roughly the separation the border had from the old white
      page. See UI-07e. */
-  --border: oklch(0.88 0 0);
-  --input: oklch(0.88 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.42 0.018 70);
+  --input: oklch(0.42 0.018 70);
+  --ring: oklch(0.55 0.14 92);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -63,7 +63,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: clamp(14px, 1.2vw + 0.4vh, 20px);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -113,24 +113,24 @@ body {
 .dark {
   /* See the note on :root. This is the line that actually fixes the dropdown. */
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --background: oklch(0.155 0.008 70);
+  --foreground: oklch(0.965 0.012 88);
+  --card: oklch(0.215 0.01 70);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.215 0.01 70);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --primary: oklch(0.85 0.16 92);
+  --primary-foreground: oklch(0.16 0.012 60);
+  --secondary: oklch(0.279 0.012 70);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --muted: oklch(0.279 0.012 70);
+  --muted-foreground: oklch(0.72 0.016 80);
+  --accent: oklch(0.3 0.03 88);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(0.68 0.03 85);
+  --input: oklch(0.6 0.025 85);
+  --ring: oklch(0.75 0.15 92);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -220,4 +220,63 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+/* ---------------------------------------------------------------------------
+   PaperOtter surface style.
+
+   The look is carried by tokens rather than by edits at 894 call sites: radius,
+   border colour and shadow are already single sources of truth, so changing
+   them here changes the whole app. What is added below is only what has no
+   token: the display face, the hard shadow, and the hand-drawn corner.
+   --------------------------------------------------------------------------- */
+
+@theme inline {
+  --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --font-display: 'Bricolage Grotesque', 'Archivo', system-ui, sans-serif;
+
+  /* Offset, not blur. Only sm/md are replaced — lg and xl still belong to
+     popovers and dialogs, which need to read as floating above the page. */
+  --shadow-sm: 2px 2px 0 var(--border);
+  --shadow-md: 4px 4px 0 var(--border);
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: 'opsz' 40;
+  letter-spacing: -0.015em;
+}
+
+/* Digits that sit in columns — file sizes, page counts, percentages. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mismatched horizontal and vertical radii read as drawn by hand rather than
+   computed. Four variants so a grid does not look like one shape stamped
+   twenty times; they are dealt out by position at the call site. */
+.wobble-1 { border-radius: 16px 7px 18px 9px / 9px 18px 7px 16px; }
+.wobble-2 { border-radius: 9px 18px 7px 16px / 16px 7px 18px 9px; }
+.wobble-3 { border-radius: 18px 9px 16px 7px / 7px 16px 9px 18px; }
+.wobble-4 { border-radius: 7px 16px 9px 18px / 18px 9px 16px 7px; }
+
+/* --- the loader ------------------------------------------------------------
+   Flips toward the viewer through sixteen discrete positions a second, the way
+   hand-cranked film moves. `transform` only, so it runs on the compositor: a
+   loading animation plays exactly when the main thread is busiest, and anything
+   animating layout would stall precisely when it is on screen. */
+.otter-loader-stage { perspective: 520px; }
+
+@keyframes otter-flip {
+  to { transform: rotateY(360deg); }
+}
+
+.otter-loader-mark {
+  animation: otter-flip 1.6s steps(16, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otter-loader-mark { animation: none; transform: none; }
 }
