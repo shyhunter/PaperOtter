@@ -82,6 +82,27 @@ the shipped binary too and their notices are owed:
 Neither is separately downloadable from Papercut because neither is a separate
 artifact: both are compiled into the same binary as the Rust code.
 
+## Signature fonts (bundled)
+
+Three handwriting faces are bundled as `woff2` in `src/assets/fonts/` and used by
+the Sign PDF tool's typed-signature option. They ship inside the application, so
+their licence and copyright notices travel with them:
+
+| Font | Copyright | Licence |
+|---|---|---|
+| Caveat | © 2014 The Caveat Project Authors — https://github.com/googlefonts/caveat | OFL-1.1 |
+| Dancing Script | © 2016 The Dancing Script Project Authors — https://github.com/googlefonts/DancingScript, with Reserved Font Name 'Dancing Script' | OFL-1.1 |
+| Great Vibes | © 2015 The Great Vibes Pro Project Authors — https://github.com/googlefonts/great-vibes | OFL-1.1 |
+
+The SIL Open Font License 1.1 text is in `LICENSES/OFL-1.1.txt` and ships with the
+installer. The OFL permits bundling, embedding in documents, and commercial use;
+its conditions are that the copyright and licence notice travel with the fonts
+(above), that the fonts are not sold on their own, and that a *modified* version
+must be renamed. Papercut modifies none of them and sells none of them.
+
+Note on the Reserved Font Name: it binds only a modified derivative, which is why
+"Dancing Script" may be named here and rendered in the interface.
+
 ## Calibre (not bundled)
 
 Used optionally for ebook conversion, invoked as a separate process if the user
