@@ -1,25 +1,5 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Compress, convert, sign and redact PDFs, images and documents on your own machine. No uploads, no account, no telemetry. Free and open source for macOS, Windows and Linux.">
-<link rel="canonical" href="https://shyhunter.github.io/PaperOtter/">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://shyhunter.github.io/PaperOtter/">
-<meta property="og:site_name" content="PaperOtter">
-<meta property="og:title" content="PaperOtter: your local document toolkit">
-<meta property="og:description" content="Nineteen tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry. Free and open source.">
-<meta property="og:image" content="https://shyhunter.github.io/PaperOtter/media/share-card.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The PaperOtter tool grid, with a banner reading: your files never leave your device.">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PaperOtter: your local document toolkit">
-<meta name="twitter:description" content="Nineteen tools for PDFs, images and documents, running on your own computer. No uploads, no account, no telemetry.">
-<meta name="twitter:image" content="https://shyhunter.github.io/PaperOtter/media/share-card.jpg">
-<title>PaperOtter: your local document toolkit</title>
-
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>Trim &amp; Bleed</title>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -37,7 +17,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "description": "Twenty-two offline tools for PDFs, images and documents. Compress, convert, sign, redact and edit on your own computer, with no account, no server and no upload step.",
+  "description": "Nineteen offline tools for PDFs, images and documents. Compress, convert, sign, redact and edit on your own computer, with no account, no server and no upload step.",
   "featureList": [
     "Compress",
     "Merge",
@@ -65,6 +45,8 @@
   }
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
 <link rel="preload" href="fonts/bricolage-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 
@@ -178,7 +160,6 @@
   [data-theme="dark"] h2 em,
   [data-theme="dark"] h1 em { background: var(--ink); color: var(--paper); }
 </style>
-
 <style>
   /* Direction A: "Trim & Bleed".
      The page presented as a sheet being prepared for print: trim marks, a spec
@@ -206,16 +187,10 @@
     --card-shadow: 5px 5px 0 #141210;
     --verso: #f4c423;      /* the reverse of the sheet, in process ink */
     --verso-ink: #141210;
-    --yellow: #f4c423;
-    --sky: #8fd6f7;
-    --lilac: #c9b6ff;
-    --lime: #b8f06a;
-    --coral: #ff8a73;
+    --yellow:#f4c423; --sky:#8fd6f7; --lilac:#c9b6ff; --lime:#b9f069; --coral:#ff8a73;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      /* Black and white, the way the app's dark theme resolved: no yellow, no
-         warmth, and the drawn line becomes white so a hard shadow still reads. */
       --paper: #121212;
       --plate: #1c1c1c;
       --ink: #ffffff;
@@ -231,23 +206,18 @@
       --card-muted: #b4b4b4;
       --card-primary: #ffffff;
       --card-shadow: 5px 5px 0 #ffffff;
-      --yellow: #f4c423;
-      --sky: #7fb9d8;
-      --lilac: #b3a2e6;
-      --lime: #a7d95f;
-      --coral: #e88b78;
     }
   }
   :root[data-theme="dark"] {
-    --paper: #14161a; --plate: #1b1e24; --ink: #eceee9;
-    --ink-soft: #969ba3; --rule: #2e333b; --process: #4fc2d4; --mark: #eceee9;
-    --card: #171717;
-    --card-border: rgba(255, 255, 255, .12);
-    --card-ink: #fafafa;
-    --card-muted: #a3a3a3;
-    --card-primary: #e5e5e5;
-    --card-shadow: none;
-    --verso: #0f333b; --verso-ink: #dff1f4;
+    --paper: #121212; --plate: #1c1c1c; --ink: #ffffff;
+    --ink-soft: #b4b4b4; --rule: #ffffff; --process: #ffffff; --mark: #ffffff;
+    --card: #1c1c1c;
+    --card-border: #ffffff;
+    --card-ink: #ffffff;
+    --card-muted: #b4b4b4;
+    --card-primary: #ffffff;
+    --card-shadow: 5px 5px 0 #ffffff;
+    --verso: #1c1c1c; --verso-ink: #ffffff;
   }
 
   * { box-sizing: border-box; }
@@ -342,7 +312,7 @@
     font-family: "Bricolage Grotesque", "Archivo", sans-serif;
     font-weight: 800;
     font-size: clamp(2.4rem, 8vw, 5.2rem);
-    line-height: .95;
+    line-height: 1.18;
     letter-spacing: -.035em;
     margin: 0 0 1rem;
     text-wrap: balance;
@@ -771,6 +741,7 @@
 
   .card-how { font-size: .78rem; line-height: 1.45; margin: 0; }
 
+
   .dl-note {
     font-family: "JetBrains Mono", monospace; font-size: .72rem; letter-spacing: .04em;
     color: var(--ink-soft); margin: .9rem 0 0;
@@ -869,22 +840,415 @@
   }
   footer nav { display: flex; flex-wrap: wrap; gap: 1.4rem; }
 
+
+  /* ── Drawn surfaces ─────────────────────────────────────────
+     The same rules the app ships: 3px lines, hard offset shadows, and corner
+     radii whose horizontal and vertical values differ so an edge reads as
+     drawn rather than computed. Four variants dealt out by position, so a
+     grid never looks like one shape stamped twenty times. */
+  .face, figure img, .claim, .net-panel, .support-card, .cmd, .stage, .demo-frame {
+    border: 3px solid var(--rule) !important;
+    border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px !important;
+    box-shadow: var(--card-shadow) !important;
+  }
+  .card:nth-child(4n+2) .face { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px !important; }
+  .card:nth-child(4n+3) .face { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px !important; }
+  .card:nth-child(4n+4) .face { border-radius: 8px 22px 11px 26px / 26px 10px 22px 8px !important; }
+
+  .btn, .os-tab, .filter, .cmd button {
+    border: 3px solid var(--rule) !important;
+    border-radius: 12px 5px 14px 6px / 6px 14px 5px 12px !important;
+    box-shadow: 4px 4px 0 var(--rule) !important;
+    transition: transform .06s linear, box-shadow .06s linear !important;
+  }
+  .btn:active, .os-tab:active, .filter:active, .cmd button:active {
+    transform: translate(4px,4px) !important; box-shadow: none !important;
+  }
+
+  /* The one loud thing on the page, the way yellow is the one loud thing in
+     the app: the primary download. */
+  .btn { background: var(--yellow); color: #141210; }
+  .btn.ghost { background: var(--plate); color: var(--ink); }
+  :root:not([data-theme="light"]) .btn,
+  [data-theme="dark"] .btn { background: #fff; color: #121212; }
+
+  /* Emphasis is a highlighter mark, not a colour change. */
+  h1 em, h2 em {
+    font-style: normal; color: #141210; background: var(--yellow);
+    padding: 0 .12em;
+    border-radius: 10px 4px 11px 5px / 5px 11px 4px 10px;
+  }
+  :root:not([data-theme="light"]) h1 em, :root:not([data-theme="light"]) h2 em,
+  [data-theme="dark"] h1 em, [data-theme="dark"] h2 em { background:#fff; color:#121212; }
+
+  /* Section rules and the stamp become drawn marks too. */
+  section::before { background: var(--rule) !important; height: 3px !important;
+                    border-radius: 0 0 14px 4px / 0 0 5px 12px; }
+  footer { border-top: 3px solid var(--rule) !important; }
+  .stamp { background: var(--yellow) !important; color: #141210 !important;
+           outline: 3px solid var(--rule) !important; }
+  .spec { border-block: 3px solid var(--rule) !important; }
+  .job { border-top: 2px solid var(--rule) !important; }
+  .job:last-child { border-bottom: 2px solid var(--rule) !important; }
+
+  /* Category colour, the way the dashboard carries it. */
+  .card[data-cat="image"] .recto { background: var(--sky); color:#141210; }
+  .card[data-cat="doc"] .recto   { background: var(--lilac); color:#141210; }
+  :root:not([data-theme="light"]) .card[data-cat="image"] .recto,
+  :root:not([data-theme="light"]) .card[data-cat="doc"] .recto,
+  [data-theme="dark"] .card[data-cat="image"] .recto,
+  [data-theme="dark"] .card[data-cat="doc"] .recto { background: var(--card); color: var(--card-ink); }
+
+  /* The mark, at the head of the sheet. */
+  .otter { display:flex; align-items:center; gap:.9rem; padding-top:1.6rem; }
+  .otter svg { width:44px; height:44px; color:var(--ink); flex:none; }
+  .otter b { font-family:"Bricolage Grotesque",sans-serif; font-weight:800;
+             font-stretch:90%; font-size:1.25rem; letter-spacing:-.02em; }
+
+
+  /* ── The stamp, rebuilt ──────────────────────────────────────
+     Not a rubber stamp any more: the same drawn frame every card on the page
+     uses, holding the mark with the licence underneath. Kept rotated so it
+     still reads as applied to the sheet rather than laid out on it. */
+  .stamp {
+    display: flex !important; flex-direction: column; align-items: center; gap: .15rem;
+    padding: 1.1rem 1.5rem !important;
+    background: var(--yellow) !important;
+    color: #141210 !important;
+    border: 4px solid var(--rule) !important;
+    outline: none !important;
+    box-shadow: 7px 7px 0 var(--rule) !important;
+    border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px !important;
+    transform: rotate(-6deg);
+    font-family: "Bricolage Grotesque", sans-serif !important;
+    font-size: 1rem !important; font-weight: 800; font-stretch: 90%;
+    letter-spacing: .04em !important; text-transform: uppercase;
+    line-height: 1.15 !important;
+  }
+  .stamp::after { content: none !important; }        /* the ink-noise texture is gone with it */
+  .stamp-mark { width: 68px; height: 68px; color: #141210; display: block; margin-bottom: .35rem; }
+  .stamp b { font-weight: 800 !important; }
+  .stamp b + b { margin-top: 0 !important; padding-top: 0 !important; border-top: none !important; }
+  .stamp:hover { transform: rotate(-6deg) translate(-2px,-2px); box-shadow: 10px 10px 0 var(--rule) !important; }
+  .stamp:active { transform: rotate(-6deg) translate(4px,4px); box-shadow: none !important; }
+
+  /* ── 2 + 3. one yellow, on both themes ───────────────────────
+     Yellow is the brand mark, not a light-mode accent: swapping it for white in
+     dark made the two themes tell different stories about what matters. */
+  h1 em, h2 em,
+  .btn, .os-tab[aria-selected="true"], .filter[aria-pressed="true"],
+  :root:not([data-theme="light"]) h1 em, :root:not([data-theme="light"]) h2 em,
+  :root:not([data-theme="light"]) .btn,
+  [data-theme="dark"] h1 em, [data-theme="dark"] h2 em, [data-theme="dark"] .btn {
+    background: var(--yellow) !important;
+    color: #141210 !important;
+  }
+  .btn.ghost { background: var(--plate) !important; color: var(--ink) !important; }
+  .btn.ghost:active, .os-tab:active, .filter:active, .cmd button:active {
+    background: var(--yellow) !important; color: #141210 !important;
+  }
+  .job[data-open="true"] .job-head { color: var(--ink) !important; }
+  .job[data-open="true"] .job-mark { background: var(--yellow) !important; border-color: var(--rule) !important; }
+
+  /* The highlight is a mark over the words, so it needs to breathe rather than
+     bleed into the line above. */
+  h1 em, h2 em {
+    padding: .04em .16em !important;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+
+
+  /* The section signature mark was the old process ink too — it is an accent,
+     so it takes the accent colour rather than becoming a black or white square. */
+  .sig::before { background: var(--yellow) !important; border: 2px solid var(--rule); }
+  .sig { color: var(--ink) !important; }
+  .job-stat, .support-go, .stage-empty strong { color: var(--ink) !important; }
+
+
+  /* ── The badge, at the size it deserves ──────────────────────
+     It is the only thing on the page carrying the mark, the name and the
+     licence at once, so it stops being a marginal note and becomes the second
+     thing you look at after the headline. */
+  .stamp {
+    padding: 1.5rem 2rem 1.35rem !important;
+    border-width: 5px !important;
+    box-shadow: 9px 9px 0 var(--rule) !important;
+    font-size: 1.35rem !important;
+    gap: .1rem;
+    max-width: 17rem;
+  }
+  .stamp-word {
+    font-size: 1.7rem; line-height: 1.05;
+    letter-spacing: -.02em; text-transform: none;
+    margin-bottom: .55rem;
+  }
+  .stamp-mark {
+    width: 112px !important; height: 112px !important;
+    margin-bottom: .5rem !important;
+  }
+  /* The licence lines sit under a drawn rule, the way a stamp carries a
+     dividing line between what it names and what it certifies. */
+  .stamp b + b.stamp-line { margin-top: .35rem !important; padding-top: .4rem !important;
+                            border-top: 3px solid #141210 !important; }
+  .stamp:hover { box-shadow: 12px 12px 0 var(--rule) !important; }
+
+  /* At the size it is now it cannot hang in the margin on a narrow screen. */
+  @media (max-width: 62rem) {
+    .stamp { position: static !important; transform: rotate(-3deg);
+             margin: 0 0 1.6rem !important; }
+  }
+
+
+  /* Inline links in prose are marked the same way a heading's key word is:
+     highlighted rather than recoloured, so the accent means one thing on this
+     page instead of two. Buttons, cards and the badge are excluded — they carry
+     their own frame and would end up yellow-on-yellow. */
+  .stand a, .lede a, p a:not(.btn):not(.stamp):not(.support-card),
+  .job-panel a, .notes a, td a {
+    background: var(--yellow);
+    color: #141210;
+    text-decoration: none;
+    padding: .04em .18em;
+    border-radius: 10px 4px 11px 5px / 5px 11px 4px 10px;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    box-shadow: 2px 2px 0 var(--rule);
+  }
+  .stand a:hover, .lede a:hover, p a:not(.btn):not(.stamp):not(.support-card):hover,
+  .job-panel a:hover, .notes a:hover, td a:hover { box-shadow: 3px 3px 0 var(--rule); }
+
+
+  /* ── Install steps, drawn ────────────────────────────────────
+     The numbers were perfect circles on a 1px straight rule — the two most
+     machine-made shapes left on the page. */
+  .step::before {
+    width: 2.4rem !important; height: 2.4rem !important;
+    inset-inline-start: -1.2rem !important;
+    border: 3px solid var(--rule) !important;
+    border-radius: 13px 5px 15px 6px / 6px 15px 5px 13px !important;
+    background: var(--yellow) !important;
+    color: #141210 !important;
+    box-shadow: 3px 3px 0 var(--rule);
+    font-family: "Bricolage Grotesque", sans-serif !important;
+    font-weight: 800 !important; font-size: .95rem !important;
+  }
+  .step:nth-child(2)::before { border-radius: 6px 15px 5px 13px / 13px 5px 15px 6px !important; }
+  .step:nth-child(3)::before { border-radius: 15px 6px 13px 5px / 5px 13px 6px 15px !important; }
+  .step:nth-child(4)::before { border-radius: 5px 13px 6px 15px / 15px 6px 13px 5px !important; }
+
+  .step {
+    border-inline-start: none !important;
+    margin-inline-start: 1.2rem !important;
+    padding-inline-start: 2.4rem !important;
+  }
+  /* The connector is a mask over the rule colour, not a coloured image, so the
+     one asset works on both themes without a second copy. */
+  .step::after {
+    content: ""; position: absolute;
+    inset-inline-start: -3px; top: 2.2rem; bottom: -.2rem; width: 4px;
+    background: var(--rule);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%274%27%20height%3D%2764%27%20viewBox%3D%270%200%204%2064%27%3E%3Cpath%20d%3D%27M2.1%200%20C0.9%2011%203.2%2021%202%2032%20C0.8%2043%203.1%2053%201.9%2064%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.4%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%274%27%20height%3D%2764%27%20viewBox%3D%270%200%204%2064%27%3E%3Cpath%20d%3D%27M2.1%200%20C0.9%2011%203.2%2021%202%2032%20C0.8%2043%203.1%2053%201.9%2064%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.4%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    -webkit-mask-repeat: repeat-y; mask-repeat: repeat-y;
+    -webkit-mask-size: 4px 64px; mask-size: 4px 64px;
+  }
+  .step:last-child::after { content: none; }
+
+
+  /* ── Every rule on the page is drawn ─────────────────────────
+     A horizontal stroke that wanders, tiled along the line. Where the rule is
+     its own element or a free pseudo-element it is a mask over var(--rule), so
+     one asset serves both themes. Table cells cannot take a mask without
+     masking their contents, so those paint the stroke directly and swap it by
+     theme — the only place two copies are needed. */
+  .drawn-rule, footer::before, .spec::before, .spec::after, .job::before,
+  .job:last-child::after, .notes > div::before, .stage-cap::before,
+  .claim-payoff::before, hr {
+    content: ""; display: block; height: 6px; width: 100%;
+    background: var(--rule);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    -webkit-mask-repeat: repeat-x; mask-repeat: repeat-x;
+    -webkit-mask-size: 96px 6px; mask-size: 96px 6px;
+    border: none;
+  }
+
+  /* Section dividers: the element is already a bar, so it takes the mask itself. */
+  section::before {
+    height: 7px !important;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    -webkit-mask-repeat: repeat-x; mask-repeat: repeat-x;
+    -webkit-mask-size: 96px 7px; mask-size: 96px 7px;
+    border-radius: 0 !important;
+  }
+
+  footer { border-top: none !important; position: relative; padding-top: 1.5rem; }
+  .spec  { border-block: none !important; position: relative; padding-block: .9rem; }
+  .spec::after { margin-top: .9rem; }
+  .job { border-top: none !important; }
+  .job:last-child { border-bottom: none !important; }
+  .notes > div { border-top: none !important; }
+  .stage-cap { border-top: none !important; padding-top: 0; }
+  .stage-cap::before { margin-bottom: .55rem; }
+  .claim-payoff { border-top: none !important; }
+  .claim-payoff::before { margin-bottom: .85rem; }
+  hr { margin: 1.4rem 0; }
+
+  /* Table rules: painted, not masked, so the cell contents survive. */
+  th, td {
+    border-bottom: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%2523141210%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    background-repeat: repeat-x;
+    background-position: left bottom;
+    background-size: 96px 6px;
+  }
+  :root:not([data-theme="light"]) th, :root:not([data-theme="light"]) td,
+  [data-theme="dark"] th, [data-theme="dark"] td { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%2523ffffff%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E"); }
+  tbody tr:last-child td { background-image: none; }
+
+
+  /* The section signature mark was a 10px square with four right angles — the
+     last perfectly machined shape sitting beside a hand-drawn heading. */
+  .sig::before {
+    width: 15px !important; height: 15px !important;
+    border: 3px solid var(--rule) !important;
+    border-radius: 8px 3px 9px 4px / 4px 9px 3px 8px !important;
+    background: var(--yellow) !important;
+    box-shadow: 2px 2px 0 var(--rule);
+  }
+  section:nth-of-type(even) .sig::before { border-radius: 4px 9px 3px 8px / 8px 3px 9px 4px !important; }
+
+  /* The dashed placeholder rule in the empty stage is a line too. */
+  .stage-empty .rule {
+    border: none !important; height: 6px; width: 4.2rem;
+    background: #6b6f6c;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%276%27%20viewBox%3D%270%200%2096%206%27%3E%3Cpath%20d%3D%27M0%203.4%20C16%201.6%2032%204.6%2048%203%20C64%201.4%2080%204.4%2096%202.8%27%20stroke%3D%27%23000%27%20stroke-width%3D%272.6%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+    -webkit-mask-repeat: repeat-x; mask-repeat: repeat-x;
+    -webkit-mask-size: 96px 6px; mask-size: 96px 6px;
+  }
+
+
+  /* The badge rides up over the spec strip so it sits on the sheet rather than
+     beside it — it should look applied, which means it has to cover something.
+     z-index puts it over the drawn rules; the strip keeps its full text, so
+     nothing that carries information is hidden. */
+  .stamp {
+    top: clamp(-1.4rem, -1vw, -0.4rem) !important;
+    right: clamp(0rem, 1vw, 1.2rem) !important;
+    z-index: 6 !important;
+  }
+
+
+  /* The badge overlaps the spec rules the way a sticker sits on a sheet: it
+     covers them where it lands, and they run out either side of it. What it
+     must not do is swallow the strip's text, so the strip is given a right
+     margin the width of the badge and wraps before it reaches it. */
+  .stamp { top: clamp(-1rem, -0.6vw, -0.2rem) !important; }
+  .spec { padding-right: 15rem; }
+  @media (max-width: 62rem) { .spec { padding-right: 0; } }
+
+
+  /* 5cm right, out past the sheet's edge into the margin. That is ~189px, which
+     only exists on a wide window — the sheet is 66rem and centred, so on
+     anything narrower the badge would hang off the viewport. It steps back in
+     rather than clipping. */
+  .stamp { right: -5cm !important; }
+  @media (max-width: 100rem) { .stamp { right: -2.5cm !important; } }
+  @media (max-width: 84rem)  { .stamp { right: -0.8cm !important; } }
+  @media (max-width: 72rem)  { .stamp { right: 0 !important; } }
+
+
+  /* Reserve the space every clip will occupy before it has loaded. Without an
+     aspect-ratio a <video> is zero-height until metadata arrives, and the whole
+     page below it jumps down the moment it does. The stage already declared
+     one; the hero never did. */
+  .demo { aspect-ratio: 1200 / 856; width: 100%; height: auto; }
+  .demo-frame { aspect-ratio: auto; }
+  figure img { aspect-ratio: 16 / 10; object-fit: cover; }
+
+
+  /* ── The clip lives in the open job ──────────────────────────
+     It was a sticky panel in a second column, which meant the video and the
+     words describing it were never in the same place on a narrow screen, and
+     on a wide one the clip stayed put while you read past it. Moving the one
+     stage element into whichever panel is open keeps them together at every
+     width, and costs nothing: it is the same element, relocated. */
+  /* Wide enough for two columns: the stage keeps its own side, sticky.
+     Anything narrower — phone, tablet either way up — and the clip belongs
+     inside the job it illustrates, where the words describing it are. */
+  @media (max-width: 80rem) {
+    .jobs { grid-template-columns: minmax(0, 1fr) !important; }
+    .job-list { width: 100%; }
+    .stage-wrap { position: static !important; margin-top: .9rem; max-width: 44rem; }
+    .job[data-open="false"] .stage-wrap { display: none; }
+  }
+  .job-panel .stage { aspect-ratio: 764 / 480; }
+
+
+  /* ── The badge's otter comes alive on hover ──────────────────
+     The app's own loading animation, not a GIF: the mark flips toward you
+     through sixteen discrete positions a second, the way hand-cranked film
+     moves. It is a transform on an inline SVG, so it costs no extra bytes,
+     stays crisp at any size, and runs on the compositor.
+
+     It flips on Y rather than spinning in the plane, so the face is never
+     upside down — the same reason the app's loader does. */
+  .stamp { perspective: 620px; }
+  .stamp-mark { transform-style: preserve-3d; will-change: transform; }
+
+  @keyframes otter-flip { to { transform: rotateY(360deg); } }
+
+  .stamp:hover .stamp-mark,
+  .stamp:focus-visible .stamp-mark {
+    animation: otter-flip 1.6s steps(16, end) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp:hover .stamp-mark,
+    .stamp:focus-visible .stamp-mark { animation: none; }
+  }
+
+
+  /* A lighter ground. The sand was the reference page's colour; on a full-width
+     site it reads heavier than it did as a swatch, so it moves closer to paper
+     while keeping the warmth that stops it looking like a blank white page. */
+  :root { --paper: #fefbf4; }
+
+  /* Icons are ink, not accent. Yellow icons were invisible on the yellow badge
+     and fought the sky and lilac card fills; black reads on all three. */
+  .card-icon { color: #141210 !important; }
+  .card-icon svg { color: inherit; }
+  :root:not([data-theme="light"]) .card-icon,
+  [data-theme="dark"] .card-icon { color: #ffffff !important; }
+
+
+  /* The "How it works" label is the only thing telling you the card has a back,
+     so it should not be the faintest text on it. Bold, and at full strength
+     rather than 75% — the opacity was doing the same job the small size and
+     letter-spacing already do. */
+  .card-how-label {
+    font-family: "Bricolage Grotesque", sans-serif !important;
+    font-weight: 800 !important;
+    font-size: .62rem !important;
+    opacity: 1 !important;
+  }
+
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-  .arw { width: .82em; height: .82em; display: inline-block; vertical-align: -.08em; }
 </style>
-</head>
-<body>
+
 <div class="sheet">
+
+  <div class="otter"><svg viewBox="11 -3 119 119" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M 61.804 21.515 C 61.422 21.905, 56.794 22.551, 51.520 22.950 C 42.562 23.627, 41.716 23.883, 38.668 26.837 C 36.873 28.577, 34.504 30, 33.402 30 C 29.029 30, 27.128 38.274, 30.617 42.129 C 32.124 43.795, 31.922 44.330, 27.617 50.057 C 23.548 55.469, 21.208 62.225, 24 60.500 C 24.582 60.140, 25 61.141, 25 62.894 C 25 64.551, 25.498 66.999, 26.107 68.334 C 27.061 70.430, 26.725 71.526, 23.658 76.320 C 19.393 82.988, 15.716 90.050, 16.238 90.572 C 16.682 91.016, 126.001 91.642, 126 91.200 C 126 90.371, 122.244 83.747, 118.308 77.631 C 114.306 71.414, 113.987 70.476, 114.943 67.732 C 115.525 66.065, 116 63.681, 116 62.434 C 116 61.187, 116.509 59.997, 117.132 59.789 C 118.599 59.300, 115.871 53.927, 111.340 48.382 C 108.477 44.878, 108.192 44.086, 109.424 43.063 C 113.355 39.801, 111.953 31.498, 107.285 30.401 C 105.753 30.041, 103.054 28.381, 101.287 26.713 C 98.531 24.111, 96.966 23.558, 90.287 22.824 C 77.749 21.445, 62.557 20.747, 61.804 21.515 M 40.687 30.805 C 36.485 35.190, 36.670 46.703, 41 50.347 C 45.848 54.426, 43.261 55.676, 37.385 52.093 C 34.270 50.194, 34.270 50.194, 31.635 52.637 C 28.419 55.619, 28.366 55.978, 31.250 55.226 C 33.392 54.666, 33.416 54.722, 31.752 56.389 C 29.726 58.417, 28.413 62.771, 29.517 63.797 C 29.933 64.183, 30.475 63.938, 30.720 63.250 C 31.487 61.104, 33 61.883, 33 64.422 C 33 71.201, 48.890 84.391, 49.056 77.750 C 49.100 76.007, 49.382 76.270, 50.306 78.913 C 52.249 84.466, 57.370 86.489, 69.500 86.495 C 86.165 86.503, 90.802 84.523, 92.042 76.870 C 92.750 72.500, 92.750 72.500, 92.875 76.250 C 93.019 80.561, 94.061 80.870, 98.771 77.998 C 102.319 75.835, 108 67.714, 108 64.804 C 108 62.747, 109.580 62.372, 110.338 64.250 C 110.615 64.938, 110.878 64.363, 110.921 62.973 C 110.964 61.582, 110.299 59.445, 109.443 58.223 C 108.013 56.180, 108.028 56, 109.630 56 C 111.043 56, 110.836 55.439, 108.541 53.043 C 105.707 50.085, 105.707 50.085, 103.219 52.043 C 101.850 53.119, 99.366 54, 97.699 54 C 94.667 54, 94.667 54, 98.566 50.629 C 103.628 46.253, 103.988 35.730, 99.245 30.750 C 95.092 26.390, 44.872 26.437, 40.687 30.805 M 42.747 31.750 C 39.494 35.391, 39.389 44.753, 42.564 48.066 C 47.437 53.153, 53.028 52.357, 57.655 45.917 C 64.715 36.090, 75.809 36.093, 81.859 45.925 C 84.854 50.792, 85.163 51, 89.414 51 C 97.023 51, 100.413 47.225, 99.619 39.634 C 98.827 32.054, 97.063 30, 91.345 30 C 86.106 30, 86.097 30.061, 90.500 35.435 C 94.462 40.270, 94.865 42.467, 92.067 43.964 C 90.392 44.861, 89.288 44.005, 83.817 37.575 C 77.500 30.151, 77.500 30.151, 69.885 30.075 C 62.269 30, 62.269 30, 56.025 37.549 C 50.173 44.624, 49.649 45.011, 47.695 43.713 C 44.492 41.587, 44.635 40.696, 48.974 35.767 C 51.188 33.252, 53 30.925, 53 30.597 C 53 29.109, 44.224 30.096, 42.747 31.750 M 31.813 33.683 C 32.534 33.972, 33.397 33.936, 33.729 33.604 C 34.061 33.272, 33.471 33.036, 32.417 33.079 C 31.252 33.127, 31.015 33.364, 31.813 33.683 M 106 34 C 106 34.550, 106.675 35, 107.500 35 C 108.325 35, 109 34.550, 109 34 C 109 33.450, 108.325 33, 107.500 33 C 106.675 33, 106 33.450, 106 34 M 62.247 43.250 C 57.714 48.931, 57.836 50.557, 63.046 53.933 C 72.080 59.787, 67.529 68.483, 56.378 66.674 C 52.599 66.061, 47 61.666, 47 59.313 C 47 57.587, 45.937 57.655, 43.223 59.557 C 40.711 61.316, 40.149 64.264, 42.497 63.363 C 45.219 62.318, 51.386 68.831, 52.500 73.926 C 53.928 80.459, 57.357 81.997, 70.500 81.997 C 83.945 81.997, 87.366 80.417, 87.814 74 C 88.174 68.840, 92.233 63.566, 95.239 64.352 C 97.657 64.985, 97.445 63.767, 94.686 61.174 C 91.843 58.504, 91.370 58.477, 90.723 60.950 C 89.461 65.776, 82.346 67.923, 76.011 65.388 C 68.706 62.465, 70.915 54.787, 79.750 52.393 C 80.987 52.058, 82 51.633, 82 51.449 C 82 50.618, 77.480 43.423, 76.545 42.765 C 74.755 41.507, 63.329 41.894, 62.247 43.250 M 66.698 67.692 C 64.156 69.023, 63.925 69.590, 64.198 73.829 C 64.500 78.500, 64.500 78.500, 70.500 78.500 C 76.500 78.500, 76.500 78.500, 76.800 73.865 C 77.086 69.446, 76.947 69.170, 73.800 67.930 C 71.985 67.215, 70.275 66.539, 70 66.427 C 69.725 66.316, 68.239 66.885, 66.698 67.692 M 56 72.443 C 56 73.835, 56.957 75.557, 58.223 76.443 C 61.854 78.987, 63 78.401, 63 74 C 63 70.095, 62.917 70, 59.500 70 C 56.455 70, 56 70.318, 56 72.443 M 79 74 C 79 78.149, 79.784 78.721, 83.066 76.965 C 86.476 75.140, 85.689 70, 82 70 C 79.167 70, 79 70.222, 79 74 M 48.158 73 C 48.158 74.375, 48.385 74.938, 48.662 74.250 C 48.940 73.563, 48.940 72.438, 48.662 71.750 C 48.385 71.063, 48.158 71.625, 48.158 73"/></svg><b>PaperOtter</b></div>
 
   <div class="trim">
     <a class="stamp" href="https://github.com/shyhunter/PaperOtter"
        aria-label="PaperOtter is free and open source. Read the source on GitHub.">
-      <b>Free</b><b>Open source</b>
+      <b class="stamp-word">PaperOtter</b>
+      <svg class="stamp-mark" viewBox="11 -3 119 119" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M 61.804 21.515 C 61.422 21.905, 56.794 22.551, 51.520 22.950 C 42.562 23.627, 41.716 23.883, 38.668 26.837 C 36.873 28.577, 34.504 30, 33.402 30 C 29.029 30, 27.128 38.274, 30.617 42.129 C 32.124 43.795, 31.922 44.330, 27.617 50.057 C 23.548 55.469, 21.208 62.225, 24 60.500 C 24.582 60.140, 25 61.141, 25 62.894 C 25 64.551, 25.498 66.999, 26.107 68.334 C 27.061 70.430, 26.725 71.526, 23.658 76.320 C 19.393 82.988, 15.716 90.050, 16.238 90.572 C 16.682 91.016, 126.001 91.642, 126 91.200 C 126 90.371, 122.244 83.747, 118.308 77.631 C 114.306 71.414, 113.987 70.476, 114.943 67.732 C 115.525 66.065, 116 63.681, 116 62.434 C 116 61.187, 116.509 59.997, 117.132 59.789 C 118.599 59.300, 115.871 53.927, 111.340 48.382 C 108.477 44.878, 108.192 44.086, 109.424 43.063 C 113.355 39.801, 111.953 31.498, 107.285 30.401 C 105.753 30.041, 103.054 28.381, 101.287 26.713 C 98.531 24.111, 96.966 23.558, 90.287 22.824 C 77.749 21.445, 62.557 20.747, 61.804 21.515 M 40.687 30.805 C 36.485 35.190, 36.670 46.703, 41 50.347 C 45.848 54.426, 43.261 55.676, 37.385 52.093 C 34.270 50.194, 34.270 50.194, 31.635 52.637 C 28.419 55.619, 28.366 55.978, 31.250 55.226 C 33.392 54.666, 33.416 54.722, 31.752 56.389 C 29.726 58.417, 28.413 62.771, 29.517 63.797 C 29.933 64.183, 30.475 63.938, 30.720 63.250 C 31.487 61.104, 33 61.883, 33 64.422 C 33 71.201, 48.890 84.391, 49.056 77.750 C 49.100 76.007, 49.382 76.270, 50.306 78.913 C 52.249 84.466, 57.370 86.489, 69.500 86.495 C 86.165 86.503, 90.802 84.523, 92.042 76.870 C 92.750 72.500, 92.750 72.500, 92.875 76.250 C 93.019 80.561, 94.061 80.870, 98.771 77.998 C 102.319 75.835, 108 67.714, 108 64.804 C 108 62.747, 109.580 62.372, 110.338 64.250 C 110.615 64.938, 110.878 64.363, 110.921 62.973 C 110.964 61.582, 110.299 59.445, 109.443 58.223 C 108.013 56.180, 108.028 56, 109.630 56 C 111.043 56, 110.836 55.439, 108.541 53.043 C 105.707 50.085, 105.707 50.085, 103.219 52.043 C 101.850 53.119, 99.366 54, 97.699 54 C 94.667 54, 94.667 54, 98.566 50.629 C 103.628 46.253, 103.988 35.730, 99.245 30.750 C 95.092 26.390, 44.872 26.437, 40.687 30.805 M 42.747 31.750 C 39.494 35.391, 39.389 44.753, 42.564 48.066 C 47.437 53.153, 53.028 52.357, 57.655 45.917 C 64.715 36.090, 75.809 36.093, 81.859 45.925 C 84.854 50.792, 85.163 51, 89.414 51 C 97.023 51, 100.413 47.225, 99.619 39.634 C 98.827 32.054, 97.063 30, 91.345 30 C 86.106 30, 86.097 30.061, 90.500 35.435 C 94.462 40.270, 94.865 42.467, 92.067 43.964 C 90.392 44.861, 89.288 44.005, 83.817 37.575 C 77.500 30.151, 77.500 30.151, 69.885 30.075 C 62.269 30, 62.269 30, 56.025 37.549 C 50.173 44.624, 49.649 45.011, 47.695 43.713 C 44.492 41.587, 44.635 40.696, 48.974 35.767 C 51.188 33.252, 53 30.925, 53 30.597 C 53 29.109, 44.224 30.096, 42.747 31.750 M 31.813 33.683 C 32.534 33.972, 33.397 33.936, 33.729 33.604 C 34.061 33.272, 33.471 33.036, 32.417 33.079 C 31.252 33.127, 31.015 33.364, 31.813 33.683 M 106 34 C 106 34.550, 106.675 35, 107.500 35 C 108.325 35, 109 34.550, 109 34 C 109 33.450, 108.325 33, 107.500 33 C 106.675 33, 106 33.450, 106 34 M 62.247 43.250 C 57.714 48.931, 57.836 50.557, 63.046 53.933 C 72.080 59.787, 67.529 68.483, 56.378 66.674 C 52.599 66.061, 47 61.666, 47 59.313 C 47 57.587, 45.937 57.655, 43.223 59.557 C 40.711 61.316, 40.149 64.264, 42.497 63.363 C 45.219 62.318, 51.386 68.831, 52.500 73.926 C 53.928 80.459, 57.357 81.997, 70.500 81.997 C 83.945 81.997, 87.366 80.417, 87.814 74 C 88.174 68.840, 92.233 63.566, 95.239 64.352 C 97.657 64.985, 97.445 63.767, 94.686 61.174 C 91.843 58.504, 91.370 58.477, 90.723 60.950 C 89.461 65.776, 82.346 67.923, 76.011 65.388 C 68.706 62.465, 70.915 54.787, 79.750 52.393 C 80.987 52.058, 82 51.633, 82 51.449 C 82 50.618, 77.480 43.423, 76.545 42.765 C 74.755 41.507, 63.329 41.894, 62.247 43.250 M 66.698 67.692 C 64.156 69.023, 63.925 69.590, 64.198 73.829 C 64.500 78.500, 64.500 78.500, 70.500 78.500 C 76.500 78.500, 76.500 78.500, 76.800 73.865 C 77.086 69.446, 76.947 69.170, 73.800 67.930 C 71.985 67.215, 70.275 66.539, 70 66.427 C 69.725 66.316, 68.239 66.885, 66.698 67.692 M 56 72.443 C 56 73.835, 56.957 75.557, 58.223 76.443 C 61.854 78.987, 63 78.401, 63 74 C 63 70.095, 62.917 70, 59.500 70 C 56.455 70, 56 70.318, 56 72.443 M 79 74 C 79 78.149, 79.784 78.721, 83.066 76.965 C 86.476 75.140, 85.689 70, 82 70 C 79.167 70, 79 70.222, 79 74 M 48.158 73 C 48.158 74.375, 48.385 74.938, 48.662 74.250 C 48.940 73.563, 48.940 72.438, 48.662 71.750 C 48.385 71.063, 48.158 71.625, 48.158 73"/></svg>
+      <b>Free</b>
+      <b class="stamp-line">Open Source</b>
     </a>
 
     <p class="spec">
-      <span>Tools <b>22</b></span>
-      <span>Need nothing installed <b>21 of 22</b></span>
+      <span>Tools <b>19</b></span>
+      <span>Need nothing installed <b>18 of 19</b></span>
       <span>Your files uploaded <b>never</b></span>
       <span>Sign-up <b>none</b></span>
     </p>
@@ -892,7 +1256,7 @@
     <h1>Everything happens<br>on <em>your</em> machine.</h1>
     <p class="stand">
       Compressing a PDF, converting a scan, signing a form: the jobs you would
-      normally hand to a website. PaperOtter&rsquo;s <a href="#tools">twenty-two tools</a>
+      normally hand to a website. PaperOtter&rsquo;s <a href="#tools">nineteen tools</a>
       do them on your own computer instead.
     </p>
     <div class="btns">
@@ -903,7 +1267,7 @@
 
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
-           autoplay muted loop playsinline controls preload="none"
+           autoplay muted loop playsinline controls preload="metadata"
            aria-label="PaperOtter in use: choosing a tool, opening a document and saving the result">
       <source src="media/hero.mp4" type="video/mp4">
       Your browser cannot play this video. The screenshots below show the same thing.
@@ -920,7 +1284,7 @@
 
     <div class="claims">
       <div class="claim">
-        <svg class="claim-icon lucide lucide-user-round-x" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2 21a8 8 0 0 1 11.873-7" /> <circle cx="10" cy="8" r="5" /> <path d="m17 17 5 5" /> <path d="m22 17-5 5" /> </svg>
+        <span class="claim-icon" data-lucide="user-round-x"></span>
         <h3>Nothing to sign up for.</h3>
         <p>
           No email, no licence key, no trial that runs out, no free tier with the
@@ -931,10 +1295,10 @@
       </div>
 
       <div class="claim">
-        <svg class="claim-icon lucide lucide-wifi-off" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 20h.01" /> <path d="M8.5 16.429a5 5 0 0 1 7 0" /> <path d="M5 12.859a10 10 0 0 1 5.17-2.69" /> <path d="M19 12.859a10 10 0 0 0-2.007-1.523" /> <path d="M2 8.82a15 15 0 0 1 4.177-2.643" /> <path d="M22 8.82a15 15 0 0 0-11.288-3.764" /> <path d="m2 2 20 20" /> </svg>
+        <span class="claim-icon" data-lucide="wifi-off"></span>
         <h3>Works with the network off.</h3>
         <p>
-          All twenty-two tools run on your own machine. On a plane, on a train,
+          All nineteen tools run on your own machine. On a plane, on a train,
           on a laptop that has never been online: it behaves exactly the same.
         </p>
         <p class="claim-payoff">Turn off wi-fi and the only thing you lose is the update check.</p>
@@ -943,7 +1307,7 @@
 
     <div class="net-panel">
       <div class="net-headline">
-        <svg class="claim-icon lucide lucide-hard-drive" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10 16h.01" /> <path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /> <path d="M21.946 12.013H2.054" /> <path d="M6 16h.01" /> </svg>
+        <span class="claim-icon" data-lucide="hard-drive"></span>
         <p class="net-claim">Your documents never leave your computer.</p>
       </div>
       <p class="lede">
@@ -995,20 +1359,20 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-file-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 18v-6" /> <path d="m9 15 3 3 3-3" /> </svg>
+            <span class="card-icon" data-lucide="file-down"></span>
             <span class="card-name">Compress</span>
             <span class="card-desc">Reduce PDF file size with quality presets</span>
           </span>
           <span class="face verso">
             <span class="card-how-label">How it works</span>
-            <span class="card-how">PaperOtter re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
+            <span class="card-how">Ghostscript re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
           </span>
         </span>
       </button>
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-merge" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="m8 6 4-4 4 4" /> <path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22" /> <path d="m20 22-5-5" /> </svg>
+            <span class="card-icon" data-lucide="merge"></span>
             <span class="card-name">Merge</span>
             <span class="card-desc">Combine multiple PDFs into one document</span>
           </span>
@@ -1021,7 +1385,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-scissors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <circle cx="6" cy="6" r="3" /> <path d="M8.12 8.12 12 12" /> <path d="M20 4 8.12 15.88" /> <circle cx="6" cy="18" r="3" /> <path d="M14.8 14.8 20 20" /> </svg>
+            <span class="card-icon" data-lucide="scissors"></span>
             <span class="card-name">Split</span>
             <span class="card-desc">Extract or separate pages from a PDF</span>
           </span>
@@ -1034,7 +1398,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
+            <span class="card-icon" data-lucide="rotate-cw"></span>
             <span class="card-name">Rotate</span>
             <span class="card-desc">Rotate individual or all pages in a PDF</span>
           </span>
@@ -1047,7 +1411,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-crop" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M6 2v14a2 2 0 0 0 2 2h14" /> <path d="M18 22V8a2 2 0 0 0-2-2H2" /> </svg>
+            <span class="card-icon" data-lucide="crop"></span>
             <span class="card-name">Crop</span>
             <span class="card-desc">Crop margins or select a region on pages</span>
           </span>
@@ -1060,7 +1424,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-layout-grid" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" /> </svg>
+            <span class="card-icon" data-lucide="layout-grid"></span>
             <span class="card-name">Organise pages</span>
             <span class="card-desc">Reorder, delete, or duplicate pages</span>
           </span>
@@ -1073,7 +1437,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-hash" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /> </svg>
+            <span class="card-icon" data-lucide="hash"></span>
             <span class="card-name">Page numbers</span>
             <span class="card-desc">Add page numbers to PDF pages</span>
           </span>
@@ -1086,7 +1450,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-stamp" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M5 22h14" /> <path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z" /> <path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13" /> </svg>
+            <span class="card-icon" data-lucide="stamp"></span>
             <span class="card-name">Watermark</span>
             <span class="card-desc">Add text or image watermark to PDF pages</span>
           </span>
@@ -1099,7 +1463,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-pen-tool" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z" /> <path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18" /> <path d="m2.3 2.3 7.286 7.286" /> <circle cx="11" cy="11" r="2" /> </svg>
+            <span class="card-icon" data-lucide="pen-tool"></span>
             <span class="card-name">Sign</span>
             <span class="card-desc">Add a visual signature stamp to PDF pages</span>
           </span>
@@ -1112,7 +1476,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-eye-off" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /> </svg>
+            <span class="card-icon" data-lucide="eye-off"></span>
             <span class="card-name">Redact</span>
             <span class="card-desc">Permanently remove text or areas from a PDF</span>
           </span>
@@ -1125,7 +1489,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-wrench" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /> </svg>
+            <span class="card-icon" data-lucide="wrench"></span>
             <span class="card-name">Repair</span>
             <span class="card-desc">Fix corrupted or malformed PDFs</span>
           </span>
@@ -1138,7 +1502,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-eye" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /> </svg>
+            <span class="card-icon" data-lucide="eye"></span>
             <span class="card-name">Make searchable</span>
             <span class="card-desc">Read the text on a scan so it can be searched and copied</span>
           </span>
@@ -1151,7 +1515,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-file-edit" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M13.378 15.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /> </svg>
+            <span class="card-icon" data-lucide="file-edit"></span>
             <span class="card-name">Edit text</span>
             <span class="card-desc">Edit text and images in a PDF document</span>
           </span>
@@ -1164,7 +1528,7 @@
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-file-image" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <circle cx="10" cy="12" r="2" /> <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22" /> </svg>
+            <span class="card-icon" data-lucide="file-image"></span>
             <span class="card-name">PDF to JPG</span>
             <span class="card-desc">Export PDF pages as JPEG or PNG images</span>
           </span>
@@ -1177,7 +1541,7 @@
       <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-file-plus-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M3 15h6" /> <path d="M6 12v6" /> </svg>
+            <span class="card-icon" data-lucide="file-plus-2"></span>
             <span class="card-name">JPG to PDF</span>
             <span class="card-desc">Convert images into a single PDF document</span>
           </span>
@@ -1190,7 +1554,7 @@
       <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-image-down" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" /> <path d="m14 19 3 3v-5.5" /> <path d="m17 22 3-3" /> <circle cx="9" cy="9" r="2" /> </svg>
+            <span class="card-icon" data-lucide="image-down"></span>
             <span class="card-name">Compress image</span>
             <span class="card-desc">Resize and convert images with quality control</span>
           </span>
@@ -1203,7 +1567,7 @@
       <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-rotate-cw" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> </svg>
+            <span class="card-icon" data-lucide="rotate-cw"></span>
             <span class="card-name">Rotate image</span>
             <span class="card-desc">Rotate images 90°, 180°, or 270°</span>
           </span>
@@ -1216,7 +1580,7 @@
       <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
+            <span class="card-icon" data-lucide="arrow-left-right"></span>
             <span class="card-name">Convert image</span>
             <span class="card-desc">Convert between JPG, PNG, and WebP formats</span>
           </span>
@@ -1229,7 +1593,7 @@
       <button class="card" type="button" data-cat="other">
         <span class="card-inner">
           <span class="face recto">
-            <svg class="card-icon lucide lucide-arrow-left-right" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" /> </svg>
+            <span class="card-icon" data-lucide="arrow-left-right"></span>
             <span class="card-name">Convert document</span>
             <span class="card-desc">Convert between PDF, DOC, EPUB, and ebook formats</span>
           </span>
@@ -1259,7 +1623,7 @@
           </button>
           <div class="job-panel" id="jp0" role="region" aria-labelledby="jb0">
             <p>Get a scan or a report under an attachment limit without turning the text to mush. The setting says what it will cost before you commit to it.</p>
-          <p class="job-stat">73.80 MB <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> 20.49 MB &middot; 72% smaller &middot; 438 pages</p>
+          <p class="job-stat">73.80 MB &rarr; 20.49 MB &middot; 72% smaller &middot; 438 pages</p>
           <p>Measured, not promised: a scanned page went from 127 KB to 40 KB, 68% smaller. A photo PDF already at screen resolution came back unchanged. There was nothing left to downsample, and the app said so instead of pretending otherwise.</p>
           </div>
         </div>
@@ -1317,8 +1681,24 @@
       (function () {
         var SRC = ["media/compress.mp4", "media/ebook.mp4", "media/markdown.mp4", "media/signature.mp4", "media/redact.mp4"];
         var POSTER = ["media/compress-poster.jpg", "media/ebook-poster.jpg", "media/markdown-poster.jpg", "media/signature-poster.jpg", "media/redact-poster.jpg"];
-        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowed into a real page rather than a picture of one.", "PDF to Markdown &middot; 18.9 KB <svg class='arw' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M5 12h14'/><path d='m12 5 7 7-7 7'/></svg> 12.5 KB &middot; 34% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn, then applied: opaque black, not a rectangle laid over the text."];
+        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowed into a real page rather than a picture of one.", "PDF to Markdown &middot; 18.9 KB &rarr; 12.5 KB &middot; 34% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn, then applied: opaque black, not a rectangle laid over the text."];
         var vid = document.getElementById('stage-video');
+        // One stage, moved into whichever panel is open, rather than four
+        // copies of a clip that already weighs more than the rest of the page.
+        var stageWrap = document.querySelector('.stage-wrap');
+        var stageHome = stageWrap && stageWrap.parentNode;   // the second column
+        var inline = window.matchMedia('(max-width: 80rem)');
+        var current = 0;
+
+        // Below 80rem the clip sits inside the open job; above it, back in its
+        // own column. Re-evaluated on resize, so rotating a tablet moves it.
+        function place(i) {
+          if (!stageWrap) return;
+          var target = inline.matches
+            ? jobs[i].querySelector('.job-panel')
+            : stageHome;
+          if (target && stageWrap.parentNode !== target) target.appendChild(stageWrap);
+        }
         var cap = document.getElementById('stage-cap');
         var jobs = Array.prototype.slice.call(document.querySelectorAll('.job'));
         var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1328,6 +1708,8 @@
             j.dataset.open = k === i ? 'true' : 'false';
             j.querySelector('.job-head').setAttribute('aria-expanded', k === i ? 'true' : 'false');
           });
+          place(i);
+          current = i;
           cap.innerHTML = CAPS[i];
           vid.poster = POSTER[i];
           vid.alt = jobs[i].querySelector('.job-title').textContent;
@@ -1337,6 +1719,12 @@
           var go = vid.play();
           if (go && go.catch) { go.catch(function () {}); }
         }
+
+        // Rotating a tablet crosses the breakpoint without a reload, so the
+        // clip has to change sides when the query changes, not only on click.
+        var onChange = function () { place(current); };
+        if (inline.addEventListener) inline.addEventListener('change', onChange);
+        else if (inline.addListener) inline.addListener(onChange);
 
         jobs.forEach(function (j, i) {
           j.querySelector('.job-head').addEventListener('click', function () { show(i); });
@@ -1386,7 +1774,7 @@
     <ol class="steps" data-panel="windows" hidden>
       <li class="step">
         <h3>Download the .exe</h3>
-        <p>One installer, everything already inside it.</p>
+        <p>One installer, Ghostscript already inside it.</p>
       </li>
       <li class="step">
         <h3>Run it, and let SmartScreen stop you</h3>
@@ -1472,36 +1860,36 @@
 
     <div class="support">
       <a class="support-card" href="https://github.com/shyhunter/PaperOtter" target="_blank" rel="noopener">
-        <svg class="support-icon lucide lucide-star" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /> </svg>
+        <span class="support-icon" data-lucide="star"></span>
         <h3>Star it on GitHub</h3>
         <p>
           Free, takes a second, and it is the only signal that reaches me. It also
           puts PaperOtter in front of people searching for a tool that does not want
           their data.
         </p>
-        <span class="support-go">github.com/shyhunter/PaperOtter <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+        <span class="support-go">github.com/shyhunter/PaperOtter →</span>
       </a>
 
       <a class="support-card" href="https://github.com/users/shyhunter/projects/9" target="_blank" rel="noopener">
-        <svg class="support-icon lucide lucide-map" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /> </svg>
+        <span class="support-icon" data-lucide="map"></span>
         <h3>Read the roadmap</h3>
         <p>
           PaperOtter is still being built, and it happens in the open: what is
           coming next, what was decided against, and the reasoning either way.
           If the tool you need is not on it yet, that is worth telling me.
         </p>
-        <span class="support-go">the roadmap <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+        <span class="support-go">the roadmap →</span>
       </a>
 
       <a class="support-card" href="https://buymeacoffee.com/shyhunter" target="_blank" rel="noopener">
-        <svg class="support-icon lucide lucide-coffee" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M10 2v2" /> <path d="M14 2v2" /> <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" /> <path d="M6 2v2" /> </svg>
+        <span class="support-icon" data-lucide="coffee"></span>
         <h3>Buy me a coffee</h3>
         <p>
           Entirely optional and it changes nothing: there is no paid tier to
           unlock, and there never will be. It pays for the certificates that stop
           your operating system calling this app damaged.
         </p>
-        <span class="support-go">buymeacoffee.com/shyhunter <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+        <span class="support-go">buymeacoffee.com/shyhunter →</span>
       </a>
     </div>
 
@@ -1633,5 +2021,17 @@
     });
   })();
 </script>
-</body>
-</html>
+
+<script>
+  // At the end of the document, because createIcons() walks the DOM for
+  // [data-lucide] and replaces each one. Called from the head, where it was,
+  // it runs before a single card exists and silently does nothing.
+  if (window.lucide && window.lucide.createIcons) {
+    try { window.lucide.createIcons(); } catch (e) { console.warn('lucide: createIcons failed', e); }
+  } else {
+    // A silent catch is how the previous version hid a 404 from a CDN URL that
+    // did not exist. If the icons are missing, the console should say why.
+    console.warn('lucide did not load: cards render without icons');
+  }
+</script>
+</body></html>
