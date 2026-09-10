@@ -2,7 +2,7 @@
 
 ### Does Papercut send my files anywhere?
 
-No. All processing happens locally using native binaries (Ghostscript,
+No. All processing happens locally using native code (qpdf,
 LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and
 the Rust `image` crate).
 Your files never leave your machine: see the
@@ -42,7 +42,7 @@ a problem with the installer. Click **More info**, then **Run anyway**.
 
 ### Do I need to install anything else?
 
-Ghostscript ships bundled with Papercut. LibreOffice and Calibre are
+LibreOffice and Calibre are
 optional, only needed for DOC/ODT/RTF and EPUB/MOBI conversion respectively
 -- see [Required Dependencies](Required-Dependencies).
 

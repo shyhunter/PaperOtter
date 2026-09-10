@@ -113,7 +113,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t('aboutDialog.includes')}</span>
-            <span className="text-foreground font-medium">Ghostscript (AGPL-3.0)</span>
+            <span className="text-foreground font-medium">qpdf (Apache-2.0)</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t('aboutDialog.builtWith')}</span>

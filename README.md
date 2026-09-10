@@ -37,11 +37,11 @@ Every tool follows the same four-step flow: Pick, Configure, Compare, Save
 
 Papercut ships with **22 tools** across three categories: all running locally on your machine.
 
-**21 of the 22 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else, Ghostscript included, is bundled.
+**18 of the 19 need nothing installed.** Only document conversion to ebook formats reaches for an external tool; everything else is compiled into the app.
 
 ### PDF Tools
 
-- 🗜️ **Compress**: Reduce PDF file size using Ghostscript presets
+- 🗜️ **Compress**: Reduce PDF file size with quality presets
 - 📐 **Resize**: Scale pages to standard or custom dimensions (part of Compress)
 - 🔗 **Merge**: Combine multiple PDFs into one
 - ✂️ **Split**: Extract page ranges into separate files
@@ -151,7 +151,7 @@ system's where one is licensed.
 | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
 
-The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go. Ghostscript is bundled with the app.
+The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go.
 
 > **Mac users:** Papercut is signed but not yet notarised by Apple, so macOS blocks the first launch. Verified on macOS 26:
 >
@@ -183,7 +183,7 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 
 **Papercut processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
 
-All file processing happens locally using native binaries (Ghostscript, LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
+All file processing happens locally using native code (qpdf, the Rust `image` crate), optional external apps (LibreOffice, Calibre), and in-app libraries (pdf-lib, pdfjs, mammoth, and the Rust `image` crate). There is no analytics and no tracking, and your documents never leave your machine. Papercut makes two, and only two, network calls, neither of which sends any data about you or your files: on launch, a request to GitHub's public API to check whether a newer version is available; and, only when you open the About dialog, a request to fetch the current feedback contact address from a JSON file on GitHub, so it can be updated without shipping a new release.
 
 ### A note on AI
 
@@ -233,19 +233,6 @@ before it will encrypt anything.
 
 <details>
 <summary>See details</summary>
-
-### Ghostscript issues
-
-Ghostscript ships bundled with Papercut, so PDF compression should work out of
-the box. If you see a "Ghostscript is not installed" message or a crash
-instead, try:
-
-- **macOS:** `brew install ghostscript`
-- **Linux:** `sudo apt install ghostscript` (or your package manager's equivalent)
-- **Windows / manual install:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html), and make sure it's on your PATH
-
-If it still crashes with a missing-library error, try reinstalling Papercut
-first: that usually fixes a corrupted bundled copy.
 
 ### LibreOffice / Calibre not found
 
@@ -306,14 +293,9 @@ npm run lint
 | Document Conversion | in-app engine + [mammoth](https://github.com/mwilliamson/mammoth.js) (DOCX) | BSD-2-Clause |
 | Document Conversion | [fflate](https://github.com/101arrowz/fflate) | MIT |
 | Image Processing | [image](https://github.com/image-rs/image) (Rust crate) | MIT OR Apache-2.0 |
-| PDF Compression | [Ghostscript](https://ghostscript.com/) (bundled) | **AGPL-3.0** |
+| PDF structure & repair | [qpdf](https://github.com/qpdf/qpdf) (compiled in) | Apache-2.0 |
 
-Ghostscript is the one to know about: it is **AGPL-3.0**, it ships inside the
-application, and its full licence text and source offer travel with every build.
-TypeScript and Tailwind are build-time only, so nothing of them is distributed.
-The complete list of all 788 compiled and bundled dependencies is in
-[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md), which is also installed
-alongside the app.
+Every bundled component is permissively licensed: there is no copyleft in the installer, and nothing here restricts commercial use. LibreOffice and Calibre are not distributed with Papercut — they are called only if the user has installed them themselves.
 
 ---
 

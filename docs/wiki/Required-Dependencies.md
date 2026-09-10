@@ -3,23 +3,6 @@
 Most of Papercut works with nothing extra to install. Two tools are bundled or
 optional, listed below.
 
-## Ghostscript (bundled, used for PDF compression)
-
-Ghostscript ships bundled with the Papercut installer, so PDF compression
-should work out of the box. If Papercut reports it as missing or it crashes,
-Papercut falls back to looking for a system copy on your `PATH`:
-
-- **macOS:** `brew install ghostscript` (Papercut also checks
-  `/opt/homebrew/bin/gs` and `/usr/local/bin/gs` directly, in case it's
-  installed but not on your `PATH`)
-- **Linux:** `sudo apt install ghostscript` (or your distribution's package
-  manager equivalent)
-- **Windows:** download from [ghostscript.com](https://ghostscript.com/releases/gsdnld.html)
-  and make sure `gswin64c` (or `gs`) is on your `PATH`
-
-If it crashes with a missing-library error even after installing, try
-reinstalling Papercut first: that usually fixes a corrupted bundled copy.
-
 ## What needs nothing at all
 
 **Twenty-one of the twenty-two tools.** Only Convert Document ever reaches for

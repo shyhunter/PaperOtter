@@ -32,7 +32,7 @@ export interface ToolStep {
   description: TranslationKey;
 }
 
-export type DependencyName = 'ghostscript' | 'calibre' | 'libreoffice';
+export type DependencyName = 'calibre' | 'libreoffice';
 
 export interface ToolDefinition {
   id: ToolId;
@@ -69,7 +69,9 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     category: 'pdf',
     icon: 'FileDown',
     acceptsFormats: ['pdf'],
-    requiresDependency: 'ghostscript',
+    // Nothing external any more: compression happens in-process, with the
+    // `image` crate for the pictures and qpdf for the structure. This tool used
+    // to be greyed out on a machine whose Ghostscript would not start.
     steps: [
       { label: 'step.pick', description: 'tool.compressPdf.step1' },
       { label: 'step.configure', description: 'tool.compressPdf.step2' },

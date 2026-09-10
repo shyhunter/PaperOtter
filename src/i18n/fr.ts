@@ -229,7 +229,7 @@ export const fr: Dictionary = {
     'Nous ne collectons aucune donnée: pas d’analyse, pas de télémétrie, pas de rapport d’incident.',
   'privacy.technicalDetails': 'Détails techniques',
   'privacy.detailLocal':
-    'Tout le traitement des fichiers est local, via Rust, Ghostscript, LibreOffice et Calibre',
+    'Tout le traitement des fichiers est local, via Rust, qpdf, LibreOffice et Calibre',
   'privacy.detailCsp':
     'La Content Security Policy bloque toute connexion externe depuis l’interface',
   'privacy.detailNoSdk': 'Aucun SDK d’analyse ni code de suivi n’est inclus',
@@ -676,10 +676,6 @@ export const fr: Dictionary = {
     '{count} fichier(s) d’un autre type ignoré(s): un lot doit être d’un seul type.',
 
   // ── Dependencies and file filters ─────────────────────────────────────────
-  'deps.ghostscriptWindows':
-    'La compression de PDF nécessite Ghostscript. Téléchargez-le sur ghostscript.com/releases/gsdnld.html et vérifiez qu’il est dans le PATH.',
-  'deps.ghostscriptLinux':
-    'La compression de PDF nécessite Ghostscript. Installez-le via votre gestionnaire de paquets, par ex. sudo apt install ghostscript',
   'deps.calibre': 'Installez Calibre pour la prise en charge des e-books: calibre-ebook.com/download',
   'deps.libreoffice': 'Installez LibreOffice pour la conversion de documents: libreoffice.org/download',
   'filter.jpegImage': 'Image JPEG',
@@ -799,7 +795,7 @@ export const fr: Dictionary = {
   'pdfEditor.applied': 'Appliqué',
   'pdfEditor.applyToAllPages': 'Appliquer à toutes les pages',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Tente de corriger une structure PDF endommagée ou mal formée avec Ghostscript.',
+    'Tente de corriger une structure PDF endommagée ou mal formée avec qpdf.',
   'pdfEditor.bottomCenter': 'En bas au centre',
   'pdfEditor.bottomLeft': 'En bas à gauche',
   'pdfEditor.bottomRight': 'En bas à droite',
@@ -1048,7 +1044,7 @@ export const fr: Dictionary = {
   'redactPdf.matchesFound': '{matches} trouvées',
   'redactPdf.pageCount': 'Page {page} : {count}',
   'repairPdf.originalToRepaired': 'Original : {original} → Réparé : {repaired}',
-  'repairPdf.repairExplanation': 'La réparation tente de corriger les problèmes de structure des PDF endommagés ou mal formés en les retraitant avec Ghostscript. Cela peut résoudre les références croisées cassées, les objets manquants et d’autres problèmes de structure.',
+  'repairPdf.repairExplanation': 'La réparation tente de corriger les problèmes de structure des PDF endommagés ou mal formés en les retraitant avec qpdf. Cela peut résoudre les références croisées cassées, les objets manquants et d’autres problèmes de structure.',
   'rotate.nPagesRotated': '{pages} pivotées.',
   'rotate.selectPagesThenRotate': 'Sélectionnez des pages, puis pivotez-les vers la gauche ou la droite.',
   'rotateImageFlow.currentDegreesClockwise': 'Actuel : {degrees} degrés dans le sens horaire',
@@ -1101,7 +1097,7 @@ export const fr: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Activez le redimensionnement des pages ci-dessous pour traiter tout de même ce fichier.',
   'merge.mergeAndSave': 'Fusionner et enregistrer',
   'pdfEditor.untitledPdf': 'Sans titre.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Ce PDF contient {images}, déjà encodées en JPEG2000: Ghostscript ne peut pas les compresser davantage.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Ce PDF contient {images}, déjà encodées en JPEG2000: Papercut ne peut pas les compresser davantage.',
   'split.split': 'Diviser',
   'toolSidebarPanel.clickToPlaceMode': 'Mode clic-pour-placer',
   'unsavedChangesDialog.dontSave': 'Ne pas enregistrer',
@@ -1117,6 +1113,5 @@ export const fr: Dictionary = {
   'convertDoc.kindEbookConverter': 'un convertisseur d’e-books tel que {tools}',
   'convertDoc.kindWordProcessor': 'un traitement de texte tel que {tools}',
   'dashboard.andMoreFiles': '+{count} de plus',
-  'deps.ghostscriptMac': 'La compression de PDF nécessite Ghostscript, inclus dans Papercut. La copie fournie n’a pas pu démarrer: réinstaller Papercut devrait la restaurer.',
   'editorToolbar.courierNewMonospace': 'Courier New (monospace)',
 };

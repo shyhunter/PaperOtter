@@ -27,7 +27,7 @@ vi.mock('@tauri-apps/plugin-store', () => ({
     save() { return Promise.resolve(undefined); }
   },
 }));
-// Make all tools available regardless of Ghostscript/Calibre detection
+// Make all tools available regardless of Calibre/LibreOffice detection
 vi.mock('@/hooks/useDependencies', () => ({
   useDependencies: () => ({
     available: { ghostscript: true, calibre: true, libreoffice: true },
@@ -111,11 +111,14 @@ describe('Suite 06c — Repair PDF', () => {
   });
 
   // RP-03 ─────────────────────────────────────────────────────────────────────
-  it('RP-03 — repair step shows info about the Ghostscript repair process', async () => {
+  it('RP-03 — repair step explains what the repair actually does', async () => {
     const { user } = await navigateToTool(/repair pdf/i);
     await selectPdfFile(user, '/test/corrupted.pdf');
     await screen.findByText(/pdf repair/i, {}, { timeout: 2000 });
-    expect(screen.getByText(/ghostscript/i)).toBeInTheDocument();
+    // Names the engine that now does the work. It said Ghostscript until
+    // repair moved to qpdf, and a test asserting the old name would have
+    // passed while the screen told the user something untrue.
+    expect(screen.getByText(/qpdf/i)).toBeInTheDocument();
   });
 
   // RP-04 ─────────────────────────────────────────────────────────────────────
@@ -146,10 +149,10 @@ describe('Suite 06c — Repair PDF', () => {
     await selectPdfFile(user, '/test/corrupted.pdf');
     await screen.findByRole('button', { name: /repair pdf/i }, { timeout: 2000 });
 
-    vi.mocked(invoke).mockRejectedValueOnce(new Error('Ghostscript not found'));
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('repair engine not found'));
     await user.click(screen.getByRole('button', { name: /repair pdf/i }));
 
-    await screen.findByText(/ghostscript not found/i, {}, { timeout: 2000 });
+    await screen.findByText(/repair engine not found/i, {}, { timeout: 2000 });
   });
 });
 

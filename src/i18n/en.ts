@@ -151,7 +151,7 @@ export const en = {
   'privacy.body': 'Papercut processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
   'privacy.zeroData': 'We collect zero data: no analytics, no telemetry, no crash reports.',
   'privacy.technicalDetails': 'Technical details',
-  'privacy.detailLocal': 'All file processing runs locally via Rust, Ghostscript, LibreOffice, and Calibre',
+  'privacy.detailLocal': 'All file processing runs locally via Rust, qpdf, LibreOffice, and Calibre',
   'privacy.detailCsp': 'Content Security Policy blocks all external connections from the app\'s UI',
   'privacy.detailNoSdk': 'No analytics SDK or tracking code is included',
   'privacy.detailPasswords': 'Passwords (PDF protect/unlock) are never stored, logged, or written to disk',
@@ -526,7 +526,7 @@ export const en = {
   'pdfEditor.allSides': 'All sides',
   'pdfEditor.applied': 'Applied',
   'pdfEditor.applyToAllPages': 'Apply to all pages',
-  'pdfEditor.attemptToFixCorruptedOr': 'Attempt to fix corrupted or malformed PDF structure using Ghostscript.',
+  'pdfEditor.attemptToFixCorruptedOr': 'Attempt to fix corrupted or malformed PDF structure using qpdf.',
   'pdfEditor.bottomCenter': 'Bottom Center',
   'pdfEditor.bottomLeft': 'Bottom Left',
   'pdfEditor.bottomRight': 'Bottom Right',
@@ -1010,9 +1010,6 @@ export const en = {
   'batch.skippedDifferentType': 'Skipped {count} file(s) of a different type: a batch has to be one type.',
 
   // ── Dependency hints ────────────────────────────────────────────────────
-  'deps.ghostscriptMac': 'Compressing PDFs needs Ghostscript, which Papercut includes. The included copy could not start: reinstalling Papercut should restore it.',
-  'deps.ghostscriptWindows': 'Compressing PDFs needs Ghostscript. Download it from ghostscript.com/releases/gsdnld.html and make sure it is on your PATH.',
-  'deps.ghostscriptLinux': 'Compressing PDFs needs Ghostscript. Install it with your package manager, e.g. sudo apt install ghostscript',
   'deps.calibre': 'Install Calibre for ebook support: calibre-ebook.com/download',
   // The kind of program, not one product's name: several will do, and naming
   // only the paid one is bad advice when a free one works.
@@ -1135,7 +1132,7 @@ export const en = {
   'redactPdf.matchesFound': '{matches} found',
   'redactPdf.pageCount': 'Page {page}: {count}',
   'repairPdf.originalToRepaired': 'Original: {original} → Repaired: {repaired}',
-  'repairPdf.repairExplanation': 'Repair attempts to fix structural issues in corrupted or malformed PDFs by re-processing through Ghostscript. This can resolve issues with broken cross-references, missing objects, and other structural problems.',
+  'repairPdf.repairExplanation': 'Repair attempts to fix structural issues in corrupted or malformed PDFs by re-processing through qpdf. This can resolve issues with broken cross-references, missing objects, and other structural problems.',
   'rotate.nPagesRotated': '{pages} rotated.',
   'rotate.selectPagesThenRotate': 'Select pages, then rotate them left or right.',
   'rotateImageFlow.currentDegreesClockwise': 'Current: {degrees} degrees clockwise',
@@ -1188,7 +1185,7 @@ export const en = {
   'configureStep.enableResizeToStillProcess': 'Enable page resize below to still process this file.',
   'merge.mergeAndSave': 'Merge & save',
   'pdfEditor.untitledPdf': 'Untitled.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. Ghostscript can\'t compress them further.',
+  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. Papercut can\'t compress them further.',
   'split.split': 'Split',
   'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
   'unsavedChangesDialog.dontSave': 'Don\'t save',

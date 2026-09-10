@@ -63,11 +63,13 @@ jobs:
           echo "--- everything this package installs under /usr/bin ---"
           dpkg-deb -c "$DEB" | grep -E '(\./)?usr/bin/' || true
 
-          # The failure this workflow exists for. Ubuntu's ghostscript package
-          # owns /usr/bin/gs, and dpkg refuses to overwrite a file belonging to
-          # another package, so shipping it makes the install fail outright on
-          # most desktops. Asserted against a real built package rather than
-          # inferred from the sidecar's filename.
+          # The failure this workflow was written for: Ubuntu's ghostscript
+          # package owns /usr/bin/gs, dpkg refuses to overwrite a file belonging
+          # to another package, and shipping it made the install fail outright.
+          # Papercut no longer ships any Ghostscript, so this cannot trip today —
+          # it is kept because the hazard is the class, not the binary: any
+          # sidecar given a bare, common name would collide the same way.
+          # Asserted against a real built package rather than inferred.
           # Both path forms, because the archive may or may not carry a ./ prefix
           # and a guard that misses the case it exists for is worse than none.
           if dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/bin/gs$'; then

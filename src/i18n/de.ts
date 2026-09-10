@@ -175,7 +175,7 @@ export const de: Dictionary = {
     'Wir erheben keinerlei Daten: keine Analyse, keine Telemetrie, keine Absturzberichte.',
   'privacy.technicalDetails': 'Technische Details',
   'privacy.detailLocal':
-    'Die gesamte Dateiverarbeitung läuft lokal über Rust, Ghostscript, LibreOffice und Calibre',
+    'Die gesamte Dateiverarbeitung läuft lokal über Rust, qpdf, LibreOffice und Calibre',
   'privacy.detailCsp':
     'Die Content Security Policy blockiert alle externen Verbindungen aus der Benutzeroberfläche',
   'privacy.detailNoSdk': 'Es ist kein Analyse-SDK und kein Tracking-Code enthalten',
@@ -508,7 +508,7 @@ export const de: Dictionary = {
   'pdfEditor.applied': 'Angewendet',
   'pdfEditor.applyToAllPages': 'Auf alle Seiten anwenden',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Versucht, eine beschädigte oder fehlerhafte PDF-Struktur mit Ghostscript zu reparieren.',
+    'Versucht, eine beschädigte oder fehlerhafte PDF-Struktur mit qpdf zu reparieren.',
   'pdfEditor.bottomCenter': 'Unten mittig',
   'pdfEditor.bottomLeft': 'Unten links',
   'pdfEditor.bottomRight': 'Unten rechts',
@@ -776,10 +776,6 @@ export const de: Dictionary = {
     '{count} Datei(en) eines anderen Typs übersprungen: ein Stapel muss aus einem Typ bestehen.',
 
   // ── Dependency hints ──────────────────────────────────────────────────────
-  'deps.ghostscriptWindows':
-    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Laden Sie es von ghostscript.com/releases/gsdnld.html und stellen Sie sicher, dass es im PATH liegt.',
-  'deps.ghostscriptLinux':
-    'Zum Verkleinern von PDFs wird Ghostscript benötigt. Installation über Ihre Paketverwaltung, z. B. sudo apt install ghostscript',
   'deps.calibre': 'Installieren Sie Calibre für E-Book-Unterstützung: calibre-ebook.com/download',
   'deps.libreoffice': 'Installieren Sie LibreOffice für die Dokumentumwandlung: libreoffice.org/download',
 
@@ -1085,7 +1081,7 @@ export const de: Dictionary = {
   'redactPdf.matchesFound': '{matches} gefunden',
   'redactPdf.pageCount': 'Seite {page}: {count}',
   'repairPdf.originalToRepaired': 'Original: {original} → Repariert: {repaired}',
-  'repairPdf.repairExplanation': 'Die Reparatur versucht, strukturelle Fehler in beschädigten oder fehlerhaften PDFs durch eine erneute Verarbeitung mit Ghostscript zu beheben. Das kann defekte Querverweise, fehlende Objekte und andere Strukturprobleme lösen.',
+  'repairPdf.repairExplanation': 'Die Reparatur versucht, strukturelle Fehler in beschädigten oder fehlerhaften PDFs durch eine erneute Verarbeitung mit qpdf zu beheben. Das kann defekte Querverweise, fehlende Objekte und andere Strukturprobleme lösen.',
   'rotate.nPagesRotated': '{pages} gedreht.',
   'rotate.selectPagesThenRotate': 'Wählen Sie Seiten aus und drehen Sie sie nach links oder rechts.',
   'rotateImageFlow.currentDegreesClockwise': 'Aktuell: {degrees} Grad im Uhrzeigersinn',
@@ -1138,7 +1134,7 @@ export const de: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Aktivieren Sie unten die Seitenskalierung, um diese Datei dennoch zu verarbeiten.',
   'merge.mergeAndSave': 'Zusammenführen und speichern',
   'pdfEditor.untitledPdf': 'Ohne Titel.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Ghostscript kann sie nicht weiter verkleinern.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Papercut kann sie nicht weiter verkleinern.',
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
@@ -1154,6 +1150,5 @@ export const de: Dictionary = {
   'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
   'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
   'dashboard.andMoreFiles': '+{count} weitere',
-  'deps.ghostscriptMac': 'Zum Verkleinern von PDFs wird Ghostscript benötigt, das Papercut mitliefert. Die mitgelieferte Kopie konnte nicht gestartet werden: eine Neuinstallation von Papercut sollte sie wiederherstellen.',
   'editorToolbar.courierNewMonospace': 'Courier New (Monospace)',
 };

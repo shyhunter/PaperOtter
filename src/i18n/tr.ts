@@ -224,7 +224,7 @@ export const tr: Dictionary = {
     'Hiçbir veri toplamıyoruz: analiz yok, telemetri yok, çökme raporu yok.',
   'privacy.technicalDetails': 'Teknik ayrıntılar',
   'privacy.detailLocal':
-    'Tüm dosya işlemleri Rust, Ghostscript, LibreOffice ve Calibre ile yerel olarak çalışır',
+    'Tüm dosya işlemleri Rust, qpdf, LibreOffice ve Calibre ile yerel olarak çalışır',
   'privacy.detailCsp': 'Content Security Policy, arayüzden tüm dış bağlantıları engeller',
   'privacy.detailNoSdk': 'Hiçbir analiz SDK’sı veya izleme kodu içermez',
   'privacy.detailPasswords':
@@ -503,10 +503,6 @@ export const tr: Dictionary = {
   'batch.couldNotBeProcessed': '{files} işlenemedi',
   'batch.processingFile': '{total} dosyadan {current}. dosya işleniyor: {name}',
   'batch.skippedDifferentType': 'Farklı türde {count} dosya atlandı: bir küme tek türden olmalıdır.',
-  'deps.ghostscriptWindows':
-    'PDF sıkıştırmak için Ghostscript gerekir. ghostscript.com/releases/gsdnld.html adresinden indirin ve PATH’te olduğundan emin olun.',
-  'deps.ghostscriptLinux':
-    'PDF sıkıştırmak için Ghostscript gerekir. Paket yöneticinizle kurun, örn. sudo apt install ghostscript',
   'deps.calibre': 'E-kitap desteği için Calibre kurun: calibre-ebook.com/download',
   'deps.libreoffice': 'Belge dönüştürme için LibreOffice kurun: libreoffice.org/download',
   'filter.jpegImage': 'JPEG görüntüsü', 'filter.pngImage': 'PNG görüntüsü', 'filter.webpImage': 'WebP görüntüsü',
@@ -540,7 +536,7 @@ export const tr: Dictionary = {
   'pdfEditor.allMarginsMm': 'Tüm kenar boşlukları (mm)', 'pdfEditor.allSides': 'Tüm kenarlar',
   'pdfEditor.applied': 'Uygulandı', 'pdfEditor.applyToAllPages': 'Tüm sayfalara uygula',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Bozuk veya hatalı PDF yapısını Ghostscript ile onarmayı dener.',
+    'Bozuk veya hatalı PDF yapısını qpdf ile onarmayı dener.',
   'pdfEditor.bottomCenter': 'Alt orta', 'pdfEditor.bottomLeft': 'Alt sol', 'pdfEditor.bottomRight': 'Alt sağ',
   'pdfEditor.clickAnywhereOnThePdf': 'Metin bloğu yerleştirmek için PDF’in herhangi bir yerine tıklayın.',
   'pdfEditor.compareFullSize': 'Tam boyutta karşılaştır', 'pdfEditor.compressed': 'Sıkıştırıldı',
@@ -765,7 +761,7 @@ export const tr: Dictionary = {
   'redactPdf.matchesFound': '{matches} bulundu',
   'redactPdf.pageCount': 'Sayfa {page}: {count}',
   'repairPdf.originalToRepaired': 'Özgün: {original} → Onarılmış: {repaired}',
-  'repairPdf.repairExplanation': 'Onarım, bozuk ya da hatalı biçimlendirilmiş PDF dosyalarındaki yapısal sorunları Ghostscript ile yeniden işleyerek gidermeye çalışır. Bozuk çapraz başvurular, eksik nesneler ve diğer yapısal sorunlar böyle çözülebilir.',
+  'repairPdf.repairExplanation': 'Onarım, bozuk ya da hatalı biçimlendirilmiş PDF dosyalarındaki yapısal sorunları qpdf ile yeniden işleyerek gidermeye çalışır. Bozuk çapraz başvurular, eksik nesneler ve diğer yapısal sorunlar böyle çözülebilir.',
   'rotate.nPagesRotated': '{pages} döndürüldü.',
   'rotate.selectPagesThenRotate': 'Sayfaları seçin, sonra sola ya da sağa döndürün.',
   'rotateImageFlow.currentDegreesClockwise': 'Şu an: saat yönünde {degrees} derece',
@@ -818,7 +814,7 @@ export const tr: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Bu dosyayı yine de işlemek için aşağıdan sayfa yeniden boyutlandırmayı açın.',
   'merge.mergeAndSave': 'Birleştir ve kaydet',
   'pdfEditor.untitledPdf': 'Adsız.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu: Ghostscript bunları daha fazla sıkıştıramaz.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Bu PDF {images} içeriyor; zaten JPEG2000 kodlu: Papercut bunları daha fazla sıkıştıramaz.',
   'split.split': 'Böl',
   'toolSidebarPanel.clickToPlaceMode': 'Tıkla-yerleştir kipi',
   'unsavedChangesDialog.dontSave': 'Kaydetme',

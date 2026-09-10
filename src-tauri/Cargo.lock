@@ -5104,6 +5104,7 @@ name = "tauri-app"
 version = "1.0.0"
 dependencies = [
  "block2",
+ "flate2",
  "image",
  "objc2",
  "objc2-core-foundation",

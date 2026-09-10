@@ -1329,7 +1329,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
   });
 
       it('TP-13b — Repair explains what it does before it is run', async () => {
-    // Repair always "succeeds": it re-processes through Ghostscript whatever
+    // Repair always "succeeds": it rebuilds the file with qpdf whatever
     // state the file was in. Without the explanation the result reads as a
     // verdict on the document rather than a description of a process that ran.
     const user = userEvent.setup();
@@ -1342,7 +1342,7 @@ describe('Suite 12 — PDF Editor: Tool Panels', () => {
 
     await user.click(screen.getByTitle('Repair PDF'));
 
-    expect(screen.getByText(/re-processing through ghostscript/i)).toBeInTheDocument();
+    expect(screen.getByText(/re-processing through qpdf/i)).toBeInTheDocument();
   });
 
   it('TP-06c — the Sign panel can sign more than the page in front of you', async () => {

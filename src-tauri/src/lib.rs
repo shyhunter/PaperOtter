@@ -2,15 +2,16 @@
 use tauri::ipc::Response;
 use tauri::Emitter;
 use tauri_plugin_shell::ShellExt;
-use tauri_plugin_shell::process::{CommandChild, CommandEvent};
+use tauri_plugin_shell::process::CommandEvent;
 use image::codecs::jpeg::JpegEncoder;
 use image::codecs::png::{PngEncoder, CompressionType};
 use std::io::Cursor;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use uuid::Uuid;
 
 mod heic;
-mod selftest;
+mod pdfcompress;
 mod ocr;
 
 /// Validates a source file path from the frontend.
@@ -122,252 +123,6 @@ fn quiet_command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command 
     cmd
 }
 
-/// Returns the binary name (not full path) suitable for `app.shell().command()`.
-/// Used as fallback when sidecar is not available, and by check_capabilities.
-fn find_system_ghostscript() -> Result<String, String> {
-    #[cfg(target_os = "windows")]
-    {
-        // Try gswin64c first (standard Windows GS name), then gs
-        let candidates = ["gswin64c", "gswin32c", "gs"];
-        for candidate in candidates {
-            let result = quiet_command("where")
-                .arg(candidate)
-                .output();
-            if let Ok(output) = result {
-                if output.status.success() {
-                    return Ok(candidate.to_string());
-                }
-            }
-        }
-        return Err(
-            "Ghostscript is not installed. Install it from https://ghostscript.com/releases/gsdnld.html and ensure it is in your PATH.".to_string()
-        );
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        // macOS / Linux: check for gs in PATH
-        let result = quiet_command("which")
-            .arg("gs")
-            .output();
-        if let Ok(output) = result {
-            if output.status.success() {
-                return Ok("gs".to_string());
-            }
-        }
-
-        // On macOS, also check Homebrew common paths
-        #[cfg(target_os = "macos")]
-        {
-            let brew_paths = [
-                "/opt/homebrew/bin/gs",
-                "/usr/local/bin/gs",
-            ];
-            for path in brew_paths {
-                if std::path::Path::new(path).exists() {
-                    return Ok(path.to_string());
-                }
-            }
-        }
-
-        Err(
-            if cfg!(target_os = "macos") {
-                "Ghostscript is not installed. Install it with: brew install ghostscript".to_string()
-            } else {
-                "Ghostscript is not installed. Install it with your package manager (e.g. sudo apt install ghostscript).".to_string()
-            }
-        )
-    }
-}
-
-/// Spawn a Ghostscript process with the given arguments.
-/// Tries the bundled sidecar binary first (`binaries/papercut-gs`), then falls back
-/// to system-installed GS via PATH lookup.
-fn spawn_gs(
-    app: &tauri::AppHandle,
-    args: Vec<String>,
-) -> Result<(tauri::async_runtime::Receiver<CommandEvent>, CommandChild), String> {
-    // 1. Try bundled sidecar first
-    if let Ok(sidecar_cmd) = app.shell().sidecar("papercut-gs") {
-        let sidecar_cmd = with_windows_dll_path(app, sidecar_cmd);
-        if let Ok(result) = sidecar_cmd.args(&args).spawn() {
-            return Ok(result);
-        }
-    }
-
-    // 2. Fallback: system-installed GS via PATH
-    let gs_bin = find_system_ghostscript()?;
-    app.shell()
-        .command(&gs_bin)
-        .args(&args)
-        .spawn()
-        .map_err(|e| format!(
-            "Ghostscript failed to start. Ensure Ghostscript is installed and in your PATH. Error: {}",
-            e
-        ))
-}
-
-/// Whether a `gs --version` probe looks like a real Ghostscript.
-///
-/// Ghostscript prints a bare version ("10.02.1"). The placeholder sidecars this
-/// project ships for three of its four targets print "gs not bundled on this
-/// platform" and exit 1, so both the exit status and the shape of the output are
-/// checked — a stub that forgot to exit non-zero would otherwise read as a
-/// working install.
-fn sidecar_reports_version(exit_ok: bool, stdout: &str) -> bool {
-    exit_ok
-        && stdout
-            .trim()
-            .chars()
-            .next()
-            .is_some_and(|c| c.is_ascii_digit())
-}
-
-/// Lets the bundled Ghostscript find gsdll64.dll on Windows.
-///
-/// Windows Ghostscript is not one file: gswin64c.exe is a thin wrapper around
-/// gsdll64.dll and will not start without it. A Tauri sidecar is a single file
-/// and resources are bundled into a different directory than the executable, so
-/// the DLL is shipped as a resource and its directory is prepended to the child
-/// process's PATH here.
-///
-/// This is the one part of the Ghostscript work that has not been run on the
-/// platform it targets — see src-tauri/binaries/README.md. On macOS and Linux it
-/// is a no-op, because Ghostscript there is genuinely a single binary.
-#[cfg(target_os = "windows")]
-fn with_windows_dll_path(
-    app: &tauri::AppHandle,
-    cmd: tauri_plugin_shell::process::Command,
-) -> tauri_plugin_shell::process::Command {
-    use tauri::Manager;
-
-    let Ok(resource_dir) = app.path().resource_dir() else {
-        return cmd;
-    };
-    let existing = std::env::var("PATH").unwrap_or_default();
-    cmd.env(
-        "PATH",
-        format!("{};{}", resource_dir.display(), existing),
-    )
-}
-
-#[cfg(not(target_os = "windows"))]
-fn with_windows_dll_path(
-    _app: &tauri::AppHandle,
-    cmd: tauri_plugin_shell::process::Command,
-) -> tauri_plugin_shell::process::Command {
-    cmd
-}
-
-/// Ghostscript's version string, through the same sidecar and PATH wrapper the
-/// app uses. Exposed for the self-test so it exercises the real resolution
-/// rather than a synthetic copy of it.
-pub(crate) async fn spawn_gs_version(app: &tauri::AppHandle) -> Result<String, String> {
-    let cmd = app
-        .shell()
-        .sidecar("papercut-gs")
-        .map_err(|e| format!("sidecar not found: {e}"))?;
-    let cmd = with_windows_dll_path(app, cmd);
-    let output = cmd
-        .arg("--version")
-        .output()
-        .await
-        .map_err(|e| format!("could not start: {e}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "exited with {:?}: {}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
-}
-
-/// Make Ghostscript write a one-page PDF with no input file.
-///
-/// `--version` proves the binary loads. Only this proves `pdfwrite` works, and
-/// pdfwrite is the device every compress in the app depends on.
-pub(crate) async fn spawn_gs_pdfwrite(
-    app: &tauri::AppHandle,
-    out: &std::path::Path,
-) -> Result<(), String> {
-    let cmd = app
-        .shell()
-        .sidecar("papercut-gs")
-        .map_err(|e| format!("sidecar not found: {e}"))?;
-    let cmd = with_windows_dll_path(app, cmd);
-    let output = cmd
-        .args([
-            "-q",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-sDEVICE=pdfwrite",
-            // Irrelevant to a blank page, and included anyway: the invariant
-            // that every pdfwrite invocation preserves page rotation is worth
-            // more as an absolute rule than as one with an exemption someone
-            // has to reason about later. The test enforcing it caught this
-            // within a minute of the code being written, which is the argument
-            // for keeping it absolute.
-            GS_KEEP_PAGE_ROTATION,
-            &format!("-sOutputFile={}", out.display()),
-            "-c",
-            "showpage",
-        ])
-        .output()
-        .await
-        .map_err(|e| format!("could not start: {e}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "exited with {:?}: {}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-    Ok(())
-}
-
-/// Check if Ghostscript is available (sidecar or system).
-/// Used by detect_converters to report GS availability.
-///
-/// Actually runs the sidecar rather than trusting that a command object could be
-/// built — `sidecar()` succeeds whether or not the binary exists or works, so the
-/// previous check reported Ghostscript available on every platform and the
-/// disabled-tool state with its install hint could never appear.
-async fn is_ghostscript_available(app: &tauri::AppHandle) -> bool {
-    if let Ok(cmd) = app.shell().sidecar("papercut-gs") {
-        if let Ok(output) = cmd.arg("--version").output().await {
-            if sidecar_reports_version(
-                output.status.success(),
-                &String::from_utf8_lossy(&output.stdout),
-            ) {
-                return true;
-            }
-        }
-    }
-    // Fallback to system PATH — reached whenever the bundled sidecar is a stub.
-    find_system_ghostscript().is_ok()
-}
-
-/// Build a user-friendly error message when Ghostscript crashes unexpectedly
-/// (signal termination, missing library, etc.) rather than exiting cleanly.
-fn format_gs_crash_error(stderr: &str) -> String {
-    const REINSTALL_HINT: &str =
-        "Try reinstalling the application or installing Ghostscript manually.";
-
-    let hint = if stderr.contains("Library not loaded") || stderr.contains("dyld") {
-        format!("A required library is missing. {}", REINSTALL_HINT)
-    } else if stderr.contains("not found") || stderr.contains("No such file") {
-        format!("Ghostscript could not be found. {}", REINSTALL_HINT)
-    } else {
-        format!("Ghostscript crashed unexpectedly. {}", REINSTALL_HINT)
-    };
-    if stderr.is_empty() {
-        hint
-    } else {
-        format!("{} Details: {}", hint, stderr)
-    }
-}
-
 /// Build a user-friendly error message for Word AppleScript automation failures.
 /// AppleScript errors -1708 ("doesn't understand the X message") and -2753
 /// ("variable ... is not defined") both surface when a document opened via
@@ -424,7 +179,13 @@ fn format_word_automation_error(stderr: &str) -> String {
 /// cancel_processing() takes the child out and kills it, which signals
 /// compress_pdf's event loop to exit with a CANCELLED error.
 struct ProcessState {
-    gs_child: Mutex<Option<CommandChild>>,
+    /// Set by `cancel_processing`, read between images by the compressor.
+    ///
+    /// Compression used to be a child process, so cancelling meant killing it.
+    /// It now happens inside this process, and the equivalent is a flag the work
+    /// loop checks at a point where stopping is safe -- between whole images,
+    /// never part-way through rewriting one.
+    cancel: Arc<AtomicBool>,
 }
 
 /// Decodes any image the app accepts as input.
@@ -758,216 +519,32 @@ async fn write_searchable_pdf(source_path: String, pages_json: String) -> Result
 /// Fire-and-forget from the TypeScript side — no return value needed.
 #[tauri::command]
 fn cancel_processing(state: tauri::State<ProcessState>) {
-    let mut guard = state.gs_child.lock().unwrap();
-    if let Some(child) = guard.take() {
-        let _ = child.kill();
-    }
-}
-
-/// Ghostscript's pdfwrite defaults to `-dAutoRotatePages=/PageByPage`, which
-/// picks each page's orientation from the direction of its text and discards the
-/// incoming `/Rotate`. Every command here rewrites the whole document, so any
-/// rotation the user applied is silently re-decided unless this says otherwise.
-///
-/// Measured on gs 10.06.0 (the version both bundled sidecars are), on a rotated
-/// text page: the source rendered 421x298 landscape, the default came back
-/// 298x421 portrait, and `/None` came back 421x298 pixel-identical to the source.
-const GS_KEEP_PAGE_ROTATION: &str = "-dAutoRotatePages=/None";
-
-/// Compress a PDF using Ghostscript.
-/// preset: one of "screen" | "ebook" | "printer" | "prepress"
-/// Spawns GS as a child process, stores the child in ProcessState so it can be
-/// killed by cancel_processing(). Waits for the Terminated event.
-/// Returns Err("CANCELLED") if killed before completion.
-/// Builds the Ghostscript argument list for compress_pdf's chosen preset.
-///
-/// PDFSETTINGS presets only recompress an image if GS decides it needs
-/// *downsampling* (its resolution exceeds the preset's target DPI). An image
-/// already at or below that resolution is passed through in its original
-/// filter untouched — even if it's losslessly encoded (FlateDecode) and would
-/// shrink significantly just by re-encoding as JPEG. For every preset except
-/// prepress (archive — meant to stay lossless), force that re-encoding
-/// explicitly rather than relying on the resolution-based auto-detection.
-/// Builds the Ghostscript argument list.
-///
-/// `downsample_images` false keeps every image at its original resolution,
-/// letting the preset re-encode without also shrinking pixel dimensions. The
-/// forced JPEG conversion below is what makes non-prepress presets shrink at
-/// all, so it stays on either way.
-fn build_compress_pdf_args(
-    preset: &str,
-    tmp_path_str: &str,
-    source_path: &str,
-    downsample_images: bool,
-) -> Vec<String> {
-    let mut gs_args = vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        GS_KEEP_PAGE_ROTATION.to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-dPDFSETTINGS=/{}", preset),
-    ];
-
-    if preset != "prepress" {
-        gs_args.extend([
-            "-dAutoFilterColorImages=false".to_string(),
-            "-dColorImageFilter=/DCTEncode".to_string(),
-            "-dEncodeColorImages=true".to_string(),
-            "-dAutoFilterGrayImages=false".to_string(),
-            "-dGrayImageFilter=/DCTEncode".to_string(),
-            "-dEncodeGrayImages=true".to_string(),
-        ]);
-    }
-
-    if !downsample_images {
-        gs_args.extend([
-            "-dDownsampleColorImages=false".to_string(),
-            "-dDownsampleGrayImages=false".to_string(),
-            "-dDownsampleMonoImages=false".to_string(),
-        ]);
-    }
-
-    gs_args.push(format!("-sOutputFile={}", tmp_path_str));
-    gs_args.push(source_path.to_string());
-    gs_args
+    state.cancel.store(true, Ordering::Relaxed);
 }
 
 #[tauri::command]
 async fn compress_pdf(
-    app: tauri::AppHandle,
     state: tauri::State<'_, ProcessState>,
     source_path: String,
     preset: String,
     downsample_images: Option<bool>,
 ) -> Result<tauri::ipc::Response, String> {
     validate_source_path(&source_path)?;
-    // Validate preset to prevent injection — only allow known GS presets
-    let valid_presets = ["screen", "ebook", "printer", "prepress"];
-    if !valid_presets.contains(&preset.as_str()) {
-        return Err(format!(
-            "Invalid Ghostscript preset '{}'. Must be one of: {}",
-            preset,
-            valid_presets.join(", ")
-        ));
-    }
+    let preset = pdfcompress::Preset::from_name(&preset)?;
+    let downsample = downsample_images.unwrap_or(true);
 
-    // Write output to a temp file (GS requires a file output path)
-    let tmp_path = std::env::temp_dir().join(format!(
-        "papercut_compressed_{}.pdf",
-        Uuid::new_v4()
-    ));
-    let tmp_path_str = tmp_path.to_string_lossy().to_string();
+    // Cleared here rather than after the run: a cancel left set by a previous
+    // job would stop the next one before it started.
+    let cancel = state.cancel.clone();
+    cancel.store(false, Ordering::Relaxed);
 
-    let gs_args = build_compress_pdf_args(
-        &preset,
-        &tmp_path_str,
-        &source_path,
-        downsample_images.unwrap_or(true),
-    );
-
-    // Spawn GS process (sidecar first, then system PATH fallback)
-    let (mut rx, child) = spawn_gs(&app, gs_args)?;
-
-    // Store the child so cancel_processing() can kill it
-    {
-        let mut guard = state.gs_child.lock().unwrap();
-        *guard = Some(child);
-    }
-
-    // Wait for GS to finish (or be killed)
-    let mut exit_code: Option<i32> = None;
-    let mut terminated = false;
-    let mut stderr_lines: Vec<String> = Vec::new();
-
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Terminated(payload) => {
-                exit_code = payload.code;
-                terminated = true;
-                break;
-            }
-            CommandEvent::Stderr(line) => {
-                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
-            }
-            CommandEvent::Error(e) => {
-                // Channel error — treat as process failure
-                let _ = std::fs::remove_file(&tmp_path);
-                // Clear stored child reference
-                let mut guard = state.gs_child.lock().unwrap();
-                *guard = None;
-                return Err(format!("Ghostscript error: {}", e));
-            }
-            _ => {} // Stdout events ignored — GS writes to tmp_path file
-        }
-    }
-
-    // Clear stored child reference now that GS has exited.
-    // Detect user-initiated cancellation: cancel_processing() takes the child
-    // out of the mutex, so if it's already None here the user cancelled.
-    // If it's still Some, GS exited on its own (crash / normal exit).
-    let user_cancelled = {
-        let mut guard = state.gs_child.lock().unwrap();
-        let was_taken = guard.is_none();
-        *guard = None;
-        was_taken
-    };
-
-    // If the channel closed without a Terminated event, the child was killed
-    if !terminated {
-        let _ = std::fs::remove_file(&tmp_path);
-        if user_cancelled {
-            return Err("CANCELLED".to_string());
-        }
-        let stderr = stderr_lines.join("\n");
-        return Err(format_gs_crash_error(&stderr));
-    }
-
-    // Non-zero exit code means GS was killed (signal) or failed
-    match exit_code {
-        None => {
-            // Signal termination — only treat as cancellation if user requested it
-            let _ = std::fs::remove_file(&tmp_path);
-            if user_cancelled {
-                return Err("CANCELLED".to_string());
-            }
-            let stderr = stderr_lines.join("\n");
-            return Err(format_gs_crash_error(&stderr));
-        }
-        Some(0) => {} // success — continue
-        Some(_code) => {
-            let file_existed = std::fs::remove_file(&tmp_path).is_ok();
-            if !file_existed && user_cancelled {
-                return Err("CANCELLED".to_string());
-            }
-            let stderr = stderr_lines.join("\n");
-            // If stderr matches known crash patterns (missing library, dyld, not found),
-            // surface the actionable reinstall message rather than a raw exit-code string.
-            if stderr.contains("Library not loaded")
-                || stderr.contains("dyld")
-                || stderr.contains("not found")
-                || stderr.contains("No such file")
-            {
-                return Err(format_gs_crash_error(&stderr));
-            }
-            let details = if stderr.is_empty() {
-                String::new()
-            } else {
-                format!(" Details: {}", stderr)
-            };
-            return Err(format!(
-                "Ghostscript compression failed (exit code {}).{}",
-                _code, details
-            ));
-        }
-    }
-
-    // Read the compressed output bytes
-    let bytes = std::fs::read(&tmp_path)
-        .map_err(|e| format!("Failed to read compressed output: {}", e))?;
-
-    // Clean up temp file (ignore errors — OS will clean eventually)
-    let _ = std::fs::remove_file(&tmp_path);
+    let bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
+        let source = std::fs::read(&source_path)
+            .map_err(|e| format!("Could not read the file: {e}"))?;
+        pdfcompress::compress(&source, preset, downsample, &cancel, |_, _| {})
+    })
+    .await
+    .map_err(|e| format!("Compression task failed: {e}"))??;
 
     Ok(tauri::ipc::Response::new(bytes))
 }
@@ -1296,7 +873,7 @@ async fn convert_with_calibre(
 /// Returns a JSON object with boolean flags for each backend.
 /// Cached in TypeScript after first call — runs detection once per app launch.
 #[tauri::command]
-async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
+async fn detect_converters() -> Result<String, String> {
     let mut results = std::collections::HashMap::new();
 
     // textutil — built-in on macOS, handles doc/docx/odt/rtf/txt
@@ -1391,10 +968,6 @@ async fn detect_converters(app: tauri::AppHandle) -> Result<String, String> {
         .map(|o| o.status.success())
         .unwrap_or(false);
     results.insert("pandoc", pandoc_ok);
-
-    // Ghostscript (bundled sidecar or system-installed)
-    let gs_ok = is_ghostscript_available(&app).await;
-    results.insert("ghostscript", gs_ok);
 
     // Native webview HTML → PDF export (WKWebView createPDF) — macOS only for now.
     results.insert("webview", cfg!(target_os = "macos"));
@@ -2365,19 +1938,18 @@ fn sweep_papercut_temp_files() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    run_with_file(None, false)
+    run_with_file(None)
 }
 
 /// Run the app, optionally opening a file passed via CLI argument (macOS "Open
-/// with") — or — with `selftest` — run the installed-layout check and exit.
 ///
 /// The self-test deliberately goes through the *same* builder and setup as the
 /// real app. Checking `resource_dir()` from a synthetic Tauri instance would
 /// prove something about that instance, not about the installed tree the user
 /// actually runs, which is the whole question REL-01 asks.
-pub fn run_with_file(open_file: Option<String>, selftest: bool) {
+pub fn run_with_file(open_file: Option<String>) {
     let builder = tauri::Builder::default()
-        .manage(ProcessState { gs_child: Mutex::new(None) })
+        .manage(ProcessState { cancel: Arc::new(AtomicBool::new(false)) })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
@@ -2402,20 +1974,6 @@ pub fn run_with_file(open_file: Option<String>, selftest: bool) {
 
     builder
         .setup(move |app| {
-            if selftest {
-                // No window, no sweep, no frontend — resolve, probe, print, exit.
-                // The window is left alone deliberately. Hiding it needs the
-                // Manager trait in scope here for one cosmetic effect, and the
-                // process exits within a second or two anyway — on a CI runner
-                // nobody sees it at all.
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    let code = selftest::run(&handle).await;
-                    std::process::exit(code);
-                });
-                return Ok(());
-            }
-
             sweep_papercut_temp_files();
 
             // If a PDF file was passed via CLI, emit a "file-opened" event to the frontend
@@ -2475,11 +2033,57 @@ pub fn run_with_file(open_file: Option<String>, selftest: bool) {
 
 #[cfg(test)]
 mod tests {
+    /// [NO-GS] Ghostscript is gone, and stays gone.
+    ///
+    /// The inverse of a test that used to assert a `papercut-gs-*` binary was
+    /// present. Removing something across ninety files is easy to half-finish,
+    /// and a stray sidecar or a re-added invocation would not otherwise fail
+    /// anything — compression would simply start depending on an AGPL binary
+    /// again, quietly, which is the whole thing this was done to prevent.
+    #[test]
+    fn no_ghostscript_remains_anywhere_in_the_crate() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+
+        assert!(
+            !root.join("binaries").exists(),
+            "src-tauri/binaries/ is back — a sidecar is being shipped again"
+        );
+
+        // Code only, comments deliberately exempt. Notes explaining why
+        // Ghostscript went, and what it used to do, are history worth keeping —
+        // a guard that banned the name would delete its own explanation, and
+        // this one would trip on the very list below.
+        //
+        // The needles are split so this test does not match itself, which is
+        // exactly how the first version of it failed.
+        let needles = [
+            concat!("-sDEVICE", "=pdfwrite"),
+            concat!("-dPDF", "SETTINGS"),
+            concat!("spawn", "_gs"),
+            concat!("papercut", "-gs"),
+        ];
+        for file in ["lib.rs", "pdfcompress.rs", "ocr.rs", "heic.rs", "main.rs"] {
+            let Ok(text) = std::fs::read_to_string(root.join("src").join(file)) else { continue };
+            let code: String = text
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("//"))
+                .collect::<Vec<_>>()
+                .join("\n");
+            for needle in needles {
+                assert!(
+                    !code.contains(needle),
+                    "{file} still invokes Ghostscript: found {needle:?} outside a comment"
+                );
+            }
+        }
+    }
+
 
     // ─── Calibre allow-list must accept what the TS side always sends ─────────
 
     use super::validate_calibre_extra_args;
 
+    /// The allow-list still does its actual job: an unrecognised flag is rejected.
     /// [CALIBRE-ARGS-01] The Calibre allow-list must accept the flags
     /// buildCalibreArgs() sends on every call, unconditionally.
     ///
@@ -2508,7 +2112,6 @@ mod tests {
         );
     }
 
-    /// The allow-list still does its actual job: an unrecognised flag is rejected.
     #[test]
     fn calibre_allowlist_still_rejects_the_unknown() {
         let bogus = vec!["--not-a-real-calibre-flag".to_string()];
@@ -2589,87 +2192,6 @@ mod tests {
     use std::io::Cursor;
 
 
-    /// Reported from a real Linux build: rotate page 1 in the editor, then run
-    /// Compress, and the rotation is gone.
-    ///
-    /// Ghostscript's pdfwrite defaults to `-dAutoRotatePages=/PageByPage`, which
-    /// picks each page's orientation from its text direction and discards the
-    /// incoming `/Rotate`. Measured against gs 10.06.0 — the version both bundled
-    /// sidecars are — on a rotated text page:
-    ///
-    ///   source                        renders 421x298 (landscape, rotated)
-    ///   after gs, today's args        renders 298x421 (portrait, rotation undone)
-    ///   after gs, AutoRotatePages/None renders 421x298, pixel-identical to source
-    ///
-    /// It needs real text to misfire, which is why a synthetic fixture does not
-    /// reproduce it: with nothing to analyse, /PageByPage behaves like /None.
-    #[test]
-    fn compress_args_keep_the_page_rotation_the_user_chose() {
-        for preset in ["screen", "ebook", "printer", "prepress"] {
-            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf", true);
-            assert!(
-                args.iter().any(|a| a == "-dAutoRotatePages=/None"),
-                "preset {} would let Ghostscript re-decide page orientation",
-                preset
-            );
-        }
-    }
-
-    /// Every pdfwrite call rewrites the whole document, so every one of them
-    /// destroys rotation the same way. Nothing in the type system connects
-    /// those argument lists, so this enumerates them from source in the shape
-    /// of the TypeScript guards: the next command anyone adds is covered
-    /// without anyone remembering this bug.
-    ///
-    /// It was five — compress, protect, unlock, PDF/A and repair. Protect,
-    /// unlock and PDF/A were removed, and repair moved to qpdf, which leaves
-    /// compress and the shared helper it goes through. The floor is a tripwire
-    /// against a call quietly losing the flag, not a count worth defending:
-    /// raise it when a command is added, lower it only when one is genuinely
-    /// deleted.
-    ///
-    /// Note for whoever moves compress off Ghostscript: this test stops having
-    /// anything to guard at that point, and should be deleted rather than
-    /// lowered to zero. It also scans source *text*, so writing the flag inside
-    /// a comment trips it — which is exactly what happened while repair was
-    /// being rewritten.
-    #[test]
-    fn every_pdfwrite_invocation_keeps_page_rotation() {
-        let source = include_str!("lib.rs");
-        // Only the production half: this test's own doc comment names the flag,
-        // and the fixtures below invoke pdfwrite themselves.
-        let production = &source[..source
-            .find("#[cfg(test)]")
-            .expect("lib.rs has a test module")];
-
-        let sites: Vec<usize> = production
-            .match_indices("-sDEVICE=pdfwrite")
-            .map(|(i, _)| i)
-            .collect();
-        assert!(
-            sites.len() >= 2,
-            "expected the two known pdfwrite commands, found {} — has this moved?",
-            sites.len()
-        );
-
-        for start in sites {
-            // Each argument list ends by naming its output file.
-            let end = production[start..]
-                .find("-sOutputFile")
-                .map(|o| start + o)
-                .unwrap_or(production.len());
-            let line = production[..start].matches('\n').count() + 1;
-            // Either spelling: the constant at the call site, or the literal
-            // it expands to. The invariant is the flag reaching Ghostscript.
-            let window = &production[start..end];
-            assert!(
-                window.contains("-dAutoRotatePages=/None") || window.contains("GS_KEEP_PAGE_ROTATION"),
-                "the pdfwrite call at lib.rs:{} lets Ghostscript re-decide page \
-                 orientation, which silently undoes a rotation the user applied",
-                line
-            );
-        }
-    }
     /// IC-09: reported from a real Linux build — a 248 KB JPEG converted to PNG
     /// gave 1.55 MB at "1/9" and 1.45 MB at "8/9". Two outcomes across a ten-step
     /// control, because levels 1..8 all mapped to CompressionType::Default and
@@ -3066,82 +2588,10 @@ mod tests {
     // conversion explicitly for every preset except prepress (archive), which is
     // meant to stay lossless.
 
-    #[test]
-    fn compress_pdf_args_force_reencode_for_screen_preset() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
-        assert!(args.contains(&"-dAutoFilterColorImages=false".to_string()));
-        assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
-        assert!(args.contains(&"-dEncodeColorImages=true".to_string()));
-        assert!(args.contains(&"-dAutoFilterGrayImages=false".to_string()));
-        assert!(args.contains(&"-dGrayImageFilter=/DCTEncode".to_string()));
-        assert!(args.contains(&"-dEncodeGrayImages=true".to_string()));
-    }
-
-    #[test]
-    fn compress_pdf_args_force_reencode_for_ebook_and_printer_presets() {
-        for preset in ["ebook", "printer"] {
-            let args = super::build_compress_pdf_args(preset, "/tmp/out.pdf", "/tmp/in.pdf", true);
-            assert!(
-                args.contains(&"-dColorImageFilter=/DCTEncode".to_string()),
-                "preset '{}' must force color image re-encoding",
-                preset
-            );
-        }
-    }
-
-    #[test]
-    fn compress_pdf_args_prepress_preset_does_not_force_reencode() {
-        let args = super::build_compress_pdf_args("prepress", "/tmp/out.pdf", "/tmp/in.pdf", true);
-        assert!(
-            !args.iter().any(|a| a.contains("DCTEncode")),
-            "prepress (archive) must stay lossless — no forced JPEG re-encoding"
-        );
-    }
-
-    #[test]
-    fn compress_pdf_args_include_output_and_source_paths() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
-        assert!(args.contains(&"-sOutputFile=/tmp/out.pdf".to_string()));
-        assert!(args.contains(&"/tmp/in.pdf".to_string()));
-        // Source path must be last (GS positional input argument)
-        assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
-    }
-
     // ─── Downsampling toggle ──────────────────────────────────────────────────
     //
     // The panel has always shown a "Downsample images" checkbox, but nothing was
     // ever passed to Ghostscript -- the box did nothing at all.
-
-    #[test]
-    fn compress_pdf_args_downsampling_on_leaves_the_preset_in_charge() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", true);
-        assert!(
-            !args.iter().any(|a| a.starts_with("-dDownsampleColorImages")),
-            "with downsampling on, the preset's own resolution policy applies"
-        );
-    }
-
-    #[test]
-    fn compress_pdf_args_downsampling_off_disables_all_three_image_types() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
-        assert!(args.contains(&"-dDownsampleColorImages=false".to_string()));
-        assert!(args.contains(&"-dDownsampleGrayImages=false".to_string()));
-        assert!(args.contains(&"-dDownsampleMonoImages=false".to_string()));
-    }
-
-    #[test]
-    fn compress_pdf_args_downsampling_off_still_re_encodes() {
-        // Turning off downsampling keeps resolution; it must not also turn off
-        // the JPEG re-encoding that makes non-prepress presets shrink at all.
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
-        assert!(args.contains(&"-dColorImageFilter=/DCTEncode".to_string()));
-    }
-
-    #[test]
-    fn compress_pdf_args_downsampling_off_keeps_source_path_last() {
-        let args = super::build_compress_pdf_args("screen", "/tmp/out.pdf", "/tmp/in.pdf", false);
-        assert_eq!(args.last(), Some(&"/tmp/in.pdf".to_string()));
-    }
 
     // ─── [REPAIR] rebuilding a damaged PDF ────────────────────────────────────
     //
@@ -3260,64 +2710,6 @@ mod tests {
 
     // ─── format_gs_crash_error — user-friendly GS error messages ──────────────
 
-    #[test]
-    fn gs_crash_error_detects_missing_library() {
-        let stderr = "dyld[84156]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib";
-        let msg = super::format_gs_crash_error(stderr);
-        assert!(msg.contains("missing"), "should mention missing library");
-        assert!(msg.contains("reinstalling"), "should suggest reinstalling");
-        assert!(msg.contains(stderr), "should include original stderr");
-    }
-
-    #[test]
-    fn gs_crash_error_detects_dyld() {
-        let stderr = "dyld: could not load inserted library";
-        let msg = super::format_gs_crash_error(stderr);
-        assert!(msg.contains("missing"), "should mention missing library for dyld errors");
-    }
-
-    #[test]
-    fn gs_crash_error_detects_not_found() {
-        let stderr = "gs: not found";
-        let msg = super::format_gs_crash_error(stderr);
-        assert!(msg.contains("could not be found"), "should mention GS not found");
-    }
-
-    #[test]
-    fn gs_crash_error_generic_fallback() {
-        let stderr = "some unknown error";
-        let msg = super::format_gs_crash_error(stderr);
-        assert!(msg.contains("crashed unexpectedly"), "should use generic crash message");
-        assert!(msg.contains(stderr), "should include original stderr");
-    }
-
-    #[test]
-    fn gs_crash_error_empty_stderr() {
-        let msg = super::format_gs_crash_error("");
-        assert!(msg.contains("crashed unexpectedly"), "should use generic message for empty stderr");
-        assert!(!msg.contains("Details:"), "should not include Details: for empty stderr");
-    }
-
-    // ─── GS-CRASH-DISC-01 — format_gs_crash_error is used for non-zero exit with crash stderr ──
-    //
-    // When GS exits with a non-zero exit code AND stderr looks like a missing-library
-    // crash (dyld / "Library not loaded"), the error message must contain the crash
-    // guidance text, NOT a raw "exit code N" message.
-    // This is the regression test for the Some(_code) path fix.
-    #[test]
-    fn gs_crash_nonzero_exit_with_dyld_stderr_produces_crash_message() {
-        let dyld_stderr = "dyld[1234]: Library not loaded: /opt/homebrew/opt/jbig2dec/lib/libjbig2dec.0.dylib";
-        let msg = super::format_gs_crash_error(dyld_stderr);
-        assert!(
-            !msg.contains("exit code"),
-            "crash with missing-library stderr must NOT say 'exit code'"
-        );
-        assert!(
-            msg.contains("missing") || msg.contains("reinstall"),
-            "crash with missing-library stderr must mention missing library or reinstall"
-        );
-    }
-
     // ─── format_word_automation_error — friendly Word AppleScript error messages ──
 
     /// [CR-BUG-04] -2753 "variable is not defined" (the raw error Word conversions
@@ -3354,118 +2746,6 @@ mod tests {
         assert!(msg.contains("no error output"));
     }
 
-
-    // ─── GS-SIDECAR-02 — the bundled binary must run on someone else's machine ─
-    //
-    // Regression test (P009). The Ghostscript this repo shipped until 2026-08-26
-    // was copied from Homebrew and referenced eleven libraries by absolute path
-    // under /opt/homebrew. Those exist only on a machine with Homebrew and the
-    // matching packages, so the "bundled" binary ran on a developer's machine and
-    // essentially nowhere else — PDF compression was broken for every real user.
-    //
-    // The existing GS-SIDECAR-01 could not catch it: the file was present and the
-    // right size. What matters is not that a binary exists but that it can load.
-    #[cfg(target_os = "macos")]
-    #[test]
-    fn the_bundled_ghostscript_has_no_package_manager_dependencies() {
-        let binary = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("binaries")
-            .join("papercut-gs-aarch64-apple-darwin");
-        if !binary.exists() {
-            return; // other targets legitimately ship a stub
-        }
-        // A stub script is not a Mach-O binary; otool would fail on it, and a
-        // stub is a deliberate state rather than a regression.
-        let head = std::fs::read(&binary).expect("must read the sidecar");
-        if head.starts_with(b"#") {
-            return;
-        }
-
-        // Plain Command on purpose: this is a macOS-only unit test, so it never
-        // spawns on Windows and has no console to suppress.
-        let output = std::process::Command::new("otool")
-            .arg("-L")
-            .arg(&binary)
-            .output()
-            .expect("otool must run");
-        let linked = String::from_utf8_lossy(&output.stdout);
-
-        let foreign: Vec<&str> = linked
-            .lines()
-            .map(str::trim)
-            .filter(|l| l.starts_with('/'))
-            // otool's first line is the binary's own path, terminated by ':'
-            .filter(|l| !l.ends_with(':'))
-            .filter(|l| !l.starts_with("/usr/lib") && !l.starts_with("/System"))
-            .collect();
-
-        assert!(
-            foreign.is_empty(),
-            "the bundled Ghostscript depends on libraries that will not exist on a \
-             user's machine, so PDF compression will fail with a dyld error. Build it \
-             with scripts/build_ghostscript_sidecar.sh, which links Ghostscript's own \
-             copies instead. Offending references:\n{}",
-            foreign.join("\n")
-        );
-    }
-
-    // ─── GS-SIDECAR-01 — Ghostscript sidecar binary must be present ───────────
-    //
-    // Papercut ships Ghostscript as a sidecar binary in src-tauri/binaries/.
-    // This test asserts that at least one file matching "papercut-gs-*" exists there,
-    // catching any build step that accidentally strips or skips bundling GS.
-    #[test]
-    fn ghostscript_sidecar_binary_exists_in_binaries_dir() {
-        let binaries_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("binaries");
-        assert!(
-            binaries_dir.exists(),
-            "src-tauri/binaries/ directory must exist"
-        );
-        let gs_binary = std::fs::read_dir(&binaries_dir)
-            .expect("must be able to read binaries dir")
-            .filter_map(|e| e.ok())
-            .any(|e| {
-                e.file_name()
-                    .to_string_lossy()
-                    .starts_with("papercut-gs-")
-            });
-        assert!(
-            gs_binary,
-            "at least one Ghostscript sidecar binary (papercut-gs-*) must be present in src-tauri/binaries/. \
-             Run the build step or provide the GS binary for the target platform."
-        );
-    }
-
-    // ─── GS-SIDECAR-02 — the sidecar must not claim a system binary name ─────
-    //
-    // Tauri installs `externalBin` beside the main binary, which on a .deb means
-    // /usr/bin. A sidecar named `gs` therefore lands on /usr/bin/gs — the exact
-    // path Ubuntu's `ghostscript` package owns — and dpkg refuses to overwrite a
-    // file belonging to another package. The install fails on any machine where
-    // Ghostscript is already present, which on a desktop is most of them, and
-    // App Center reports that failure as an indefinite spinner.
-    //
-    // Every release up to v1.0.0-beta.9 shipped that way. The prefix is what
-    // keeps the sidecar in our own namespace, so it is asserted rather than
-    // remembered.
-    #[test]
-    fn the_ghostscript_sidecar_does_not_claim_a_system_binary_name() {
-        let binaries_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries");
-        for entry in std::fs::read_dir(&binaries_dir).expect("must read binaries dir") {
-            let name = entry.expect("readable entry").file_name().to_string_lossy().to_string();
-            // Documentation, and the Windows DLL that Ghostscript loads rather
-            // than a program the package manager would ever own.
-            if name == "README.md" || name.ends_with(".dll") {
-                continue;
-            }
-            assert!(
-                name.starts_with("papercut-"),
-                "sidecar {name:?} would install to a bare name under /usr/bin and can collide \
-                 with a system package. Prefix it with `papercut-`."
-            );
-        }
-    }
 
     // ─── IM-FIX-01 — Image processing with real committed fixtures ──────────
     //
@@ -4111,35 +3391,6 @@ mod tests {
     // the app reported Ghostscript available on every platform and the disabled
     // state with its install hint never appeared.
 
-    mod ghostscript_probe {
-        use super::super::sidecar_reports_version;
-
-        #[test]
-        fn a_real_ghostscript_version_counts_as_available() {
-            assert!(sidecar_reports_version(true, "10.02.1\n"));
-            assert!(sidecar_reports_version(true, "9.56.1"));
-        }
-
-        #[test]
-        fn the_bundled_stub_does_not_count_as_available() {
-            // Exactly what the three placeholder sidecars emit today.
-            assert!(!sidecar_reports_version(false, "gs not bundled on this platform\n"));
-        }
-
-        #[test]
-        fn a_zero_exit_with_prose_is_still_not_a_version() {
-            // Guards the weaker check of trusting the exit code alone: a stub that
-            // forgot to exit non-zero would otherwise read as a working install.
-            assert!(!sidecar_reports_version(true, "gs not bundled on this platform"));
-            assert!(!sidecar_reports_version(true, ""));
-        }
-
-        #[test]
-        fn leading_whitespace_does_not_hide_the_version() {
-            assert!(sidecar_reports_version(true, "  10.02.1  "));
-        }
-    }
-
     // ─── PDF-GS-INT-01 — Ghostscript integration (conditional on GS availability) ─
     //
     // These tests invoke the actual gs subprocess directly to verify GS
@@ -4148,14 +3399,6 @@ mod tests {
 
     mod ghostscript_integration {
         use std::process::Command;
-
-        fn ghostscript_available() -> bool {
-            Command::new("which")
-                .arg("gs")
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false)
-        }
 
         fn fixture_path(name: &str) -> std::path::PathBuf {
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -4169,78 +3412,6 @@ mod tests {
             bytes.len() >= 4 && &bytes[0..4] == b"%PDF"
         }
 
-        #[test]
-        fn gs_screen_preset_compresses_photo_pdf() {
-            if !ghostscript_available() {
-                return;
-            }
-
-            let input = fixture_path("photo_heavy.pdf");
-            let output = std::env::temp_dir().join("gs_screen_test.pdf");
-
-            let status = Command::new("gs")
-                .arg("-q")
-                .arg("-dNOPAUSE")
-                .arg("-dBATCH")
-                .arg("-dSAFER")
-                .arg("-dPDFSETTINGS=/screen")
-                .arg("-sDEVICE=pdfwrite")
-                .arg(format!("-sOutputFile={}", output.display()))
-                .arg(input.to_string_lossy().to_string())
-                .output()
-                .expect("gs command must execute");
-
-            assert!(status.status.success(), "gs must exit cleanly");
-            assert!(
-                output.exists(),
-                "gs must produce output file"
-            );
-
-            let out_bytes = std::fs::read(&output).expect("must read gs output");
-            assert!(
-                has_pdf_magic(&out_bytes),
-                "output must have PDF header (%PDF)"
-            );
-            assert!(out_bytes.len() > 0, "output must not be empty");
-
-            let _ = std::fs::remove_file(&output); // cleanup
-        }
-
-        #[test]
-        fn gs_text_pdf_produces_valid_pdf() {
-            if !ghostscript_available() {
-                return;
-            }
-
-            let input = fixture_path("warnock_camelot.pdf");
-            let output = std::env::temp_dir().join("gs_text_test.pdf");
-
-            let status = Command::new("gs")
-                .arg("-q")
-                .arg("-dNOPAUSE")
-                .arg("-dBATCH")
-                .arg("-dSAFER")
-                .arg("-dPDFSETTINGS=/ebook")
-                .arg("-sDEVICE=pdfwrite")
-                .arg(format!("-sOutputFile={}", output.display()))
-                .arg(input.to_string_lossy().to_string())
-                .output()
-                .expect("gs command must execute");
-
-            assert!(status.status.success(), "gs must exit cleanly");
-            assert!(
-                output.exists(),
-                "gs must produce output file"
-            );
-
-            let out_bytes = std::fs::read(&output).expect("must read gs output");
-            assert!(
-                has_pdf_magic(&out_bytes),
-                "output must have PDF header (%PDF)"
-            );
-
-            let _ = std::fs::remove_file(&output); // cleanup
-        }
     }
 
     // ─── Save must never leave a half-written file over the original ──────────

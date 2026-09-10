@@ -217,7 +217,7 @@ export const es: Dictionary = {
     'No recopilamos ningún dato: sin analítica, sin telemetría, sin informes de fallos.',
   'privacy.technicalDetails': 'Detalles técnicos',
   'privacy.detailLocal':
-    'Todo el procesamiento de archivos es local, mediante Rust, Ghostscript, LibreOffice y Calibre',
+    'Todo el procesamiento de archivos es local, mediante Rust, qpdf, LibreOffice y Calibre',
   'privacy.detailCsp':
     'La Content Security Policy bloquea toda conexión externa desde la interfaz',
   'privacy.detailNoSdk': 'No se incluye ningún SDK de analítica ni código de seguimiento',
@@ -570,10 +570,6 @@ export const es: Dictionary = {
   'batch.processingFile': 'Procesando el archivo {current} de {total}: {name}',
   'batch.skippedDifferentType':
     'Se omitieron {count} archivo(s) de otro tipo: un lote debe ser de un solo tipo.',
-  'deps.ghostscriptWindows':
-    'Comprimir PDF requiere Ghostscript. Descárguelo de ghostscript.com/releases/gsdnld.html y asegúrese de que esté en el PATH.',
-  'deps.ghostscriptLinux':
-    'Comprimir PDF requiere Ghostscript. Instálelo con su gestor de paquetes, p. ej. sudo apt install ghostscript',
   'deps.calibre': 'Instale Calibre para admitir libros electrónicos: calibre-ebook.com/download',
   'deps.libreoffice': 'Instale LibreOffice para la conversión de documentos: libreoffice.org/download',
   'filter.jpegImage': 'Imagen JPEG', 'filter.pngImage': 'Imagen PNG', 'filter.webpImage': 'Imagen WebP',
@@ -607,7 +603,7 @@ export const es: Dictionary = {
   'pdfEditor.allMarginsMm': 'Todos los márgenes (mm)', 'pdfEditor.allSides': 'Todos los lados',
   'pdfEditor.applied': 'Aplicado', 'pdfEditor.applyToAllPages': 'Aplicar a todas las páginas',
   'pdfEditor.attemptToFixCorruptedOr':
-    'Intenta corregir con Ghostscript una estructura de PDF dañada o mal formada.',
+    'Intenta corregir con qpdf una estructura de PDF dañada o mal formada.',
   'pdfEditor.bottomCenter': 'Abajo centro', 'pdfEditor.bottomLeft': 'Abajo izquierda',
   'pdfEditor.bottomRight': 'Abajo derecha',
   'pdfEditor.clickAnywhereOnThePdf': 'Haga clic en cualquier punto del PDF para colocar un bloque de texto.',
@@ -834,7 +830,7 @@ export const es: Dictionary = {
   'redactPdf.matchesFound': '{matches} encontradas',
   'redactPdf.pageCount': 'Página {page}: {count}',
   'repairPdf.originalToRepaired': 'Original: {original} → Reparado: {repaired}',
-  'repairPdf.repairExplanation': 'La reparación intenta corregir problemas estructurales en PDF dañados o mal formados reprocesándolos con Ghostscript. Puede resolver referencias cruzadas rotas, objetos ausentes y otros problemas de estructura.',
+  'repairPdf.repairExplanation': 'La reparación intenta corregir problemas estructurales en PDF dañados o mal formados reprocesándolos con qpdf. Puede resolver referencias cruzadas rotas, objetos ausentes y otros problemas de estructura.',
   'rotate.nPagesRotated': '{pages} giradas.',
   'rotate.selectPagesThenRotate': 'Seleccione páginas y gírelas a la izquierda o a la derecha.',
   'rotateImageFlow.currentDegreesClockwise': 'Actual: {degrees} grados en sentido horario',
@@ -887,7 +883,7 @@ export const es: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Active el cambio de tamaño de página abajo para procesar igualmente este archivo.',
   'merge.mergeAndSave': 'Combinar y guardar',
   'pdfEditor.untitledPdf': 'Sin título.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Este PDF contiene {images}, ya codificadas en JPEG2000: Ghostscript no puede comprimirlas más.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Este PDF contiene {images}, ya codificadas en JPEG2000: Papercut no puede comprimirlas más.',
   'split.split': 'Dividir',
   'toolSidebarPanel.clickToPlaceMode': 'Modo de clic para colocar',
   'unsavedChangesDialog.dontSave': 'No guardar',
@@ -903,6 +899,5 @@ export const es: Dictionary = {
   'convertDoc.kindEbookConverter': 'un conversor de libros electrónicos como {tools}',
   'convertDoc.kindWordProcessor': 'un procesador de textos como {tools}',
   'dashboard.andMoreFiles': '+{count} más',
-  'deps.ghostscriptMac': 'La compresión de PDF requiere Ghostscript, que Papercut incluye. La copia incluida no se pudo iniciar; reinstalar Papercut debería restaurarla.',
   'editorToolbar.courierNewMonospace': 'Courier New (monoespaciada)',
 };
