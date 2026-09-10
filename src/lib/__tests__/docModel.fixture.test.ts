@@ -58,7 +58,7 @@ describe('PDF → DocModel → Markdown (sample.pdf)', () => {
     // Per-page headings survive.
     expect(md).toContain('# Page Two — Lorem Ipsum');
     // The repeated running header must be stripped, not emitted as body text.
-    expect(md).not.toContain('Papercut — Test Fixture Document');
+    expect(md).not.toContain('PaperOtter — Test Fixture Document');
     // Body prose is present and reflowed onto one paragraph line (no mid-paragraph breaks).
     expect(md).toContain('This is a sample PDF used for automated integration testing');
   });

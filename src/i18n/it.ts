@@ -153,7 +153,7 @@ export const it: Dictionary = {
   'imageCompareStep.copyStats': 'Copia statistiche', 'imageCompareStep.copied': 'Copiato',
   'privacy.title': 'La sua privacy', 'privacy.headline': 'I suoi file non lasciano mai il dispositivo.',
   'privacy.body':
-    'Papercut elabora tutto localmente sul suo computer. Nessun caricamento, nessuna archiviazione cloud, nessun tracciamento.',
+    'PaperOtter elabora tutto localmente sul suo computer. Nessun caricamento, nessuna archiviazione cloud, nessun tracciamento.',
   'privacy.zeroData':
     'Non raccogliamo alcun dato: niente analisi, niente telemetria, niente rapporti di errore.',
   'privacy.technicalDetails': 'Dettagli tecnici',
@@ -168,7 +168,7 @@ export const it: Dictionary = {
   'privacy.detailSweep':
     'I file temporanei rimasti dopo un arresto anomalo vengono rimossi all’avvio',
   'privacyFooter.processedLocallyPrivacy': 'Elaborato localmente · Privacy',
-  'chrome.about': 'Informazioni su Papercut', 'chrome.openAnother': 'Apri un altro file',
+  'chrome.about': 'Informazioni su PaperOtter', 'chrome.openAnother': 'Apri un altro file',
   'chrome.language': 'Lingua',
 
   'rotateImage.left90': '90° a sinistra', 'rotateImage.right90': '90° a destra',
@@ -269,7 +269,7 @@ export const it: Dictionary = {
   'protectPdf.addPasswordEncryptionToA': 'Protegga un PDF con una password.',
   'protectPdf.confirmPassword': 'Conferma password',
   'protectPdf.encrypting': 'Cifratura…', 'protectPdf.enterPassword': 'Inserisca una password',
-  'protectPdf.acknowledgePassword': 'Ho capito che Papercut non memorizza questa password e non può recuperarla. Se la perdo, questo file non potrà più essere aperto.',
+  'protectPdf.acknowledgePassword': 'Ho capito che PaperOtter non memorizza questa password e non può recuperarla. Se la perdo, questo file non potrà più essere aperto.',
   'protectPdf.savedProtectedCopy': 'Copia protetta salvata. Il documento aperto qui resta invariato.',
   'protectPdf.saveProtectedCopy': 'Salva copia protetta…',
   'protectPdf.password': 'Password', 'protectPdf.passwordsDoNotMatch': 'Le password non coincidono.',
@@ -565,7 +565,7 @@ export const it: Dictionary = {
   'app.pleaseTryAgain': 'Riprovi.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tutta l’elaborazione avviene localmente. Nessun dato lascia mai il suo computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut parla nove lingue. Tutte sono state realizzate con l’aiuto dell’IA, inglese compreso, e nessuna è stata rivista da un traduttore professionista. Se qualcosa suona strano o dice la cosa sbagliata, la preghiamo di segnalarlo.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter parla nove lingue. Tutte sono state realizzate con l’aiuto dell’IA, inglese compreso, e nessuna è stata rivista da un traduttore professionista. Se qualcosa suona strano o dice la cosa sbagliata, la preghiamo di segnalarlo.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Sviluppato con', 'aboutDialog.license': 'Licenza',
                                              'aboutDialog.includes': 'Include',
@@ -605,7 +605,7 @@ export const it: Dictionary = {
   'landingCard.unsupportedFile': 'File non supportato', 'landingCard.dropFileHere': 'Trascini il file qui',
   'landingCard.dropToOpen': 'Rilasci per aprire',
   'recentDirsButton.recent': 'Recenti', 'recentDirsButton.recentFolders': 'Cartelle recenti',
-  'recentDirs.recentFolders': 'Cartelle recenti', 'splashScreen.papercutLogo': 'Logo di Papercut',
+  'recentDirs.recentFolders': 'Cartelle recenti', 'splashScreen.papercutLogo': 'Logo di PaperOtter',
   'updateChecker.dismissUpdateBanner': 'Nascondi l’avviso di aggiornamento', 'updateChecker.download': 'Scarica',
   'themeToggle.system': 'Sistema', 'themeToggle.light': 'Chiaro',
   'docModel.thisDocumentHasNoExtractable':
@@ -720,7 +720,7 @@ export const it: Dictionary = {
   'themeToggle.dark': 'Scuro',
   'themeToggle.themeNamed': 'Tema: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'presenta modifiche non salvate. Il salvataggio sostituisce il file originale.',
-  'updateChecker.versionAvailable': 'Papercut v{version} è disponibile.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} è disponibile.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} applicato correttamente',
   'toolSidebarPanel.canCompressToAbout': 'Comprimibile al meglio a circa {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Trascina sulla pagina per coprire qualcosa. Applicando, quelle pagine vengono appiattite in un’immagine: il contenuto sottostante viene rimosso dal file, non solo nascosto.',
@@ -756,7 +756,7 @@ export const it: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Attiva il ridimensionamento delle pagine qui sotto per elaborare comunque questo file.',
   'merge.mergeAndSave': 'Unisci e salva',
   'pdfEditor.untitledPdf': 'Senza titolo.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Questo PDF contiene {images}, già codificate in JPEG2000: Papercut non può comprimerle oltre.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Questo PDF contiene {images}, già codificate in JPEG2000: PaperOtter non può comprimerle oltre.',
   'split.split': 'Dividi',
   'toolSidebarPanel.clickToPlaceMode': 'Modalità clic per posizionare',
   'unsavedChangesDialog.dontSave': 'Non salvare',
@@ -768,7 +768,7 @@ export const it: Dictionary = {
   'search.noMatches': 'Nessun risultato per «{query}».',
   'search.noMatchesInScan': 'Nessun risultato per «{query}» nel testo letto da questa scansione.',
   'search.readScanHint': 'Questa pagina non ha testo da cercare. La lettura aggiunge un livello di testo invisibile e l’aspetto della pagina resta identico.',
-  'convertDoc.formatMayNeed': 'Potrebbe richiedere {requirement}. Papercut non è riuscito a rilevarlo, ma il rilevamento non è sempre accurato: provi comunque.',
+  'convertDoc.formatMayNeed': 'Potrebbe richiedere {requirement}. PaperOtter non è riuscito a rilevarlo, ma il rilevamento non è sempre accurato: provi comunque.',
   'convertDoc.kindEbookConverter': 'un convertitore di e-book come {tools}',
   'convertDoc.kindWordProcessor': 'un elaboratore di testi come {tools}',
   'dashboard.andMoreFiles': '+{count} in più',

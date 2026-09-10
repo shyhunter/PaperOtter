@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Papercut",
+  "productName": "PaperOtter",
   "version": "1.0.0",
-  "identifier": "com.papercut.app",
+  "identifier": "com.paperotter.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Papercut",
+        "title": "PaperOtter",
         "width": 1100,
         "height": 780,
         "minWidth": 900,
@@ -65,7 +65,7 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/share/doc/papercut/copyright": "../LICENSES/copyright"
+          "/usr/share/doc/paperotter/copyright": "../LICENSES/copyright"
         }
       }
     },

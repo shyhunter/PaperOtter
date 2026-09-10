@@ -3,7 +3,7 @@
 //
 // The bundle flag is not portable. `--bundles app` produces the .app tree that
 // macOS needs, because the WebDriver session launches
-// `Papercut.app/Contents/MacOS/tauri-app` and the Ghostscript sidecar has to sit
+// `PaperOtter.app/Contents/MacOS/tauri-app` and the Ghostscript sidecar has to sit
 // beside it inside the bundle. On Linux and Windows there is no such tree —
 // `app` is not a bundle type there at all — and the suite launches the plain
 // binary from `target/debug/`, so bundling is wasted work that also fails.

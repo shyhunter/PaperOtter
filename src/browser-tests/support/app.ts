@@ -1,5 +1,5 @@
 /**
- * Booting the real Papercut in Chromium, and the small vocabulary tests use to drive it.
+ * Booting the real PaperOtter in Chromium, and the small vocabulary tests use to drive it.
  *
  * Everything above the Tauri bridge is the shipped code: the same App, the same
  * components, the same CSS, laid out by a real engine. That is the whole point —
@@ -71,7 +71,7 @@ export async function bootApp(page: Page, seed: Seed = {}): Promise<void> {
   // Its timers are registered by an effect, so advancing time before React has
   // mounted fires nothing and leaves the overlay up for the full four seconds.
   // By test id, not by its heading: the dashboard behind it carries a
-  // "Papercut" heading of its own, and both are mounted at once.
+  // "PaperOtter" heading of its own, and both are mounted at once.
   const splash = page.getByTestId('splash-screen');
   await expect(splash).toBeVisible();
 
@@ -113,7 +113,7 @@ export async function tauriCalls(page: Page): Promise<{ api: string; args: unkno
 /**
  * Fire a native file drop the way Tauri would.
  *
- * Papercut does not listen for DOM drag events — it listens on Tauri's webview
+ * PaperOtter does not listen for DOM drag events — it listens on Tauri's webview
  * channel, which carries filesystem paths rather than a DataTransfer. So a
  * DOM-level drop would test nothing real; this drives the same handler the OS
  * drives, which is why the mock parks it on `window`.
@@ -209,7 +209,7 @@ export async function expectEveryControlReachable(page: Page, where: string): Pr
 /**
  * The window itself never scrolls; only regions inside it do.
  *
- * Papercut is a fixed shell (`h-screen overflow-hidden`) with scrolling panes.
+ * PaperOtter is a fixed shell (`h-screen overflow-hidden`) with scrolling panes.
  * When the document grows instead, something has escaped its pane and whatever
  * sits at the bottom of the screen leaves with it — the shared mechanism behind
  * D1, I4 and R1, so it is worth asserting directly rather than one symptom at a

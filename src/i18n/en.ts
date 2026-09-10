@@ -148,7 +148,7 @@ export const en = {
   // ── Privacy ─────────────────────────────────────────────────────────────
   'privacy.title': 'Your Privacy',
   'privacy.headline': 'Your files never leave your device.',
-  'privacy.body': 'Papercut processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
+  'privacy.body': 'PaperOtter processes everything locally on your computer. No uploads, no cloud storage, no tracking.',
   'privacy.zeroData': 'We collect zero data: no analytics, no telemetry, no crash reports.',
   'privacy.technicalDetails': 'Technical details',
   'privacy.detailLocal': 'All file processing runs locally via Rust, qpdf, LibreOffice, and Calibre',
@@ -160,7 +160,7 @@ export const en = {
   'common.close': 'Close',
 
   // ── App chrome ──────────────────────────────────────────────────────────
-  'chrome.about': 'About Papercut',
+  'chrome.about': 'About PaperOtter',
   'chrome.openAnother': 'Open another file',
 
   // ── rotateImage ─────────────────────────────────────────────────────────
@@ -287,7 +287,7 @@ export const en = {
   'protectPdf.encrypting': 'Encrypting…',
   'protectPdf.enterPassword': 'Enter password',
   'protectPdf.password': 'Password',
-  'protectPdf.acknowledgePassword': 'I understand Papercut does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
+  'protectPdf.acknowledgePassword': 'I understand PaperOtter does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
   'protectPdf.savedProtectedCopy': 'Saved a protected copy. The document open here is unchanged.',
   'protectPdf.saveProtectedCopy': 'Save protected copy…',
   'protectPdf.passwordsDoNotMatch': 'Passwords do not match',
@@ -589,7 +589,7 @@ export const en = {
 
   // ── aboutDialog ─────────────────────────────────────────────────────────
   'aboutDialog.allProcessingHappensLocallyNo': 'All processing happens locally. No data ever leaves your computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut speaks nine languages. All of them, English included, were written with AI assistance, and none has been checked by a professional translator. If something reads oddly or says the wrong thing, please report it.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter speaks nine languages. All of them, English included, were written with AI assistance, and none has been checked by a professional translator. If something reads oddly or says the wrong thing, please report it.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Built with',
   'aboutDialog.license': 'License',
@@ -645,7 +645,7 @@ export const en = {
   'recentDirsButton.recentFolders': 'Recent folders',
 
   // ── splashScreen ────────────────────────────────────────────────────────
-  'splashScreen.papercutLogo': 'Papercut logo',
+  'splashScreen.papercutLogo': 'PaperOtter logo',
 
   // ── updateChecker ───────────────────────────────────────────────────────
   'updateChecker.dismissUpdateBanner': 'Dismiss update banner',
@@ -941,7 +941,7 @@ export const en = {
   'toolSidebarPanel.turnRight': 'Turn Right',
   'toolSidebarPanel.turnLeft': 'Turn Left',
   'docModel.thisDocumentHasNoExtractable': 'This document has no extractable text: it looks scanned or image-only.',
-  'pdfUtils.permissionDenied': 'Papercut does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
+  'pdfUtils.permissionDenied': 'PaperOtter does not have permission to read this file. Try opening it with the Choose File button instead of dragging it in.',
   'pdfUtils.thisFileAppearsToBe': 'This file appears to be corrupted or is not a valid PDF. Please try a different file.',
   'pdfUtils.failedToLoadPdfThe': 'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
   'pdfUtils.thisFileIsNotA': 'This file is not a valid PDF document. Please select a valid PDF file.',
@@ -1015,7 +1015,7 @@ export const en = {
   // only the paid one is bad advice when a free one works.
   'convertDoc.kindWordProcessor': 'a word processor such as {tools}',
   'convertDoc.kindEbookConverter': 'an ebook converter such as {tools}',
-  'convertDoc.formatMayNeed': 'May need {requirement}. Papercut could not find one, but detection is not always right: try it and see.',
+  'convertDoc.formatMayNeed': 'May need {requirement}. PaperOtter could not find one, but detection is not always right: try it and see.',
   'deps.libreoffice': 'Install LibreOffice for document conversion: libreoffice.org/download',
 
   // ── OCR ─────────────────────────────────────────────────────────────────
@@ -1149,7 +1149,7 @@ export const en = {
   'themeToggle.dark': 'Dark',
   'themeToggle.themeNamed': 'Theme: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'has changes that have not been saved. Saving replaces the original file.',
-  'updateChecker.versionAvailable': 'Papercut v{version} is available.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} is available.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} applied successfully',
   'toolSidebarPanel.canCompressToAbout': 'Can compress to about {size} at best.',
   'toolSidebarPanel.dragOnThePageToCover': 'Drag on the page to cover something. Applying flattens those pages to an image, so the content underneath is removed from the file, not just hidden.',
@@ -1185,7 +1185,7 @@ export const en = {
   'configureStep.enableResizeToStillProcess': 'Enable page resize below to still process this file.',
   'merge.mergeAndSave': 'Merge & save',
   'pdfEditor.untitledPdf': 'Untitled.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. Papercut can\'t compress them further.',
+  'pdfProcessor.jpxAlreadyEncoded': 'This PDF contains {images}, already JPEG2000-encoded. PaperOtter can\'t compress them further.',
   'split.split': 'Split',
   'toolSidebarPanel.clickToPlaceMode': 'Click-to-place mode',
   'unsavedChangesDialog.dontSave': 'Don\'t save',

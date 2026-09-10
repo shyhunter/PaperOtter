@@ -120,27 +120,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Papercut ${{ github.ref_name }}'
+          releaseName: 'PaperOtter ${{ github.ref_name }}'
           releaseBody: |
-            ## Install Papercut
+            ## Install PaperOtter
 
             Click the link for your platform to download. Then open the file to install.
 
             | Platform | Installer | Download |
             |----------|-----------|----------|
-            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_aarch64.dmg) |
-            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64.dmg) |
-            | **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_x64-setup.exe) |
-            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.AppImage) |
-            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/Papercut_${{ steps.version.outputs.version }}_amd64.deb) |
+            | **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_aarch64.dmg) |
+            | **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_x64.dmg) |
+            | **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_x64-setup.exe) |
+            | **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_amd64.AppImage) |
+            | **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/download/${{ github.ref_name }}/PaperOtter_${{ steps.version.outputs.version }}_amd64.deb) |
 
             Everything you need is included: just install and go.
 
-            > **Mac users:** If you see _"Papercut is damaged and can't be opened"_, open **Terminal** and run:
+            > **Mac users:** If you see _"PaperOtter is damaged and can't be opened"_, open **Terminal** and run:
             > ```
-            > xattr -cr /Applications/Papercut.app
+            > xattr -cr /Applications/PaperOtter.app
             > ```
-            > Then open Papercut normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
+            > Then open PaperOtter normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
 
             > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it is safe to use.
 
@@ -182,16 +182,16 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            asset: "Papercut_{version}_aarch64.dmg"
+            asset: "PaperOtter_{version}_aarch64.dmg"
             type: dmg
           - platform: macos-14
-            asset: "Papercut_{version}_x64.dmg"
+            asset: "PaperOtter_{version}_x64.dmg"
             type: dmg
           - platform: windows-latest
-            asset: "Papercut_{version}_x64-setup.exe"
+            asset: "PaperOtter_{version}_x64-setup.exe"
             type: nsis
           - platform: ubuntu-22.04
-            asset: "Papercut_{version}_amd64.AppImage"
+            asset: "PaperOtter_{version}_amd64.AppImage"
             type: appimage
 
     runs-on: ${{ matrix.platform }}
@@ -229,27 +229,27 @@ jobs:
       - name: "macOS: Mount DMG, verify app launches, check version"
         if: matrix.type == 'dmg'
         run: |
-          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/Papercut
-          test -d "/Volumes/Papercut/Papercut.app" || { echo "FAIL: Papercut.app not found in DMG"; exit 1; }
+          hdiutil attach "${{ steps.asset.outputs.filename }}" -nobrowse -mountpoint /Volumes/PaperOtter
+          test -d "/Volumes/PaperOtter/PaperOtter.app" || { echo "FAIL: PaperOtter.app not found in DMG"; exit 1; }
 
           # A broken signature is worse than no signature: macOS reports
-          # "Papercut is damaged and can't be opened" and tells the user to move
+          # "PaperOtter is damaged and can't be opened" and tells the user to move
           # it to the Trash, which reads as malware rather than as an unsigned
           # indie app. Every release up to v1.0.0-beta.9 shipped that way -- the
           # arm64 linker ad-hoc signs the executable, but nothing sealed the
           # bundle, so `codesign --verify` failed on the artifact users
           # downloaded. Checked here so it cannot come back unnoticed.
-          if ! codesign --verify --deep --strict --verbose=2 "/Volumes/Papercut/Papercut.app"; then
+          if ! codesign --verify --deep --strict --verbose=2 "/Volumes/PaperOtter/PaperOtter.app"; then
             echo "FAIL: the app bundle's signature does not verify"
-            codesign -dvv "/Volumes/Papercut/Papercut.app" || true
-            hdiutil detach /Volumes/Papercut || true
+            codesign -dvv "/Volumes/PaperOtter/PaperOtter.app" || true
+            hdiutil detach /Volumes/PaperOtter || true
             exit 1
           fi
           echo "PASS: bundle signature verifies, sidecar included"
 
-          BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/tauri-app"
+          BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/tauri-app"
           if [ ! -x "$BINARY" ]; then
-            BINARY="/Volumes/Papercut/Papercut.app/Contents/MacOS/Papercut"
+            BINARY="/Volumes/PaperOtter/PaperOtter.app/Contents/MacOS/PaperOtter"
           fi
           if [ ! -x "$BINARY" ]; then
             echo "FAIL: No app binary found in Contents/MacOS/"
@@ -261,27 +261,27 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut running with PID: $APP_PID"
+            echo "PASS: PaperOtter running with PID: $APP_PID"
           else
-            echo "FAIL: Papercut exited prematurely"
+            echo "FAIL: PaperOtter exited prematurely"
             exit 1
           fi
 
           # Version assertion: Info.plist CFBundleShortVersionString must match tag
-          PLIST="/Volumes/Papercut/Papercut.app/Contents/Info.plist"
+          PLIST="/Volumes/PaperOtter/PaperOtter.app/Contents/Info.plist"
           BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$PLIST" 2>/dev/null || echo "")
           EXPECTED_VERSION="${{ steps.asset.outputs.version }}"
           if [ "$BUNDLE_VERSION" != "$EXPECTED_VERSION" ]; then
             echo "FAIL: Info.plist CFBundleShortVersionString=\"$BUNDLE_VERSION\" expected \"$EXPECTED_VERSION\""
             kill "$APP_PID" 2>/dev/null || true
-            hdiutil detach /Volumes/Papercut
+            hdiutil detach /Volumes/PaperOtter
             exit 1
           fi
           echo "PASS: Version in bundle: $BUNDLE_VERSION ✓"
 
           kill "$APP_PID" 2>/dev/null || true
           sleep 2
-          hdiutil detach /Volumes/Papercut
+          hdiutil detach /Volumes/PaperOtter
           echo "=== macOS smoke test PASSED ==="
 
       # ── Windows (NSIS .exe) ──
@@ -293,9 +293,9 @@ jobs:
           Start-Process -FilePath ".\$installer" -ArgumentList "/S" -Wait -NoNewWindow
 
           # Tauri's Cargo package name is "tauri-app"; the NSIS installer may use
-          # either the productName ("Papercut") or the Cargo binary name ("tauri-app")
+          # either the productName ("PaperOtter") or the Cargo binary name ("tauri-app")
           # for the .exe. Search for both in all plausible install locations.
-          $candidateNames = @("Papercut.exe", "tauri-app.exe")
+          $candidateNames = @("PaperOtter.exe", "tauri-app.exe")
           $searchRoots = @(
             $env:LOCALAPPDATA,
             $env:ProgramFiles,
@@ -314,7 +314,7 @@ jobs:
           }
 
           if (-Not $binary) {
-            Write-Host "FAIL: No Papercut binary found after install."
+            Write-Host "FAIL: No PaperOtter binary found after install."
             Write-Host "--- Listing $env:LOCALAPPDATA (depth 4) ---"
             Get-ChildItem -Path $env:LOCALAPPDATA -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
             exit 1
@@ -325,9 +325,9 @@ jobs:
           Start-Sleep -Seconds 8
 
           if (-Not $proc.HasExited) {
-            Write-Host "PASS: Papercut is running (PID: $($proc.Id))"
+            Write-Host "PASS: PaperOtter is running (PID: $($proc.Id))"
           } else {
-            Write-Host "FAIL: Papercut exited immediately with code $($proc.ExitCode)"
+            Write-Host "FAIL: PaperOtter exited immediately with code $($proc.ExitCode)"
             exit 1
           }
 
@@ -368,9 +368,9 @@ jobs:
           sleep 8
 
           if kill -0 "$APP_PID" 2>/dev/null; then
-            echo "PASS: Papercut AppImage is running (PID: $APP_PID)"
+            echo "PASS: PaperOtter AppImage is running (PID: $APP_PID)"
           else
-            echo "FAIL: Papercut AppImage exited prematurely"
+            echo "FAIL: PaperOtter AppImage exited prematurely"
             kill "$XVFB_PID" 2>/dev/null || true
             exit 1
           fi

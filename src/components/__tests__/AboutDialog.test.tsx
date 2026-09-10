@@ -29,7 +29,7 @@ describe('AboutDialog', () => {
     fireEvent.click(button);
 
     expect(openUrl).toHaveBeenCalledWith(
-      'mailto:someone-else@example.com?subject=Papercut%20Feedback',
+      'mailto:someone-else@example.com?subject=PaperOtter%20Feedback',
     );
   });
 
@@ -41,7 +41,7 @@ describe('AboutDialog', () => {
     fireEvent.click(button);
 
     expect(openUrl).toHaveBeenCalledWith(
-      `mailto:${FALLBACK_FEEDBACK_EMAIL}?subject=Papercut%20Feedback`,
+      `mailto:${FALLBACK_FEEDBACK_EMAIL}?subject=PaperOtter%20Feedback`,
     );
   });
 });

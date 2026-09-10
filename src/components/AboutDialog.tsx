@@ -84,7 +84,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
 
         {/* App identity */}
         <div className="text-center space-y-1">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Papercut</h2>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">PaperOtter</h2>
           <p className="text-xs text-muted-foreground/60 font-mono">v{version}</p>
           <p className="text-sm text-muted-foreground">
             {t('common.yourLocalDocumentToolkitPrivate')}
@@ -150,7 +150,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
           <button
             type="button"
             onClick={() =>
-              openUrl(`mailto:${feedbackEmail}?subject=Papercut%20Feedback`).catch(() => {})
+              openUrl(`mailto:${feedbackEmail}?subject=PaperOtter%20Feedback`).catch(() => {})
             }
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >

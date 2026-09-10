@@ -104,7 +104,7 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
 /// A GUI app gets `windows_subsystem = "windows"` and so has no console of its
 /// own, but every console-subsystem child it spawns allocates one, and Windows
 /// shows it. `detect_converters` runs on the dashboard's first render and
-/// spawns powershell, soffice, pandoc and calibre, so launching Papercut
+/// spawns powershell, soffice, pandoc and calibre, so launching PaperOtter
 /// flashed several black windows over the UI before it had drawn anything.
 /// Reported from a real Windows 11 machine on v1.0.0-beta.13; invisible on
 /// macOS and Linux, which have no equivalent behaviour.
@@ -128,7 +128,7 @@ fn quiet_command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command 
 /// ("variable ... is not defined") both surface when a document opened via
 /// `open POSIX file` isn't fully wired into Word's scriptable document interface —
 /// the file opens, but save/close commands are rejected. Seen on some Word for
-/// Mac builds regardless of source format; not something Papercut can work around.
+/// Mac builds regardless of source format; not something PaperOtter can work around.
 /// Only called from the macOS Word-automation path, but deliberately left
 /// compiled on every platform so its unit tests keep running in CI (which is
 /// Linux). Without this, `cargo clippy -- -D warnings` fails there on dead_code.
@@ -1869,7 +1869,7 @@ async fn save_over_file(app: tauri::AppHandle, request: tauri::ipc::Request<'_>)
         .flatten()
         .collect();
         if !is_writable_target(target, &roots, granted) {
-            return Err("FORBIDDEN:not a location Papercut may write to".to_string());
+            return Err("FORBIDDEN:not a location PaperOtter may write to".to_string());
         }
     }
 

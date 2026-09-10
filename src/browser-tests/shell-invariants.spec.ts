@@ -81,7 +81,7 @@ test('[SHELL-03] the window itself never scrolls; only regions inside it do', as
   await page.getByTestId('open-file-btn').click();
   await expect(page.getByTestId('back-btn')).toBeVisible();
 
-  // Papercut is a fixed shell -- `h-screen overflow-hidden` on the root -- with
+  // PaperOtter is a fixed shell -- `h-screen overflow-hidden` on the root -- with
   // scrolling panes inside it. When the document itself grows, something below
   // has escaped its pane, and whatever sits at the bottom of the screen leaves
   // with it. That is the mechanism behind D1, I4 and R1 alike, so it is worth

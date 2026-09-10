@@ -47,7 +47,7 @@ process.env.E2E_KNOWN_DIR ??= STAGE_KNOWN;
 // tauri-plugin-webdriver-automation plugin is registered.
 function getTauriBinaryPath(): string {
   if (process.platform === 'darwin') {
-    return join(__dirname, '../../src-tauri/target/debug/bundle/macos/Papercut.app/Contents/MacOS/tauri-app');
+    return join(__dirname, '../../src-tauri/target/debug/bundle/macos/PaperOtter.app/Contents/MacOS/tauri-app');
   }
   if (process.platform === 'win32') {
     return join(__dirname, '../../src-tauri/target/debug/tauri-app.exe');
@@ -69,7 +69,7 @@ function getTauriBinaryPath(): string {
 // starts from a genuinely first-launch profile, and the user's own settings are
 // neither read nor written.
 function settingsFile(): string {
-  const id = 'com.papercut.app'; // tauri.conf.json → identifier
+  const id = 'com.paperotter.app'; // tauri.conf.json → identifier
   const home = homedir();
   if (process.platform === 'darwin') {
     return join(home, 'Library', 'Application Support', id, 'papercut-settings.json');
@@ -106,7 +106,7 @@ function restoreUserSettings(): void {
 }
 
 // Kill the app started for this run. Matched on the debug binary path, never on
-// the app name: a Papercut the user has open for real must survive the suite.
+// the app name: a PaperOtter the user has open for real must survive the suite.
 function killAppProcesses(): void {
   spawnSync('pkill', ['-f', getTauriBinaryPath()], { stdio: 'ignore' });
   spawnSync('pkill', ['-f', 'tauri-wd'], { stdio: 'ignore' });
@@ -303,7 +303,7 @@ export const config: WebdriverIO.Config = {
   // Clean up after each session.
   //
   // tauri-wd spawns the app as its own child, so killing tauri-wd can orphan
-  // the app; kill both, matching on the debug bundle path alone so a Papercut
+  // the app; kill both, matching on the debug bundle path alone so a PaperOtter
   // the user has open for real is never touched.
   afterSession: (): void => {
     killedTauriWd = true;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import logoSvg from '@/assets/logo.svg';
+import { OtterMark } from '@/components/brand/OtterMark';
 import { t } from '@/i18n';
 
 interface SplashScreenProps {
@@ -52,7 +52,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     >
       {/* Text appears first */}
       <h1 className="splash-text-in text-4xl font-bold tracking-tight text-foreground">
-        Papercut
+        PaperOtter
       </h1>
       <p className="splash-text-in-delayed mt-2 text-sm text-muted-foreground">
         {t('common.yourLocalDocumentToolkitPrivate')}
@@ -67,10 +67,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           showLogo ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <img
-          src={logoSvg}
-          alt={t('splashScreen.papercutLogo')}
-          className="h-28 w-28 dark:invert"
+        <OtterMark
+          title={t('splashScreen.papercutLogo')}
+          className="h-28 w-28 text-foreground"
         />
       </div>
 

@@ -440,7 +440,7 @@ export function Dashboard() {
             <div>
               <div className="flex items-baseline gap-2">
                 <h1 className="text-[clamp(1.3rem,2.5vw,2rem)] font-bold text-foreground tracking-tight">
-                  Papercut
+                  PaperOtter
                 </h1>
                 <span className="text-[clamp(0.6rem,0.8vw,0.75rem)] text-muted-foreground/50 font-medium">
                   v{appVersion}

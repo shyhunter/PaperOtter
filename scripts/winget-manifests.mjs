@@ -22,10 +22,10 @@ if (!version || !sumsPath || !outDir) {
   process.exit(2);
 }
 
-const PACKAGE_ID = 'shyhunter.Papercut';
+const PACKAGE_ID = 'shyhunter.PaperOtter';
 const MANIFEST_VERSION = '1.6.0';
 const REPO = 'https://github.com/shyhunter/Papercut';
-const installerName = `Papercut_${version}_x64-setup.exe`;
+const installerName = `PaperOtter_${version}_x64-setup.exe`;
 
 const sums = readFileSync(sumsPath, 'utf8');
 const line = sums.split('\n').find((l) => l.trim().endsWith(installerName));
@@ -68,13 +68,13 @@ PackageVersion: ${packageVersion}
 PackageLocale: en-US
 Publisher: shyhunter
 PublisherUrl: https://github.com/shyhunter
-PackageName: Papercut
+PackageName: PaperOtter
 PackageUrl: ${REPO}
 License: MIT
 LicenseUrl: ${REPO}/blob/main/LICENSE
 ShortDescription: Compress, convert and edit PDFs, images and documents on your own machine.
 Description: >-
-  Papercut is a local document toolkit. Twenty-two tools for PDFs, images and
+  PaperOtter is a local document toolkit. Twenty-two tools for PDFs, images and
   documents run on your own machine, with no account, no uploads and no
   telemetry. Ghostscript is bundled, so twenty-one of the twenty-two need
   nothing else installed.

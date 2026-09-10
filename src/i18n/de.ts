@@ -170,7 +170,7 @@ export const de: Dictionary = {
   'privacy.title': 'Ihre Privatsphäre',
   'privacy.headline': 'Ihre Dateien verlassen Ihr Gerät nicht.',
   'privacy.body':
-    'Papercut verarbeitet alles lokal auf Ihrem Computer. Keine Uploads, kein Cloud-Speicher, kein Tracking.',
+    'PaperOtter verarbeitet alles lokal auf Ihrem Computer. Keine Uploads, kein Cloud-Speicher, kein Tracking.',
   'privacy.zeroData':
     'Wir erheben keinerlei Daten: keine Analyse, keine Telemetrie, keine Absturzberichte.',
   'privacy.technicalDetails': 'Technische Details',
@@ -187,7 +187,7 @@ export const de: Dictionary = {
     'Nach einem Absturz zurückgebliebene temporäre Dateien werden beim Start der App entfernt',
 
   // ── App chrome ────────────────────────────────────────────────────────────
-  'chrome.about': 'Über Papercut',
+  'chrome.about': 'Über PaperOtter',
   'chrome.openAnother': 'Andere Datei öffnen',
   'chrome.language': 'Sprache',
 
@@ -295,7 +295,7 @@ export const de: Dictionary = {
   'protectPdf.confirmPassword': 'Passwort bestätigen',
   'protectPdf.encrypting': 'Wird verschlüsselt…',
   'protectPdf.enterPassword': 'Passwort eingeben',
-  'protectPdf.acknowledgePassword': 'Ich verstehe, dass Papercut dieses Passwort nicht speichert und es nicht wiederherstellen kann. Wenn ich es verliere, lässt sich diese Datei nicht mehr öffnen.',
+  'protectPdf.acknowledgePassword': 'Ich verstehe, dass PaperOtter dieses Passwort nicht speichert und es nicht wiederherstellen kann. Wenn ich es verliere, lässt sich diese Datei nicht mehr öffnen.',
   'protectPdf.savedProtectedCopy': 'Geschützte Kopie gespeichert. Das hier geöffnete Dokument bleibt unverändert.',
   'protectPdf.saveProtectedCopy': 'Geschützte Kopie speichern…',
   'protectPdf.password': 'Passwort',
@@ -566,7 +566,7 @@ export const de: Dictionary = {
     'Diese Datei scheint beschädigt zu sein. Bitte versuchen Sie es mit einer anderen Datei.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Die gesamte Verarbeitung findet lokal statt. Es verlassen keinerlei Daten Ihren Computer.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut spricht neun Sprachen. Alle wurden mit KI-Unterstützung erstellt, auch das Englische, und keine wurde professionell geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter spricht neun Sprachen. Alle wurden mit KI-Unterstützung erstellt, auch das Englische, und keine wurde professionell geprüft. Wenn etwas seltsam klingt oder das Falsche sagt, melden Sie es bitte.',
   'aboutDialog.roadmap': 'Roadmap',
   'aboutDialog.builtWith': 'Entwickelt mit',
   'aboutDialog.license': 'Lizenz',
@@ -851,7 +851,7 @@ export const de: Dictionary = {
   'recentDirs.recentFolders': 'Zuletzt verwendete Ordner',
   'support.buyMeACoffee': 'Spendieren Sie mir einen Kaffee',
   'privacyFooter.processedLocallyPrivacy': 'Lokal verarbeitet · Datenschutz',
-  'splashScreen.papercutLogo': 'Papercut-Logo',
+  'splashScreen.papercutLogo': 'PaperOtter-Logo',
   'updateChecker.dismissUpdateBanner': 'Update-Hinweis ausblenden',
   'updateChecker.download': 'Herunterladen',
   'landingCard.repairWithRepairPdf': 'Mit „PDF reparieren“ beheben →',
@@ -1098,7 +1098,7 @@ export const de: Dictionary = {
   'themeToggle.dark': 'Dunkel',
   'themeToggle.themeNamed': 'Design: {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'hat ungespeicherte Änderungen. Beim Speichern wird die Originaldatei ersetzt.',
-  'updateChecker.versionAvailable': 'Papercut v{version} ist verfügbar.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} ist verfügbar.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} erfolgreich angewendet',
   'toolSidebarPanel.canCompressToAbout': 'Verkleinerbar auf bestenfalls etwa {size}.',
   'toolSidebarPanel.dragOnThePageToCover': 'Ziehen Sie auf der Seite, um etwas abzudecken. Beim Anwenden werden diese Seiten zu einem Bild reduziert, sodass der darunterliegende Inhalt aus der Datei entfernt und nicht nur verborgen wird.',
@@ -1134,7 +1134,7 @@ export const de: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Aktivieren Sie unten die Seitenskalierung, um diese Datei dennoch zu verarbeiten.',
   'merge.mergeAndSave': 'Zusammenführen und speichern',
   'pdfEditor.untitledPdf': 'Ohne Titel.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: Papercut kann sie nicht weiter verkleinern.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Dieses PDF enthält {images}, bereits JPEG2000-kodiert: PaperOtter kann sie nicht weiter verkleinern.',
   'split.split': 'Teilen',
   'toolSidebarPanel.clickToPlaceMode': 'Modus „Klicken zum Platzieren“',
   'unsavedChangesDialog.dontSave': 'Nicht speichern',
@@ -1146,7 +1146,7 @@ export const de: Dictionary = {
   'search.noMatches': 'Keine Treffer für „{query}“.',
   'search.noMatchesInScan': 'Keine Treffer für „{query}“ im Text, der aus diesem Scan gelesen wurde.',
   'search.readScanHint': 'Diese Seite enthält keinen durchsuchbaren Text. Beim Lesen wird eine unsichtbare Textebene hinzugefügt; das Aussehen der Seite bleibt unverändert.',
-  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. Papercut konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig: versuchen Sie es einfach.',
+  'convertDoc.formatMayNeed': 'Möglicherweise wird {requirement} benötigt. PaperOtter konnte es nicht finden, aber die Erkennung ist nicht immer zuverlässig: versuchen Sie es einfach.',
   'convertDoc.kindEbookConverter': 'ein E-Book-Konverter wie {tools}',
   'convertDoc.kindWordProcessor': 'eine Textverarbeitung wie {tools}',
   'dashboard.andMoreFiles': '+{count} weitere',

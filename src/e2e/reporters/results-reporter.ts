@@ -230,7 +230,7 @@ function markdown(
   const breaches = timings.filter((t) => t.breach);
   const ok = counts.failed === 0 && missing.length === 0 && breaches.length === 0;
   const lines: string[] = [
-    '# Papercut regression run',
+    '# PaperOtter regression run',
     '',
     `- **When:** ${finishedAt}`,
     `- **Platform:** ${currentPlatform()}`,

@@ -1,7 +1,7 @@
 /**
  * [PLATFORM] What the app says differently depending on the operating system.
  *
- * Papercut ships for macOS, Windows and Linux, and a handful of strings and
+ * PaperOtter ships for macOS, Windows and Linux, and a handful of strings and
  * gates change with the platform. Those are easy to get wrong and hard to
  * notice, because whoever is looking at the screen only ever sees one of the
  * three: the reveal button said **Finder** on every platform once, and a Linux

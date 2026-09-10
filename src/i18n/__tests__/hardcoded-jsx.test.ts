@@ -29,7 +29,7 @@ describe('user-visible text comes from the dictionary', () => {
    * Anything added here should be a proper noun or a symbol, never a sentence.
    */
   const ALLOWED = new Set([
-    'Papercut',        // the product name; not translated in any language
+    'PaperOtter',        // the product name; not translated in any language
     'Tauri + React',   // technology names, shown in the About dialog
     'qpdf (Apache-2.0)',  // product name + SPDX id; the About dialog must name it exactly
     'GitHub',          // proper noun

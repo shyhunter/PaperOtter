@@ -4,7 +4,7 @@ import type { Dictionary } from '@/i18n/en';
  * French translation.
  *
  * ⚠️ UNREVIEWED: see LOCALE_REVIEW in i18n/index.ts. Produced but not yet
- * checked by a French speaker. The brief is explicit that Papercut's copy
+ * checked by a French speaker. The brief is explicit that PaperOtter's copy
  * resists machine translation and that subtly wrong safety copy in a privacy
  * tool is worse than English, so the ~80 strings about permanent removal,
  * passwords and corrupt files are the ones a reviewer should read first.
@@ -224,7 +224,7 @@ export const fr: Dictionary = {
   'privacy.title': 'Votre vie privée',
   'privacy.headline': 'Vos fichiers ne quittent jamais votre appareil.',
   'privacy.body':
-    'Papercut traite tout localement sur votre ordinateur. Aucun envoi, aucun stockage en ligne, aucun suivi.',
+    'PaperOtter traite tout localement sur votre ordinateur. Aucun envoi, aucun stockage en ligne, aucun suivi.',
   'privacy.zeroData':
     'Nous ne collectons aucune donnée: pas d’analyse, pas de télémétrie, pas de rapport d’incident.',
   'privacy.technicalDetails': 'Détails techniques',
@@ -242,7 +242,7 @@ export const fr: Dictionary = {
   'privacyFooter.processedLocallyPrivacy': 'Traité localement · Confidentialité',
 
   // ── App chrome ────────────────────────────────────────────────────────────
-  'chrome.about': 'À propos de Papercut',
+  'chrome.about': 'À propos de PaperOtter',
   'chrome.openAnother': 'Ouvrir un autre fichier',
   'chrome.language': 'Langue',
 
@@ -395,7 +395,7 @@ export const fr: Dictionary = {
   'protectPdf.confirmPassword': 'Confirmer le mot de passe',
   'protectPdf.encrypting': 'Chiffrement…',
   'protectPdf.enterPassword': 'Saisissez un mot de passe',
-  'protectPdf.acknowledgePassword': 'Je comprends que Papercut n’enregistre pas ce mot de passe et ne peut pas le récupérer. Si je le perds, ce fichier ne pourra plus être ouvert.',
+  'protectPdf.acknowledgePassword': 'Je comprends que PaperOtter n’enregistre pas ce mot de passe et ne peut pas le récupérer. Si je le perds, ce fichier ne pourra plus être ouvert.',
   'protectPdf.savedProtectedCopy': 'Copie protégée enregistrée. Le document ouvert ici reste inchangé.',
   'protectPdf.saveProtectedCopy': 'Enregistrer une copie protégée…',
   'protectPdf.password': 'Mot de passe',
@@ -879,7 +879,7 @@ export const fr: Dictionary = {
   'app.pleaseTryAgain': 'Veuillez réessayer.',
   'aboutDialog.allProcessingHappensLocallyNo':
     'Tout le traitement est local. Aucune donnée ne quitte votre ordinateur.',
-  'aboutDialog.translationsNotNativeReviewed': 'Papercut parle neuf langues. Toutes ont été rédigées avec l’aide de l’IA, y compris l’anglais, et aucune n’a été relue par un traducteur professionnel. Si une formulation semble étrange ou incorrecte, merci de le signaler.',
+  'aboutDialog.translationsNotNativeReviewed': 'PaperOtter parle neuf langues. Toutes ont été rédigées avec l’aide de l’IA, y compris l’anglais, et aucune n’a été relue par un traducteur professionnel. Si une formulation semble étrange ou incorrecte, merci de le signaler.',
   'aboutDialog.roadmap': 'Feuille de route',
   'aboutDialog.builtWith': 'Développé avec',
   'aboutDialog.license': 'Licence',
@@ -931,7 +931,7 @@ export const fr: Dictionary = {
   'recentDirsButton.recent': 'Récents',
   'recentDirsButton.recentFolders': 'Dossiers récents',
   'recentDirs.recentFolders': 'Dossiers récents',
-  'splashScreen.papercutLogo': 'Logo Papercut',
+  'splashScreen.papercutLogo': 'Logo PaperOtter',
   'updateChecker.dismissUpdateBanner': 'Masquer le bandeau de mise à jour',
   'updateChecker.download': 'Télécharger',
   'themeToggle.system': 'Système',
@@ -1061,7 +1061,7 @@ export const fr: Dictionary = {
   'themeToggle.dark': 'Sombre',
   'themeToggle.themeNamed': 'Thème : {theme}',
   'unsavedChangesDialog.hasUnsavedChanges': 'comporte des modifications non enregistrées. L’enregistrement remplace le fichier d’origine.',
-  'updateChecker.versionAvailable': 'Papercut v{version} est disponible.',
+  'updateChecker.versionAvailable': 'PaperOtter v{version} est disponible.',
   'toolSidebarPanel.appliedSuccessfully': '{tool} appliqué avec succès',
   'toolSidebarPanel.canCompressToAbout': 'Compression possible jusqu’à environ {size} au mieux.',
   'toolSidebarPanel.dragOnThePageToCover': 'Faites glisser sur la page pour masquer un élément. L’application aplatit ces pages en image : le contenu situé dessous est retiré du fichier, et pas seulement masqué.',
@@ -1097,7 +1097,7 @@ export const fr: Dictionary = {
   'configureStep.enableResizeToStillProcess': 'Activez le redimensionnement des pages ci-dessous pour traiter tout de même ce fichier.',
   'merge.mergeAndSave': 'Fusionner et enregistrer',
   'pdfEditor.untitledPdf': 'Sans titre.pdf',
-  'pdfProcessor.jpxAlreadyEncoded': 'Ce PDF contient {images}, déjà encodées en JPEG2000: Papercut ne peut pas les compresser davantage.',
+  'pdfProcessor.jpxAlreadyEncoded': 'Ce PDF contient {images}, déjà encodées en JPEG2000: PaperOtter ne peut pas les compresser davantage.',
   'split.split': 'Diviser',
   'toolSidebarPanel.clickToPlaceMode': 'Mode clic-pour-placer',
   'unsavedChangesDialog.dontSave': 'Ne pas enregistrer',
@@ -1109,7 +1109,7 @@ export const fr: Dictionary = {
   'search.noMatches': 'Aucun résultat pour « {query} ».',
   'search.noMatchesInScan': 'Aucun résultat pour « {query} » dans le texte lu depuis ce scan.',
   'search.readScanHint': 'Cette page ne contient aucun texte à rechercher. La lecture ajoute une couche de texte invisible : l’aspect de la page reste identique.',
-  'convertDoc.formatMayNeed': 'Peut nécessiter {requirement}. Papercut n’en a pas trouvé, mais la détection n’est pas toujours fiable: essayez quand même.',
+  'convertDoc.formatMayNeed': 'Peut nécessiter {requirement}. PaperOtter n’en a pas trouvé, mais la détection n’est pas toujours fiable: essayez quand même.',
   'convertDoc.kindEbookConverter': 'un convertisseur d’e-books tel que {tools}',
   'convertDoc.kindWordProcessor': 'un traitement de texte tel que {tools}',
   'dashboard.andMoreFiles': '+{count} de plus',

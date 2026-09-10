@@ -3,7 +3,7 @@
  *
  * Only the pdf-lib half runs here. Rendering stays on the main thread because it
  * needs a canvas, and moving that too would mean depending on `OffscreenCanvas`
- * — supported everywhere Papercut ships *today*, but a platform requirement we
+ * — supported everywhere PaperOtter ships *today*, but a platform requirement we
  * would be taking on for a second or so, on the largest pages only. pdf-lib is
  * plain JavaScript with no DOM in sight, so this half moves for free.
  *

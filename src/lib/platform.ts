@@ -1,6 +1,6 @@
 import type { ToolDefinition } from '@/types/tools';
 
-/** The three platforms Papercut ships for. */
+/** The three platforms PaperOtter ships for. */
 export type Platform = 'macos' | 'windows' | 'linux';
 
 /**
