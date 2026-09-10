@@ -37,4 +37,4 @@ If you turn on **Target file size** instead of picking a preset directly, Paperc
 
 ---
 
-See also: [Repair PDF](Repair-PDF) · [PDF-A Convert](PDF-A-Convert) · [Required Dependencies](Required-Dependencies)
+See also: [Repair PDF](Repair-PDF) · [Required Dependencies](Required-Dependencies)

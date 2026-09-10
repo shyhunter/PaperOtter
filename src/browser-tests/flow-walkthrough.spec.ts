@@ -67,9 +67,6 @@ interface Entry {
 }
 
 const ENTRY: Record<string, Entry> = {
-  // Needs a PDF that is actually encrypted; sample.pdf leaves it on step one,
-  // which is correct behaviour rather than a defect.
-  'unlock-pdf': { fixture: 'locked.pdf' },
   // The two multi-file flows hand-roll a step one with no test ids on it: pick
   // the files, then confirm. Named rather than given ids because adding ids is a
   // source change, and this file is not the place to make one.

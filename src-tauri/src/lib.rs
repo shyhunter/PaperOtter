@@ -973,214 +973,6 @@ async fn compress_pdf(
 }
 
 #[tauri::command]
-async fn protect_pdf(
-    app: tauri::AppHandle,
-    source_path: String,
-    owner_password: String,
-    user_password: String,
-) -> Result<tauri::ipc::Response, String> {
-    validate_source_path(&source_path)?;
-    if owner_password.is_empty() || user_password.is_empty() {
-        return Err("Password cannot be empty".to_string());
-    }
-
-    let tmp_path = std::env::temp_dir().join(format!(
-        "papercut_protected_{}.pdf",
-        Uuid::new_v4()
-    ));
-    let tmp_path_str = tmp_path.to_string_lossy().to_string();
-
-    let (mut rx, _child) = spawn_gs(&app, vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        GS_KEEP_PAGE_ROTATION.to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-sOwnerPassword={}", owner_password),
-        format!("-sUserPassword={}", user_password),
-        "-dEncryptionR=3".to_string(),
-        "-dKeyLength=128".to_string(),
-        format!("-sOutputFile={}", tmp_path_str),
-        source_path.clone(),
-    ])?;
-
-    // Wait for completion
-    let mut stderr_lines: Vec<String> = Vec::new();
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Terminated(payload) => {
-                if payload.code != Some(0) {
-                    let _ = std::fs::remove_file(&tmp_path);
-                    return Err("PDF password protection failed. The file may be corrupted or unsupported.".to_string());
-                }
-                break;
-            }
-            CommandEvent::Stderr(line) => {
-                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
-            }
-            CommandEvent::Error(e) => {
-                let _ = std::fs::remove_file(&tmp_path);
-                return Err(format!("Ghostscript error: {}", redact_gs_passwords(&e)));
-            }
-            _ => {}
-        }
-    }
-
-    let bytes = std::fs::read(&tmp_path)
-        .map_err(|e| format!("Failed to read output: {}", e))?;
-    let _ = std::fs::remove_file(&tmp_path);
-    Ok(tauri::ipc::Response::new(bytes))
-}
-
-#[tauri::command]
-async fn unlock_pdf(
-    app: tauri::AppHandle,
-    source_path: String,
-    password: String,
-) -> Result<tauri::ipc::Response, String> {
-    validate_source_path(&source_path)?;
-    if password.is_empty() {
-        return Err("Password cannot be empty".to_string());
-    }
-
-    let tmp_path = std::env::temp_dir().join(format!(
-        "papercut_unlocked_{}.pdf",
-        Uuid::new_v4()
-    ));
-    let tmp_path_str = tmp_path.to_string_lossy().to_string();
-
-    let (mut rx, _child) = spawn_gs(&app, vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        GS_KEEP_PAGE_ROTATION.to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-sPDFPassword={}", password),
-        format!("-sOutputFile={}", tmp_path_str),
-        source_path.clone(),
-    ])?;
-
-    // Wait for completion
-    let mut stderr_lines: Vec<String> = Vec::new();
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Terminated(payload) => {
-                if payload.code != Some(0) {
-                    let _ = std::fs::remove_file(&tmp_path);
-                    return Err("PDF unlock failed. The password may be incorrect or the file may be corrupted.".to_string());
-                }
-                break;
-            }
-            CommandEvent::Stderr(line) => {
-                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
-            }
-            CommandEvent::Error(e) => {
-                let _ = std::fs::remove_file(&tmp_path);
-                return Err(format!("Ghostscript error: {}", redact_gs_passwords(&e)));
-            }
-            _ => {}
-        }
-    }
-
-    let bytes = std::fs::read(&tmp_path)
-        .map_err(|e| format!("Failed to read output: {}", e))?;
-    let _ = std::fs::remove_file(&tmp_path);
-    Ok(tauri::ipc::Response::new(bytes))
-}
-
-#[tauri::command]
-async fn convert_pdfa(
-    app: tauri::AppHandle,
-    source_path: String,
-    pdfa_level: String,
-) -> Result<tauri::ipc::Response, String> {
-    validate_source_path(&source_path)?;
-    // Validate pdfa_level — only allow known conformance levels
-    let valid_levels = ["1", "2", "3"];
-    if !valid_levels.contains(&pdfa_level.as_str()) {
-        return Err(format!(
-            "Invalid PDF/A level '{}'. Must be one of: {}",
-            pdfa_level,
-            valid_levels.join(", ")
-        ));
-    }
-
-    let tmp_path = std::env::temp_dir().join(format!(
-        "papercut_pdfa_{}.pdf",
-        Uuid::new_v4()
-    ));
-    let tmp_path_str = tmp_path.to_string_lossy().to_string();
-
-    // Generate a minimal PDFA_def.ps file with required pdfmark metadata
-    let pdfa_def_path = std::env::temp_dir().join(format!(
-        "papercut_PDFA_def_{}.ps",
-        Uuid::new_v4()
-    ));
-    let pdfa_def_content = r#"%!PS
-% Required PDF/A pdfmark metadata
-[ /Title (PDF/A Document)
-  /DOCINFO pdfmark
-[ /ICCProfile (sRGB)
-  /OutputCondition (sRGB IEC61966-2.1)
-  /OutputConditionIdentifier (sRGB IEC61966-2.1)
-  /RegistryName (http://www.color.org)
-  /Info (sRGB IEC61966-2.1)
-  /OutputIntents pdfmark
-"#.to_string();
-    std::fs::write(&pdfa_def_path, &pdfa_def_content)
-        .map_err(|e| format!("Failed to write PDFA_def.ps: {}", e))?;
-
-    let (mut rx, _child) = spawn_gs(&app, vec![
-        "-sDEVICE=pdfwrite".to_string(),
-        GS_KEEP_PAGE_ROTATION.to_string(),
-        "-dNOPAUSE".to_string(),
-        "-dBATCH".to_string(),
-        "-dQUIET".to_string(),
-        format!("-dPDFA={}", pdfa_level),
-        "-dPDFACompatibilityPolicy=1".to_string(),
-        "-sColorConversionStrategy=RGB".to_string(),
-        format!("-sOutputFile={}", tmp_path_str),
-        pdfa_def_path.to_string_lossy().to_string(),
-        source_path.clone(),
-    ])?;
-
-    // Wait for completion
-    let mut stderr_lines: Vec<String> = Vec::new();
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Terminated(payload) => {
-                if payload.code != Some(0) {
-                    let _ = std::fs::remove_file(&tmp_path);
-                    let _ = std::fs::remove_file(&pdfa_def_path);
-                    let stderr = stderr_lines.join("\n");
-                    return Err(format!(
-                        "Ghostscript failed (exit {}): {}",
-                        payload.code.unwrap_or(-1),
-                        stderr
-                    ));
-                }
-                break;
-            }
-            CommandEvent::Stderr(line) => {
-                stderr_lines.push(String::from_utf8_lossy(&line).to_string());
-            }
-            CommandEvent::Error(e) => {
-                let _ = std::fs::remove_file(&tmp_path);
-                let _ = std::fs::remove_file(&pdfa_def_path);
-                return Err(format!("Ghostscript error: {}", e));
-            }
-            _ => {}
-        }
-    }
-
-    let bytes = std::fs::read(&tmp_path)
-        .map_err(|e| format!("Failed to read output: {}", e))?;
-    let _ = std::fs::remove_file(&tmp_path);
-    let _ = std::fs::remove_file(&pdfa_def_path);
-    Ok(tauri::ipc::Response::new(bytes))
-}
-
-#[tauri::command]
 async fn repair_pdf(
     app: tauri::AppHandle,
     source_path: String,
@@ -2556,24 +2348,7 @@ fn e2e_emit_drop(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String
     .map_err(|e| format!("could not emit drop: {e}"))
 }
 
-/// Redact any password values from a Ghostscript error/stderr string.
 /// Replaces the value after password-related flags with [REDACTED].
-fn redact_gs_passwords(stderr: &str) -> String {
-    let mut result = stderr.to_string();
-    for flag in &["-sOwnerPassword=", "-sUserPassword=", "-sPDFPassword="] {
-        while let Some(start) = result.find(flag) {
-            let value_start = start + flag.len();
-            // Find end of value (next space or end of string)
-            let value_end = result[value_start..]
-                .find(' ')
-                .map(|i| value_start + i)
-                .unwrap_or(result.len());
-            result.replace_range(value_start..value_end, "[REDACTED]");
-        }
-    }
-    result
-}
-
 /// Sweep orphan temp files from crashed sessions.
 /// Deletes any file/directory in the system temp dir matching "papercut_*"
 /// that was last modified more than 1 hour ago.
@@ -2629,9 +2404,9 @@ pub fn run_with_file(open_file: Option<String>, selftest: bool) {
             // so the release list stays exactly what it was -- a #[cfg] inside the
             // macro is easy to misread as shipping.
             #[cfg(not(feature = "e2e"))]
-            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file] }
+            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file] }
             #[cfg(feature = "e2e")]
-            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, protect_pdf, unlock_pdf, convert_pdfa, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file, e2e_emit_drop] }
+            { tauri::generate_handler![greet, process_image, rotate_image, decode_heic_preview, heic_frame_count, ocr_pdf, ocr_languages, write_searchable_pdf, compress_pdf, cancel_processing, repair_pdf, convert_with_libreoffice, convert_with_calibre, convert_with_textutil, convert_with_word, convert_html_to_pdf_native, detect_converters, reveal_in_finder, system_info, allow_dropped_paths, save_over_file, e2e_emit_drop] }
         });
 
     // E2E automation plugin — gated behind the `e2e` Cargo feature so it is
@@ -2856,11 +2631,16 @@ mod tests {
     }
 
     /// Every pdfwrite call rewrites the whole document, so every one of them
-    /// destroys rotation the same way — compress, protect, unlock, PDF/A and
-    /// repair alike. Nothing in the type system connects those five argument
-    /// lists, so this enumerates them from source in the shape of the
-    /// TypeScript guards: the next command anyone adds is covered without
-    /// anyone remembering this bug.
+    /// destroys rotation the same way. Nothing in the type system connects
+    /// those argument lists, so this enumerates them from source in the shape
+    /// of the TypeScript guards: the next command anyone adds is covered
+    /// without anyone remembering this bug.
+    ///
+    /// It was five — compress, protect, unlock, PDF/A and repair. Protect,
+    /// unlock and PDF/A were removed, so the floor moved to the three that
+    /// remain. The floor is a tripwire against a call quietly losing the flag,
+    /// not a count worth defending: raise it when a command is added, lower it
+    /// only when one is genuinely deleted.
     #[test]
     fn every_pdfwrite_invocation_keeps_page_rotation() {
         let source = include_str!("lib.rs");
@@ -2875,8 +2655,8 @@ mod tests {
             .map(|(i, _)| i)
             .collect();
         assert!(
-            sites.len() >= 5,
-            "expected the five known pdfwrite commands, found {} — has this moved?",
+            sites.len() >= 3,
+            "expected the three known pdfwrite commands, found {} — has this moved?",
             sites.len()
         );
 

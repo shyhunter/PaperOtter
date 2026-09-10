@@ -214,8 +214,6 @@ describe('Suite 15 — dropped files skip the pick step', () => {
   const PDF_TOOLS: Array<[string, RegExp]> = [
     ['Split PDF', /^Split PDF/],
     ['Rotate PDF', /^Rotate PDF/],
-    ['Protect PDF', /^Protect PDF/],
-    ['Unlock PDF', /^Unlock PDF/],
     ['Repair PDF', /^Repair PDF/],
     ['PDF to JPG', /^PDF to JPG/],
     ['Organize PDF', /^Organi[sz]e PDF/],
@@ -246,7 +244,6 @@ describe('Suite 15 — dropped files skip the pick step', () => {
     ['Sign PDF', /^Sign PDF/],
     ['Redact PDF', /^Redact/],
     ['OCR', /^(Make Searchable|OCR)/],
-    ['PDF\\/A', /^(PDF\/A|Convert to PDF\/A)/],
   ];
 
   it.each(MORE_PDF_TOOLS)('[PENDING-07] %s uses the dropped PDF instead of asking again', async (_name, label) => {

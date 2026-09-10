@@ -93,12 +93,6 @@ const CONTRACTS: Contract[] = [
     output: 'contract-repair.pdf',
     verify: keepsShape,
   },
-  {
-    id: 'pdfa-convert',
-    fixture: 'known-3-a3.pdf',
-    output: 'contract-pdfa.pdf',
-    verify: keepsShape,
-  },
 ];
 
 describe('Every tool honours the same contract', () => {

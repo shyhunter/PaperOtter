@@ -23,13 +23,7 @@ Use [PDF to JPG](PDF-to-JPG).
 **"I have scanned photos of pages I need as one PDF."**
 Use [JPG to PDF](JPG-to-PDF).
 
-## Protecting and locking down documents
-
-**"I want to password-protect a PDF before sending it."**
-Use [Protect PDF](Protect-PDF).
-
-**"I have a password-protected PDF and want to remove the password."**
-Use [Unlock PDF](Unlock-PDF): you need to already know the password; this isn't a password-recovery tool.
+## Removing sensitive content before sharing
 
 **"I need to permanently black out an SSN, account number, or other sensitive text before sharing a document."**
 Use [Redact PDF](Redact-PDF), and only this one. [Crop PDF](Crop-PDF) just hides content outside the visible page (it's still in the file), and covering text with a shape in [Edit PDF](Edit-PDF) just draws over the original text without removing it. Redact PDF is the only tool that actually flattens the page so nothing's left to recover.
@@ -80,11 +74,6 @@ Use [Repair PDF](Repair-PDF) first: it fixes most structural issues by re-writin
 
 **"Compressing didn't make my file any smaller."**
 See [why your file may not get smaller](Compress-PDF#why-your-file-may-not-get-smaller): usually because the PDF is mostly text (little to recompress), or was already close to optimal.
-
-## Preparing for the long term
-
-**"I need a document that will still open correctly on any computer in 20 years, for legal/compliance records."**
-Use [PDF/A Convert](PDF-A-Convert): it embeds everything the document needs (fonts, color profiles) inside the file itself.
 
 ## Working with images
 

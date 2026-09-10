@@ -32,13 +32,10 @@ import { RotateImageFlow } from '@/components/rotate-image/RotateImageFlow';
 import { ConvertImageFlow } from '@/components/convert-image/ConvertImageFlow';
 import { PdfToJpgFlow } from '@/components/pdf-to-jpg/PdfToJpgFlow';
 import { JpgToPdfFlow } from '@/components/jpg-to-pdf/JpgToPdfFlow';
-import { ProtectPdfFlow } from '@/components/protect-pdf/ProtectPdfFlow';
-import { UnlockPdfFlow } from '@/components/unlock-pdf/UnlockPdfFlow';
 import { PageNumbersFlow } from '@/components/page-numbers/PageNumbersFlow';
 import { WatermarkFlow } from '@/components/watermark/WatermarkFlow';
 import { CropPdfFlow } from '@/components/crop-pdf/CropPdfFlow';
 import { OrganizePdfFlow } from '@/components/organize-pdf/OrganizePdfFlow';
-import { PdfaConvertFlow } from '@/components/pdfa-convert/PdfaConvertFlow';
 import { RepairPdfFlow } from '@/components/repair-pdf/RepairPdfFlow';
 import { RedactPdfFlow } from '@/components/redact-pdf/RedactPdfFlow';
 import { SignPdfFlow } from '@/components/sign-pdf/SignPdfFlow';
@@ -85,8 +82,6 @@ const DEDICATED_TOOLS = new Set<string>([
   'rotate-pdf',
   'pdf-to-jpg',
   'jpg-to-pdf',
-  'protect-pdf',
-  'unlock-pdf',
   'rotate-image',
   'convert-image',
   'page-numbers',
@@ -97,7 +92,6 @@ const DEDICATED_TOOLS = new Set<string>([
   'redact-pdf',
   'edit-pdf',
   'convert-doc',
-  'pdfa-convert',
   'repair-pdf',
   'ocr-pdf',
 ]);
@@ -185,26 +179,6 @@ function DedicatedToolFlow() {
       <>
         <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <JpgToPdfFlow onStepChange={setDedicatedFlowStep} />
-      </>
-    );
-  }
-
-  // Protect PDF — dedicated flow
-  if (activeTool === 'protect-pdf') {
-    return (
-      <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
-        <ProtectPdfFlow onStepChange={setDedicatedFlowStep} />
-      </>
-    );
-  }
-
-  // Unlock PDF — dedicated flow
-  if (activeTool === 'unlock-pdf') {
-    return (
-      <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
-        <UnlockPdfFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }
@@ -304,16 +278,6 @@ function DedicatedToolFlow() {
       <>
         <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
         <ConvertDocFlow onStepChange={setDedicatedFlowStep} />
-      </>
-    );
-  }
-
-  // PDF/A Convert — dedicated flow
-  if (activeTool === 'pdfa-convert') {
-    return (
-      <>
-        <ToolHeader currentStep={dedicatedFlowStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
-        <PdfaConvertFlow onStepChange={setDedicatedFlowStep} />
       </>
     );
   }

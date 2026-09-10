@@ -123,8 +123,8 @@ describe('Save replaces the source file', () => {
  */
 const REPLACES = [
   'rotate', 'crop-pdf', 'watermark', 'page-numbers',
-  'redact-pdf', 'sign-pdf', 'organize-pdf', 'unlock-pdf', 'repair-pdf',
-  'pdfa-convert', 'ocr-pdf', 'rotate-image',
+  'redact-pdf', 'sign-pdf', 'organize-pdf', 'repair-pdf',
+  'ocr-pdf', 'rotate-image',
 ];
 
 /** Flows that cannot replace anything, each for a stated reason. */
@@ -135,7 +135,6 @@ const CANNOT_REPLACE: Record<string, string> = {
   'jpg-to-pdf': 'the output is a different file type',
   merge: 'many files in, one out — there is no single source to replace',
   split: 'one file in, many out',
-  'protect-pdf': 'deliberate: a forgotten password would make the original unopenable',
 };
 
 function flowSources(): Map<string, string> {

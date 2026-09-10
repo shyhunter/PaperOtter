@@ -20,4 +20,4 @@ Repair works well for structural corruption Ghostscript can re-parse and rewrite
 
 ---
 
-See also: [Compress PDF](Compress-PDF) · [PDF-A Convert](PDF-A-Convert)
+See also: [Compress PDF](Compress-PDF)
