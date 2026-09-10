@@ -41,7 +41,7 @@ describe('UpdateChecker', () => {
     vi.mocked(fetchLatestRelease).mockResolvedValue({
       version: '1.1.0',
       notes: '',
-      url: 'https://github.com/shyhunter/Papercut/releases/tag/v1.1.0',
+      url: 'https://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0',
     });
     render(<UpdateChecker />);
     expect(await screen.findByText(/paperotter v1\.1\.0 is available/i)).toBeInTheDocument();
@@ -88,11 +88,11 @@ describe('UpdateChecker', () => {
     vi.mocked(fetchLatestRelease).mockResolvedValue({
       version: '1.1.0',
       notes: '',
-      url: 'https://github.com/shyhunter/Papercut/releases/tag/v1.1.0',
+      url: 'https://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0',
     });
     render(<UpdateChecker />);
     fireEvent.click(await screen.findByRole('button', { name: /download/i }));
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/shyhunter/Papercut/releases/tag/v1.1.0');
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0');
   });
 
   it('UC-06: renders nothing when the fetch fails', async () => {

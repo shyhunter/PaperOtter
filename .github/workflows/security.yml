@@ -48,7 +48,7 @@ jobs:
           # GITLEAKS_LICENSE: only needed for org-level dashboard (optional)
 
   npm-audit:
-    name: Dependency audit (prod only)
+    name: Dependency audit (npm + cargo)
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -92,3 +92,20 @@ jobs:
           done
           echo "::error::npm audit endpoint unreachable after 3 attempts. This is a registry outage, not a finding. Dependabot alerts remain the standing control; re-run this job once registry.npmjs.org answers."
           exit 1
+
+      # npm audit reads GitHub's advisory database; cargo audit reads RustSec.
+      # They are different databases and RustSec is routinely ahead for Rust
+      # crates. On 2026-09-10 that gap hid two 7.5-severity quick-xml advisories
+      # for as long as nothing looked: npm audit said 0, Dependabot said 0 open
+      # alerts, and cargo audit said two. Nothing on the project was reading
+      # Cargo.lock at all.
+      #
+      # Advisory-only failures: unmaintained/yanked transitive crates arrive
+      # through Tauri and cannot be fixed here, so warnings do not block a merge.
+      # Actual vulnerabilities do.
+      - name: cargo audit (fail on vulnerabilities, not on unmaintained warnings)
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: src-tauri
+          ignore: RUSTSEC-2026-0105,RUSTSEC-2025-0057,RUSTSEC-2024-0436

@@ -19,8 +19,8 @@ import type { ImageProcessingOptions } from '@/types/file';
 // Path: src/lib/__tests__/ -> ../../../ -> project root -> src-tauri/capabilities/default.json
 
 const ALLOWED_HTTP_URLS = [
-  'https://api.github.com/repos/shyhunter/Papercut/releases/latest',
-  'https://raw.githubusercontent.com/shyhunter/Papercut/main/feedback-config.json',
+  'https://api.github.com/repos/shyhunter/PaperOtter/releases/latest',
+  'https://raw.githubusercontent.com/shyhunter/PaperOtter/main/feedback-config.json',
 ];
 
 describe('Privacy — Tauri capability config', () => {

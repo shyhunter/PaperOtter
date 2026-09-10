@@ -9,7 +9,7 @@
 <p align="center">
   <a href="#download"><img src="https://img.shields.io/badge/-Download-2ea44f?style=for-the-badge" alt="Download"></a>
   <a href="https://github.com/users/shyhunter/projects/9"><img src="https://img.shields.io/badge/-Roadmap-0969da?style=for-the-badge" alt="Roadmap"></a>
-  <a href="https://github.com/shyhunter/Papercut/wiki"><img src="https://img.shields.io/badge/-Wiki-8A2BE2?style=for-the-badge" alt="Wiki"></a>
+  <a href="https://github.com/shyhunter/PaperOtter/wiki"><img src="https://img.shields.io/badge/-Wiki-8A2BE2?style=for-the-badge" alt="Wiki"></a>
 </p>
 
 <br>
@@ -82,7 +82,7 @@ Papercut ships with **22 tools** across three categories: all running locally on
 > Italian, Dutch, Polish and European Portuguese. Papercut follows your
 > operating system's language on first run and remembers an explicit choice.
 > The eight translations beyond English are community-quality and still under
-> review: if something reads wrongly, [tell us](https://github.com/shyhunter/Papercut/issues/new/choose).
+> review: if something reads wrongly, [tell us](https://github.com/shyhunter/PaperOtter/issues/new/choose).
 
 ---
 
@@ -115,7 +115,7 @@ in English everywhere, never half-done, and a test enforces that. A confusing
 warning is worse than a foreign one.
 
 **If a string reads oddly, says the wrong thing, or is missing, please
-[open an issue](https://github.com/shyhunter/Papercut/issues).** Corrections from
+[open an issue](https://github.com/shyhunter/PaperOtter/issues).** Corrections from
 native speakers are the most useful contribution this project can receive.
 
 ---
@@ -140,18 +140,18 @@ system's where one is licensed.
 ## Download
 
 <p align="center">
-  <a href="https://github.com/shyhunter/Papercut/releases/latest"><img src="https://img.shields.io/github/v/release/shyhunter/Papercut?label=version&style=for-the-badge" alt="Latest version"></a>
+  <a href="https://github.com/shyhunter/PaperOtter/releases/latest"><img src="https://img.shields.io/github/v/release/shyhunter/PaperOtter?label=version&style=for-the-badge" alt="Latest version"></a>
 </p>
 
 | Platform | Installer | Download |
 |----------|-----------|----------|
-| **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
-| **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
-| **Windows** | .exe | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
-| **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
-| **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/Papercut/releases/latest) |
+| **Mac (M1/M2/M3/M4)** | .dmg | [Download](https://github.com/shyhunter/PaperOtter/releases/latest) |
+| **Mac (Intel)** | .dmg | [Download](https://github.com/shyhunter/PaperOtter/releases/latest) |
+| **Windows** | .exe | [Download](https://github.com/shyhunter/PaperOtter/releases/latest) |
+| **Linux (AppImage)** | .AppImage | [Download](https://github.com/shyhunter/PaperOtter/releases/latest) |
+| **Linux (Debian/Ubuntu)** | .deb | [Download](https://github.com/shyhunter/PaperOtter/releases/latest) |
 
-The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/Papercut/releases). Everything you need is included: just install and go.
+The links above always point to the latest release on [GitHub Releases](https://github.com/shyhunter/PaperOtter/releases). Everything you need is included: just install and go.
 
 > **Mac users:** Papercut is signed but not yet notarised by Apple, so macOS blocks the first launch. Verified on macOS 26:
 >
@@ -240,13 +240,13 @@ DOC/DOCX conversion and EPUB/MOBI tools need LibreOffice or Calibre installed
 and on your PATH. Papercut will show a prompt naming the missing dependency
 if one isn't found.
 
-See the [Required Dependencies](https://github.com/shyhunter/Papercut/wiki/Required-Dependencies)
+See the [Required Dependencies](https://github.com/shyhunter/PaperOtter/wiki/Required-Dependencies)
 wiki page for full per-platform detail.
 
 ### Still stuck?
 
-Check the [Troubleshooting wiki page](https://github.com/shyhunter/Papercut/wiki/Troubleshooting)
-for more error messages, or [open an issue](https://github.com/shyhunter/Papercut/issues/new/choose)
+Check the [Troubleshooting wiki page](https://github.com/shyhunter/PaperOtter/wiki/Troubleshooting)
+for more error messages, or [open an issue](https://github.com/shyhunter/PaperOtter/issues/new/choose)
 and include the exact error message.
 
 </details>

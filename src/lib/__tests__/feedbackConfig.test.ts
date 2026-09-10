@@ -44,7 +44,7 @@ describe('fetchFeedbackUrl', () => {
   // become a link the app opens for the user.
   it.each([
     ['a non-github host', 'https://evil.example.com/discussions'],
-    ['plain http', 'http://github.com/shyhunter/Papercut/discussions'],
+    ['plain http', 'http://github.com/shyhunter/PaperOtter/discussions'],
     ['a javascript: url', 'javascript:alert(1)'],
     ['a lookalike host', 'https://github.com.evil.example.com/x'],
     ['not a url at all', 'discussions'],
