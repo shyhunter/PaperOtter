@@ -2,9 +2,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { open } from '@tauri-apps/plugin-dialog';
 import { ocrPdf } from '@/lib/ocrProcessor';
 import { OcrPdfFlow } from '@/components/ocr-pdf/OcrPdfFlow';
+import { openFilePicker } from '@/hooks/useFileOpen';
+
+vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
 
 // ─── OCR flow (OCR-03) ───────────────────────────────────────────────────────
 //
@@ -42,8 +44,8 @@ const result = (over: Partial<Awaited<ReturnType<typeof ocrPdf>>['summary']> = {
 
 async function reachSummary(user: ReturnType<typeof userEvent.setup>) {
   render(<OcrPdfFlow />);
-  vi.mocked(open).mockResolvedValueOnce('/scans/permit.pdf');
-  await user.click(screen.getByRole('button', { name: /select pdf/i }));
+  vi.mocked(openFilePicker).mockResolvedValueOnce('/scans/permit.pdf');
+  await user.click(screen.getByRole('button', { name: /open file/i }));
   await act(async () => {});
   await user.click(await screen.findByRole('button', { name: /read the text/i }));
   await act(async () => {});
@@ -51,7 +53,7 @@ async function reachSummary(user: ReturnType<typeof userEvent.setup>) {
 
 afterEach(cleanup);
 beforeEach(() => {
-  vi.mocked(open).mockReset();
+  vi.mocked(openFilePicker).mockReset();
   vi.mocked(ocrPdf).mockReset();
 });
 
@@ -89,8 +91,8 @@ describe('OcrPdfFlow', () => {
     const user = userEvent.setup();
     vi.mocked(ocrPdf).mockResolvedValue(result());
     render(<OcrPdfFlow />);
-    vi.mocked(open).mockResolvedValueOnce('/scans/permit.pdf');
-    await user.click(screen.getByRole('button', { name: /select pdf/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce('/scans/permit.pdf');
+    await user.click(screen.getByRole('button', { name: /open file/i }));
     await act(async () => {});
 
     await user.selectOptions(await screen.findByLabelText(/language/i), 'tr-TR');

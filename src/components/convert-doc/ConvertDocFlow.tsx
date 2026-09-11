@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { ConvertPickStep } from '@/components/convert-doc/ConvertPickStep';
 import { ConvertConfigStep } from '@/components/convert-doc/ConvertConfigStep';
 import { ConvertCompareStep } from '@/components/convert-doc/ConvertCompareStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
-import { useToolContext } from '@/context/ToolContext';
 import { getFileName } from '@/lib/fileValidation';
 import type { ConvertFormat, ConvertResult } from '@/types/converter';
 import { t } from '@/i18n';
@@ -41,7 +40,6 @@ interface ConvertDocFlowProps {
 }
 
 export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -53,42 +51,6 @@ export function ConvertDocFlow({ onStepChange }: ConvertDocFlowProps) {
   const [sourceFormat, setSourceFormat] = useState<ConvertFormat>('pdf');
   const [convertResult, setConvertResult] = useState<ConvertResult | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-
-  // StrictMode guard for pending files
-  const consumedPending = useRef(false);
-  // Captured into a ref on the first render, never recomputed. StrictMode renders
-  // twice; deriving this from `consumedPending` — which the first pass flips —
-  // left the second pass with null, and the mount effect closes over the second
-  // pass. That is how a dropped file reached the flow and was still never opened.
-  const capturedPending = useRef<string | null>(null);
-  if (capturedPending.current === null && pendingFiles.length > 0) {
-    capturedPending.current = pendingFiles[0];
-  }
-  const initialFile = capturedPending.current;
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    consumedPending.current = true;
-    setPendingFiles([]);
-  }
-
-  // Auto-load initial file from dashboard drop
-  useEffect(() => {
-    if (initialFile) {
-      const ext = initialFile.split('.').pop()?.toLowerCase() ?? '';
-      const formatMap: Record<string, ConvertFormat> = {
-        pdf: 'pdf', docx: 'docx', doc: 'doc', odt: 'odt',
-        epub: 'epub', mobi: 'mobi', azw3: 'azw3', txt: 'txt', rtf: 'rtf',
-        html: 'html',
-      };
-      const fmt = formatMap[ext];
-      if (fmt) {
-        setFilePath(initialFile);
-        setFileName(getFileName(initialFile));
-        setSourceFormat(fmt);
-        goToStep(1);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleFilePicked = useCallback((path: string, format: ConvertFormat) => {
     setFilePath(path);

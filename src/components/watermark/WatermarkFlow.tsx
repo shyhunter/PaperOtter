@@ -4,12 +4,10 @@ import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@/lib/dialog';
-import { FileUp, RotateCcw, RotateCw } from 'lucide-react';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addWatermark, addWatermarkSinglePage, DEFAULT_WATERMARK_OPTIONS } from '@/lib/pdfWatermark';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
@@ -21,6 +19,7 @@ import { t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
 interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
@@ -39,7 +38,6 @@ function fontSizes(): { label: string; value: number }[] {
 }
 
 export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
   const [fileName, setFileName] = useState('');
@@ -71,11 +69,6 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
     onStepChange?.(s);
   }, [onStepChange]);
 
-  // Consume pending file
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0) {
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
@@ -102,26 +95,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
 
   // Auto-load initial file on mount
 
-  useEffect(() => {
-    if (initialFile) {
-      loadFile(initialFile);
-    }
-  }, [initialFile, loadFile]);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      const path = typeof result === 'string' ? result : result;
-      await loadFile(path);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   // Generate preview thumbnail with current options (debounced).
   // Only processes the first page — running the full watermark pass on every
@@ -185,32 +159,13 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
       <StepErrorBoundary stepName="Watermark">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('watermark.addWatermark')}</h2>
-              <p className="text-sm text-muted-foreground">{t('watermark.selectAPdfToAdd')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('watermark.selectAPdfToAdd')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Configure watermark */}

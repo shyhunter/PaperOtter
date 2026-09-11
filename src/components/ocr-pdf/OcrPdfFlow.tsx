@@ -1,27 +1,24 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { open } from '@/lib/dialog';
+import { useState, useCallback, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { FileUp, ScanText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ScanText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { ocrPdf, type OcrResult } from '@/lib/ocrProcessor';
-import { getFileName, isHeicDecodable } from '@/lib/fileValidation';
+import { getFileName } from '@/lib/fileValidation';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
 import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const PDF_EXTENSIONS = ['pdf'];
 
 interface OcrPdfFlowProps {
   onStepChange?: (step: number) => void;
 }
 
 export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const locale = useLocale();
   const [step, setStep] = useState(0);
 
@@ -45,16 +42,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
   const [result, setResult] = useState<OcrResult | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  const consumedPending = useRef(false);
 
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    const file = pendingFiles[0];
-    consumedPending.current = true;
-    setPendingFiles([]);
-    setFilePath(file);
-    setFileName(getFileName(file));
-    goToStep(1);
-  }
 
   // Back to the file picker, clearing what the last choice left behind: a stale
   // error or an old result shown against a newly chosen file is worse than no
@@ -91,16 +79,12 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
     return () => { void unlisten.then((fn) => fn()); };
   }, []);
 
-  const handleSelectFile = useCallback(async () => {
+  // The picker is shared; what a tool does with the path it is handed is not.
+  const handleFileReady = useCallback(async (filePath: string) => {
     setLoadError(null);
     try {
-      const picked = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
-      });
-      if (!picked) return;
-      setFilePath(picked);
-      setFileName(getFileName(picked));
+      setFilePath(filePath);
+      setFileName(getFileName(filePath));
       goToStep(1);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : String(err));
@@ -129,29 +113,12 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
     <StepErrorBoundary stepName="Make Searchable">
       {/* Step 0 — pick */}
       {step === 0 && (
-        <div className="flex flex-1 flex-col items-center justify-center p-6">
-          <div className="w-full max-w-sm space-y-4 text-center">
-            <h2 className="text-lg font-semibold text-foreground">{t('ocr.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('ocr.intro')}</p>
-
-            {!isHeicDecodable() && (
-              <div className="rounded-md border border-amber-500/50 bg-amber-500/10 px-4 py-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400">{t('ocr.needsMacos')}</p>
-              </div>
-            )}
-
-            {loadError && (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                <p className="text-xs text-destructive">{loadError}</p>
-              </div>
-            )}
-
-            <Button data-testid="open-file-btn" onClick={handleSelectFile} className="w-full">
-              <FileUp className="w-4 h-4 me-2" />
-              {t('ocr.selectPdf')}
-            </Button>
-          </div>
-        </div>
+        <FilePickStep
+          acceptedFormats={['pdf']}
+          tagline={t('ocr.intro')}
+          onFileReady={handleFileReady}
+          error={loadError}
+        />
       )}
 
       {/* Step 1 — choose language and run */}

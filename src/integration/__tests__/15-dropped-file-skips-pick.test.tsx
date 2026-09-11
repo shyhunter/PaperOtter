@@ -18,7 +18,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { StrictMode } from 'react';
 import { render, screen, cleanup, act, waitFor } from '@testing-library/react';
-import { open } from '@tauri-apps/plugin-dialog';
 import App from '@/App';
 
 /**
@@ -49,6 +48,7 @@ vi.mock('@/hooks/useDependencies', () => ({
   }),
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
+import { openFilePicker } from '@/hooks/useFileOpen';
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
   renderPdfThumbnail: vi.fn().mockResolvedValue('blob:preview'),
@@ -163,8 +163,8 @@ const clickTool = async (label: RegExp) => {
 afterEach(cleanup);
 beforeEach(() => {
   dropHandlers.length = 0;
-  vi.mocked(open).mockClear();
-  vi.mocked(open).mockResolvedValue(null);
+  vi.mocked(openFilePicker).mockClear();
+  vi.mocked(openFilePicker).mockResolvedValue(null);
 });
 
 describe('Suite 15 — dropped files skip the pick step', () => {
@@ -306,7 +306,7 @@ describe('Suite 15 — dropped files skip the pick step', () => {
     await clickTool(/^Merge PDF/);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /select pdfs/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
     });
   });
 });

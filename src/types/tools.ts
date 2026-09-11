@@ -102,7 +102,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     acceptsFormats: ['pdf'],
     acceptsMultipleFiles: true,
     steps: [
-      { label: 'step.pickFiles', description: 'tool.mergePdf.step1' },
+      { label: 'step.pick', description: 'tool.mergePdf.step1' },
       { label: 'step.order', description: 'tool.mergePdf.step2' },
       { label: 'step.save', description: 'tool.mergePdf.step3' },
     ],
@@ -155,7 +155,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     acceptsFormats: ['image'],
     acceptsMultipleFiles: true,
     steps: [
-      { label: 'step.pickImages', description: 'tool.jpgToPdf.step1' },
+      { label: 'step.pick', description: 'tool.jpgToPdf.step1' },
       { label: 'step.configure', description: 'tool.jpgToPdf.step2' },
       { label: 'step.save', description: 'tool.jpgToPdf.step3' },
     ],
@@ -246,7 +246,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     icon: 'PenTool',
     acceptsFormats: ['pdf'],
     steps: [
-      { label: 'step.selectPdf', description: 'tool.signPdf.step2' },
+      { label: 'step.pick', description: 'tool.signPdf.step2' },
       { label: 'step.signature', description: 'tool.signPdf.step3' },
       { label: 'step.place', description: 'tool.signPdf.step3' },
       { label: 'step.save', description: 'tool.redactPdf.step1' },
@@ -260,7 +260,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     icon: 'EyeOff',
     acceptsFormats: ['pdf'],
     steps: [
-      { label: 'step.selectPdf', description: 'tool.redactPdf.step2' },
+      { label: 'step.pick', description: 'tool.redactPdf.step2' },
       { label: 'step.redact', description: 'tool.redactPdf.step2' },
       { label: 'step.save', description: 'tool.pdfaConvert.step1' },
     ],
@@ -277,7 +277,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     // greyed out on a machine without Ghostscript; now there is nothing to be
     // missing. Compress is the only tool that still needs it.
     steps: [
-      { label: 'step.selectPdf', description: 'tool.repairPdf.step2' },
+      { label: 'step.pick', description: 'tool.repairPdf.step2' },
       { label: 'step.repair', description: 'tool.editPdf.step1' },
       { label: 'step.save', description: 'tool.editPdf.step2' },
     ],
@@ -296,7 +296,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     icon: 'Eye',
     acceptsFormats: ['pdf'],
     steps: [
-      { label: 'step.selectPdf', description: 'tool.ocrPdf.step1' },
+      { label: 'step.pick', description: 'tool.ocrPdf.step1' },
       { label: 'step.recognise', description: 'tool.ocrPdf.step2' },
       { label: 'step.save', description: 'tool.ocrPdf.step3' },
     ],

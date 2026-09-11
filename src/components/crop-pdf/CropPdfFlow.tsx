@@ -1,15 +1,12 @@
 // CropPdfFlow: Pick PDF → Set crop margins → Save cropped PDF.
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@/lib/dialog';
-import { FileUp } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { cropPdf, mmToPoints, pointsToMm } from '@/lib/pdfCrop';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
@@ -18,6 +15,7 @@ import { t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
 /**
  * A function, not a constant: these labels are translated, and a module-level
@@ -37,7 +35,6 @@ interface CropPdfFlowProps {
 }
 
 export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -71,12 +68,6 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
   const [processError, setProcessError] = useState<string | null>(null);
 
   // StrictMode guard
-  const consumedRef = useRef(false);
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0 && !consumedRef.current) {
-    consumedRef.current = true;
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
@@ -104,24 +95,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
     }
   }, [goToStep]);
 
-  useEffect(() => {
-    if (initialFile) loadFile(initialFile);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   // Equal margins sync
   const setMargin = useCallback((side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
@@ -190,24 +164,13 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       <StepErrorBoundary stepName="Crop PDF">
         {/* Step 0: Pick */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('cropPdf.cropPdf')}</h2>
-              <p className="text-sm text-muted-foreground">{t('cropPdf.selectAPdfToCrop')}</p>
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <><OtterSpinner className="size-4" />{t('common.loading')}</>
-                ) : (
-                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('cropPdf.selectAPdfToCrop')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Configure crop */}

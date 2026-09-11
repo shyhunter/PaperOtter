@@ -1,26 +1,21 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { getFileName } from '@/lib/fileValidation';
-import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
-import { FileUp } from 'lucide-react';
 import { SignatureCreateStep } from './SignatureCreateStep';
 import { SignaturePlaceStep } from './SignaturePlaceStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
-import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const PDF_EXTENSIONS = ['pdf'];
 
 interface SignPdfFlowProps {
   onStepChange?: (step: number) => void;
 }
 
 export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -42,54 +37,20 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
   const [resultBytes, setResultBytes] = useState<Uint8Array | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  // StrictMode guard
-  const consumedPending = useRef(false);
 
-  // Consume pending file on mount
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    const file = pendingFiles[0];
-    consumedPending.current = true;
-    setPendingFiles([]);
-    const name = getFileName(file);
-    setFilePath(file);
-    setFileName(name);
-    // Read bytes will happen via effect-like pattern after render
-    setIsLoadingFile(true);
-    readFile(file)
-      .then(async (bytes) => {
-        // A dropped file gets the same check as a picked one.
-        const refusal = await encryptedPdfRefusal(new Uint8Array(bytes));
-        if (refusal) { setLoadError(refusal); setFilePath(null); return; }
-        setPdfBytes(new Uint8Array(bytes));
-        goToStep(1);
-      })
-      .catch(() => {
-        setLoadError(t('signPdf.couldNotReadThePdf'));
-      })
-      .finally(() => {
-        setIsLoadingFile(false);
-      });
-  }
 
-  const handleSelectFile = useCallback(async () => {
+  // The picker is shared; what a tool does with the path it is handed is not.
+  const handleFileReady = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
-      });
-      if (!result) {
-        setIsLoadingFile(false);
-        return;
-      }
-      const name = getFileName(result);
-      const bytes = await readFile(result);
+      const name = getFileName(filePath);
+      const bytes = await readFile(filePath);
       // A locked PDF loads fine under `ignoreEncryption` and reports its real
       // page count, so without this the tool opens and then renders nothing.
       const refusal = await encryptedPdfRefusal(bytes);
       if (refusal) { setLoadError(refusal); return; }
-      setFilePath(result);
+      setFilePath(filePath);
       setFileName(name);
       setPdfBytes(new Uint8Array(bytes));
       goToStep(1);
@@ -121,32 +82,13 @@ export function SignPdfFlow({ onStepChange }: SignPdfFlowProps) {
       <StepErrorBoundary stepName="Sign PDF">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('signPdf.signPdf')}</h2>
-              <p className="text-sm text-muted-foreground">{t('signPdf.addASignatureToYour')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('signPdf.addASignatureToYour')}
+            onFileReady={handleFileReady}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Create or select signature */}

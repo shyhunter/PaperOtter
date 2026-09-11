@@ -4,7 +4,6 @@ import { MergePickStep } from './MergePickStep';
 import { MergeOrderStep } from './MergeOrderStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
-import { useToolContext } from '@/context/ToolContext';
 import type { MergeInput } from '@/lib/pdfMerge';
 
 interface MergeFlowProps {
@@ -12,7 +11,6 @@ interface MergeFlowProps {
 }
 
 export function MergeFlow({ onStepChange }: MergeFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
   const [files, setFiles] = useState<MergeInput[]>([]);
   const [mergedBytes, setMergedBytes] = useState<Uint8Array | null>(null);
@@ -22,12 +20,6 @@ export function MergeFlow({ onStepChange }: MergeFlowProps) {
     setStep(s);
     onStepChange?.(s);
   }, [onStepChange]);
-
-  // Consume pending files on first render
-  const initialFiles = pendingFiles.length > 0 ? [...pendingFiles] : [];
-  if (pendingFiles.length > 0) {
-    setPendingFiles([]);
-  }
 
   const handleFilesSelected = useCallback((selected: MergeInput[]) => {
     setFiles(selected);
@@ -49,7 +41,6 @@ export function MergeFlow({ onStepChange }: MergeFlowProps) {
         {step === 0 && (
           <MergePickStep
             onFilesSelected={handleFilesSelected}
-            initialFiles={initialFiles}
           />
         )}
 

@@ -9,7 +9,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import App from '@/App';
 
@@ -30,6 +29,7 @@ vi.mock('@/hooks/useDependencies', () => ({
   }),
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
+import { openFilePicker } from '@/hooks/useFileOpen';
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
   renderPdfThumbnail: vi.fn().mockResolvedValue('blob:preview'),
@@ -82,8 +82,8 @@ async function navigateToTool(toolNamePrefix: RegExp) {
 }
 
 async function selectImageFile(user: ReturnType<typeof userEvent.setup>, filePath: string) {
-  vi.mocked(open).mockResolvedValueOnce(filePath);
-  await user.click(await screen.findByRole('button', { name: /select image/i }));
+  vi.mocked(openFilePicker).mockResolvedValueOnce(filePath);
+  await user.click(await screen.findByRole('button', { name: /open file/i }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -96,7 +96,7 @@ describe('Suite 08a — Rotate Image', () => {
     await navigateToTool(/^Rotate Image/);
     // Check for the unique description text on the landing page
     expect(screen.getByText('Select an image to rotate 90, 180, or 270 degrees.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // RI-02 ─────────────────────────────────────────────────────────────────────
@@ -166,7 +166,7 @@ describe('Suite 08a — Rotate Image', () => {
     await screen.findByRole('button', { name: /apply & save/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 });
 
@@ -179,7 +179,7 @@ describe('Suite 08b — Convert Image', () => {
     // Use "^Convert Image" to avoid matching "convert images" in other tool descriptions
     await navigateToTool(/^Convert Image/);
     expect(screen.getByText('Select an image to convert between formats.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // CI-02 ─────────────────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ describe('Suite 08b — Convert Image', () => {
     await screen.findByText(/output format/i, {}, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select image/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
   // CI-08 ─────────────────────────────────────────────────────────────────────
   it('CI-08 — PNG output keeps a control, shown as a compression level', async () => {

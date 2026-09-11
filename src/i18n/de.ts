@@ -614,9 +614,6 @@ export const de: Dictionary = {
 
   // ── Step labels ───────────────────────────────────────────────────────────
   'step.pick': 'Auswählen',
-  'step.pickFiles': 'Dateien auswählen',
-  'step.pickImages': 'Bilder auswählen',
-  'step.selectPdf': 'PDF auswählen',
   'step.selectPages': 'Seiten auswählen',
   'step.configure': 'Einstellen',
   'step.compare': 'Vergleichen',

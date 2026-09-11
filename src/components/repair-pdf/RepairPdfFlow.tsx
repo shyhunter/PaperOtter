@@ -1,19 +1,17 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getFileName } from '@/lib/fileValidation';
-import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
-import { FileUp, Wrench, Info } from 'lucide-react';
+import { Wrench, Info } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const PDF_EXTENSIONS = ['pdf'];
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -26,7 +24,6 @@ interface RepairPdfFlowProps {
 }
 
 export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -48,16 +45,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
   const [sourceFileSize, setSourceFileSize] = useState(0);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  // StrictMode guard
-  const consumedPending = useRef(false);
 
-  // Consume pending file on mount
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    const file = pendingFiles[0];
-    consumedPending.current = true;
-    setPendingFiles([]);
-    setPendingFile(file);
-  }
 
   // A dropped file gets the same check as a picked one -- it used to walk
   // straight past it into the repair step.
@@ -81,24 +69,17 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
     })();
   }, [pendingFile, goToStep]);
 
-  const handleSelectFile = useCallback(async () => {
+  // The picker is shared; what a tool does with the path it is handed is not.
+  const handleFileReady = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
     setLoadError(null);
     try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: PDF_EXTENSIONS }],
-      });
-      if (!result) {
-        setIsLoadingFile(false);
-        return;
-      }
-      const name = getFileName(result);
+      const name = getFileName(filePath);
       // Repair cannot help a locked document either: Ghostscript needs the
       // password before it can rewrite anything.
-      const refusal = await encryptedPdfRefusal(await readFile(result));
+      const refusal = await encryptedPdfRefusal(await readFile(filePath));
       if (refusal) { setLoadError(refusal); return; }
-      setFilePath(result);
+      setFilePath(filePath);
       setFileName(name);
       goToStep(1);
     } catch (err) {
@@ -147,34 +128,13 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
       <StepErrorBoundary stepName="Repair PDF">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('repairPdf.repairPdf')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('repairPdf.fixStructuralIssuesInCorrupted')}
-              </p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('repairPdf.fixStructuralIssuesInCorrupted')}
+            onFileReady={handleFileReady}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Repair */}

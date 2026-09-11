@@ -1,28 +1,23 @@
 // RotateFlow: Orchestrates the rotate tool flow — Pick → Select & Rotate → Save.
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@/lib/dialog';
-import { FileUp } from 'lucide-react';
 import { RotateStep } from './RotateStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
-import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { useRotatePdfProcessor } from '@/hooks/useRotatePdfProcessor';
 import type { RotationDegrees } from '@/lib/pdfRotate';
 import { t } from '@/i18n';
-import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { FilePickStep } from '@/components/FilePickStep';
 
 interface RotateFlowProps {
   onStepChange?: (step: number) => void;
 }
 
 export function RotateFlow({ onStepChange }: RotateFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const rotateProcessor = useRotatePdfProcessor();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -39,11 +34,6 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
     onStepChange?.(s);
   }, [onStepChange]);
 
-  // Consume pending file
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0) {
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
@@ -71,26 +61,7 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
 
   // Auto-load initial file on mount
 
-  useEffect(() => {
-    if (initialFile) {
-      loadFile(initialFile);
-    }
-  }, [initialFile, loadFile]);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      const path = typeof result === 'string' ? result : result;
-      await loadFile(path);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   const handleApplied = useCallback(async (rotations: Map<number, RotationDegrees>) => {
     if (!pdfBytes) return;
@@ -112,32 +83,13 @@ export function RotateFlow({ onStepChange }: RotateFlowProps) {
       <StepErrorBoundary stepName="Rotate">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('common.rotatePages')}</h2>
-              <p className="text-sm text-muted-foreground">{t('rotate.selectAPdfToRotate')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('rotate.selectAPdfToRotate')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Select & Rotate */}

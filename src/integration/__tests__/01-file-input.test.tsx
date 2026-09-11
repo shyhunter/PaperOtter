@@ -296,6 +296,8 @@ describe('Suite 01 — File Input', () => {
     await act(async () => {});
 
     // The dialog itself is the OS's, so what can be checked here is the request.
-    expect(vi.mocked(openFilePicker)).toHaveBeenCalledWith(['image']);
+    // The second argument is whether the tool takes several files at once --
+    // Compress Image takes one.
+    expect(vi.mocked(openFilePicker)).toHaveBeenCalledWith(['image'], false);
   });
 });

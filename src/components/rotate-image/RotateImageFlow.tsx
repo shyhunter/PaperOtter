@@ -1,12 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { stripImageExtension, getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@/lib/dialog';
-import { FileUp, RotateCcw, RotateCw } from 'lucide-react';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { rotateImage } from '@/lib/imageRotate';
 import { cn } from '@/lib/utils';
 import type { ImageRotation } from '@/lib/imageRotate';
@@ -14,8 +12,8 @@ import type { ImageOutputFormat } from '@/types/file';
 import { t } from '@/i18n';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -51,7 +49,6 @@ interface RotateImageFlowProps {
 }
 
 export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -73,23 +70,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
   const [resultBytes, setResultBytes] = useState<Uint8Array | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  // StrictMode guard
-  const consumedPending = useRef(false);
 
-  // Consume pending file on mount
-  // Captured into a ref on the first render, never recomputed. StrictMode renders
-  // twice; deriving this from `consumedPending` — which the first pass flips —
-  // left the second pass with null, and the mount effect closes over the second
-  // pass. That is how a dropped file reached the flow and was still never opened.
-  const capturedPending = useRef<string | null>(null);
-  if (capturedPending.current === null && pendingFiles.length > 0) {
-    capturedPending.current = pendingFiles[0];
-  }
-  const initialFile = capturedPending.current;
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    consumedPending.current = true;
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (path: string) => {
     setIsLoadingFile(true);
@@ -123,27 +104,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
     }
   }, [goToStep]);
 
-  // Auto-load initial file
-  useEffect(() => {
-    if (initialFile) {
-      loadFile(initialFile);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   const handleRotateLeft = useCallback(() => {
     setRotation((prev) => {
@@ -184,32 +145,13 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
       <StepErrorBoundary stepName="Rotate Image">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('rotateImage.rotateImage')}</h2>
-              <p className="text-sm text-muted-foreground">{t('rotateImage.selectAnImageToRotate')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('common.selectImage')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['image']}
+            tagline={t('rotateImage.selectAnImageToRotate')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Rotate configuration */}

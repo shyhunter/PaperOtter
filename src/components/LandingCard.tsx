@@ -32,6 +32,15 @@ interface LandingCardProps {
   /** Non-null when the selected file exceeds the 100 MB limit. Contains the actual file size in bytes. */
   fileSizeLimitBytes?: number | null;
   onFileSizeLimitDismiss?: () => void;
+  /**
+   * The tool's own one-line description, shown above the card.
+   *
+   * Every tool used to draw its own pick screen and its own heading with it.
+   * Unifying the layout would have thrown those away and left twenty tools
+   * headed "Compress, resize, convert" -- true of two of them. The layout is
+   * shared; the sentence is the tool's.
+   */
+  tagline?: string;
   /** Non-null when the selected PDF has invalid magic bytes — hard block with Repair PDF CTA. */
   corruptPdfBlock?: { name: string } | null;
   onCorruptPdfDismiss?: () => void;
@@ -65,6 +74,7 @@ export function LandingCard({
   corruptFileError,
   fileSizeLimitBytes,
   onFileSizeLimitDismiss,
+  tagline,
 }: LandingCardProps) {
   const cardClass = cn(
     'relative w-full max-w-[clamp(20rem,55vw,42rem)] mx-auto transition-all duration-200 select-none',
@@ -91,7 +101,7 @@ export function LandingCard({
 
         {/* Tagline — prominent, above the card */}
         <h2 className="text-[clamp(1.1rem,1.8vw,1.5rem)] text-foreground text-center">
-          {t('landingCard.compressResizeConvertStaysOn')}
+          {tagline ?? t('landingCard.compressResizeConvertStaysOn')}
         </h2>
 
         <Card className={cardClass}>

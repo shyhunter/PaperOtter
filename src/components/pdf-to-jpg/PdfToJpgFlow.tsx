@@ -3,15 +3,13 @@ import { getFileName } from '@/lib/fileValidation';
 import { readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { tempDir, join } from '@tauri-apps/api/path';
-import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
-import { FileUp, CheckSquare, Square } from 'lucide-react';
+import { CheckSquare, Square } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
@@ -22,6 +20,7 @@ import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
 // Worker setup — must match pdfThumbnail.ts
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -154,7 +153,6 @@ interface PdfToJpgFlowProps {
 }
 
 export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -190,23 +188,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
   // Sidecar availability
   const [sidecarAvail, setSidecarAvail] = useState<{ libreoffice: boolean; calibre: boolean } | null>(null);
 
-  // StrictMode guard
-  const consumedPending = useRef(false);
 
-  // Consume pending file on mount
-  // Captured into a ref on the first render, never recomputed. StrictMode renders
-  // twice; deriving this from `consumedPending` — which the first pass flips —
-  // left the second pass with null, and the mount effect closes over the second
-  // pass. That is how a dropped file reached the flow and was still never opened.
-  const capturedPending = useRef<string | null>(null);
-  if (capturedPending.current === null && pendingFiles.length > 0) {
-    capturedPending.current = pendingFiles[0];
-  }
-  const initialFile = capturedPending.current;
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    consumedPending.current = true;
-    setPendingFiles([]);
-  }
 
   // Check sidecar availability once
   useEffect(() => {
@@ -247,27 +229,6 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
     }
   }, [goToStep]);
 
-  // Auto-load initial file
-  useEffect(() => {
-    if (initialFile) {
-      loadFile(initialFile);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   // Page selection handlers
   const handleTogglePage = useCallback((index: number) => {
@@ -369,32 +330,13 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
       <StepErrorBoundary stepName="PDF to Image">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('pdfToJpg.convertPdf')}</h2>
-              <p className="text-sm text-muted-foreground">{t('pdfToJpg.convertPdfPagesToImages')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <OtterSpinner className="size-4" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('pdfToJpg.convertPdfPagesToImages')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Configure */}

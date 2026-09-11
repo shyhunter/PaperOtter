@@ -7,7 +7,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { open } from '@tauri-apps/plugin-dialog';
 import App from '@/App';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -27,6 +26,7 @@ vi.mock('@/hooks/useDependencies', () => ({
   }),
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
+import { openFilePicker } from '@/hooks/useFileOpen';
 
 // pdf-lib — mock PDFDocument.load to succeed without real PDF bytes
 vi.mock('pdf-lib', () => ({
@@ -156,8 +156,11 @@ async function navigateToTool(toolNamePrefix: RegExp) {
 }
 
 async function selectPdfFile(user: ReturnType<typeof userEvent.setup>, filePath: string) {
-  vi.mocked(open).mockResolvedValueOnce(filePath);
-  await user.click(await screen.findByRole('button', { name: /^select pdf$/i }));
+  // Every tool shares one picker now, so the button is "Open file" in all of
+  // them and the dialog is reached through openFilePicker rather than the raw
+  // dialog plugin.
+  vi.mocked(openFilePicker).mockResolvedValueOnce(filePath);
+  await user.click(await screen.findByRole('button', { name: /open file/i }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -168,14 +171,14 @@ describe('Suite 09a — Merge PDF', () => {
   it('MP-01 — navigating to Merge PDF shows the landing page', async () => {
     await navigateToTool(/^Merge PDF/);
     expect(screen.getByText('Select two or more PDFs to combine into one.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select pdfs/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // MP-02 ─────────────────────────────────────────────────────────────────────
   it('MP-02 — selecting two PDFs shows file names and the Continue button', async () => {
     const { user } = await navigateToTool(/^Merge PDF/);
-    vi.mocked(open).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
-    await user.click(screen.getByRole('button', { name: /select pdfs/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
+    await user.click(screen.getByRole('button', { name: /open file/i }));
 
     // File names should appear in the list
     await screen.findByText('a.pdf', {}, { timeout: 2000 });
@@ -186,8 +189,8 @@ describe('Suite 09a — Merge PDF', () => {
   // MP-03 ─────────────────────────────────────────────────────────────────────
   it('MP-03 — Continue button is available after selecting PDFs', async () => {
     const { user } = await navigateToTool(/^Merge PDF/);
-    vi.mocked(open).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
-    await user.click(screen.getByRole('button', { name: /select pdfs/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
+    await user.click(screen.getByRole('button', { name: /open file/i }));
 
     await screen.findByText('a.pdf', {}, { timeout: 2000 });
     const continueBtn = screen.getByRole('button', { name: /^continue$/i });
@@ -197,8 +200,8 @@ describe('Suite 09a — Merge PDF', () => {
   // MP-04 ─────────────────────────────────────────────────────────────────────
   it('MP-04 — Continue button advances to the merge order step', async () => {
     const { user } = await navigateToTool(/^Merge PDF/);
-    vi.mocked(open).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
-    await user.click(screen.getByRole('button', { name: /select pdfs/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
+    await user.click(screen.getByRole('button', { name: /open file/i }));
 
     await screen.findByText('a.pdf', {}, { timeout: 2000 });
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
@@ -209,8 +212,8 @@ describe('Suite 09a — Merge PDF', () => {
   // MP-05 ─────────────────────────────────────────────────────────────────────
   it('MP-05 — Merge & Save triggers processing and advances to save step', async () => {
     const { user } = await navigateToTool(/^Merge PDF/);
-    vi.mocked(open).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
-    await user.click(screen.getByRole('button', { name: /select pdfs/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
+    await user.click(screen.getByRole('button', { name: /open file/i }));
     await screen.findByText('a.pdf', {}, { timeout: 2000 });
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
     await screen.findByRole('button', { name: /merge & save/i }, { timeout: 2000 });
@@ -222,14 +225,14 @@ describe('Suite 09a — Merge PDF', () => {
   // MP-06 ─────────────────────────────────────────────────────────────────────
   it('MP-06 — Back button from order step returns to the file picker', async () => {
     const { user } = await navigateToTool(/^Merge PDF/);
-    vi.mocked(open).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
-    await user.click(screen.getByRole('button', { name: /select pdfs/i }));
+    vi.mocked(openFilePicker).mockResolvedValueOnce(['/test/a.pdf', '/test/b.pdf'] as unknown as string);
+    await user.click(screen.getByRole('button', { name: /open file/i }));
     await screen.findByText('a.pdf', {}, { timeout: 2000 });
     await user.click(screen.getByRole('button', { name: /^continue$/i }));
     await screen.findByRole('button', { name: /merge & save/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select pdfs/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 });
 
@@ -241,7 +244,7 @@ describe('Suite 09b — Split PDF', () => {
   it('SP-01 — navigating to Split PDF shows the landing page', async () => {
     await navigateToTool(/^Split PDF/);
     expect(screen.getByText('Select a PDF to split into multiple files.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^select pdf$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // SP-02 ─────────────────────────────────────────────────────────────────────
@@ -296,7 +299,7 @@ describe('Suite 09b — Split PDF', () => {
     await screen.findByRole('button', { name: /^back$/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /^select pdf$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 });
 
@@ -308,7 +311,7 @@ describe('Suite 09c — Crop PDF', () => {
   it('CP-01 — navigating to Crop PDF shows the landing page', async () => {
     await navigateToTool(/^Crop PDF/);
     expect(screen.getByText('Select a PDF to crop margins.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^select pdf$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // CP-02 ─────────────────────────────────────────────────────────────────────
@@ -371,7 +374,7 @@ describe('Suite 09d — Organize PDF', () => {
   it('OP-01 — navigating to Organize PDF shows the landing page', async () => {
     await navigateToTool(/^Organise PDF/);
     expect(screen.getByText('Reorder, delete, or duplicate pages in a PDF.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^select pdf$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // OP-02 ─────────────────────────────────────────────────────────────────────
