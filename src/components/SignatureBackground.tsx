@@ -25,9 +25,23 @@ interface Props {
  * presets fell into; the label is looked up at render instead.
  */
 const PRESETS = [
+  // Three page stocks and three colours you can see.
+  //
+  // The stocks were the whole list, and they are the right *default* -- a
+  // scanned signature on a white page wants white behind it. But all three sit
+  // within a few levels of each other and of the panel, so a row of them reads
+  // as three empty squares: reported twice as "I do not see background
+  // colours". A preset nobody can distinguish is not a preset.
+  //
+  // The colours are for the other use, which is marking rather than matching:
+  // a signature that has to stand out on a form.
   { colour: '#ffffff', key: 'signatureBackground.white' },
   { colour: '#faf8f2', key: 'signatureBackground.cream' },
   { colour: '#f5f5f5', key: 'signatureBackground.grey' },
+  { colour: '#ffd43b', key: 'signatureBackground.yellow' },
+  { colour: '#ff922b', key: 'signatureBackground.orange' },
+  { colour: '#f783ac', key: 'signatureBackground.pink' },
+  { colour: '#ff6b6b', key: 'signatureBackground.red' },
 ] as const;
 
 export function SignatureBackground({ value, onChange, className }: Props) {
@@ -74,9 +88,13 @@ export function SignatureBackground({ value, onChange, className }: Props) {
             aria-pressed={value?.toLowerCase() === p.colour}
             title={label}
             aria-label={label}
+            // Two pixels, not one. All three stocks are within a few levels of
+            // white -- that is what makes them page stocks -- so on a light
+            // panel a hairline outline left three pale squares that read as
+            // empty space. Reported as "no preset colours are there".
             className={cn(
-              'h-7 w-7 rounded-md border',
-              value?.toLowerCase() === p.colour ? 'border-primary ring-2 ring-ring' : 'border-border',
+              'h-7 w-7 flex-none rounded-md border-2',
+              value?.toLowerCase() === p.colour ? 'border-primary ring-2 ring-ring' : 'border-foreground/40',
             )}
             style={{ backgroundColor: p.colour }}
           />
@@ -86,7 +104,7 @@ export function SignatureBackground({ value, onChange, className }: Props) {
         {/* Qualified for the same reason as the swatches: the ink picker beside
             this one also offers a custom colour. */}
         <label
-          className="flex h-7 items-center gap-1 rounded-md border border-border px-1.5 text-[11px] text-muted-foreground hover:bg-accent"
+          className="flex h-7 flex-none items-center gap-1 rounded-md border-2 border-foreground/40 px-1.5 text-[11px] text-muted-foreground hover:bg-accent"
           title={customLabel}
         >
           <input

@@ -64,16 +64,9 @@ describe('A locked PDF is refused, not silently emptied', () => {
     });
   }
 
-  it('[E2E-LOCK-02] Unlock PDF still accepts one, since that is its purpose', async () => {
-    const locked = ws.fixture('locked.pdf', 'locked-for-unlock.pdf');
-
-    await resetAppState(browser, 'Unlock PDF');
-    await waitForTestId(browser, 'open-file-btn');
-    await mockOpenDialog(browser, locked);
-    await clickTestId(browser, 'open-file-btn');
-
-    // It must reach the password screen rather than refusing at the door.
-    await waitForText(browser, /password/i);
-    expect(await pageContainsText(browser, /password-protected.*unlock pdf tool/i)).toBe(false);
-  });
+  // [E2E-LOCK-02] is gone. It drove an "Unlock PDF" tool, and there is no such
+  // tool in the registry -- there never has been in this app. It passed its
+  // name check only because the i18n strings for it were still present, so the
+  // guard was comparing against a dictionary rather than against the dashboard.
+  // Both the strings and this test are removed together.
 });

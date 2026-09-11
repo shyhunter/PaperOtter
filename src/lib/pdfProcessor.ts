@@ -62,6 +62,27 @@ export function getNonCompressibleReason(
  * ConfigureStep and CompareStep so the same file never shows differently-worded
  * explanations of the same fact in different places.
  */
+/**
+ * Why a document came back the same size, when it has images and they are not
+ * JPEG 2000.
+ *
+ * This is the ordinary case and it had no explanation: a file that has already
+ * been compressed once -- by PaperOtter or anything else -- has images at or
+ * below the preset's target resolution, and re-encoding them produces a stream
+ * no smaller than the one already there. The compressor refuses to write that,
+ * because handing back something bigger is not compression.
+ *
+ * It is not a failure, and it is not nothing to say. What the user needs to
+ * know is whether a stronger setting exists, so the answer differs at the
+ * bottom of the scale.
+ */
+export function alreadyCompressedMessage(quality: PdfQualityLevel): string {
+  const strongest = QUALITY_CASCADE[QUALITY_CASCADE.length - 1];
+  return quality === strongest
+    ? t('pdfProcessor.alreadyCompressedStrongest')
+    : t('pdfProcessor.alreadyCompressedTryStronger');
+}
+
 export function nonCompressibleMessage(reason: NonCompressibleReason, imageCount: number): string | null {
   switch (reason) {
     case 'text-only':
@@ -413,6 +434,7 @@ export async function processPdf(
           const gsResult: ArrayBuffer = await invoke('compress_pdf', {
             sourcePath: tempInputPath,
             preset: levelPreset,
+            downsampleImages: options.downsampleImages ?? true,
           });
           const gsBytes = new Uint8Array(gsResult);
 
@@ -446,6 +468,7 @@ export async function processPdf(
         const gsResult: ArrayBuffer = await invoke('compress_pdf', {
           sourcePath: tempInputPath,
           preset,
+          downsampleImages: options.downsampleImages ?? true,
         });
 
         processedBytes = new Uint8Array(gsResult);

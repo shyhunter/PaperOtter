@@ -46,13 +46,17 @@ import {
 import type { PdfQualityLevel, PdfPagePreset } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Expand, RotateCcw, RotateCw } from 'lucide-react';
+import { Check, AlertCircle, Expand, RotateCcw, RotateCw } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
 import { listen } from '@tauri-apps/api/event';
 import { ocrPdf, type OcrSummary } from '@/lib/ocrProcessor';
 import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { dataUrlToBytes } from '@/lib/dataUrl';
+import { cropMarginPresets } from '@/lib/cropPresets';
+import { cn } from '@/lib/utils';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -143,7 +147,7 @@ function ApplyButton({
       >
         {isApplying ? (
           <>
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <OtterSpinner className="size-4" />
             {t('common.applying')}
           </>
         ) : success ? (
@@ -1519,6 +1523,35 @@ function CropPanel() {
       <PanelHeader toolId="crop-pdf" />
 
       <div className="space-y-2">
+        {/* The presets the standalone tool has always offered. Per-side numbers
+            were here already, so the panel could do more than the tool and still
+            felt like less: reaching a plain 10mm border meant typing 10 four
+            times. */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
+          <div className="flex gap-1">
+            {cropMarginPresets().map((preset) => {
+              const chosen = (['top', 'bottom', 'left', 'right'] as const).every((side) => margins[side] === preset.mm);
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  data-testid="editor-crop-preset"
+                  onClick={() => setMargins({ top: preset.mm, bottom: preset.mm, left: preset.mm, right: preset.mm })}
+                  className={cn(
+                    'flex-1 rounded-md border px-1.5 py-1 text-[10px] font-medium transition-colors',
+                    chosen
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <label className="text-[10px] font-medium text-muted-foreground">{t('convertDoc.marginsMm')}</label>
           <label className="flex items-center gap-1 text-[10px] cursor-pointer">
@@ -1643,6 +1676,14 @@ function SignPanel() {
   // What sits behind the signature on the page. The editor renders the document
   // to a canvas, so the colour can be taken off the page rather than guessed.
   const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
+  // Whether the picker above the list has been used this session.
+  //
+  // A saved signature remembers the background it was saved with, and placing
+  // it used that unconditionally -- so choosing a colour in the panel and then
+  // clicking a saved signature did nothing at all, which is what a control that
+  // appears to be broken looks like. `null` cannot tell "untouched" from "the
+  // user chose None", so the touch is tracked rather than inferred.
+  const [sigBackgroundTouched, setSigBackgroundTouched] = useState(false);
   const { signatures: savedSignatures, saveSignature, deleteSignature } = useSavedSignatures();
   // Draw and Upload were only ever in Sign PDF, so a signature made with a
   // stylus or scanned from paper could not be used in the editor at all --
@@ -1651,7 +1692,7 @@ function SignPanel() {
   // Which pages a signature goes on. Sign PDF has offered this since it
   // shipped; this panel could only ever stamp the page you were looking at,
   // so signing a contract meant placing it once per page by hand.
-  const [applyTo, setApplyTo] = useState<'current' | 'all' | 'custom'>('current');
+  const [applyTo, setApplyTo] = useState<'current' | 'last' | 'all' | 'custom'>('current');
   const [customRange, setCustomRange] = useState('');
   // What Draw or Upload produced, waiting to be placed or saved.
   const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
@@ -1675,6 +1716,9 @@ function SignPanel() {
   /** The pages a Place will stamp. */
   const signatureTargets = useMemo(() => {
     if (applyTo === 'all') return Array.from({ length: state.pageCount }, (_, i) => i);
+    // Signing at the end is the commonest thing anyone does with a signature,
+    // and reaching it meant paging to the back of the document first.
+    if (applyTo === 'last') return [Math.max(0, state.pageCount - 1)];
     if (applyTo === 'custom') {
       const parsed = parsePageRange(customRange, state.pageCount);
       // An empty or unreadable range means the page in front of you rather than
@@ -1705,7 +1749,7 @@ function SignPanel() {
 
   const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
     const composited = background ? await applySignatureBackground(dataUrl, background) : dataUrl;
-    const bytes = new Uint8Array(await (await fetch(composited)).arrayBuffer());
+    const bytes = dataUrlToBytes(composited);
 
     // The stored image carries no size of its own, so the height comes from the
     // size control and the width follows the image's proportions.
@@ -1723,12 +1767,20 @@ function SignPanel() {
 
     const { width, height } = signatureBlockSize(dims.w, dims.h, sigSize);
 
+    // One Place is one stamp, wherever it lands. The offset is taken once from
+    // the page in front of the user rather than per page: a stamp that stepped
+    // down the page as it went put the signature in a different place on every
+    // sheet, and then moving one of them moved only that one.
+    const { x, y } = nextStampPosition(state.pages[state.currentPage]?.imageBlocks.length ?? 0);
+    // Only when it spans pages. A single-page stamp has nothing to move with,
+    // and giving it a group would make a later second stamp on the same page
+    // drag the first one along with it.
+    const groupId = signatureTargets.length > 1 ? crypto.randomUUID() : undefined;
+
     for (const target of signatureTargets) {
-      // Stepped per page from what that page already carries, so signing every
-      // page twice does not hide the second stamp under the first.
-      const { x, y } = nextStampPosition(state.pages[target]?.imageBlocks.length ?? 0);
       addImageBlock(target, {
         id: crypto.randomUUID(),
+        groupId,
         pageIndex: target,
         x,
         y,
@@ -1745,7 +1797,7 @@ function SignPanel() {
       });
     }
     markDirty();
-  }, [signatureTargets, state.pages, sigSize, addImageBlock, markDirty]);
+  }, [signatureTargets, state.pages, state.currentPage, sigSize, addImageBlock, markDirty]);
 
   /** Whether there is a signature to place at all, on whichever tab is open. */
   const canPlace = sigTab === 'type' ? sigText.trim().length > 0 : pendingDataUrl !== null;
@@ -1916,7 +1968,10 @@ function SignPanel() {
 
       {/* Outside the tabs: what sits behind the signature applies to a drawn or
           uploaded one just as much as a typed one. */}
-      <SignatureBackground value={sigBackground} onChange={setSigBackground} />
+      <SignatureBackground
+        value={sigBackground}
+        onChange={(next) => { setSigBackground(next); setSigBackgroundTouched(true); }}
+      />
 
       {/* Which pages, in the standalone tool's own words. This panel could only
           stamp the page you were looking at, so signing a contract meant
@@ -1927,6 +1982,7 @@ function SignPanel() {
         </span>
         {([
           ['current', 'signPdf.currentPageOnly'],
+          ['last', 'signPdf.lastPage'],
           ['all', 'signPdf.allPages'],
           ['custom', 'signPdf.customRange'],
         ] as const).map(([value, key]) => (
@@ -2001,7 +2057,14 @@ function SignPanel() {
             <div key={sig.id} className="flex items-center gap-1.5 rounded border p-1.5 hover:bg-muted/50 group">
               <button
                 type="button"
-                onClick={() => placeSignatureImage(sig.dataUrl, sig.background ?? null)}
+                onClick={() =>
+                  placeSignatureImage(
+                    sig.dataUrl,
+                    // An explicit choice in the panel wins; otherwise the
+                    // signature keeps the background it was saved with.
+                    sigBackgroundTouched ? sigBackground : (sig.background ?? null),
+                  )
+                }
                 className="flex min-w-0 flex-1 items-center gap-2 text-start"
                 title={sig.name}
               >

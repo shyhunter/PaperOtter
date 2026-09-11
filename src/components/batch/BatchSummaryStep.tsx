@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { formatBytes } from '@/lib/pdfUtils';
 import { getFileName } from '@/lib/fileValidation';
 import { plural, t } from '@/i18n';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface BatchSuccessSummary {
   path: string;
@@ -111,9 +112,8 @@ export function BatchSummaryStep({
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
         {succeeded.length > 0 && (
-          <Button size="sm" onClick={onSave}>
+          <Button size="sm" onClick={onSave} className={PRIMARY_ACTION}>
             {t('save.saveNFiles', { files: plural('count.file', succeeded.length) })}
           </Button>
         )}

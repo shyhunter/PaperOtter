@@ -1,7 +1,7 @@
 // RedactStep: Page navigation + rectangle drawing + text search UI for PDF redaction.
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Search, ChevronLeft, ChevronRight, Trash2, Loader2, ScanText } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trash2, ScanText } from 'lucide-react';
 import { PagePreview } from '@/components/shared/PagePreview';
 import { RedactOverlay, type RedactionRect } from './RedactOverlay';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ import { isLightColor } from '@/lib/colorPresets';
 import { DEFAULT_REDACTION_COLOR } from '@/lib/pdfRedact';
 import { Button } from '@/components/ui/button';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface RedactStepProps {
   pdfBytes: Uint8Array;
@@ -255,7 +257,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
                 disabled={isSearching || !searchQuery.trim()}
               >
                 {isSearching ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <OtterSpinner className="size-4" />
                 ) : (
                   <Search className="w-3.5 h-3.5" />
                 )}
@@ -285,7 +287,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
                   >
                     {isReadingScan ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />
+                        <OtterSpinner className="size-4" />
                         {t('redactPdf.readingScan')}
                       </>
                     ) : (
@@ -433,7 +435,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
           data-testid="apply-btn"
           onClick={() => onComplete(allRedactions, boxColor)}
           disabled={allRedactions.length === 0}
-          className="flex-1 justify-center"
+          className={PRIMARY_ACTION}
         >
           {t('redactPdf.applyRedactions', { count: allRedactions.length })}
         </Button>

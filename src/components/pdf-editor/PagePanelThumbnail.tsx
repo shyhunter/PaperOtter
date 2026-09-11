@@ -5,6 +5,7 @@ import { acquireSharedPdfDocument, releaseSharedPdfDocument } from '@/lib/pdfThu
 import { Check } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface PagePanelThumbnailProps {
   pdfBytes: Uint8Array;
@@ -139,7 +140,7 @@ export const PagePanelThumbnail = memo(function PagePanelThumbnail({
       <div className="relative bg-white rounded overflow-hidden" style={{ width: 120, minHeight: 80 }}>
         {!rendered && (
           <div className="flex items-center justify-center" style={{ width: 120, height: 155 }}>
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            <OtterSpinner className="size-4" />
           </div>
         )}
         <canvas

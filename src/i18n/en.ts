@@ -16,6 +16,10 @@ export const en = {
   'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Background',
   'signatureBackground.none': 'None',
+  'signatureBackground.yellow': 'Yellow',
+  'signatureBackground.orange': 'Orange',
+  'signatureBackground.pink': 'Pink',
+  'signatureBackground.red': 'Red',
   'signatureBackground.white': 'White',
   'signatureBackground.cream': 'Cream',
   'signatureBackground.grey': 'Grey',
@@ -35,7 +39,6 @@ export const en = {
     "This filename contains characters that aren't supported. Please rename the file and try again.",
   'file.needsImage': 'This tool works on images. To shrink a PDF, use {tool}.',
   'file.needsPdf': 'This tool works on PDFs. To shrink a picture, use {tool}.',
-
 
   // ── Image compare ───────────────────────────────────────────────────────
   'imageCompare.before': 'Before',
@@ -80,6 +83,7 @@ export const en = {
   // ── Save ────────────────────────────────────────────────────────────────
   'save.toFolder': 'Save to Folder',
   'save.asZip': 'Save as ZIP',
+  'save.saved': 'Saved',
   'save.again': 'Save Again',
   'save.showInFinder': 'Show in Finder',
   'save.showInExplorer': 'Show in File Explorer',
@@ -88,7 +92,7 @@ export const en = {
   'save.showInFiles': 'Show in file manager',
   'save.success': 'File saved successfully',
   'pdfEncryption.lockedUseUnlock':
-    'This PDF is password-protected, so it cannot be opened here. Unlock it with the Unlock PDF tool first, then try again.',
+    'This PDF is password-protected, so it cannot be opened here. Remove the password in the program that made it, then try again.',
   'destination.webUpload2mbA4':
     'Web upload: under 2 MB, A4',
   'destination.email10mb':
@@ -154,7 +158,6 @@ export const en = {
   'privacy.detailLocal': 'All file processing runs locally via Rust, qpdf, LibreOffice, and Calibre',
   'privacy.detailCsp': 'Content Security Policy blocks all external connections from the app\'s UI',
   'privacy.detailNoSdk': 'No analytics SDK or tracking code is included',
-  'privacy.detailPasswords': 'Passwords (PDF protect/unlock) are never stored, logged, or written to disk',
   'privacy.detailTemp': 'Temporary files are created during processing and automatically deleted afterwards',
   'privacy.detailSweep': 'Leftover temp files from crashes are swept on app launch',
   'common.close': 'Close',
@@ -281,19 +284,6 @@ export const en = {
   'pdfaConvert.convertToPdfA': 'Convert to PDF/A',
   'pdfaConvert.pdfAIsAnArchival': 'PDF/A is an archival format designed for long-term document preservation.',
 
-  // ── protectPdf ──────────────────────────────────────────────────────────
-  'protectPdf.addPasswordEncryptionToA': 'Add password encryption to a PDF file.',
-  'protectPdf.confirmPassword': 'Confirm password',
-  'protectPdf.encrypting': 'Encrypting…',
-  'protectPdf.enterPassword': 'Enter password',
-  'protectPdf.password': 'Password',
-  'protectPdf.acknowledgePassword': 'I understand PaperOtter does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
-  'protectPdf.savedProtectedCopy': 'Saved a protected copy. The document open here is unchanged.',
-  'protectPdf.saveProtectedCopy': 'Save protected copy…',
-  'protectPdf.passwordsDoNotMatch': 'Passwords do not match',
-  'protectPdf.protectPdf': 'Protect PDF',
-  'protectPdf.setPassword': 'Set Password',
-
   // ── redactPdf ───────────────────────────────────────────────────────────
   'redactPdf.removeRedaction': 'Remove redaction',
 
@@ -357,6 +347,7 @@ export const en = {
   'signPdf.signatureName': 'Signature name…',
 
   // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.lastPage': 'Last page',
   'signPdf.allPages': 'All pages',
   'signPdf.applyTo': 'Apply To',
   'signPdf.currentPageOnly': 'Current page only',
@@ -381,16 +372,6 @@ export const en = {
   'split.pageRangesEG1': 'Page ranges (e.g., 1-3, 5, 7-10)',
   'split.splitEveryNPages': 'Split every N pages',
   'split.splitting': 'Splitting…',
-
-  // ── unlockPdf ───────────────────────────────────────────────────────────
-  'unlockPdf.enterPassword': 'Enter password',
-  'unlockPdf.enterThePdfPassword': 'Enter the PDF password',
-  'unlockPdf.pdfPassword': 'PDF Password',
-  'unlockPdf.removePasswordProtectionFromA': 'Remove password protection from a PDF file.',
-  'unlockPdf.unlockPdf': 'Unlock PDF',
-  'protectPdf.alreadyProtected': 'This PDF is already password-protected. Unlock it first, then protect it again.',
-  'unlockPdf.notProtected': 'This PDF is not password-protected, so there is nothing to unlock.',
-  'unlockPdf.unlocking': 'Unlocking…',
 
   // ── watermark ───────────────────────────────────────────────────────────
   'watermark.addWatermark': 'Add Watermark',
@@ -694,7 +675,6 @@ export const en = {
   'tool.compressImage.step3': 'Review output',
   'tool.mergePdf.name': 'Merge PDFs',
   'tool.mergePdf.desc': 'Combine multiple PDFs into one document',
-  'step.pickFiles': 'Pick Files',
   'tool.mergePdf.step1': 'Select PDFs to merge',
   'step.order': 'Order',
   'tool.mergePdf.step2': 'Arrange page order',
@@ -714,18 +694,9 @@ export const en = {
   'tool.pdfToJpg.step2': 'Set format and quality',
   'tool.jpgToPdf.name': 'JPG to PDF',
   'tool.jpgToPdf.desc': 'Convert images into a single PDF document',
-  'step.pickImages': 'Pick Images',
   'tool.jpgToPdf.step1': 'Select images to convert',
   'tool.jpgToPdf.step2': 'Set page size and layout',
-  'tool.protectPdf.name': 'Protect PDF',
-  'tool.protectPdf.desc': 'Add password encryption to a PDF',
-  'tool.protectPdf.step1': 'Open a PDF file',
   'step.password': 'Password',
-  'tool.protectPdf.step2': 'Set a password',
-  'tool.unlockPdf.name': 'Unlock PDF',
-  'tool.unlockPdf.desc': 'Remove password protection from a PDF',
-  'tool.unlockPdf.step1': 'Open a PDF file',
-  'tool.unlockPdf.step2': 'Enter the password',
   'tool.rotateImage.name': 'Rotate Image',
   'tool.rotateImage.desc': 'Rotate images 90°, 180°, or 270°',
   'tool.rotateImage.step1': 'Open an image file',
@@ -754,7 +725,6 @@ export const en = {
   'tool.signPdf.name': 'Sign PDF',
   'tool.signPdf.desc': 'Add a visual signature stamp to PDF pages',
   'tool.signPdf.step1': 'Save organised PDF',
-  'step.selectPdf': 'Select PDF',
   'tool.signPdf.step2': 'Open a PDF file',
   'step.signature': 'Signature',
   'tool.signPdf.step3': 'Create or choose a signature',
@@ -792,8 +762,6 @@ export const en = {
   'tool.rotatePdf.step3': 'Save rotated PDF',
   'tool.pdfToJpg.step3': 'Save images',
   'tool.jpgToPdf.step3': 'Save PDF',
-  'tool.protectPdf.step3': 'Save protected PDF',
-  'tool.unlockPdf.step3': 'Save unlocked PDF',
   'tool.rotateImage.step3': 'Save rotated image',
   'tool.convertImage.step3': 'Save converted image',
   'step.crop': 'Crop',
@@ -950,6 +918,8 @@ export const en = {
   'redactionScope.coversOnlyTheFoundText': 'Covers only the found text',
   'redactionScope.justTheMatch': 'Just the match',
   'redactionScope.wholeLine': 'Whole line',
+  'pdfProcessor.alreadyCompressedTryStronger': 'This file is already compressed at this quality: its images are at or below the resolution this setting asks for, and re-encoding them came out no smaller. Try a stronger quality to go further.',
+  'pdfProcessor.alreadyCompressedStrongest': 'This file is already compressed as far as PaperOtter can take it: its images are at or below the resolution the strongest setting asks for, and re-encoding them came out no smaller.',
   'pdfProcessor.thisFileIsMostlyText': 'This file is mostly text with no embedded images: compression has minimal effect on text-only PDFs.',
   'pdfProcessor.customPageSizeRequiresBoth': 'Custom page size requires both width and height in mm',
   'pdfMerge.atLeast2PdfsAre': 'At least 2 PDFs are required to merge.',
@@ -1126,7 +1096,7 @@ export const en = {
   'pdfToJpgFlow.nSelectedParens': '({count} selected)',
   'pdfToJpgFlow.renderingPageOf': 'Rendering page {current} of {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Network access is scoped to exactly two read-only endpoints (checking for app updates and fetching the feedback contact address), enforced by Tauri capability config. No other network access is possible.',
+  'privacy.detailNetworkScope': 'Network access is scoped to exactly two read-only endpoints (checking for app updates and fetching the link to the discussion board), enforced by Tauri capability config. No other network access is possible.',
   'redactPdf.appliedAcross': '{redactions} applied across {pages}',
   'redactPdf.applyRedactions': 'Apply Redactions ({count})',
   'redactPdf.matchesFound': '{matches} found',

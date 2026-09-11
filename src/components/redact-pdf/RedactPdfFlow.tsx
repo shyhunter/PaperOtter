@@ -1,26 +1,23 @@
 // RedactPdfFlow: Pick PDF → Redact (draw/search) → Save redacted PDF.
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
-import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
+import { FilePickStep } from '@/components/FilePickStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
-import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
 import { plural, t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
 }
 
 export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -37,14 +34,6 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
   const [redactionCount, setRedactionCount] = useState(0);
   const [redactedPageCount, setRedactedPageCount] = useState(0);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-
-  // StrictMode guard for pendingFiles consumption
-  const consumedRef = useRef(false);
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0 && !consumedRef.current) {
-    consumedRef.current = true;
-    setPendingFiles([]);
-  }
 
   // OCR reads from the file rather than the bytes already in memory, so the
   // path has to survive alongside them.
@@ -70,25 +59,6 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       setIsLoadingFile(false);
     }
   }, [goToStep]);
-
-  useEffect(() => {
-    if (initialFile) loadFile(initialFile);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   const handleRedactComplete = useCallback(
     async (redactions: RedactionRect[], color: string) => {
@@ -122,32 +92,13 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
       <StepErrorBoundary stepName="Redact PDF">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('redactPdf.redactPdf')}</h2>
-              <p className="text-sm text-muted-foreground">
-                {t('redactPdf.selectAPdfToPermanently')}
-              </p>
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('pdfToJpg.selectPdf')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('redactPdf.selectAPdfToPermanently')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Redact */}
@@ -155,7 +106,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
           <>
             {isProcessing ? (
               <div className="flex flex-1 flex-col items-center justify-center p-6">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-3" />
+                <OtterLoader size="md" className="mb-3" />
                 <p className="text-sm font-medium text-foreground">{t('redactPdf.applyingRedactions')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {t('redactPdf.renderingPagesAndRemovingContent')}

@@ -209,3 +209,54 @@ describe('ConfigureStep — non-compressible PDFs disable the compression contro
     expect(screen.getByText(/custom target size/i).closest('button')).not.toBeDisabled();
   });
 });
+
+// ─── Keep image resolution ────────────────────────────────────────────────────
+//
+// The editor's compress panel has offered this since it shipped; the standalone
+// tool did not, so the same document compressed two ways gave the user two
+// different sets of choices. These pin the behaviour to the editor's.
+
+describe('ConfigureStep — keep image resolution', () => {
+  it('[CFG-KIR-01] offers the option when the document has images', () => {
+    render(<ConfigureStep {...makeProps({ imageCount: 12 })} />);
+    expect(screen.getByTestId('keep-image-resolution')).not.toBeChecked();
+  });
+
+  it('[CFG-KIR-02] hides it for a document with no images to keep the resolution of', () => {
+    render(<ConfigureStep {...makeProps({ imageCount: 0, compressibilityScore: 0 })} />);
+    expect(screen.queryByTestId('keep-image-resolution')).toBeNull();
+  });
+
+  it('[CFG-KIR-03] downsamples by default, which is what every preset describes', async () => {
+    const user = userEvent.setup();
+    render(<ConfigureStep {...makeProps()} />);
+
+    await user.click(screen.getByTestId('generate-preview-btn'));
+
+    expect(onGeneratePreview).toHaveBeenCalledTimes(1);
+    expect(onGeneratePreview.mock.calls[0][0].downsampleImages).toBe(true);
+  });
+
+  it('[CFG-KIR-04] carries the choice through to the options the job runs with', async () => {
+    const user = userEvent.setup();
+    render(<ConfigureStep {...makeProps()} />);
+
+    await user.click(screen.getByTestId('keep-image-resolution'));
+    await user.click(screen.getByTestId('generate-preview-btn'));
+
+    expect(onGeneratePreview.mock.calls[0][0].downsampleImages).toBe(false);
+  });
+
+  it('[CFG-KIR-05] says the estimates no longer hold once it is on', async () => {
+    const user = userEvent.setup();
+    render(<ConfigureStep {...makeProps()} />);
+
+    // The estimates beside each quality zone assume downsampling. Leaving them
+    // unqualified would have the screen promising a number it cannot reach.
+    expect(screen.queryByText(/actual sizes will be larger/i)).toBeNull();
+
+    await user.click(screen.getByTestId('keep-image-resolution'));
+
+    expect(screen.getByText(/actual sizes will be larger/i)).toBeInTheDocument();
+  });
+});

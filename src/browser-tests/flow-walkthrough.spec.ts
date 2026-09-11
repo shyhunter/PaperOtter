@@ -62,16 +62,21 @@ const FIXTURE_FOR: Record<string, string> = {
 /** How a tool's first step is completed, where the default does not fit. */
 interface Entry {
   fixture?: string;
-  /** Buttons to press in order, by visible name, for flows with no test id. */
-  names?: string[];
+  /** Buttons to press in order, by visible name, where one click is not enough. */
+  names?: (string | RegExp)[];
 }
 
 const ENTRY: Record<string, Entry> = {
-  // The two multi-file flows hand-roll a step one with no test ids on it: pick
-  // the files, then confirm. Named rather than given ids because adding ids is a
-  // source change, and this file is not the place to make one.
-  'merge-pdf': { names: ['Select PDFs', 'Continue'] },
-  'jpg-to-pdf': { names: ['Select Images', 'Continue'] },
+  // The two multi-file flows take two clicks, not one: they open on the shared
+  // picker like everything else, then stage what was chosen on a list where the
+  // order can be changed and more can be added, and only then continue.
+  //
+  // The first button used to be their own "Select PDFs" / "Select Images". Both
+  // now open with the same picker as the other seventeen tools, so it is the
+  // same "Open file" button -- matched loosely because the accessible name
+  // carries the formats hint under the label too.
+  'merge-pdf': { names: [/open file/i, 'Continue'] },
+  'jpg-to-pdf': { names: [/open file/i, 'Continue'] },
 };
 
 /**

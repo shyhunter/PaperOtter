@@ -197,4 +197,48 @@ describe('findTextMatches', () => {
     expect(matches[0].x).toBeGreaterThan((60 / 600) * 100);
     expect(matches[0].x + matches[0].width).toBeLessThan(((108 + 40) / 600) * 100);
   });
+
+  // ── Reported: one occurrence, listed twice ────────────────────────────────
+  //
+  // Searching "the Display" in a two-page document listed six results for three
+  // occurrences, and marking them drew two boxes stacked over the same words.
+
+  it('[TS-10] one occurrence on a line whose baselines drift is one match', async () => {
+    // A run of differently-sized glyphs puts consecutive items a point or two
+    // apart. `inReadingOrder` already reads them as one line, because it
+    // compares neighbours; the box grouping compared everything to the *first*
+    // item, so the line broke in two the moment the drift passed the tolerance.
+    const matches = await findTextMatches(
+      fakeDoc([[item('the ', 60, 720, 20), item('Dis', 82, 722, 18), item('play', 101, 724, 22)]]),
+      'the Display',
+    );
+
+    expect(matches).toHaveLength(1);
+  });
+
+  it('[TS-11] does not report overlapping hits', async () => {
+    // `from` advanced one character past the start of a match rather than past
+    // the match, so a needle that overlaps itself was counted every time it
+    // could start. There are two "aa" in "aaaa", not three.
+    expect(await findTextMatches(fakeDoc([[item('aaaa', 60, 720)]]), 'aa')).toHaveLength(2);
+  });
+
+  it('[TS-12] still separates two genuine occurrences on one line', async () => {
+    const matches = await findTextMatches(
+      fakeDoc([[item('the Display and the Display', 60, 720, 200)]]),
+      'the Display',
+    );
+
+    expect(matches).toHaveLength(2);
+    expect(matches[0].x).not.toBeCloseTo(matches[1].x, 1);
+  });
+
+  it('[TS-13] still yields a box per line when a match really does wrap', async () => {
+    const matches = await findTextMatches(
+      fakeDoc([[item('Jane', 60, 720, 30), item('Doe', 60, 690, 25)]]),
+      'jane doe',
+    );
+
+    expect(matches).toHaveLength(2);
+  });
 });

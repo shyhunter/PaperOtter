@@ -21,6 +21,10 @@ export const de: Dictionary = {
   'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Hintergrund',
   'signatureBackground.none': 'Keiner',
+  'signatureBackground.yellow': 'Gelb',
+  'signatureBackground.orange': 'Orange',
+  'signatureBackground.pink': 'Rosa',
+  'signatureBackground.red': 'Rot',
   'signatureBackground.white': 'Weiß',
   'signatureBackground.cream': 'Creme',
   'signatureBackground.grey': 'Grau',
@@ -107,11 +111,12 @@ export const de: Dictionary = {
   // ── Save ──────────────────────────────────────────────────────────────────
   'save.toFolder': 'In Ordner speichern',
   'save.asZip': 'Als ZIP speichern',
+  'save.saved': 'Gespeichert',
   'save.again': 'Erneut speichern',
   'save.showInFinder': 'Im Finder anzeigen',
   'save.success': 'Datei erfolgreich gespeichert',
   'pdfEncryption.lockedUseUnlock':
-    'Dieses PDF ist passwortgeschützt und kann hier nicht geöffnet werden. Heben Sie den Schutz zuerst mit dem Werkzeug „PDF entsperren“ auf und versuchen Sie es dann erneut.',
+    'Diese PDF ist passwortgeschützt und kann hier nicht geöffnet werden. Entfernen Sie das Passwort in dem Programm, mit dem sie erstellt wurde, und versuchen Sie es erneut.',
   'destination.webUpload2mbA4':
     'Web-Upload: unter 2 MB, A4',
   'destination.email10mb':
@@ -179,8 +184,6 @@ export const de: Dictionary = {
   'privacy.detailCsp':
     'Die Content Security Policy blockiert alle externen Verbindungen aus der Benutzeroberfläche',
   'privacy.detailNoSdk': 'Es ist kein Analyse-SDK und kein Tracking-Code enthalten',
-  'privacy.detailPasswords':
-    'Passwörter (PDF schützen/entsperren) werden nie gespeichert, protokolliert oder auf die Festplatte geschrieben',
   'privacy.detailTemp':
     'Während der Verarbeitung entstehen temporäre Dateien, die anschließend automatisch gelöscht werden',
   'privacy.detailSweep':
@@ -291,17 +294,6 @@ export const de: Dictionary = {
     'PDF/A ist ein Archivformat für die langfristige Aufbewahrung von Dokumenten.',
 
   // ── Protect / unlock ──────────────────────────────────────────────────────
-  'protectPdf.addPasswordEncryptionToA': 'Ein PDF mit einem Passwort verschlüsseln.',
-  'protectPdf.confirmPassword': 'Passwort bestätigen',
-  'protectPdf.encrypting': 'Wird verschlüsselt…',
-  'protectPdf.enterPassword': 'Passwort eingeben',
-  'protectPdf.acknowledgePassword': 'Ich verstehe, dass PaperOtter dieses Passwort nicht speichert und es nicht wiederherstellen kann. Wenn ich es verliere, lässt sich diese Datei nicht mehr öffnen.',
-  'protectPdf.savedProtectedCopy': 'Geschützte Kopie gespeichert. Das hier geöffnete Dokument bleibt unverändert.',
-  'protectPdf.saveProtectedCopy': 'Geschützte Kopie speichern…',
-  'protectPdf.password': 'Passwort',
-  'protectPdf.passwordsDoNotMatch': 'Die Passwörter stimmen nicht überein.',
-  'protectPdf.protectPdf': 'PDF schützen',
-  'protectPdf.setPassword': 'Passwort festlegen',
 
   // ── Redaction ─────────────────────────────────────────────────────────────
   // Safety copy: these sentences tell the user that content is destroyed and
@@ -367,6 +359,7 @@ export const de: Dictionary = {
   'signPdf.noSavedSignatures': 'Keine gespeicherten Unterschriften',
   'signPdf.savedSignatures': 'Gespeicherte Unterschriften',
   'signPdf.signatureName': 'Name der Unterschrift…',
+  'signPdf.lastPage': 'Letzte Seite',
   'signPdf.allPages': 'Alle Seiten',
   'signPdf.applyTo': 'Anwenden auf',
   'signPdf.currentPageOnly': 'Nur aktuelle Seite',
@@ -387,14 +380,6 @@ export const de: Dictionary = {
   'split.splitting': 'Wird geteilt…',
 
   // ── Unlock ────────────────────────────────────────────────────────────────
-  'unlockPdf.enterPassword': 'Passwort eingeben',
-  'unlockPdf.enterThePdfPassword': 'Geben Sie das PDF-Passwort ein',
-  'unlockPdf.pdfPassword': 'PDF-Passwort',
-  'unlockPdf.removePasswordProtectionFromA': 'Den Passwortschutz eines PDFs entfernen.',
-  'unlockPdf.unlockPdf': 'PDF entsperren',
-  'protectPdf.alreadyProtected': 'Diese PDF ist bereits passwortgeschützt. Entsperren Sie sie zuerst und schützen Sie sie dann erneut.',
-  'unlockPdf.notProtected': 'Diese PDF ist nicht passwortgeschützt, es gibt also nichts zu entsperren.',
-  'unlockPdf.unlocking': 'Wird entsperrt…',
 
   // ── Watermark ─────────────────────────────────────────────────────────────
   'watermark.addWatermark': 'Wasserzeichen hinzufügen',
@@ -614,9 +599,6 @@ export const de: Dictionary = {
 
   // ── Step labels ───────────────────────────────────────────────────────────
   'step.pick': 'Auswählen',
-  'step.pickFiles': 'Dateien auswählen',
-  'step.pickImages': 'Bilder auswählen',
-  'step.selectPdf': 'PDF auswählen',
   'step.selectPages': 'Seiten auswählen',
   'step.configure': 'Einstellen',
   'step.compare': 'Vergleichen',
@@ -673,16 +655,6 @@ export const de: Dictionary = {
   'tool.jpgToPdf.step1': 'Bilder zum Umwandeln auswählen',
   'tool.jpgToPdf.step2': 'Seitengröße und Layout einstellen',
   'tool.jpgToPdf.step3': 'PDF speichern',
-  'tool.protectPdf.name': 'PDF schützen',
-  'tool.protectPdf.desc': 'Ein PDF mit einem Passwort verschlüsseln',
-  'tool.protectPdf.step1': 'Eine PDF-Datei öffnen',
-  'tool.protectPdf.step2': 'Ein Passwort festlegen',
-  'tool.protectPdf.step3': 'Geschütztes PDF speichern',
-  'tool.unlockPdf.name': 'PDF entsperren',
-  'tool.unlockPdf.desc': 'Den Passwortschutz eines PDFs entfernen',
-  'tool.unlockPdf.step1': 'Eine PDF-Datei öffnen',
-  'tool.unlockPdf.step2': 'Das Passwort eingeben',
-  'tool.unlockPdf.step3': 'Entsperrtes PDF speichern',
   'tool.rotateImage.name': 'Bild drehen',
   'tool.rotateImage.desc': 'Bilder um 90°, 180° oder 270° drehen',
   'tool.rotateImage.step1': 'Eine Bilddatei öffnen',
@@ -895,6 +867,8 @@ export const de: Dictionary = {
     'Dieses PDF ist passwortgeschützt und konnte nicht geöffnet werden.',
   'docModel.thisDocumentHasNoExtractable':
     'Dieses Dokument enthält keinen auslesbaren Text: es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
+  'pdfProcessor.alreadyCompressedTryStronger': 'Diese Datei ist bei dieser Qualität bereits verkleinert: Ihre Bilder liegen auf oder unter der Auflösung, die diese Einstellung verlangt, und eine erneute Kodierung wurde nicht kleiner. Wählen Sie eine stärkere Qualität, um weiterzukommen.',
+  'pdfProcessor.alreadyCompressedStrongest': 'Diese Datei ist bereits so weit verkleinert, wie PaperOtter es kann: Ihre Bilder liegen auf oder unter der Auflösung der stärksten Einstellung, und eine erneute Kodierung wurde nicht kleiner.',
   'pdfProcessor.thisFileIsMostlyText':
     'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder: bei reinen Textdokumenten bringt das Verkleinern kaum etwas.',
   'pdfProcessor.customPageSizeRequiresBoth':
@@ -1075,7 +1049,7 @@ export const de: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} ausgewählt)',
   'pdfToJpgFlow.renderingPageOf': 'Seite {current} von {total} wird gerendert…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt (die Suche nach App-Aktualisierungen und das Abrufen der Feedback-Kontaktadresse), durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
+  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt (die Suche nach App-Aktualisierungen und das Abrufen des Links zum Diskussionsforum), durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
   'redactPdf.appliedAcross': '{redactions} auf {pages} angewendet',
   'redactPdf.applyRedactions': 'Schwärzungen anwenden ({count})',
   'redactPdf.matchesFound': '{matches} gefunden',

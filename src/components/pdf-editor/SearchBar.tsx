@@ -4,7 +4,7 @@
 // on the selected text block and grey out when nothing is selected, while search
 // is document-level and has to stay live.
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ChevronDown, ChevronUp, ScanText, Search, X, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ScanText, Search, X } from 'lucide-react';
 import { useEditorContext } from '@/context/EditorContext';
 import { useDocumentSearch } from '@/hooks/useDocumentSearch';
 import { listOcrLanguages } from '@/lib/ocrLanguages';
@@ -12,6 +12,7 @@ import { isToolAvailableHere } from '@/lib/platform';
 import { TOOL_REGISTRY } from '@/types/tools';
 import { useLocale } from '@/i18n/context';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 export function SearchBar() {
   const { state, setSearchMatches, setSearchCurrent, setCurrentPage, scrollToPageRef } =
@@ -127,7 +128,7 @@ export function SearchBar() {
         />
       </div>
 
-      {isSearching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+      {isSearching && <OtterSpinner className="size-4" />}
 
       {counter && (
         <>
@@ -183,7 +184,7 @@ export function SearchBar() {
                 className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] hover:bg-muted disabled:opacity-50"
               >
                 {isReadingScan ? (
-                  <><Loader2 className="h-3 w-3 animate-spin" />{t('redactPdf.readingScan')}</>
+                  <><OtterSpinner className="size-4" />{t('redactPdf.readingScan')}</>
                 ) : (
                   <><ScanText className="h-3 w-3" />{t('redactPdf.readScanAndSearch')}</>
                 )}

@@ -1,20 +1,21 @@
 // JpgToPdfFlow: Pick images -> Configure page layout -> Create & Save PDF.
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
-import { FilePlus, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { FilePlus, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { openFilePicker } from '@/hooks/useFileOpen';
+import { FilePickStep } from '@/components/FilePickStep';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
 type PageSizeId = 'a4' | 'letter' | 'auto';
 type OrientationId = 'portrait' | 'landscape' | 'auto';
@@ -131,7 +132,6 @@ interface JpgToPdfFlowProps {
 }
 
 export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -152,24 +152,6 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
   const [processError, setProcessError] = useState<string | null>(null);
   const [resultBytes, setResultBytes] = useState<Uint8Array | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
-
-  // StrictMode guard
-  const consumedPending = useRef(false);
-
-  // Consume pending files on mount
-  // Captured into a ref on the first render, never recomputed. StrictMode renders
-  // twice; deriving this from `consumedPending` — which the first pass flips —
-  // left the second pass with an empty list, and the mount effect closes over the
-  // second pass. That is why a dropped image never opened.
-  const capturedPending = useRef<string[] | null>(null);
-  if (capturedPending.current === null && pendingFiles.length > 0) {
-    capturedPending.current = [...pendingFiles];
-  }
-  const initialFiles = capturedPending.current ?? [];
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    consumedPending.current = true;
-    setPendingFiles([]);
-  }
 
   // ── Add images ────────────────────────────────────────────────────────────
 
@@ -203,31 +185,20 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     }
   }, []);
 
-  // Auto-load initial files
-  const initialFilesLoaded = useRef(false);
-  useEffect(() => {
-    if (!initialFilesLoaded.current && initialFiles.length > 0) {
-      initialFilesLoaded.current = true;
-      // Load them, but stay on this step. It is where the user sees what is
-      // selected, reorders it, and — the common case — adds a second image.
-      // Skipping ahead would take that away for the sake of one click.
-      void addImages(initialFiles);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /** The shared picker hands over one path plus the rest of the selection. */
+  const handleFileReady = useCallback(
+    (filePath: string, alsoSelected: string[]) => { void addImages([filePath, ...alsoSelected]); },
+    [addImages],
+  );
 
-  const handleSelectFiles = useCallback(async () => {
+  /** The Add more button, once the list exists. Same dialog the picker opens. */
+  const handleAddMore = useCallback(async () => {
     try {
-      const result = await open({
-        multiple: true,
-        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
-      });
-      if (!result) return;
-      const paths = Array.isArray(result) ? result : [result];
-      await addImages(paths);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
+      const picked = await openFilePicker(['image'], true);
+      if (!picked) return;
+      await addImages(Array.isArray(picked) ? picked : [picked]);
+    } catch {
+      setLoadError(t('app.couldNotOpenFilePicker'));
     }
   }, [addImages]);
 
@@ -359,7 +330,18 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
     <>
       <StepErrorBoundary stepName="JPG to PDF">
         {/* Step 0: Pick images */}
-        {step === 0 && (
+        {step === 0 && images.length === 0 && (
+          <FilePickStep
+            acceptedFormats={['image']}
+            tagline={t('jpgToPdf.selectOneOrMoreImages')}
+            onFileReady={handleFileReady}
+            multiple
+            isLoading={isLoading}
+            error={loadError}
+          />
+        )}
+
+        {step === 0 && images.length > 0 && (
           <div className="flex flex-1 flex-col items-center justify-center p-6">
             <div className="w-full max-w-lg space-y-4">
               <div className="text-center space-y-1">
@@ -426,7 +408,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {/* Loading indicator */}
               {isLoading && (
                 <div className="flex items-center justify-center gap-2 py-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  <OtterSpinner className="size-4" />
                   <span className="text-sm text-muted-foreground">{t('jpgToPdf.loadingImages')}</span>
                 </div>
               )}
@@ -442,7 +424,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  onClick={handleSelectFiles}
+                  onClick={handleAddMore}
                   disabled={isLoading}
                   className="flex-1"
                 >
@@ -570,11 +552,11 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleCreatePdf}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (

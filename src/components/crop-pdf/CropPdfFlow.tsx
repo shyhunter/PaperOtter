@@ -1,32 +1,32 @@
 // CropPdfFlow: Pick PDF → Set crop margins → Save cropped PDF.
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { cropPdf, mmToPoints, pointsToMm } from '@/lib/pdfCrop';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { cropMarginPresets } from '@/lib/cropPresets';
+import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
 /**
  * A function, not a constant: these labels are translated, and a module-level
  * constant resolves them once at import -- before the locale is known.
  */
-function marginPresets(): { label: string; mm: number }[] {
-  return [
-    { label: t('cropPdfFlow.none'), mm: 0 },
-    { label: t('watermarkFlow.small'), mm: 5 },
-    { label: t('watermarkFlow.medium'), mm: 10 },
-    { label: t('watermarkFlow.large'), mm: 20 },
-  ];
+/** Bytes as the rest of the app writes them. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
 interface CropPdfFlowProps {
@@ -34,7 +34,6 @@ interface CropPdfFlowProps {
 }
 
 export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -68,12 +67,6 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
   const [processError, setProcessError] = useState<string | null>(null);
 
   // StrictMode guard
-  const consumedRef = useRef(false);
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0 && !consumedRef.current) {
-    consumedRef.current = true;
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
@@ -101,24 +94,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
     }
   }, [goToStep]);
 
-  useEffect(() => {
-    if (initialFile) loadFile(initialFile);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   // Equal margins sync
   const setMargin = useCallback((side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
@@ -187,24 +163,13 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
       <StepErrorBoundary stepName="Crop PDF">
         {/* Step 0: Pick */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('cropPdf.cropPdf')}</h2>
-              <p className="text-sm text-muted-foreground">{t('cropPdf.selectAPdfToCrop')}</p>
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
-                ) : (
-                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('cropPdf.selectAPdfToCrop')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Configure crop */}
@@ -214,6 +179,13 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               {/* Left panel: margin inputs */}
               <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
                 <h2 className="text-sm font-semibold text-foreground">{t('cropPdf.cropMargins')}</h2>
+                {/* Which document this is. Every other tool names the file it
+                    is working on; Crop showed only a page size, so a second
+                    window of the same tool was indistinguishable from the first. */}
+                <p data-testid="crop-file-name" className="truncate text-xs font-medium text-foreground" title={fileName}>
+                  {fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">{formatBytes(pdfBytes?.byteLength ?? 0)}</p>
 
                 {/* Page dimensions info */}
                 <p className="text-xs text-muted-foreground">
@@ -224,7 +196,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
                   <div className="flex gap-1.5">
-                    {marginPresets().map((p) => (
+                    {cropMarginPresets().map((p) => (
                       <button
                         key={p.label}
                         type="button"
@@ -286,10 +258,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               {/* Right panel: preview with crop overlay */}
               <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-4 bg-muted/30">
                 {isLoadingPreview && !previewUrl && (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">{t('cropPdf.loadingPreview')}</p>
-                  </div>
+                  <OtterLoader size="md" label={t('cropPdf.loadingPreview')} />
                 )}
                 {previewUrl && (
                   <div className="relative inline-block">
@@ -317,10 +286,11 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 {t('common.back')}
               </Button>
-              <div className="flex-1" />
-              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}>
+              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}
+          className={PRIMARY_ACTION}
+        >
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('cropPdf.cropping')}</>
+                  <><OtterSpinner className="size-4" />{t('cropPdf.cropping')}</>
                 ) : (
                   t('cropPdfFlow.applyCrop')
                 )}

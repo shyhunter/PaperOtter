@@ -1,19 +1,18 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { stripImageExtension, getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
-import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { FileUp, Loader2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
 import { pngLevelForQuality } from '@/lib/pngCompression';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
 
 const FORMAT_LABELS: Record<ImageOutputFormat, string> = {
   jpeg: 'JPG',
@@ -67,7 +66,6 @@ interface ConvertImageFlowProps {
 }
 
 export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -87,23 +85,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
   const [resultBytes, setResultBytes] = useState<Uint8Array | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
 
-  // StrictMode guard
-  const consumedPending = useRef(false);
 
-  // Consume pending file on mount
-  // Captured into a ref on the first render, never recomputed. StrictMode renders
-  // twice; deriving this from `consumedPending` — which the first pass flips —
-  // left the second pass with null, and the mount effect closes over the second
-  // pass. That is how a dropped file reached the flow and was still never opened.
-  const capturedPending = useRef<string | null>(null);
-  if (capturedPending.current === null && pendingFiles.length > 0) {
-    capturedPending.current = pendingFiles[0];
-  }
-  const initialFile = capturedPending.current;
-  if (!consumedPending.current && pendingFiles.length > 0) {
-    consumedPending.current = true;
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (path: string) => {
     setIsLoadingFile(true);
@@ -152,27 +134,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
     }
   }, [goToStep]);
 
-  // Auto-load initial file
-  useEffect(() => {
-    if (initialFile) {
-      loadFile(initialFile);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.imageFiles'), extensions: IMAGE_EXTENSIONS }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   const handleConvert = useCallback(async () => {
     if (!filePath) return;
@@ -213,32 +175,13 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
       <StepErrorBoundary stepName="Convert Image">
         {/* Step 0: Pick file */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('convertImage.convertImage')}</h2>
-              <p className="text-sm text-muted-foreground">{t('convertImage.selectAnImageToConvert')}</p>
-
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-4 h-4 me-2" />
-                    {t('common.selectImage')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['image']}
+            tagline={t('convertImage.selectAnImageToConvert')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Configure format */}
@@ -345,11 +288,11 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('convertImage.converting')}
                     </>
                   ) : (

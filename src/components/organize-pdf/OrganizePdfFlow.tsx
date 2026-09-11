@@ -1,21 +1,22 @@
 // OrganizePdfFlow: Pick PDF → Reorder/delete/duplicate pages → Save.
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { open } from '@/lib/dialog';
-import { FileUp, Loader2, ArrowUp, ArrowDown, Trash2, Copy, RotateCcw } from 'lucide-react';
+import { ArrowUp, ArrowDown, Trash2, Copy, RotateCcw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { useToolContext } from '@/context/ToolContext';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { organizePdf } from '@/lib/pdfOrganize';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
 import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
+import { FilePickStep } from '@/components/FilePickStep';
 
 interface PageEntry {
   sourceIndex: number;
@@ -32,7 +33,6 @@ interface OrganizePdfFlowProps {
 }
 
 export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const [step, setStep] = useState(0);
 
   const goToStep = useCallback((s: number) => {
@@ -56,12 +56,6 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
   const [processError, setProcessError] = useState<string | null>(null);
 
   // StrictMode guard
-  const consumedRef = useRef(false);
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0 && !consumedRef.current) {
-    consumedRef.current = true;
-    setPendingFiles([]);
-  }
 
   const loadFile = useCallback(async (filePath: string) => {
     setIsLoadingFile(true);
@@ -88,24 +82,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
     }
   }, [goToStep]);
 
-  useEffect(() => {
-    if (initialFile) loadFile(initialFile);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const handleSelectFile = useCallback(async () => {
-    try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-      if (!result) return;
-      await loadFile(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
-    }
-  }, [loadFile]);
 
   const moveUp = useCallback((index: number) => {
     if (index === 0) return;
@@ -168,24 +145,13 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
       <StepErrorBoundary stepName="Organize PDF">
         {/* Step 0: Pick */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-6">
-            <div className="w-full max-w-sm space-y-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">{t('organizePdf.organizePdf')}</h2>
-              <p className="text-sm text-muted-foreground">{t('organizePdf.reorderDeleteOrDuplicatePages')}</p>
-              {loadError && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-                  <p className="text-xs text-destructive">{loadError}</p>
-                </div>
-              )}
-              <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
-                {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
-                ) : (
-                  <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
-                )}
-              </Button>
-            </div>
-          </div>
+          <FilePickStep
+            acceptedFormats={['pdf']}
+            tagline={t('organizePdf.reorderDeleteOrDuplicatePages')}
+            onFileReady={loadFile}
+            isLoading={isLoadingFile}
+            error={loadError}
+          />
         )}
 
         {/* Step 1: Organize pages */}
@@ -196,7 +162,6 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <span className="text-sm font-medium text-foreground">
                 {plural('count.page', pages.length)}
               </span>
-              <div className="flex-1" />
               <Button variant="outline" size="sm" onClick={reverseOrder} disabled={pages.length < 2}>
                 {t('organizePdf.reverse')}
               </Button>
@@ -304,10 +269,11 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 {t('common.back')}
               </Button>
-              <div className="flex-1" />
-              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
+              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}
+          className={PRIMARY_ACTION}
+        >
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.processing')}</>
+                  <><OtterSpinner className="size-4" />{t('common.processing')}</>
                 ) : (
                   t('organizePdfFlow.applyPages', { pages: plural('count.page', pages.length) })
                 )}

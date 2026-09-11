@@ -16,6 +16,7 @@ import userEvent from '@testing-library/user-event';
 import App from '@/App';
 import { openFilePicker } from '@/hooks/useFileOpen';
 import * as fileValidation from '@/lib/fileValidation';
+import { readFile } from '@tauri-apps/plugin-fs';
 
 // ── Tauri webview (useFileDrop) ───────────────────────────────────────────────
 vi.mock('@tauri-apps/api/webview', () => ({
@@ -198,8 +199,12 @@ describe('Suite 01 — File Input', () => {
   // FI-09 ────────────────────────────────────────────────────────────────────
   it('FI-09 — opening a file > 100 MB shows the file-size-limit modal', async () => {
     const { user } = await setup();
-    // Override getFileSizeBytes to return 105 MB for this test
-    vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(105 * 1024 * 1024);
+    // The size is the file's own length now, read once and used for both the
+    // limit and the magic-byte check rather than read twice for the two. So the
+    // file is what makes it large, which is also what happens in the app.
+    const huge = new Uint8Array(105 * 1024 * 1024);
+    huge.set([0x25, 0x50, 0x44, 0x46, 0x2d]); // %PDF-
+    vi.mocked(readFile).mockResolvedValueOnce(huge);
 
     vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/huge.pdf');
     await user.click(screen.getByText('Open file'));
@@ -216,8 +221,7 @@ describe('Suite 01 — File Input', () => {
   // FI-10 ────────────────────────────────────────────────────────────────────
   it('FI-10 — opening a zero-byte file shows inline empty-file error', async () => {
     const { user } = await setup();
-    // Override getFileSizeBytes to return 0 (empty file) for this test
-    vi.mocked(fileValidation.getFileSizeBytes).mockResolvedValueOnce(0);
+    vi.mocked(readFile).mockResolvedValueOnce(new Uint8Array(0));
 
     vi.mocked(openFilePicker).mockResolvedValueOnce('/Users/test/empty.pdf');
     await user.click(screen.getByText('Open file'));
@@ -296,6 +300,8 @@ describe('Suite 01 — File Input', () => {
     await act(async () => {});
 
     // The dialog itself is the OS's, so what can be checked here is the request.
-    expect(vi.mocked(openFilePicker)).toHaveBeenCalledWith(['image']);
+    // The second argument is whether the tool takes several files at once --
+    // Compress Image takes one.
+    expect(vi.mocked(openFilePicker)).toHaveBeenCalledWith(['image'], false);
   });
 });

@@ -14,7 +14,7 @@ interface ToolHeaderProps {
 }
 
 export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecentFileSelected }: ToolHeaderProps) {
-  const { activeToolDef } = useToolContext();
+  const { activeToolDef, jobComplete } = useToolContext();
 
   if (!activeToolDef) return null;
 
@@ -50,7 +50,7 @@ export function ToolHeader({ currentStep, onBackToDashboard, recentDirs, onRecen
       </div>
 
       {/* Adaptive StepBar */}
-      <StepBar steps={activeToolDef.steps} current={currentStep} />
+      <StepBar steps={activeToolDef.steps} current={currentStep} complete={jobComplete} />
     </div>
   );
 }

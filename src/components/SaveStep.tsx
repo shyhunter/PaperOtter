@@ -18,6 +18,9 @@ import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
 import { saveOverFile, classifySaveFailure, saveFailureMessage } from '@/lib/saveOverFile';
 import { revealLabelKey } from '@/lib/platform';
+import { useOptionalToolContext } from '@/context/ToolContext';
+import { OtterLoader } from '@/components/brand/OtterLoader';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -112,13 +115,13 @@ function AnimatedCheckmark() {
             cy="26"
             r="25"
             fill="none"
-            stroke="#22c55e"
+            stroke="var(--success)"
             strokeWidth="2"
           />
           <path
             className="checkmark-check"
             fill="none"
-            stroke="#22c55e"
+            stroke="var(--success)"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -133,6 +136,17 @@ function AnimatedCheckmark() {
 // ── Save Confirmation Card ────────────────────────────────────────────────────
 
 function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismiss: () => void }) {
+  // The step bar is in the header, several levels up and in a different tree
+  // from whichever flow rendered this card. Announcing here rather than in each
+  // flow means the last step goes green exactly when this card is on screen,
+  // and stops the moment it is dismissed -- one fact, one owner.
+  const setJobComplete = useOptionalToolContext()?.setJobComplete;
+  useEffect(() => {
+    if (!setJobComplete) return;
+    setJobComplete(true);
+    return () => setJobComplete(false);
+  }, [setJobComplete]);
+
   const handleOpenFile = async () => {
     try {
       await open(savedPath);
@@ -180,7 +194,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
           <button
             type="button"
             onClick={handleOpenFile}
-            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-start"
+            className="text-xs text-[var(--success)] underline cursor-pointer hover:text-[var(--success-strong)] truncate block max-w-full text-start"
             title={t('saveStep.openPath', { path: savedPath })}
           >
             {savedPath}
@@ -341,14 +355,12 @@ function MultiFileSave({
     return (
       <div className="flex flex-1 flex-col">
         <SaveConfirmation savedPath={savedFilePath} onDismiss={onDismissSaveConfirmation} />
-        <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <div className="flex-1" />
-          <Button size="sm" onClick={handleMultiFileSave}>
-            {t('save.again')}
+          <Button size="sm" data-testid="save-again-btn" disabled className={PRIMARY_ACTION}>
+            {t('save.saved')}
           </Button>
         </div>
       </div>
@@ -608,7 +620,17 @@ function SingleFileSave({
 
   // Default to Save as... when nothing has been chosen yet: opening a dialog is
   // the recoverable direction, overwriting is not.
+  // Retrying a *failed* save has to attempt the same thing again -- a replace
+  // that hit a read-only file must be retried as a replace, not quietly turned
+  // into a Save as. That is this, and it is unchanged.
   const repeatSave = lastMode === 'replace' ? handleReplace : handleSave;
+
+  // The button in the confirmation footer is a different question. Once the
+  // file is written the step is over, and the control says so rather than
+  // offering a job that has already been done: after a replace it re-wrote the
+  // same bytes to the same path, and after a Save as it was a second dialog
+  // nobody had asked for. Saving somewhere else is reached by going Back and
+  // choosing Save as, which is where that decision belongs.
 
   // Auto-trigger the save dialog on mount (only if no savedFilePath yet).
   //
@@ -644,9 +666,13 @@ function SingleFileSave({
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <div className="flex-1" />
-          <Button size="sm" onClick={repeatSave}>
-            {t('save.again')}
+          <Button
+            size="sm"
+            data-testid="save-again-btn"
+            disabled
+            className={PRIMARY_ACTION}
+          >
+            {t('save.saved')}
           </Button>
         </div>
       </div>
@@ -657,7 +683,7 @@ function SingleFileSave({
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-3">
-          <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+          <OtterLoader size="md" />
           <p className="text-sm font-medium text-foreground">
             {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('pdfEditor.saving')}
           </p>

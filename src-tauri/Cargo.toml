@@ -119,3 +119,18 @@ objc2-vision = { version = "0.3", default-features = false, features = [
 e2e = ["dep:tauri-plugin-webdriver-automation"]
 
 
+
+# Test builds decode, resample and re-encode real photographs, which is minutes
+# of work unoptimized. Named crates rather than `"*"`: optimizing every
+# dependency did make the local suite fast, and it also invalidated CI's Rust
+# cache and rebuilt several hundred crates at opt-level 2 -- rust-integration
+# went to 21 minutes on a job that is metered. These four are where the time
+# actually goes.
+[profile.test.package.image]
+opt-level = 2
+[profile.test.package.zune-jpeg]
+opt-level = 2
+[profile.test.package.flate2]
+opt-level = 2
+[profile.test.package.miniz_oxide]
+opt-level = 2

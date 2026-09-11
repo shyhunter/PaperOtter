@@ -78,7 +78,12 @@ function createEmptyPages(pageCount: number): PageEditState[] {
   }));
 }
 
-function editorReducer(state: EditorViewState, action: EditorAction): EditorViewState {
+/**
+ * Exported for tests. The grouped-stamp rules in UPDATE_IMAGE_BLOCK are pure
+ * state maths and the only place the "move one, move all" behaviour lives; a
+ * test that drove them through the provider would be testing React instead.
+ */
+export function editorReducer(state: EditorViewState, action: EditorAction): EditorViewState {
   switch (action.type) {
     case 'SET_ZOOM':
       return { ...state, zoom: clampZoom(action.zoom), zoomPreset: null };
@@ -192,11 +197,35 @@ function editorReducer(state: EditorViewState, action: EditorAction): EditorView
       return { ...state, pages, isDirty: true, selectedBlockId: action.block.id };
     }
     case 'UPDATE_IMAGE_BLOCK': {
-      const pages = state.pages.map((p, i) =>
-        i === action.pageIdx
-          ? { ...p, imageBlocks: p.imageBlocks.map((b) => (b.id === action.block.id ? action.block : b)) }
-          : p,
-      );
+      // A grouped stamp moves as one. The geometry is copied to every sibling,
+      // and nothing else is: each keeps its own id and its own page, and the
+      // bytes are already the same array on every page by design.
+      const { groupId } = action.block;
+      const geometry = {
+        x: action.block.x,
+        y: action.block.y,
+        width: action.block.width,
+        height: action.block.height,
+        rotation: action.block.rotation,
+        flipH: action.block.flipH,
+        flipV: action.block.flipV,
+      };
+
+      const pages = state.pages.map((p, i) => {
+        const onThisPage = i === action.pageIdx;
+        if (!onThisPage && !groupId) return p;
+
+        let touched = false;
+        const imageBlocks = p.imageBlocks.map((b) => {
+          if (onThisPage && b.id === action.block.id) { touched = true; return action.block; }
+          if (groupId && b.groupId === groupId && b.id !== action.block.id) {
+            touched = true;
+            return { ...b, ...geometry };
+          }
+          return b;
+        });
+        return touched ? { ...p, imageBlocks } : p;
+      });
       return { ...state, pages, isDirty: true };
     }
     case 'DELETE_IMAGE_BLOCK': {

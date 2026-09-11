@@ -1,13 +1,15 @@
 // MergePickStep: Multi-file PDF selector with thumbnails, page counts, and "Add More".
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { open } from '@/lib/dialog';
-import { FilePlus, X, Loader2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { FilePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { FilePickStep } from '@/components/FilePickStep';
+import { openFilePicker } from '@/hooks/useFileOpen';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -15,11 +17,9 @@ interface FileWithThumb extends MergeInput {
 
 interface MergePickStepProps {
   onFilesSelected: (files: MergeInput[]) => void;
-  /** Optional initial file paths (from dashboard drop) */
-  initialFiles?: string[];
 }
 
-export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepProps) {
+export function MergePickStep({ onFilesSelected }: MergePickStepProps) {
   const [files, setFiles] = useState<FileWithThumb[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -46,33 +46,20 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
     }
   }, []);
 
-  // Load initial files on first render if provided
-  // Ref guard prevents StrictMode double-effect from duplicating files
-  const initialFilesLoaded = useRef(false);
+  /** The shared picker hands over one path plus the rest of the selection. */
+  const handleFileReady = useCallback(
+    (filePath: string, alsoSelected: string[]) => { void addFiles([filePath, ...alsoSelected]); },
+    [addFiles],
+  );
 
-  useEffect(() => {
-    if (!initialFilesLoaded.current && initialFiles && initialFiles.length > 0) {
-      initialFilesLoaded.current = true;
-      // Load them, but stay on this step: a merge of two dropped files is very
-      // often a merge of three, and this is the only place to add the third.
-      void addFiles(initialFiles);
-    }
-  }, [addFiles, initialFiles]);
-
-  const handleSelectFiles = useCallback(async () => {
+  /** The Add more button, once the list exists. Same dialog the picker opens. */
+  const handleAddMore = useCallback(async () => {
     try {
-      const result = await open({
-        multiple: true,
-        filters: [{ name: t('filter.pdfFiles'), extensions: ['pdf'] }],
-      });
-
-      if (!result) return; // user cancelled
-
-      const paths = Array.isArray(result) ? result : [result];
-      await addFiles(paths);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
-      setLoadError(message);
+      const picked = await openFilePicker(['pdf'], true);
+      if (!picked) return;
+      await addFiles(Array.isArray(picked) ? picked : [picked]);
+    } catch {
+      setLoadError(t('app.couldNotOpenFilePicker'));
     }
   }, [addFiles]);
 
@@ -83,6 +70,22 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
   const handleContinue = useCallback(() => {
     onFilesSelected(files);
   }, [files, onFilesSelected]);
+
+  // Until something is staged this is a pick screen like every other tool's,
+  // drop target and guards included. Once files are in, it becomes the list --
+  // which is the part merge actually needs and no shared card can express.
+  if (files.length === 0) {
+    return (
+      <FilePickStep
+        acceptedFormats={['pdf']}
+        tagline={t('merge.selectTwoOrMorePdfs')}
+        onFileReady={handleFileReady}
+        multiple
+        isLoading={isLoading}
+        error={loadError}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
@@ -122,7 +125,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-4">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            <OtterSpinner className="size-4" />
             <span className="text-sm text-muted-foreground">{t('merge.loadingPdfs')}</span>
           </div>
         )}
@@ -138,7 +141,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={handleSelectFiles}
+            onClick={handleAddMore}
             disabled={isLoading}
             className="flex-1"
           >

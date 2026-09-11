@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { SplashScreen } from '@/components/SplashScreen';
-import { LandingCard } from '@/components/LandingCard';
+import { FilePickStep } from '@/components/FilePickStep';
 import { ToolHeader } from '@/components/ToolHeader';
 import { AppChrome } from '@/components/AppChrome';
 import { ConfigureStep } from '@/components/ConfigureStep';
@@ -16,10 +15,8 @@ import { Dashboard } from '@/components/Dashboard';
 import { ToolProvider, useToolContext } from '@/context/ToolContext';
 import { useLocale } from '@/i18n/context';
 import { TOOL_REGISTRY, type ToolId } from '@/types/tools';
-import { useFileDrop } from '@/hooks/useFileDrop';
-import { openFilePicker } from '@/hooks/useFileOpen';
-import { detectFormat, getFileName, getFileSizeBytes, FILE_SIZE_LIMIT_BYTES, isPdfHeader, stripImageExtension, isHeicPath, isHeicDecodable, heicUnsupportedMessage } from '@/lib/fileValidation';
-import { friendlyPdfError, isPdfLoadError, isPermissionError } from '@/lib/pdfUtils';
+import { detectFormat, getFileName, stripImageExtension } from '@/lib/fileValidation';
+import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -305,7 +302,7 @@ function DedicatedToolFlow() {
 }
 
 function StandardToolFlow() {
-  const { activeTool, goToDashboard, pendingFiles, setPendingFiles, selectTool } = useToolContext();
+  const { activeTool, goToDashboard, setPendingFiles } = useToolContext();
   // Compress PDF and Compress Image are one flow that branches on the file, so
   // without this the tool you opened decided nothing: the picker offered every
   // type, and dropping a PDF on Compress Image quietly started a PDF job.
@@ -344,11 +341,10 @@ function StandardToolFlow() {
     addRecentDir(filePath);
   }, [setPendingFiles, pdfProcessor, imageProcessor, addRecentDir]);
 
-  const [invalidDropError, setInvalidDropError] = useState<string | null>(null);
-  const [emptyFileError, setEmptyFileError] = useState<string | null>(null);
-  const [corruptFileError, setCorruptFileError] = useState<string | null>(null);
-  const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
-  const [corruptPdfBlock, setCorruptPdfBlock] = useState<{ name: string } | null>(null);
+  // Not a picker concern: this is what a *processing* step reports when it
+  // fails and sends the user back to step 0. FilePickStep shows it in the same
+  // slot its own refusals use.
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   // Stores the last PDF options so Retry can re-run with the same settings
   const lastPdfOptionsRef = useRef<Omit<PdfProcessingOptions, 'onProgress'> | null>(null);
@@ -369,7 +365,6 @@ function StandardToolFlow() {
     setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
-    setCorruptPdfBlock(null);
     goToDashboard();
   }, [pdfProcessor, imageProcessor, goToDashboard]);
 
@@ -385,123 +380,22 @@ function StandardToolFlow() {
     setPdfCompressibility({ imageCount: 0, compressibilityScore: 0, jpxByteShare: 0 });
     pdfProcessor.reset();
     imageProcessor.reset();
-    setCorruptPdfBlock(null);
   }, [pdfProcessor, imageProcessor]);
 
-  // Called when a file is confirmed (from picker or drop)
-  const handleFileSelected = useCallback(async (filePath: string, alsoSelected: string[] = []) => {
-    if (!filePath) {
-      setInvalidDropError(t('file.unsupported'));
-      setTimeout(() => setInvalidDropError(null), 2500);
-      return;
-    }
-
+  // Everything the picker needs -- the guards, the dialog, the drop listener --
+  // now lives in FilePickStep, which every tool shares. What is left here is
+  // what happens *after* a file has been accepted.
+  const handleFileReady = useCallback((filePath: string, alsoSelected: string[]) => {
     const format = detectFormat(filePath);
-    if (!format) {
-      setInvalidDropError(t('file.unsupported'));
-      setTimeout(() => setInvalidDropError(null), 2500);
-      return;
-    }
-
-    // The picker filters by tool, but a filter is only a hint -- drag-and-drop
-    // and the recent-folders dialog can still hand this a file of the other
-    // kind, and accepting it would start the sibling tool's job under this
-    // tool's name.
-    if (!acceptedFormats.includes(format)) {
-      // Name the tool that does take this file: refusing it without saying
-      // where it belongs leaves the user to guess between twenty-two cards.
-      const takesImages = acceptedFormats.includes('image');
-      setInvalidDropError(
-        takesImages
-          ? t('file.needsImage', { tool: t(TOOL_REGISTRY['compress-pdf'].name) })
-          : t('file.needsPdf', { tool: t(TOOL_REGISTRY['compress-image'].name) }),
-      );
-      setTimeout(() => setInvalidDropError(null), 3500);
-      return;
-    }
-
-    // HEIC decoding needs macOS Image I/O. Say so here rather than letting the
-    // user configure a whole job and fail at the last step.
-    if (isHeicPath(filePath) && !isHeicDecodable()) {
-      setInvalidDropError(heicUnsupportedMessage());
-      setTimeout(() => setInvalidDropError(null), 4000);
-      return;
-    }
-
-    // Check file size before loading
-    let sizeBytes: number;
-    try {
-      sizeBytes = await getFileSizeBytes(filePath);
-    } catch {
-      // Could not read the file at all — treat as corrupt
-      setCorruptFileError(t('app.thisFileAppearsToBe'));
-      setTimeout(() => setCorruptFileError(null), 2500);
-      return;
-    }
-
-    if (sizeBytes === 0) {
-      setEmptyFileError(t('app.thisFileIsEmptyPlease'));
-      setTimeout(() => setEmptyFileError(null), 2500);
-      return;
-    }
-
-    if (sizeBytes > FILE_SIZE_LIMIT_BYTES) {
-      setFileSizeLimitBytes(sizeBytes);
-      return;
-    }
-
-    // For PDFs: check magic bytes before loading to give a clear corrupt-file message
-    // instead of a cryptic parse error later in the processing step.
-    if (format === 'pdf') {
-      try {
-        const { readFile } = await import('@tauri-apps/plugin-fs');
-        // Read the file and check the first 5 bytes for the %PDF- magic number
-        const allBytes = await readFile(filePath);
-        const headerBytes = allBytes.slice(0, 5);
-        if (!isPdfHeader(headerBytes)) {
-          setCorruptPdfBlock({ name: getFileName(filePath) });
-          return;
-        }
-      } catch (err) {
-        // A file we are not allowed to read is not a damaged file. The corrupt
-        // block offers to repair the document, which for a blocked-but-intact
-        // scan sends the user to fix a problem that does not exist.
-        if (isPermissionError(err)) {
-          toast.error(friendlyPdfError(err));
-        } else {
-          setCorruptPdfBlock({ name: getFileName(filePath) });
-        }
-        return;
-      }
-    }
-
-    // Only files of the same type join the batch — the options chosen on the
-    // Configure step are type-specific, so a PDF and a JPEG cannot share a run.
-    const sameType = alsoSelected.filter((p) => detectFormat(p) === format);
-    const skipped = alsoSelected.length - sameType.length;
-    if (skipped > 0) {
-      toast(t('batch.skippedDifferentType', { count: skipped }));
-    }
-
+    if (!format) return;
     setIsLoading(true);
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
-      setBatchPaths(sameType.length > 0 ? [filePath, ...sameType] : []);
-      addRecentDir(filePath); // persist directory for next session
+      setBatchPaths(alsoSelected.length > 0 ? [filePath, ...alsoSelected] : []);
       setIsLoading(false);
       setCurrentStep(1);
     }, 600);
-  }, [addRecentDir, acceptedFormats]);
-
-  // Auto-load file dropped on dashboard (pendingFiles from ToolContext)
-  useEffect(() => {
-    if (pendingFiles.length > 0 && currentStep === 0 && !fileEntry) {
-      const [file, ...rest] = pendingFiles;
-      setPendingFiles([]);
-      // rest carries the other files staged on the dashboard, which start a batch.
-      handleFileSelected(file, rest);
-    }
-  }, [pendingFiles, currentStep, fileEntry, handleFileSelected, setPendingFiles]);
+  }, []);
 
   // Load source PDF page count, file size, and compressibility when a PDF is selected
   useEffect(() => {
@@ -560,12 +454,11 @@ function StandardToolFlow() {
   useEffect(() => {
     if (pdfProcessor.error && currentStep === 1 && fileEntry?.format === 'pdf') {
       handleStartOver();
-      setCorruptFileError(
+      setProcessingError(
         isPdfLoadError(pdfProcessor.error)
           ? friendlyPdfError(pdfProcessor.error)
           : pdfProcessor.error
       );
-      setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfProcessor.error]);
@@ -574,50 +467,11 @@ function StandardToolFlow() {
   useEffect(() => {
     if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
       handleStartOver();
-      setCorruptFileError(t('app.thisFileAppearsToBe'));
-      setTimeout(() => setCorruptFileError(null), 2500);
+      setProcessingError(t('app.thisFileAppearsToBe'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageProcessor.error]);
 
-  const handleFileSizeLimitDismiss = useCallback(() => {
-    setFileSizeLimitBytes(null);
-  }, []);
-
-  // Same list the picker uses, so hovering a file the tool cannot take shows
-  // the refusal colour rather than promising a drop that will be turned away.
-  const acceptsDroppedFile = useCallback(
-    (path: string) => {
-      const format = detectFormat(path);
-      return format !== null && acceptedFormats.includes(format);
-    },
-    [acceptedFormats],
-  );
-
-  const dragState = useFileDrop(handleFileSelected, acceptsDroppedFile);
-
-  const handlePickerClick = useCallback(async () => {
-    try {
-      // E2E test hook: tests set window.__E2E_OPEN_FILE__ to bypass the frozen Tauri IPC.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const e2eFile = (window as any).__E2E_OPEN_FILE__ as string | undefined;
-      if (e2eFile) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any).__E2E_OPEN_FILE__;
-        handleFileSelected(e2eFile);
-        return;
-      }
-      const filePath = await openFilePicker(acceptedFormats);
-      if (filePath) {
-        handleFileSelected(filePath);
-      }
-      // null = user cancelled — do nothing
-    } catch {
-      toast.error(t('app.couldNotOpenFilePicker'), {
-        description: t('app.pleaseTryAgain'),
-      });
-    }
-  }, [handleFileSelected, acceptedFormats]);
 
   const handleGeneratePreview = useCallback(
     (options: Omit<PdfProcessingOptions, 'onProgress'>) => {
@@ -716,21 +570,13 @@ function StandardToolFlow() {
     <>
       <ToolHeader currentStep={currentStep} onBackToDashboard={handleBackToDashboard} recentDirs={recentDirs} onRecentFileSelected={handleRecentFileSelected} />
 
-      {/* Step 0: Landing / Pick */}
+      {/* Step 0: Pick */}
       {currentStep === 0 && (
-        <LandingCard
-          dragState={dragState}
-          isLoading={isLoading}
+        <FilePickStep
           acceptedFormats={acceptedFormats}
-          onPickerClick={handlePickerClick}
-          invalidDropError={invalidDropError}
-          emptyFileError={emptyFileError}
-          corruptFileError={corruptFileError}
-          fileSizeLimitBytes={fileSizeLimitBytes}
-          onFileSizeLimitDismiss={handleFileSizeLimitDismiss}
-          corruptPdfBlock={corruptPdfBlock}
-          onCorruptPdfDismiss={() => setCorruptPdfBlock(null)}
-          onCorruptPdfRepair={() => { selectTool('repair-pdf'); setCorruptPdfBlock(null); }}
+          onFileReady={handleFileReady}
+          isLoading={isLoading}
+          error={processingError}
         />
       )}
 
@@ -998,7 +844,11 @@ function AppContent() {
       {showToolFlow && <ToolFlow key={documentEpoch} />}
       {showDashboard && <Dashboard />}
       {!showEditor && <PrivacyFooter />}
-      <Toaster position="bottom-center" />
+      {/* Clear of the action bar. A toast landing on the button that raised it
+          covers the thing the user is about to press again, and on the merge
+          screen it sat squarely over Save. 200px puts it above the bar with
+          room to spare. */}
+      <Toaster position="bottom-center" offset={200} mobileOffset={200} />
     </div>
   );
 }

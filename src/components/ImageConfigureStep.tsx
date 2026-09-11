@@ -9,6 +9,8 @@ import type {
   ImageProcessingResult,
 } from '@/types/file';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface ImageConfigureStepProps {
   fileName: string;
@@ -469,7 +471,6 @@ export function ImageConfigureStep({
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
         {isProcessing && onCancel && (
           <button
             type="button"
@@ -484,8 +485,16 @@ export function ImageConfigureStep({
           data-testid="generate-preview-btn"
           onClick={handleSubmit}
           disabled={isProcessing}
+          className={PRIMARY_ACTION}
         >
-          {isProcessing ? t('common.processing') : t('imageConfigureStep.generatePreview')}
+          {isProcessing ? (
+            <>
+              <OtterSpinner className="size-5" />
+              {t('common.processing')}
+            </>
+          ) : (
+            t('imageConfigureStep.generatePreview')
+          )}
         </Button>
       </div>
     </div>

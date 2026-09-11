@@ -60,7 +60,6 @@ export function PrivacyModal({ open, onClose }: PrivacyModalProps) {
               <li>{t('privacy.detailLocal')}</li>
               <li>{t('privacy.detailTemp')}</li>
               <li>{t('privacy.detailSweep')}</li>
-              <li>{t('privacy.detailPasswords')}</li>
             </ul>
           </details>
         </div>

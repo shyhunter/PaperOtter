@@ -1075,3 +1075,104 @@ describe('processPdf — cascade compression (targetSizeBytes)', () => {
     expect(result.targetMet).toBe(true);
   });
 });
+
+// ─── Keep image resolution reaches the engine ────────────────────────────────
+//
+// The Configure step can set this, but the value only means anything if it
+// survives the trip to the Rust command. A control wired to nothing looks
+// identical to a working one, right up until someone checks the output.
+
+describe('processPdf — downsampleImages reaches the compress_pdf command', () => {
+  let imagePdf: Uint8Array;
+
+  beforeAll(async () => {
+    // A real image, or isPredictablyNonCompressible skips the compress pass and
+    // invoke is never called at all.
+    imagePdf = await createPdfWithImage(1);
+  });
+
+  it('[PC-KIR-01] passes downsampling on by default, which is what the presets describe', async () => {
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500));
+
+    await processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true });
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith(
+      'compress_pdf',
+      expect.objectContaining({ downsampleImages: true }),
+    );
+  });
+
+  it('[PC-KIR-02] passes the choice through when the user keeps image resolution', async () => {
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500));
+
+    await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      downsampleImages: false,
+    });
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith(
+      'compress_pdf',
+      expect.objectContaining({ downsampleImages: false }),
+    );
+  });
+
+  it('[PC-KIR-03] keeps it set on every rung of the target-size cascade', async () => {
+    // With a target it cannot reach, processPdf walks down the presets. Each of
+    // those calls is a separate invoke, and every one of them has to carry the
+    // same answer -- dropping it on the second rung would quietly downsample
+    // the very images the user asked to leave alone.
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500_000));
+
+    await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      qualityLevel: 'archive',
+      targetSizeBytes: 1024,
+      downsampleImages: false,
+    });
+
+    const compressCalls = vi.mocked(invoke).mock.calls.filter((c) => c[0] === 'compress_pdf');
+    expect(compressCalls.length).toBeGreaterThan(1);
+    for (const [, args] of compressCalls) {
+      expect(args).toMatchObject({ downsampleImages: false });
+    }
+  });
+});
+
+// ─── Why nothing shrank ───────────────────────────────────────────────────────
+//
+// "File already optimal" was two words in a status strip. The text-only and
+// JPEG 2000 cases explained themselves; the commonest outcome -- a file that
+// has been compressed before -- did not, and left the user nothing to try.
+
+describe('alreadyCompressedMessage', () => {
+  it('[PC-OPT-01] at a middling quality, points at the stronger one', async () => {
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    const message = alreadyCompressedMessage('screen');
+
+    expect(message).toMatch(/already compressed/i);
+    expect(message, 'there is a stronger setting, so say so').toMatch(/stronger/i);
+  });
+
+  it('[PC-OPT-02] at the strongest quality, says there is nothing further', async () => {
+    // 'web' is the bottom of QUALITY_CASCADE. Telling someone to try a stronger
+    // setting when they are already on it is worse than saying nothing.
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    const message = alreadyCompressedMessage('web');
+
+    expect(message).toMatch(/as far as/i);
+    expect(message, 'there is no stronger setting to point at').not.toMatch(/try a stronger/i);
+  });
+
+  it('[PC-OPT-03] says why, not just that', async () => {
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    for (const quality of ['screen', 'web'] as const) {
+      expect(alreadyCompressedMessage(quality), `${quality} gives no reason`)
+        .toMatch(/resolution/i);
+    }
+  });
+});

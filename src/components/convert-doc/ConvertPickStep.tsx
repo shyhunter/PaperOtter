@@ -1,14 +1,9 @@
 import { useState, useCallback } from 'react';
-import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { getExtension } from '@/lib/fileValidation';
 import type { ConvertFormat } from '@/types/converter';
 import { t } from '@/i18n';
+import { FilePickStep } from '@/components/FilePickStep';
 
-const DOC_EXTENSIONS = [
-  'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
-];
 
 /** Maps file extension to ConvertFormat. Returns null if unsupported. */
 function extToFormat(ext: string): ConvertFormat | null {
@@ -35,26 +30,23 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSelectFile = useCallback(async () => {
+  // The picker is shared; what a tool does with the path it is handed is not.
+  const handleFileReady = useCallback(async (filePath: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await open({
-        multiple: false,
-        filters: [{ name: t('filter.documentFiles'), extensions: DOC_EXTENSIONS }],
-      });
-      if (!result || typeof result !== 'string') {
+      if (!filePath || typeof filePath !== 'string') {
         setIsLoading(false);
         return;
       }
-      const ext = getExtension(result);
+      const ext = getExtension(filePath);
       const format = extToFormat(ext);
       if (!format) {
         setError(t('convertDoc.unsupportedFileFormatPleaseUse'));
         setIsLoading(false);
         return;
       }
-      onFilePicked(result, format);
+      onFilePicked(filePath, format);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('app.couldNotOpenFilePicker');
       setError(message);
@@ -64,39 +56,12 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
   }, [onFilePicked]);
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-4 text-center">
-        <h2 className="text-lg font-semibold text-foreground">{t('convertDoc.convertDocument')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('convertDoc.selectADocumentToConvert')}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {t('convertDoc.openPdfDocxDocOdt')}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {t('convertDoc.convertToMarkdownHtmlJson')}
-        </p>
-
-        {error && (
-          <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3">
-            <p className="text-xs text-destructive">{error}</p>
-          </div>
-        )}
-
-        <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoading} className="w-full">
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
-              {t('common.loading')}
-            </>
-          ) : (
-            <>
-              <FileUp className="w-4 h-4 me-2" />
-              {t('convertDoc.selectDocument')}
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+    <FilePickStep
+      acceptedFormats={['pdf', 'document']}
+      tagline={t('convertDoc.selectADocumentToConvert')}
+      onFileReady={handleFileReady}
+      isLoading={isLoading}
+      error={error}
+    />
   );
 }

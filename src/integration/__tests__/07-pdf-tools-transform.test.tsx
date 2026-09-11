@@ -9,7 +9,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { open } from '@tauri-apps/plugin-dialog';
 import { PDFDocument } from 'pdf-lib';
 import App from '@/App';
 
@@ -30,6 +29,7 @@ vi.mock('@/hooks/useDependencies', () => ({
   }),
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
+import { openFilePicker } from '@/hooks/useFileOpen';
 
 // Thumbnail generation — return empty arrays/fake URLs for all tests
 vi.mock('@/lib/pdfThumbnail', () => ({
@@ -141,8 +141,8 @@ async function navigateToTool(toolName: RegExp) {
 }
 
 async function selectPdfFile(user: ReturnType<typeof userEvent.setup>, filePath: string) {
-  vi.mocked(open).mockResolvedValueOnce(filePath);
-  await user.click(await screen.findByRole('button', { name: /select pdf/i }));
+  vi.mocked(openFilePicker).mockResolvedValueOnce(filePath);
+  await user.click(await screen.findByRole('button', { name: /open file/i }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -152,8 +152,8 @@ describe('Suite 07a — Watermark', () => {
   // WM-01 ─────────────────────────────────────────────────────────────────────
   it('WM-01 — navigating to Watermark shows the landing page', async () => {
     await navigateToTool(/watermark/i);
-    expect(screen.getByText('Add Watermark')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByText('Select a PDF to add a text watermark.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // WM-02 ─────────────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ describe('Suite 07a — Watermark', () => {
     await screen.findByText('Watermark Options', {}, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // WM-08 ─────────────────────────────────────────────────────────────────────
@@ -249,8 +249,8 @@ describe('Suite 07b — Page Numbers', () => {
   // PN-01 ─────────────────────────────────────────────────────────────────────
   it('PN-01 — navigating to Page Numbers shows the landing page', async () => {
     await navigateToTool(/page numbers/i);
-    expect(screen.getByText('Add Page Numbers')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByText('Select a PDF to add page numbers.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // PN-02 ─────────────────────────────────────────────────────────────────────
@@ -311,7 +311,7 @@ describe('Suite 07b — Page Numbers', () => {
     await screen.findByText('Page Number Options', {}, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 });
 
@@ -323,7 +323,7 @@ describe('Suite 07c — Rotate PDF', () => {
   it('RF-01 — navigating to Rotate PDF shows the landing page', async () => {
     await navigateToTool(/rotate pdf/i);
     expect(screen.getByText('Select a PDF to rotate individual or all pages.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // RF-02 ─────────────────────────────────────────────────────────────────────
@@ -382,7 +382,7 @@ describe('Suite 07c — Rotate PDF', () => {
     await screen.findByText('Rotate Pages', {}, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // RF-08 ─────────────────────────────────────────────────────────────────────

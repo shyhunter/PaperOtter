@@ -53,6 +53,14 @@
   --lilac: oklch(0.818 0.103 296);
   --lime: oklch(0.889 0.174 128);
   --coral: oklch(0.757 0.147 32);
+  /* Green for a job that finished, at a lightness text can actually be set in.
+     --lime is the fill behind a completed step and is far too bright to write
+     on: the success tick shipped as #22c55e, which measures 2.24:1 on this
+     page -- under the 3:1 even a non-text mark is asked for. These two are
+     4.96:1 and 6.58:1, so the saved-file link clears AA at 12px and deepens on
+     hover. See UI-08. */
+  --success: oklch(0.52 0.16 150);
+  --success-strong: oklch(0.45 0.16 150);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -141,6 +149,11 @@ body {
   --lilac: oklch(0.76 0.12 296);
   --lime: oklch(0.82 0.19 128);
   --coral: oklch(0.66 0.16 30);
+  /* The same two roles, inverted: on a dark card the readable green is the
+     light one, and "stronger" means lighter rather than darker. 10.43:1 and
+     13.51:1. */
+  --success: oklch(0.80 0.17 150);
+  --success-strong: oklch(0.88 0.17 150);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -210,6 +223,30 @@ body {
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+/* The mark flips toward the viewer, snapping through sixteen positions a second
+   the way hand-cranked film moves. `transform` only, so it runs on the
+   compositor: a loading animation plays exactly when the main thread is
+   busiest, and anything animating layout would stall precisely when it is on
+   screen -- a frozen spinner reads as a crashed app.
+
+   This was written once and then deleted by an unrelated edit in 241e471,
+   which is why every OtterLoader on screen has been a static picture since.
+   `steps()` and a keyframe are the whole mechanism: no timer, no rAF loop,
+   nothing to leak on unmount. */
+.otter-loader-stage { perspective: 520px; }
+
+@keyframes otter-flip {
+  to { transform: rotateY(360deg); }
+}
+
+.otter-loader-mark {
+  animation: otter-flip 1.6s steps(16, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otter-loader-mark { animation: none; transform: none; }
 }
 
 .animate-fade-slide-in {
@@ -440,3 +477,52 @@ select {
 /* Every tool card is the same height, whatever the length of its description —
    one-line descriptions were leaving short cards in the grid. */
 [data-testid="tool-card"] { height: 100%; }
+
+/* ── Toasts ──────────────────────────────────────────────────────────────────
+   A toast is a card like every other card here, so it gets the same drawn edge
+   and hard shadow rather than the rounded rectangle the library ships. The
+   description colour is set from our own token too: sonner's stylesheet picks
+   one from its own idea of the theme, which is how a near-white line came to be
+   printed on a light popover. */
+[data-sonner-toast] {
+  border: 3px solid var(--border) !important;
+  border-radius: 18px 7px 20px 8px / 8px 20px 7px 18px !important;
+  box-shadow: 5px 5px 0 var(--border) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
+
+/* The close button is off by default and only appears on hover; a toast that
+   covers something should be dismissible the moment it is seen. */
+[data-sonner-toast] [data-close-button] {
+  opacity: 1 !important;
+  border: 2px solid var(--border) !important;
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-radius: 8px 3px 9px 4px / 4px 9px 3px 8px !important;
+}
+
+/* ── A chosen option has to look chosen ──────────────────────────────────────
+   Thirty-seven controls mark their selected state as `border-primary` plus a
+   tint of the same colour. The tint is 5% or 10% of the brand yellow, which on
+   a page at oklch(0.994 ...) composites to within a couple of levels of the
+   paper: on the Configure steps the chosen format and the chosen resolution
+   were, in practice, indistinguishable from the ones beside them.
+
+   Raised here rather than at thirty-seven call sites, because it is one
+   decision -- how visible "chosen" is -- and it should stay one. The pairing
+   with `border-primary` is what keeps this off hover states and drag overlays,
+   which use the same tints to mean something much weaker.
+
+   Dark mode is left alone: the same alpha over oklch(0.145 ...) already reads. */
+:root:not(.dark) .border-primary.bg-primary\/5 {
+  background-color: color-mix(in oklab, var(--primary) 24%, transparent);
+}
+:root:not(.dark) .border-primary.bg-primary\/10 {
+  background-color: color-mix(in oklab, var(--primary) 34%, transparent);
+}
+:root:not(.dark) .border-primary.bg-primary\/20 {
+  background-color: color-mix(in oklab, var(--primary) 46%, transparent);
+}

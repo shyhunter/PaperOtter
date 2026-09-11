@@ -1,13 +1,15 @@
 // SplitSelectStep: Page selection with 3 modes — by range, every N pages, extract all.
 // Visual page grid + text input with bidirectional sync.
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { parsePageRangeText } from '@/lib/pdfSplit';
 import type { SplitMode } from '@/lib/pdfSplit';
 import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 type TabMode = 'range' | 'every-n' | 'individual';
 
@@ -298,11 +300,12 @@ export function SplitSelectStep({
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
-        <Button data-testid="apply-btn" size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}>
+        <Button data-testid="apply-btn" size="sm" onClick={handleSplit} disabled={!currentSplitMode || isProcessing}
+          className={PRIMARY_ACTION}
+        >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('split.splitting')}
             </>
           ) : (

@@ -4,9 +4,13 @@ import { applySignatureBackground } from '@/lib/signatureBackground';
 import { PagePreview, type PageDimensions } from '@/components/shared/PagePreview';
 import { addSignature } from '@/lib/pdfSign';
 import { PDFDocument } from 'pdf-lib';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { dataUrlToBytes } from '@/lib/dataUrl';
+import { useSavedSignatures } from '@/hooks/useSavedSignatures';
+import { cn } from '@/lib/utils';
 
 interface SignaturePlaceStepProps {
   pdfBytes: Uint8Array;
@@ -15,7 +19,7 @@ interface SignaturePlaceStepProps {
   onBack: () => void;
 }
 
-type PageRangeMode = 'current' | 'all' | 'custom';
+type PageRangeMode = 'current' | 'last' | 'all' | 'custom';
 
 /** Parse "1-3, 5, 7-10" into zero-based indices, clamped to [0, maxPage) */
 function parsePageRange(input: string, maxPage: number): number[] {
@@ -37,17 +41,6 @@ function parsePageRange(input: string, maxPage: number): number[] {
   return Array.from(indices).sort((a, b) => a - b);
 }
 
-/** Convert a data URL to Uint8Array (base64 decode) */
-function dataUrlToBytes(dataUrl: string): Uint8Array {
-  const base64 = dataUrl.split(',')[1];
-  const binaryStr = atob(base64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) {
-    bytes[i] = binaryStr.charCodeAt(i);
-  }
-  return bytes;
-}
-
 export function SignaturePlaceStep({
   pdfBytes,
   signatureDataUrl,
@@ -63,6 +56,14 @@ export function SignaturePlaceStep({
   // lands on the page: a background chosen against a preview that does not have
   // it is a guess.
   const [background, setBackground] = useState<SignatureBg>(null);
+
+  // Which signature is being placed. Seeded from the step before, but not fixed
+  // there: the only way to use a different saved one was to go back, and the
+  // list was not visible from here at all, so there was nothing to go back to
+  // that you could see first.
+  const [activeDataUrl, setActiveDataUrl] = useState(signatureDataUrl);
+  useEffect(() => { setActiveDataUrl(signatureDataUrl); }, [signatureDataUrl]);
+  const { signatures: savedSignatures } = useSavedSignatures();
   const [composited, setComposited] = useState(signatureDataUrl);
   const pageBoxRef = useRef<HTMLDivElement | null>(null);
 
@@ -226,6 +227,10 @@ export function SignaturePlaceStep({
       let pageIndices: number[];
       if (rangeMode === 'current') {
         pageIndices = [pageIndex];
+      } else if (rangeMode === 'last') {
+        // Signing at the end is the commonest thing anyone does with a
+        // signature, and reaching it meant paging to the back first.
+        pageIndices = [Math.max(0, totalPages - 1)];
       } else if (rangeMode === 'all') {
         pageIndices = Array.from({ length: totalPages }, (_, i) => i);
       } else {
@@ -268,14 +273,18 @@ export function SignaturePlaceStep({
   }, [pageDims, sigPos, sigSize, composited, pdfBytes, pageIndex, totalPages, rangeMode, customRange, onComplete]);
   useEffect(() => {
     let cancelled = false;
-    if (!background) { setComposited(signatureDataUrl); return; }
+    if (!background) { setComposited(activeDataUrl); return; }
     (async () => {
-      const withBg = await applySignatureBackground(signatureDataUrl, background);
-      if (!cancelled) setComposited(withBg);
+      try {
+        const withBg = await applySignatureBackground(activeDataUrl, background);
+        if (!cancelled) setComposited(withBg);
+      } catch {
+        // The signature still places; it just goes on without the colour.
+        if (!cancelled) setComposited(activeDataUrl);
+      }
     })();
     return () => { cancelled = true; };
-  }, [signatureDataUrl, background]);
-
+  }, [activeDataUrl, background]);
 
   const corners = ['nw', 'ne', 'sw', 'se'];
   const cornerPositions: Record<string, React.CSSProperties> = {
@@ -350,6 +359,32 @@ export function SignaturePlaceStep({
       {/* Right: Controls panel */}
       <div className="flex w-64 flex-col gap-4 rounded-lg border border-border bg-card p-4">
         {/* Page navigation */}
+          {savedSignatures.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-foreground">
+                {t('signPdf.savedSignatures')}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {savedSignatures.map((sig) => (
+                  <button
+                    key={sig.id}
+                    type="button"
+                    data-testid="place-saved-signature"
+                    onClick={() => setActiveDataUrl(sig.dataUrl)}
+                    aria-pressed={sig.dataUrl === activeDataUrl}
+                    title={sig.name}
+                    className={cn(
+                      'h-10 w-20 rounded-md border bg-card p-1',
+                      sig.dataUrl === activeDataUrl ? 'border-primary ring-2 ring-ring' : 'border-border hover:bg-accent',
+                    )}
+                  >
+                    <img src={sig.dataUrl} alt={sig.name} className="h-full w-full [object-fit:contain]" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <SignatureBackground
             value={background}
             onChange={setBackground}
@@ -414,6 +449,16 @@ export function SignaturePlaceStep({
               <input
                 type="radio"
                 name="page-range"
+                checked={rangeMode === 'last'}
+                onChange={() => setRangeMode('last')}
+                className="accent-primary"
+              />
+              {t('signPdf.lastPage')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="radio"
+                name="page-range"
                 checked={rangeMode === 'all'}
                 onChange={() => setRangeMode('all')}
                 className="accent-primary"
@@ -455,7 +500,7 @@ export function SignaturePlaceStep({
           >
             {isProcessing ? (
               <>
-                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                <OtterSpinner className="size-4" />
                 {t('common.applying')}
               </>
             ) : (

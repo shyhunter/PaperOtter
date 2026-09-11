@@ -4,7 +4,6 @@ import { SplitPickStep } from './SplitPickStep';
 import { SplitSelectStep } from './SplitSelectStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
-import { useToolContext } from '@/context/ToolContext';
 import { useSplitPdfProcessor } from '@/hooks/useSplitPdfProcessor';
 import type { SplitMode } from '@/lib/pdfSplit';
 
@@ -13,7 +12,6 @@ interface SplitFlowProps {
 }
 
 export function SplitFlow({ onStepChange }: SplitFlowProps) {
-  const { pendingFiles, setPendingFiles } = useToolContext();
   const splitProcessor = useSplitPdfProcessor();
   const [step, setStep] = useState(0);
   const [pdfBytes, setPdfBytes] = useState<Uint8Array | null>(null);
@@ -25,12 +23,6 @@ export function SplitFlow({ onStepChange }: SplitFlowProps) {
     setStep(s);
     onStepChange?.(s);
   }, [onStepChange]);
-
-  // Consume pending file
-  const initialFile = pendingFiles.length > 0 ? pendingFiles[0] : null;
-  if (pendingFiles.length > 0) {
-    setPendingFiles([]);
-  }
 
   const handleFileLoaded = useCallback((bytes: Uint8Array, pages: number, name: string) => {
     setPdfBytes(bytes);
@@ -60,7 +52,6 @@ export function SplitFlow({ onStepChange }: SplitFlowProps) {
         {step === 0 && (
           <SplitPickStep
             onFileLoaded={handleFileLoaded}
-            initialFile={initialFile}
           />
         )}
 

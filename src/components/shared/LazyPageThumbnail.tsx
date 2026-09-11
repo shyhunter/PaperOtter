@@ -10,6 +10,7 @@
 // (usePdfDocument) and every tile shares that proxy.
 import { useEffect, useRef, useState, memo, type CSSProperties, type RefObject } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface LazyPageThumbnailProps {
   /** Shared, already-parsed document. Null while the grid is still loading it. */
@@ -104,7 +105,7 @@ export const LazyPageThumbnail = memo(function LazyPageThumbnail({
     <div ref={containerRef} className={className}>
       {!rendered && (
         <div className="flex h-full w-full items-center justify-center">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          <OtterSpinner className="size-4" />
         </div>
       )}
       <canvas

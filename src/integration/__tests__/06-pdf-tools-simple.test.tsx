@@ -12,7 +12,6 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -37,6 +36,7 @@ vi.mock('@/hooks/useDependencies', () => ({
   }),
 }));
 vi.mock('@/hooks/useFileOpen', () => ({ openFilePicker: vi.fn() }));
+import { openFilePicker } from '@/hooks/useFileOpen';
 vi.mock('@/lib/pdfThumbnail', () => ({
   renderAllPdfPages: vi.fn().mockResolvedValue([]),
   renderPdfThumbnail: vi.fn().mockResolvedValue('blob:preview'),
@@ -75,8 +75,8 @@ async function navigateToTool(toolName: RegExp) {
 
 /** Click "Select PDF" button with open() returning the given path. */
 async function selectPdfFile(user: ReturnType<typeof userEvent.setup>, filePath: string) {
-  vi.mocked(open).mockResolvedValueOnce(filePath);
-  await user.click(await screen.findByRole('button', { name: /select pdf/i }));
+  vi.mocked(openFilePicker).mockResolvedValueOnce(filePath);
+  await user.click(await screen.findByRole('button', { name: /open file/i }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -99,7 +99,7 @@ describe('Suite 06c — Repair PDF', () => {
   it('RP-01 — navigating to Repair PDF shows landing page', async () => {
     await navigateToTool(/repair pdf/i);
     expect(screen.getByText('Fix structural issues in corrupted or malformed PDFs.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // RP-02 ─────────────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ describe('Suite 06c — Repair PDF', () => {
     await screen.findByRole('button', { name: /repair pdf/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /^back$/i }));
-    expect(screen.getByRole('button', { name: /select pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument();
   });
 
   // RP-06 ─────────────────────────────────────────────────────────────────────

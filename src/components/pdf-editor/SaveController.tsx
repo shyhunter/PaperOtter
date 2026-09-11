@@ -13,6 +13,7 @@ import { useEditorContext } from '@/context/EditorContext';
 import { applyAllEdits } from '@/lib/pdfEditor';
 import { t } from '@/i18n';
 import { revealLabelKey } from '@/lib/platform';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 /** Show a save-success toast with a clickable "Show in Finder" action */
 function showSavedToast(savedPath: string) {
@@ -104,7 +105,7 @@ export function SaveController() {
   if (isSaving) {
     return (
       <div className="fixed top-2 end-2 z-50 flex items-center gap-2 rounded bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
-        <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        <OtterSpinner className="size-3" />
         {t('pdfEditor.saving')}
       </div>
     );

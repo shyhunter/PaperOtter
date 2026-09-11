@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ImageProcessingResult } from '@/types/file';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface ImageCompareStepProps {
   result: ImageProcessingResult;
@@ -186,9 +189,8 @@ export function ImageCompareStep({
                 <img src={originalUrl} alt={t('imageCompare.original')} className="w-full h-auto block" />
               </div>
             ) : (
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-                <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center">
+                <OtterLoader size="md" label={t('common.loading')} />
               </div>
             )}
           </div>
@@ -221,7 +223,7 @@ export function ImageCompareStep({
               </>
             ) : isProcessing ? (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+                <OtterSpinner className="size-8" />
                 <span className="text-sm text-muted-foreground">{t('common.processing')}</span>
               </div>
             ) : null}
@@ -262,8 +264,6 @@ export function ImageCompareStep({
           {t('common.back')}
         </Button>
 
-        <div className="flex-1" />
-
         <button
           type="button"
           data-testid="process-another-btn"
@@ -273,7 +273,7 @@ export function ImageCompareStep({
           {t('common.startOver')}
         </button>
 
-        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className={PRIMARY_ACTION}>
           {t('common.saveEllipsis')}
         </Button>
       </div>
