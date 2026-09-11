@@ -74,9 +74,13 @@ export function SignatureBackground({ value, onChange, className }: Props) {
             aria-pressed={value?.toLowerCase() === p.colour}
             title={label}
             aria-label={label}
+            // Two pixels, not one. All three stocks are within a few levels of
+            // white -- that is what makes them page stocks -- so on a light
+            // panel a hairline outline left three pale squares that read as
+            // empty space. Reported as "no preset colours are there".
             className={cn(
-              'h-7 w-7 rounded-md border',
-              value?.toLowerCase() === p.colour ? 'border-primary ring-2 ring-ring' : 'border-border',
+              'h-7 w-7 flex-none rounded-md border-2',
+              value?.toLowerCase() === p.colour ? 'border-primary ring-2 ring-ring' : 'border-foreground/40',
             )}
             style={{ backgroundColor: p.colour }}
           />
@@ -86,7 +90,7 @@ export function SignatureBackground({ value, onChange, className }: Props) {
         {/* Qualified for the same reason as the swatches: the ink picker beside
             this one also offers a custom colour. */}
         <label
-          className="flex h-7 items-center gap-1 rounded-md border border-border px-1.5 text-[11px] text-muted-foreground hover:bg-accent"
+          className="flex h-7 flex-none items-center gap-1 rounded-md border-2 border-foreground/40 px-1.5 text-[11px] text-muted-foreground hover:bg-accent"
           title={customLabel}
         >
           <input

@@ -1676,6 +1676,14 @@ function SignPanel() {
   // What sits behind the signature on the page. The editor renders the document
   // to a canvas, so the colour can be taken off the page rather than guessed.
   const [sigBackground, setSigBackground] = useState<SignatureBg>(null);
+  // Whether the picker above the list has been used this session.
+  //
+  // A saved signature remembers the background it was saved with, and placing
+  // it used that unconditionally -- so choosing a colour in the panel and then
+  // clicking a saved signature did nothing at all, which is what a control that
+  // appears to be broken looks like. `null` cannot tell "untouched" from "the
+  // user chose None", so the touch is tracked rather than inferred.
+  const [sigBackgroundTouched, setSigBackgroundTouched] = useState(false);
   const { signatures: savedSignatures, saveSignature, deleteSignature } = useSavedSignatures();
   // Draw and Upload were only ever in Sign PDF, so a signature made with a
   // stylus or scanned from paper could not be used in the editor at all --
@@ -1949,7 +1957,10 @@ function SignPanel() {
 
       {/* Outside the tabs: what sits behind the signature applies to a drawn or
           uploaded one just as much as a typed one. */}
-      <SignatureBackground value={sigBackground} onChange={setSigBackground} />
+      <SignatureBackground
+        value={sigBackground}
+        onChange={(next) => { setSigBackground(next); setSigBackgroundTouched(true); }}
+      />
 
       {/* Which pages, in the standalone tool's own words. This panel could only
           stamp the page you were looking at, so signing a contract meant
@@ -2034,7 +2045,14 @@ function SignPanel() {
             <div key={sig.id} className="flex items-center gap-1.5 rounded border p-1.5 hover:bg-muted/50 group">
               <button
                 type="button"
-                onClick={() => placeSignatureImage(sig.dataUrl, sig.background ?? null)}
+                onClick={() =>
+                  placeSignatureImage(
+                    sig.dataUrl,
+                    // An explicit choice in the panel wins; otherwise the
+                    // signature keeps the background it was saved with.
+                    sigBackgroundTouched ? sigBackground : (sig.background ?? null),
+                  )
+                }
                 className="flex min-w-0 flex-1 items-center gap-2 text-start"
                 title={sig.name}
               >

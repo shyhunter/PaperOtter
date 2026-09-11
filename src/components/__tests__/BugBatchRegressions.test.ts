@@ -137,3 +137,35 @@ describe('[PRIVACY-01] the app says what it actually fetches', () => {
     }
   });
 });
+
+describe('[SIGN-BG-01] the background picker is not decoration', () => {
+  const panel = readFileSync('src/components/pdf-editor/ToolSidebarPanel.tsx', 'utf-8');
+
+  it('honours the colour chosen in the panel when placing a saved signature', () => {
+    // Reported after the CSP fix, which was necessary but not sufficient:
+    // placing a saved signature passed `sig.background` -- the colour it was
+    // saved with -- and ignored the picker sitting directly above the list. So
+    // choosing a colour and clicking a signature did nothing, which is
+    // indistinguishable from a broken control.
+    expect(panel, 'the saved background is used unconditionally')
+      .not.toMatch(/placeSignatureImage\(sig\.dataUrl,\s*sig\.background \?\? null\)/);
+    expect(panel).toContain('sigBackgroundTouched ? sigBackground : (sig.background ?? null)');
+  });
+
+  it('tracks the choice rather than inferring it from null', () => {
+    // `null` is both "untouched" and "the user chose None", so an untouched
+    // panel must not be read as a decision to remove the saved background.
+    expect(panel).toContain('const [sigBackgroundTouched, setSigBackgroundTouched] = useState(false)');
+    expect(panel).toMatch(/setSigBackground\(next\);\s*setSigBackgroundTouched\(true\)/);
+  });
+
+  it('draws the page stocks so they can be told from the panel', () => {
+    // All three presets are within a few levels of white -- that is what makes
+    // them page stocks -- so a 1px outline left three pale squares reading as
+    // empty space. Reported as "no preset colours are there".
+    const picker = readFileSync('src/components/SignatureBackground.tsx', 'utf-8');
+    expect(picker).toContain("'h-7 w-7 flex-none rounded-md border-2'");
+    expect(picker, 'a hairline border cannot bound a near-white swatch')
+      .toContain('border-foreground/40');
+  });
+});

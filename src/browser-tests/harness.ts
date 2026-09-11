@@ -14,6 +14,7 @@ import { extractPageText, extractAllPagesText, getPageDimensions } from '@/lib/p
 import { applyRedactions } from '@/lib/pdfRedact';
 import { PDFDocument, PDFDict, PDFName, PDFNumber, PDFRawStream } from 'pdf-lib';
 import { matchToRect, type RedactionScope } from '@/lib/redactionScope';
+import { applySignatureBackground } from '@/lib/signatureBackground';
 
 // Same worker wiring the app uses. Without it pdf.js silently renders nothing,
 // which is exactly the failure mode this layer is meant to make visible.
@@ -145,9 +146,54 @@ async function pixelAt(bytes: number[], pageIndex: number, xPercent: number, yPe
   return { r, g, b, a };
 }
 
+/**
+ * The signature compositor, in a real browser.
+ *
+ * It cannot be reached from the unit layer: jsdom implements no canvas, so
+ * every assertion about it has been structural -- "the source does not call
+ * fetch" -- which is not the same as "the colour arrives". It shipped broken
+ * twice behind exactly that gap.
+ */
+interface CompositedPixels {
+  /** A corner the ink never touched: whatever is here is the background. */
+  background: { r: number; g: number; b: number; a: number };
+  /** The one pixel the signature drew. It has to survive the fill. */
+  ink: { r: number; g: number; b: number; a: number };
+}
+
+async function compositeSignature(colour: string): Promise<CompositedPixels> {
+  // A 4x4 PNG: one opaque black pixel at the top-left, the rest transparent.
+  const src = document.createElement('canvas');
+  src.width = 4; src.height = 4;
+  const sctx = src.getContext('2d')!;
+  sctx.fillStyle = '#000000';
+  sctx.fillRect(0, 0, 1, 1);
+
+  const withBg = await applySignatureBackground(src.toDataURL('image/png'), colour);
+
+  const img = new Image();
+  img.src = withBg;
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('composited image would not load'));
+  });
+
+  const out = document.createElement('canvas');
+  out.width = img.naturalWidth; out.height = img.naturalHeight;
+  const octx = out.getContext('2d')!;
+  octx.drawImage(img, 0, 0);
+
+  const read = (x: number, y: number) => {
+    const [r, g, b, a] = octx.getImageData(x, y, 1, 1).data;
+    return { r, g, b, a };
+  };
+  return { background: read(3, 3), ink: read(0, 0) };
+}
+
 declare global {
   interface Window {
     __papercut: {
+      compositeSignature: typeof compositeSignature;
       openPdf: typeof openPdf;
       searchBytes: typeof searchBytes;
       extractPageText: (bytes: number[], pageIndex: number) => ReturnType<typeof extractPageText>;
@@ -163,6 +209,7 @@ declare global {
 }
 
 window.__papercut = {
+  compositeSignature,
   openPdf,
   searchBytes,
   extractPageText: (bytes, pageIndex) => extractPageText(toBytes(bytes), pageIndex),
