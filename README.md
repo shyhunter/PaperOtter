@@ -160,7 +160,7 @@ The links above always point to the latest release on [GitHub Releases](https://
 >
 > macOS remembers the decision and PaperOtter opens normally from then on.
 >
-> If you see the older _"PaperOtter is damaged and can't be opened"_ message, or the hour expired, clear the quarantine flag instead: `xattr -cr /Applications/PaperOtter.app`
+> If you see the older _"PaperOtter is damaged and can't be opened"_ message, or the hour expired, clear the quarantine flag instead: `xattr -dr com.apple.quarantine /Applications/PaperOtter.app`
 
 > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
 

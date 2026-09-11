@@ -27,7 +27,7 @@ harsher message, which has no Open Anyway path. The same applies if the
 one-hour window expired. Clear the quarantine flag directly:
 
 ```
-xattr -cr /Applications/PaperOtter.app
+xattr -dr com.apple.quarantine /Applications/PaperOtter.app
 ```
 
 ## "Windows protected your PC" (SmartScreen warning)
