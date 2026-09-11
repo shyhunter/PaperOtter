@@ -413,6 +413,7 @@ export async function processPdf(
           const gsResult: ArrayBuffer = await invoke('compress_pdf', {
             sourcePath: tempInputPath,
             preset: levelPreset,
+            downsampleImages: options.downsampleImages ?? true,
           });
           const gsBytes = new Uint8Array(gsResult);
 
@@ -446,6 +447,7 @@ export async function processPdf(
         const gsResult: ArrayBuffer = await invoke('compress_pdf', {
           sourcePath: tempInputPath,
           preset,
+          downsampleImages: options.downsampleImages ?? true,
         });
 
         processedBytes = new Uint8Array(gsResult);

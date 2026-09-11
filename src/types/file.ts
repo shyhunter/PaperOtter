@@ -26,6 +26,16 @@ export interface PdfProcessingOptions {
   compressionEnabled: boolean;
   qualityLevel: PdfQualityLevel;
   targetSizeBytes: number | null;  // null = no target, just re-save
+  /**
+   * Whether images above the preset's target resolution may be scaled down.
+   * Defaults to true when absent, which is what every preset describes.
+   *
+   * Turning it off still re-encodes them, just at their original pixel size --
+   * the right answer for screenshots and line art, where downsampling is what
+   * makes small text unreadable. Estimates assume downsampling, so the result
+   * will be larger than the figure shown beside the quality zone.
+   */
+  downsampleImages?: boolean;
 
   // Page resize
   resizeEnabled: boolean;

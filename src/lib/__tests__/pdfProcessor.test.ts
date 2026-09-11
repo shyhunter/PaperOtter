@@ -1075,3 +1075,70 @@ describe('processPdf — cascade compression (targetSizeBytes)', () => {
     expect(result.targetMet).toBe(true);
   });
 });
+
+// ─── Keep image resolution reaches the engine ────────────────────────────────
+//
+// The Configure step can set this, but the value only means anything if it
+// survives the trip to the Rust command. A control wired to nothing looks
+// identical to a working one, right up until someone checks the output.
+
+describe('processPdf — downsampleImages reaches the compress_pdf command', () => {
+  let imagePdf: Uint8Array;
+
+  beforeAll(async () => {
+    // A real image, or isPredictablyNonCompressible skips the compress pass and
+    // invoke is never called at all.
+    imagePdf = await createPdfWithImage(1);
+  });
+
+  it('[PC-KIR-01] passes downsampling on by default, which is what the presets describe', async () => {
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500));
+
+    await processPdf('/test.pdf', { ...baseOpts, compressionEnabled: true });
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith(
+      'compress_pdf',
+      expect.objectContaining({ downsampleImages: true }),
+    );
+  });
+
+  it('[PC-KIR-02] passes the choice through when the user keeps image resolution', async () => {
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500));
+
+    await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      downsampleImages: false,
+    });
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith(
+      'compress_pdf',
+      expect.objectContaining({ downsampleImages: false }),
+    );
+  });
+
+  it('[PC-KIR-03] keeps it set on every rung of the target-size cascade', async () => {
+    // With a target it cannot reach, processPdf walks down the presets. Each of
+    // those calls is a separate invoke, and every one of them has to carry the
+    // same answer -- dropping it on the second rung would quietly downsample
+    // the very images the user asked to leave alone.
+    mockReadFile(imagePdf);
+    mockCompressPdf(makeGsOutput(500_000));
+
+    await processPdf('/test.pdf', {
+      ...baseOpts,
+      compressionEnabled: true,
+      qualityLevel: 'archive',
+      targetSizeBytes: 1024,
+      downsampleImages: false,
+    });
+
+    const compressCalls = vi.mocked(invoke).mock.calls.filter((c) => c[0] === 'compress_pdf');
+    expect(compressCalls.length).toBeGreaterThan(1);
+    for (const [, args] of compressCalls) {
+      expect(args).toMatchObject({ downsampleImages: false });
+    }
+  });
+});

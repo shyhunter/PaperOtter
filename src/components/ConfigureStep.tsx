@@ -177,6 +177,11 @@ export function ConfigureStep({
 
   // Resize state — off by default, toggled via prominent switch
   const [resizeEnabled, setResizeEnabled] = useState(false);
+  // The editor's compress panel has had this since it shipped; the standalone
+  // tool never did, so the same document compressed two ways offered two
+  // different sets of choices. Held as the mechanism (downsample) and shown as
+  // the outcome (keep resolution), which is the way round the user thinks.
+  const [downsampleImages, setDownsampleImages] = useState(true);
   const [pagePreset, setPagePreset] = useState<PdfPagePreset>('A4');
   const [customWidthMm, setCustomWidthMm] = useState<string>('210');
   const [customHeightMm, setCustomHeightMm] = useState<string>('297');
@@ -280,6 +285,7 @@ export function ConfigureStep({
       customWidthMm: pagePreset === 'custom' ? parseFloat(customWidthMm) : null,
       customHeightMm: pagePreset === 'custom' ? parseFloat(customHeightMm) : null,
       selectedPageIndices,
+      downsampleImages,
     };
 
     onGeneratePreview(options);
@@ -509,6 +515,34 @@ export function ConfigureStep({
               </div>
             )}
           </div>
+
+          {/* Only meaningful when there are images to keep the resolution of.
+              Phrased as the thing the user wants rather than the mechanism they
+              must switch off to get it: every preset bundles resolution
+              reduction with re-encoding, and this is the only way to have the
+              second without the first. Same control, same words and same
+              caveat as the editor's compress panel -- two screens doing one
+              job should not disagree about what they offer. */}
+          {imageCount > 0 && (
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  data-testid="keep-image-resolution"
+                  checked={!downsampleImages}
+                  onChange={(e) => setDownsampleImages(!e.target.checked)}
+                  disabled={isProcessing}
+                  className="h-3.5 w-3.5 accent-[var(--primary)] disabled:opacity-50"
+                />
+                {t('pdfEditor.keepImageResolution')}
+              </label>
+              {!downsampleImages && (
+                <p className="ps-5 text-xs leading-relaxed text-muted-foreground">
+                  {t('toolSidebarPanel.imagesStillReEncoded')}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Compressibility guidance — only shown when the banner above isn't already
               covering the reason, so the same fact is never stated twice on this screen. */}
