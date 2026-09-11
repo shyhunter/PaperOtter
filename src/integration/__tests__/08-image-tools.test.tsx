@@ -42,7 +42,11 @@ vi.mock('@/lib/pdfProcessor', () => ({
 vi.mock('@/lib/imageProcessor', () => ({ processImage: vi.fn() }));
 
 // Rotate image lib — return fake image bytes
-vi.mock('@/lib/imageRotate', () => ({
+vi.mock('@/lib/imageRotate', async (importOriginal) => ({
+  // Only the backend call is stubbed. `turnImage` is the cycle itself -- pure
+  // arithmetic with no Tauri in it -- and mocking it away would mean these
+  // tests drove a rotation control that did not rotate.
+  ...(await importOriginal<typeof import('@/lib/imageRotate')>()),
   rotateImage: vi.fn().mockResolvedValue(new Uint8Array([0xff, 0xd8, 0xff, 0xe0])),
 }));
 
@@ -120,22 +124,34 @@ describe('Suite 08a — Rotate Image', () => {
   });
 
   // RI-04 ─────────────────────────────────────────────────────────────────────
-  it('RI-04 — initial rotation is 90 degrees clockwise', async () => {
+  it('RI-04 — an image opens as it arrived, not already turned', async () => {
+    // This asserted 90, which was the defect rather than the contract: the tool
+    // opened on an image already rotated a quarter, and its three-state cycle
+    // never came back to the picture the user had chosen. Rotate PDF starts a
+    // page at 0 and always has.
     const { user } = await navigateToTool(/^Rotate Image/);
     await selectImageFile(user, '/test/photo.jpg');
     await screen.findByRole('button', { name: /apply & save/i }, { timeout: 2000 });
 
-    expect(screen.getByText(/current: 90 degrees clockwise/i)).toBeInTheDocument();
+    expect(screen.getByText(/current: 0 degrees clockwise/i)).toBeInTheDocument();
+    expect(
+      screen.getByTestId('apply-btn'),
+      'there is nothing to apply to an unturned image',
+    ).toBeDisabled();
   });
 
   // RI-05 ─────────────────────────────────────────────────────────────────────
-  it('RI-05 — clicking Right 90 changes rotation to 180 degrees', async () => {
+  it('RI-05 — Right 90 turns a quarter, and Left 90 turns it back', async () => {
     const { user } = await navigateToTool(/^Rotate Image/);
     await selectImageFile(user, '/test/photo.jpg');
     await screen.findByRole('button', { name: /right 90/i }, { timeout: 2000 });
 
     await user.click(screen.getByRole('button', { name: /right 90/i }));
-    expect(screen.getByText(/current: 180 degrees clockwise/i)).toBeInTheDocument();
+    expect(screen.getByText(/current: 90 degrees clockwise/i)).toBeInTheDocument();
+
+    // And back again, which the old three-state cycle could not do.
+    await user.click(screen.getByRole('button', { name: /left 90/i }));
+    expect(screen.getByText(/current: 0 degrees clockwise/i)).toBeInTheDocument();
   });
 
   // RI-06 ─────────────────────────────────────────────────────────────────────
@@ -155,6 +171,9 @@ describe('Suite 08a — Rotate Image', () => {
     await selectImageFile(user, '/test/photo.jpg');
     await screen.findByRole('button', { name: /apply & save/i }, { timeout: 2000 });
 
+    // A turn first: Apply is disabled at 0, because rotating nothing would
+    // re-encode the image only to leave it as it was.
+    await user.click(screen.getByRole('button', { name: /right 90/i }));
     await user.click(screen.getByRole('button', { name: /apply & save/i }));
     await screen.findByText(/choose a save location|save changes to/i, {}, { timeout: 3000 });
   });
