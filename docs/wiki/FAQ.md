@@ -33,7 +33,7 @@ macOS has blocked you and expires about an hour later. See
 [Troubleshooting](Troubleshooting) for the full sequence.
 
 If you see the older _"damaged and can't be opened"_ message instead, run
-`xattr -cr /Applications/PaperOtter.app`.
+`xattr -dr com.apple.quarantine /Applications/PaperOtter.app`.
 
 ### Why does Windows show a SmartScreen warning?
 

@@ -1810,6 +1810,37 @@
         <p>The same warning appears, now with an <strong>Open Anyway</strong> button in it. Click that, and macOS remembers the decision. You never do any of this again.</p>
       </li>
       <li class="step">
+        <h3>If it says &ldquo;damaged&rdquo; instead</h3>
+        <p>Some Macs show <em>&ldquo;PaperOtter is damaged and can&rsquo;t be opened&rdquo;</em> and offer only
+           the Trash, with no Open Anyway anywhere. It is not damaged: macOS is refusing the
+           download tag on an app it cannot trace to a paid developer account. Remove that one
+           tag and open it normally:</p>
+        <div class="cmd">
+          <code>xattr -dr com.apple.quarantine /Applications/PaperOtter.app</code>
+          <button type="button" data-copy="xattr -dr com.apple.quarantine /Applications/PaperOtter.app">Copy</button>
+        </div>
+        <p style="margin-top:.7rem">Drag the app into Applications first, or that path points at nothing.</p>
+        <p style="margin-top:.7rem"><strong>What that command does, exactly.</strong>
+           <span class="mono">xattr</span> edits extended attributes &mdash; small labels macOS
+           attaches to files. <span class="mono">-d com.apple.quarantine</span> deletes one named
+           label: the &ldquo;this came from the internet&rdquo; tag.
+           <span class="mono">-r</span> applies it through the bundle, because an app is a folder.
+           The last argument is the only thing it touches.</p>
+        <p style="margin-top:.7rem"><strong>What it does not do.</strong> There is no
+           <span class="mono">sudo</span>, so it needs no admin rights and cannot change anything
+           outside your own files. It does not turn Gatekeeper off, and it does not touch any other
+           app &mdash; every other download on your Mac stays checked exactly as before. If you ever
+           see advice to run <span class="mono">spctl --master-disable</span>, that one <em>does</em>
+           disable the check for everything you install afterwards. Do not run it, for us or for
+           anyone.</p>
+        <p style="margin-top:.7rem">You can see the label before and after, if you would rather
+           check than trust:</p>
+        <div class="cmd">
+          <code>xattr /Applications/PaperOtter.app</code>
+          <button type="button" data-copy="xattr /Applications/PaperOtter.app">Copy</button>
+        </div>
+      </li>
+      <li class="step">
         <h3>That is the whole setup</h3>
         <p>No account, no key, nothing to configure. It opens on the tool grid.</p>
       </li>

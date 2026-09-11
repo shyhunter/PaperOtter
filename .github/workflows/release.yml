@@ -136,11 +136,20 @@ jobs:
 
             Everything you need is included: just install and go.
 
-            > **Mac users:** If you see _"PaperOtter is damaged and can't be opened"_, open **Terminal** and run:
+            > **Mac users:** PaperOtter has no Apple developer certificate, so macOS stops the first open. Which way it stops you depends on your Mac:
+            >
+            > - **"Apple could not verify PaperOtter is free of malware"** — click Done, then open **System Settings → Privacy & Security**, scroll to Security, and click **Open Anyway** next to PaperOtter. Do it within an hour or the button expires. Open the app again and click Open Anyway in the dialog.
+            > - **"PaperOtter is damaged and can't be opened"** — there is no Open Anyway for this one. Drag the app into Applications, then run this in **Terminal**:
+            >
             > ```
-            > xattr -cr /Applications/PaperOtter.app
+            > xattr -dr com.apple.quarantine /Applications/PaperOtter.app
             > ```
-            > Then open PaperOtter normally. This happens because the app is not yet signed with an Apple Developer certificate: it is safe to use.
+            >
+            > Then open PaperOtter normally. Neither message means anything is wrong with the app.
+            >
+            > **What that command does:** `xattr` edits extended attributes, the small labels macOS attaches to files. `-d com.apple.quarantine` deletes one named label — the "this came from the internet" tag. `-r` applies it through the bundle, because an app is a folder. The path is the only thing it touches.
+            >
+            > **What it does not do:** there is no `sudo`, so it needs no admin rights. It does not turn Gatekeeper off and it does not affect any other app — every other download on your Mac stays checked exactly as before. Run `xattr /Applications/PaperOtter.app` before and after if you would rather check than trust.
 
             > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it is safe to use.
 
