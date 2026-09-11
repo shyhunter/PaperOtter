@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, globSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { sourceFiles } from '@/i18n/__tests__/sourceFiles';
 import { dataUrlToBytes } from '@/lib/dataUrl';
 
 /**
@@ -24,13 +25,19 @@ import { dataUrlToBytes } from '@/lib/dataUrl';
 
 const CSP: string = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf-8')).app.security.csp;
 
-const SOURCES = [
-  ...globSync('src/lib/**/*.ts'),
-  ...globSync('src/components/**/*.tsx'),
-  ...globSync('src/hooks/**/*.ts'),
-].filter((f) => !f.includes('__tests__'));
+const SOURCES = sourceFiles(['.ts', '.tsx']).filter(
+  (f) => f.startsWith('src/lib/') || f.startsWith('src/components/') || f.startsWith('src/hooks/'),
+);
 
 describe('[CSP-01] data: URLs are decoded, not fetched', () => {
+  it('is actually scanning files', () => {
+    // A scanner that walks nothing passes every check it makes. `globSync` gave
+    // this suite exactly that failure on CI: it lands in Node 22, CI runs Node
+    // 20, and the suite failed to load while the summary line still counted the
+    // other tests as green.
+    expect(SOURCES.length, 'the walk found no files').toBeGreaterThan(20);
+  });
+
   it('confirms the policy that makes this necessary', () => {
     const connect = CSP.split(';').map((d) => d.trim()).find((d) => d.startsWith('connect-src'));
     expect(connect, 'no connect-src in the CSP').toBeDefined();

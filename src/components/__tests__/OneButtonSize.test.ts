@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { globSync } from 'node:fs';
+import { sourceFiles } from '@/i18n/__tests__/sourceFiles';
 
 /**
  * [UI-BTN-01] One size for the primary action, in every tool.
@@ -16,18 +16,57 @@ import { globSync } from 'node:fs';
  * hand-rolled CSS rings were still in use after the otter loader shipped.
  */
 
-const COMPONENTS = globSync('src/components/**/*.tsx').filter((f) => !f.includes('__tests__'));
+const COMPONENTS = sourceFiles(['.tsx']).filter((f) => f.startsWith('src/components/'));
+
+/**
+ * The opening `<Button …>` tag of every primary action in one file.
+ *
+ * Scanned rather than matched. A regex that runs to the first `>` after the
+ * test id stops inside `onClick={() => …}` — so for every button whose handler
+ * is an inline arrow, `className` fell outside the captured text and the check
+ * passed on a button it had never actually read. That is exactly the shape of
+ * the buttons this is meant to guard.
+ */
+function primaryActionTags(src: string): string[] {
+  const ID = /data-testid="(?:apply-btn|generate-preview-btn|save-btn)"/g;
+  const tags: string[] = [];
+
+  for (const hit of src.matchAll(ID)) {
+    const open = src.lastIndexOf('<Button', hit.index);
+    if (open === -1) continue;
+
+    // Forward to the `>` that closes the tag, ignoring any inside braces or
+    // quotes — which is where the arrow functions live.
+    let depth = 0;
+    let quote: string | null = null;
+    let end = -1;
+    for (let i = open; i < src.length; i++) {
+      const ch = src[i];
+      if (quote) { if (ch === quote && src[i - 1] !== '\\') quote = null; continue; }
+      if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue; }
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+      else if (ch === '>' && depth === 0) { end = i; break; }
+    }
+    if (end !== -1) tags.push(src.slice(open, end + 1));
+  }
+  return tags;
+}
 
 describe('[UI-BTN-01] the primary action is one size everywhere', () => {
+  it('is actually scanning files', () => {
+    // A scanner that walks nothing passes every check it makes. `globSync` gave
+    // this suite exactly that failure on CI: it lands in Node 22, CI runs Node
+    // 20, and the suite failed to load while the summary line still counted the
+    // other tests as green.
+    expect(COMPONENTS.length, 'the walk found no files').toBeGreaterThan(20);
+  });
+
   it('never hardcodes a width on a primary action button', () => {
     const offenders: string[] = [];
 
     for (const file of COMPONENTS) {
-      const src = readFileSync(file, 'utf-8');
-      // The opening tag of any button carrying a primary-action test id.
-      // Anchored so the match cannot run back through an earlier <Button and
-      // pick up the Back button's own class.
-      for (const tag of src.match(/<Button(?:(?!<Button)[\s\S]){0,400}?data-testid="(?:apply-btn|generate-preview-btn|save-btn)"(?:(?!<Button)[\s\S]){0,400}?>/g) ?? []) {
+      for (const tag of primaryActionTags(readFileSync(file, 'utf-8'))) {
         const cls = tag.match(/className="([^"]*)"/)?.[1];
         // `w-full` is the same intent in a vertical stack, where there is no
         // row to divide.

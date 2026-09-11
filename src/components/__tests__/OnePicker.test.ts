@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, globSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { sourceFiles } from '@/i18n/__tests__/sourceFiles';
 import { TOOL_REGISTRY } from '@/types/tools';
 
 /**
@@ -16,10 +17,18 @@ import { TOOL_REGISTRY } from '@/types/tools';
  * drift -- the next tool written the old way, or a guard quietly skipped.
  */
 
-const COMPONENTS = globSync('src/components/**/*.tsx').filter((f) => !f.includes('__tests__'));
+const COMPONENTS = sourceFiles(['.tsx']).filter((f) => f.startsWith('src/components/'));
 const APP = 'src/App.tsx';
 
 describe('[UI-PICK-01] every tool picks files the same way', () => {
+  it('is actually scanning files', () => {
+    // A scanner that walks nothing passes every check it makes. `globSync` gave
+    // this suite exactly that failure on CI: it lands in Node 22, CI runs Node
+    // 20, and the suite failed to load while the summary line still counted the
+    // other tests as green.
+    expect(COMPONENTS.length, 'the walk found no files').toBeGreaterThan(20);
+  });
+
   it('has no hand-rolled picker left', () => {
     const offenders = COMPONENTS.filter((f) => {
       if (f.endsWith('LandingCard.tsx') || f.endsWith('FilePickStep.tsx')) return false;
@@ -45,8 +54,8 @@ describe('[UI-PICK-01] every tool picks files the same way', () => {
   it('listens for a drop in one place', () => {
     // The bug this replaces: seventeen tools rendered a drop-shaped screen and
     // ignored anything dropped on it.
-    const users = [...COMPONENTS, APP, ...globSync('src/hooks/**/*.ts')]
-      .filter((f) => !f.endsWith('useFileDrop.ts') && !f.includes('__tests__'))
+    const users = [...COMPONENTS, APP, ...sourceFiles(['.ts']).filter((f) => f.startsWith('src/hooks/'))]
+      .filter((f) => !f.endsWith('useFileDrop.ts'))
       .filter((f) => readFileSync(f, 'utf-8').includes('useFileDrop('));
 
     expect(users).toEqual(['src/components/FilePickStep.tsx']);
