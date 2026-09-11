@@ -14,6 +14,7 @@ import { RedactStep } from './RedactStep';
 import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
 import { plural, t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -155,7 +156,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
           <>
             {isProcessing ? (
               <div className="flex flex-1 flex-col items-center justify-center p-6">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-3" />
+                <OtterLoader size="md" className="mb-3" />
                 <p className="text-sm font-medium text-foreground">{t('redactPdf.applyingRedactions')}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {t('redactPdf.renderingPagesAndRemovingContent')}

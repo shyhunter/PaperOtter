@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
 import { saveOverFile, classifySaveFailure, saveFailureMessage } from '@/lib/saveOverFile';
 import { revealLabelKey } from '@/lib/platform';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -657,7 +658,7 @@ function SingleFileSave({
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center space-y-3">
-          <div className="mx-auto h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
+          <OtterLoader size="md" />
           <p className="text-sm font-medium text-foreground">
             {saveState === 'dialog-open' ? t('saveStep.chooseASaveLocation') : t('pdfEditor.saving')}
           </p>

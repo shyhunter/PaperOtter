@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, memo } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useEditorContext } from '@/context/EditorContext';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 const PAGE_GAP = 16;
 const VIRTUALIZATION_WINDOW = 3;
@@ -109,7 +110,7 @@ export function CompareCanvas({ scrollRef, onScroll }: CompareCanvasProps) {
   if (pageInfos.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        <OtterLoader size="md" />
       </div>
     );
   }

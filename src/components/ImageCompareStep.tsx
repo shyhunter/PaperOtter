@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ImageProcessingResult } from '@/types/file';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 export interface ImageCompareStepProps {
   result: ImageProcessingResult;
@@ -186,9 +187,8 @@ export function ImageCompareStep({
                 <img src={originalUrl} alt={t('imageCompare.original')} className="w-full h-auto block" />
               </div>
             ) : (
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-                <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-                <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center">
+                <OtterLoader size="md" label={t('common.loading')} />
               </div>
             )}
           </div>

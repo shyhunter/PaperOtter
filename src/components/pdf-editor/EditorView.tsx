@@ -23,6 +23,7 @@ import { ToolSidebar } from './ToolSidebar';
 import { PagePanel } from './PagePanel';
 import { SaveController } from './SaveController';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 interface EditorViewProps {
   /** File path to open */
@@ -201,10 +202,7 @@ function EditorViewInner({ filePath }: EditorViewProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-          <span className="text-sm text-muted-foreground">{t('pdfEditor.loadingPdf')}</span>
-        </div>
+        <OtterLoader size="lg" label={t('pdfEditor.loadingPdf')} />
       </div>
     );
   }

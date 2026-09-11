@@ -10,6 +10,7 @@ import { ImageBlockLayer } from './ImageBlockLayer';
 import { RedactionLayer } from './RedactionLayer';
 import { SearchHighlightLayer } from './SearchHighlightLayer';
 import { diagLog } from '@/lib/diagLog';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 const PAGE_GAP = 16; // px between pages
 const ZOOM_DEBOUNCE_MS = 150;
@@ -290,7 +291,7 @@ export function EditorCanvas() {
   if (pageInfos.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        <OtterLoader size="md" />
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { cropPdf, mmToPoints, pointsToMm } from '@/lib/pdfCrop';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 /**
  * A function, not a constant: these labels are translated, and a module-level
@@ -286,10 +287,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               {/* Right panel: preview with crop overlay */}
               <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-4 bg-muted/30">
                 {isLoadingPreview && !previewUrl && (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">{t('cropPdf.loadingPreview')}</p>
-                  </div>
+                  <OtterLoader size="md" label={t('cropPdf.loadingPreview')} />
                 )}
                 {previewUrl && (
                   <div className="relative inline-block">

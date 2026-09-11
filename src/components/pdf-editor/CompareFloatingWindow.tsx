@@ -11,6 +11,7 @@ import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 // Zoom steps matching CompareStep
 const ZOOM_STEPS: Array<{ label: string; wrapperClass: string }> = [
@@ -135,9 +136,8 @@ function PreviewPanel({
             <span className="text-sm text-muted-foreground">{t('compare.unavailable')}</span>
           </div>
         ) : isRendering || !handle ? (
-          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-            <div className="h-8 w-8 rounded-full border-2 border-muted-foreground/30 border-t-primary animate-spin" />
-            <span className="text-sm text-muted-foreground">{t('compare.rendering')}</span>
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center">
+            <OtterLoader size="md" label={t('compare.rendering')} />
           </div>
         ) : (
           <div className={cn(zoomWrapperClass, 'animate-fade-slide-in')}>

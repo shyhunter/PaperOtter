@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback, type RefObject } from 'react'
 import { X, Minimize2, Maximize2, Columns2, Layers, ZoomIn, ZoomOut } from 'lucide-react';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 export type CompareMode = 'overlay' | 'side-by-side';
 
@@ -234,7 +235,7 @@ export function CompareOverlay({
       {/* Content */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          <OtterLoader size="md" />
         </div>
       ) : mode === 'side-by-side' ? (
         <div className="flex-1 flex min-h-0">

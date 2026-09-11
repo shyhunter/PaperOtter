@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import { ColorPicker } from '@/components/ColorPicker';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
@@ -318,10 +319,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
               {/* Right panel: preview */}
               <div className="flex-1 flex flex-col items-center justify-center overflow-auto p-4 bg-muted/30">
                 {isGeneratingPreview && !previewUrl && (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">{t('common.generatingPreview')}</p>
-                  </div>
+                  <OtterLoader size="md" label={t('common.generatingPreview')} />
                 )}
                 {previewUrl && (
                   <div className="relative">

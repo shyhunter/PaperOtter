@@ -212,6 +212,30 @@ body {
   50% { opacity: 0.6; }
 }
 
+/* The mark flips toward the viewer, snapping through sixteen positions a second
+   the way hand-cranked film moves. `transform` only, so it runs on the
+   compositor: a loading animation plays exactly when the main thread is
+   busiest, and anything animating layout would stall precisely when it is on
+   screen -- a frozen spinner reads as a crashed app.
+
+   This was written once and then deleted by an unrelated edit in 241e471,
+   which is why every OtterLoader on screen has been a static picture since.
+   `steps()` and a keyframe are the whole mechanism: no timer, no rAF loop,
+   nothing to leak on unmount. */
+.otter-loader-stage { perspective: 520px; }
+
+@keyframes otter-flip {
+  to { transform: rotateY(360deg); }
+}
+
+.otter-loader-mark {
+  animation: otter-flip 1.6s steps(16, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otter-loader-mark { animation: none; transform: none; }
+}
+
 .animate-fade-slide-in {
   animation: fade-slide-in 0.3s ease-out both;
 }
