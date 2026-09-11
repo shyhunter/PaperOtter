@@ -59,16 +59,35 @@ impl Preset {
     }
 }
 
+/// What a stream actually holds once qpdf has decoded everything it will.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Source {
+    /// Eight-bit samples, one or three components. Ready to use as they are.
+    Samples(u32),
+    /// A JPEG file. qpdf does not decode /DCTDecode, so these arrive encoded
+    /// and have to be decoded here before anything can be done with them.
+    Jpeg,
+}
+
 /// One image found in the document, with everything needed to decide about it.
 struct Candidate {
     stream: QPdfStream,
     width: u32,
     height: u32,
-    components: u32,
+    source: Source,
     stored_bytes: usize,
     /// Width of the page it sits on, in points.
     page_width_pt: f32,
 }
+
+/// The largest picture worth decoding, in pixels.
+///
+/// A PDF declares an image's dimensions in its dictionary, and a JPEG declares
+/// them again in its own header; neither is trustworthy, and a decoder asked for
+/// 40,000 x 40,000 will try to allocate for it. 80 megapixels is far above any
+/// real scan -- an A4 page at 1200 dpi is 137 megapixels, but nothing sane
+/// stores one -- and far below what hurts.
+const MAX_PIXELS: usize = 80_000_000;
 
 /// Compress `source`. Returns the original bytes when nothing could be improved.
 pub fn compress(
@@ -126,6 +145,12 @@ fn first_line(s: &str) -> String {
 /// Every image XObject in the document that is safe to touch.
 fn collect_images(pdf: &QPdf) -> Result<Vec<Candidate>, String> {
     let mut found = Vec::new();
+    // One image placed on several pages is one object, and compressing it once
+    // per page did the whole decode-resize-encode three times over on
+    // `photo_heavy.pdf`. Worse than the waste: the second pass re-encoded what
+    // the first had already re-encoded, so a shared image took its generation
+    // loss once per page it appeared on.
+    let mut seen: std::collections::HashSet<(u32, u32)> = std::collections::HashSet::new();
     let pages = pdf.get_pages().map_err(|e| first_line(&e.to_string()))?;
 
     for page in pages {
@@ -141,6 +166,9 @@ fn collect_images(pdf: &QPdf) -> Result<Vec<Candidate>, String> {
                 continue;
             }
             let stream: QPdfStream = object.into();
+            if !seen.insert((stream.get_id(), stream.get_generation())) {
+                continue;
+            }
             let dict = stream.get_dictionary();
             if name_of(&dict, "/Subtype") != "/Image" {
                 continue;
@@ -166,23 +194,40 @@ fn collect_images(pdf: &QPdf) -> Result<Vec<Candidate>, String> {
                 continue;
             }
 
+            let pixels = width as usize * height as usize;
+            if pixels > MAX_PIXELS {
+                continue;
+            }
+
             let Ok(decoded) = stream.get_data(StreamDecodeLevel::Specialized) else { continue };
 
-            // The component count has to come out exactly, and dividing for it
-            // is not enough. qpdf's specialized decode level leaves /DCTDecode
-            // and /JPXDecode encoded, so for those streams this is the image
-            // *file*, not its samples -- and a file small enough divides by its
-            // own pixel count to a perfectly plausible 1 or 3 once integer
-            // division has dropped the remainder. A 15x15 JPEG of 333 bytes
-            // read as grey, and the encoder downstream asserts on the length it
-            // is handed. An exact fit is what separates samples from a picture
-            // that merely happens to be about the right size.
-            let pixels = width as usize * height as usize;
-            let components = match decoded.as_ref().len() {
-                n if n == pixels => 1,
-                n if n == pixels * 3 => 3,
-                // CMYK, exotic colour spaces, and anything still encoded.
-                _ => continue,
+            // What the filter says comes first, and the byte count second.
+            //
+            // qpdf's specialized decode level leaves /DCTDecode and /JPXDecode
+            // encoded, so for those streams this is the image *file*, not its
+            // samples. Measuring first and asking later is how a 15x15 JPEG of
+            // 333 bytes came to be read as grey samples: 333 divides by 225 to a
+            // perfectly plausible 1 once integer division has dropped the
+            // remainder. The filter is not a guess, so it decides.
+            let source = if filter_names(&dict).iter().any(|f| f == "/DCTDecode") {
+                // Only the two colour spaces whose channel count is beyond doubt
+                // and whose channel *meaning* survives a round trip. A CMYK JPEG
+                // carries an Adobe inversion flag that decoders disagree about,
+                // and getting it wrong turns a photograph into its negative.
+                match colour_components(&dict) {
+                    Some(1) | Some(3) => Source::Jpeg,
+                    _ => continue,
+                }
+            } else {
+                // No decoding left to do, so the length is the whole truth: an
+                // exact fit is what separates real samples from a picture that
+                // merely happens to be about the right size.
+                match decoded.as_ref().len() {
+                    n if n == pixels => Source::Samples(1),
+                    n if n == pixels * 3 => Source::Samples(3),
+                    // JPEG 2000, CMYK, and every exotic colour space.
+                    _ => continue,
+                }
             };
 
             let stored_bytes = stream
@@ -190,7 +235,7 @@ fn collect_images(pdf: &QPdf) -> Result<Vec<Candidate>, String> {
                 .map(|d| d.as_ref().len())
                 .unwrap_or(usize::MAX);
 
-            found.push(Candidate { stream, width, height, components, stored_bytes, page_width_pt });
+            found.push(Candidate { stream, width, height, source, stored_bytes, page_width_pt });
         }
     }
     Ok(found)
@@ -208,22 +253,60 @@ fn shrink_one(
         .get_data(StreamDecodeLevel::Specialized)
         .map_err(|e| first_line(&e.to_string()))?;
 
-    // `from_raw` below accepts any buffer that is merely *long enough* and
-    // keeps the surplus, which is how extra bytes reach an encoder that asserts
-    // on length. The candidate was measured exactly, so a mismatch here means
-    // the stream is not what it was when it was collected.
-    let expected = candidate.width as usize * candidate.height as usize * candidate.components as usize;
-    if raw.as_ref().len() != expected {
-        return Ok(false);
-    }
+    let image = match candidate.source {
+        Source::Samples(components) => {
+            // `from_raw` below accepts any buffer that is merely *long enough*
+            // and keeps the surplus, which is how extra bytes reach an encoder
+            // that asserts on length. The candidate was measured exactly, so a
+            // mismatch here means the stream is not what it was when it was
+            // collected.
+            let expected =
+                candidate.width as usize * candidate.height as usize * components as usize;
+            if raw.as_ref().len() != expected {
+                return Ok(false);
+            }
+            let built = if components == 1 {
+                GrayImage::from_raw(candidate.width, candidate.height, raw.as_ref().to_vec())
+                    .map(DynamicImage::ImageLuma8)
+            } else {
+                RgbImage::from_raw(candidate.width, candidate.height, raw.as_ref().to_vec())
+                    .map(DynamicImage::ImageRgb8)
+            };
+            let Some(built) = built else { return Ok(false) };
+            built
+        }
+        Source::Jpeg => {
+            // A lossless preset has nothing to offer a JPEG. Decoding one only
+            // to deflate its samples produces a stream several times larger --
+            // the size guard below would throw it away, having done all the
+            // work first.
+            if preset.jpeg_quality.is_none() {
+                return Ok(false);
+            }
 
-    let image = match candidate.components {
-        1 => GrayImage::from_raw(candidate.width, candidate.height, raw.as_ref().to_vec())
-            .map(DynamicImage::ImageLuma8),
-        _ => RgbImage::from_raw(candidate.width, candidate.height, raw.as_ref().to_vec())
-            .map(DynamicImage::ImageRgb8),
+            let Ok(decoded) =
+                image::load_from_memory_with_format(raw.as_ref(), image::ImageFormat::Jpeg)
+            else {
+                return Ok(false);
+            };
+
+            // The dictionary's dimensions are what the page is drawn from. If
+            // the JPEG disagrees with them the file is malformed, and replacing
+            // the stream would resize the picture inside a box laid out for the
+            // old one.
+            if decoded.width() != candidate.width || decoded.height() != candidate.height {
+                return Ok(false);
+            }
+
+            // A decoder is free to widen what it hands back -- a grey JPEG can
+            // arrive as RGB. Narrowing it here rather than trusting the variant
+            // keeps the rest of this function working in the two forms it knows.
+            match decoded {
+                DynamicImage::ImageLuma8(_) | DynamicImage::ImageRgb8(_) => decoded,
+                other => DynamicImage::ImageRgb8(other.to_rgb8()),
+            }
+        }
     };
-    let Some(image) = image else { return Ok(false) };
 
     // How many pixels the image spends per inch of page.
     //
@@ -257,7 +340,7 @@ fn shrink_one(
     // away, so only exactly-equal channels qualify — a sepia tint, which reads
     // as near-grey, must survive there.
     let tolerance = if preset.jpeg_quality.is_some() { 4 } else { 0 };
-    let gray = candidate.components == 1 || carries_no_colour(&image, tolerance);
+    let gray = matches!(image, DynamicImage::ImageLuma8(_)) || carries_no_colour(&image, tolerance);
 
     let mut best: Option<(Vec<u8>, &'static str)> = None;
     let mut consider = |bytes: Vec<u8>, filter: &'static str| {
@@ -331,6 +414,63 @@ fn media_box_width(page: &QPdfDictionary) -> Option<f32> {
     let x0 = QPdfScalar::from(array.get(0)?).as_f64() as f32;
     let x1 = QPdfScalar::from(array.get(2)?).as_f64() as f32;
     Some((x1 - x0).abs())
+}
+
+/// Every filter on a stream, in order. /Filter is a name when there is one and
+/// an array when they are chained, and a chain ending in /DCTDecode still leaves
+/// a JPEG behind.
+fn filter_names(dict: &QPdfDictionary) -> Vec<String> {
+    let Some(filter) = dict.get("/Filter") else { return Vec::new() };
+    match filter.get_type() {
+        qpdf::QPdfObjectType::Name => vec![filter.as_name()],
+        qpdf::QPdfObjectType::Array => {
+            let array: qpdf::QPdfArray = filter.into();
+            (0..array.len())
+                .filter_map(|i| array.get(i))
+                .filter(|o| o.get_type() == qpdf::QPdfObjectType::Name)
+                .map(|o| o.as_name())
+                .collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// How many channels the image's colour space has, where that can be known.
+///
+/// `None` means "not one of the forms handled here" -- /Indexed, /Separation,
+/// /DeviceN and friends -- and the caller leaves those images alone rather than
+/// guessing at what their samples mean.
+fn colour_components(dict: &QPdfDictionary) -> Option<u32> {
+    let space = dict.get("/ColorSpace")?;
+    match space.get_type() {
+        qpdf::QPdfObjectType::Name => match space.as_name().as_str() {
+            "/DeviceGray" | "/CalGray" | "/G" => Some(1),
+            "/DeviceRGB" | "/CalRGB" | "/RGB" => Some(3),
+            "/DeviceCMYK" | "/CMYK" => Some(4),
+            _ => None,
+        },
+        // [/ICCBased <stream>], where the stream's /N carries the count. This is
+        // what a scanner or a camera-to-PDF export actually writes, so skipping
+        // it would exclude most real photographs.
+        qpdf::QPdfObjectType::Array => {
+            let array: qpdf::QPdfArray = space.into();
+            if array.len() < 2 || array.get(0)?.as_name() != "/ICCBased" {
+                return None;
+            }
+            let profile = array.get(1)?;
+            if profile.get_type() != qpdf::QPdfObjectType::Stream {
+                return None;
+            }
+            let profile: QPdfStream = profile.into();
+            match int_of(&profile.get_dictionary(), "/N") {
+                1 => Some(1),
+                3 => Some(3),
+                4 => Some(4),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 fn name_of(dict: &QPdfDictionary, key: &str) -> String {
@@ -407,10 +547,15 @@ mod tests {
 
     #[test]
     fn compress_04_an_already_optimal_document_is_left_alone() {
-        // photo_heavy.pdf is one JPEG at 72 dpi shared by three pages: already at
-        // the screen preset's target, so there is nothing to take away.
-        let (src, out) = run("photo_heavy.pdf", "screen");
-        assert_eq!(out, src, "nothing to gain, so nothing should change");
+        // photo_heavy.pdf is one JPEG at 72 dpi shared by three pages. The
+        // screen preset now re-encodes it (see compress_09), but the three
+        // gentler presets have nothing to offer: there is no resolution to take
+        // away at 72 dpi, and re-encoding at quality 60 or above lands bigger
+        // than the original, which the size guard refuses.
+        for preset in ["ebook", "printer", "prepress"] {
+            let (src, out) = run("photo_heavy.pdf", preset);
+            assert!(out == src, "{preset}: nothing to gain, so nothing should change");
+        }
     }
 
     #[test]
@@ -428,21 +573,58 @@ mod tests {
         assert_eq!(err, CANCELLED);
     }
 
+    /// Not an assertion -- a measurement, printed with `--nocapture`, so the
+    /// numbers in the tests below come from the engine rather than from hope.
+    #[test]
+    #[ignore = "measurement, not a test"]
+    fn measure() {
+        for name in ["scanned.pdf", "photo_heavy.pdf", "sample.pdf"] {
+            let src = fixture(name);
+            print!("{name} ({} bytes):", src.len());
+            for preset in ["screen", "ebook", "printer", "prepress"] {
+                let out = compress(&src, Preset::from_name(preset).unwrap(), true, &AtomicBool::new(false), |_, _| {}).unwrap();
+                let pct = 100.0 - (out.len() as f64 / src.len() as f64) * 100.0;
+                print!("  {preset}={} ({pct:.1}%)", out.len());
+            }
+            println!();
+        }
+    }
+
     #[test]
     fn compress_07_rejects_an_unknown_preset() {
         assert!(Preset::from_name("enormous").is_err());
     }
 
-    /// A PDF holding one small JPEG, built here rather than checked in so the
-    /// dimensions that trigger the bug are visible in the test.
+    /// How the image's colour space is declared in the PDF.
     ///
-    /// Returns the document and the length of the JPEG inside it.
-    fn pdf_with_jpeg(w: u32, h: u32) -> (Vec<u8>, usize) {
+    /// The samples are always the same RGB JPEG; only the dictionary changes.
+    /// That is the point -- what decides whether an image is touched is what the
+    /// document *claims* about it, and claiming CMYK is enough to make a stream
+    /// we cannot safely interpret.
+    enum Space {
+        DeviceRgb,
+        DeviceCmyk,
+        /// [/ICCBased <stream /N n>], which is what a scanner actually writes.
+        Icc(i64),
+    }
+
+    /// A one-page PDF holding one JPEG, built here rather than checked in so the
+    /// numbers that matter are visible in the test that depends on them.
+    ///
+    /// Returns the document, and the JPEG that went into it.
+    fn pdf_with_jpeg(w: u32, h: u32, quality: u8, page_width_pt: i64, space: Space) -> (Vec<u8>, Vec<u8>) {
+        // A smooth gradient rather than noise: JPEG is built for exactly this,
+        // so a quality-95 encode of it is faithful and the later comparison
+        // measures what compression did, not what the fixture already lost.
         let picture = RgbImage::from_fn(w, h, |x, y| {
-            image::Rgb([(x * 9) as u8, (y * 9) as u8, 0x40])
+            image::Rgb([
+                (x * 255 / w.max(1)) as u8,
+                (y * 255 / h.max(1)) as u8,
+                ((x + y) * 127 / (w + h).max(1)) as u8,
+            ])
         });
         let mut jpeg = Vec::new();
-        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 80)
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, quality)
             .encode(picture.as_raw(), w, h, image::ExtendedColorType::Rgb8)
             .unwrap();
 
@@ -456,7 +638,18 @@ mod tests {
         dict.set("/Width", pdf.new_integer(w as i64));
         dict.set("/Height", pdf.new_integer(h as i64));
         dict.set("/BitsPerComponent", pdf.new_integer(8));
-        dict.set("/ColorSpace", pdf.new_name("/DeviceRGB"));
+        match space {
+            Space::DeviceRgb => dict.set("/ColorSpace", pdf.new_name("/DeviceRGB")),
+            Space::DeviceCmyk => dict.set("/ColorSpace", pdf.new_name("/DeviceCMYK")),
+            Space::Icc(n) => {
+                let profile = pdf.new_stream(b"not a real profile");
+                profile.get_dictionary().set("/N", pdf.new_integer(n));
+                let array = pdf.new_array();
+                array.push(pdf.new_name("/ICCBased"));
+                array.push(profile.into_indirect());
+                dict.set("/ColorSpace", &array);
+            }
+        }
         drop(dict);
 
         let xobjects = pdf.new_dictionary();
@@ -465,10 +658,11 @@ mod tests {
         resources.set("/XObject", &xobjects);
 
         let media = pdf.new_array_from(
-            [0, 0, 200, 200].into_iter().map(|n| pdf.new_integer(n).into()),
+            [0, 0, page_width_pt, page_width_pt].into_iter().map(|n| pdf.new_integer(n).into()),
         );
 
-        let content = pdf.new_stream(b"q 150 0 0 150 20 20 cm /Im0 Do Q".to_vec());
+        let draw = format!("q {page_width_pt} 0 0 {page_width_pt} 0 0 cm /Im0 Do Q");
+        let content = pdf.new_stream(draw.into_bytes());
 
         let page = pdf.new_dictionary();
         page.set("/Type", pdf.new_name("/Page"));
@@ -477,7 +671,46 @@ mod tests {
         page.set("/Contents", content.into_indirect());
         pdf.add_page(page.into_indirect(), true).unwrap();
 
-        (pdf.writer().write_to_memory().unwrap(), jpeg.len())
+        (pdf.writer().write_to_memory().unwrap(), jpeg)
+    }
+
+    /// The first image XObject in a document: its stream bytes as stored, its
+    /// filters, and its declared size.
+    fn first_image(bytes: &[u8]) -> (Vec<u8>, Vec<String>, u32, u32) {
+        let pdf = QPdf::read_from_memory(bytes).unwrap();
+        for page in pdf.get_pages().unwrap() {
+            let resources: QPdfDictionary = page.get("/Resources").unwrap().into();
+            let xobjects: QPdfDictionary = resources.get("/XObject").unwrap().into();
+            for key in xobjects.keys() {
+                let stream: QPdfStream = xobjects.get(&key).unwrap().into();
+                let dict = stream.get_dictionary();
+                if name_of(&dict, "/Subtype") != "/Image" {
+                    continue;
+                }
+                return (
+                    stream.get_data(StreamDecodeLevel::None).unwrap().as_ref().to_vec(),
+                    filter_names(&dict),
+                    int_of(&dict, "/Width") as u32,
+                    int_of(&dict, "/Height") as u32,
+                );
+            }
+        }
+        panic!("no image in the document");
+    }
+
+    /// Mean absolute per-channel difference between two pictures of equal size,
+    /// in levels out of 255.
+    fn mean_difference(a: &DynamicImage, b: &DynamicImage) -> f64 {
+        let (a, b) = (a.to_rgb8(), b.to_rgb8());
+        assert_eq!(a.dimensions(), b.dimensions(), "sizes must match to compare");
+        let total: u64 = a
+            .pixels()
+            .zip(b.pixels())
+            .map(|(p, q)| {
+                (0..3).map(|c| p[c].abs_diff(q[c]) as u64).sum::<u64>()
+            })
+            .sum();
+        total as f64 / (a.width() as f64 * a.height() as f64 * 3.0)
     }
 
     /// Regression: one small JPEG took the whole compressor down.
@@ -490,25 +723,106 @@ mod tests {
     /// passed to an encoder that asserts on buffer length. The assert fired
     /// inside a blocking task, so the user saw
     /// `Compression task failed: task 124 panicked with message "assertion
-    /// `left == right` failed: Invalid buffer length: expected 225 got 333"`.
+    /// left == right failed: Invalid buffer length: expected 225 got 333"`.
+    ///
+    /// What must hold now is not that the file is left alone -- a JPEG is a fair
+    /// target these days -- but that nothing panics and what comes back is a
+    /// readable document with its picture still the size the page expects.
     #[test]
-    fn compress_08_a_small_jpeg_is_not_mistaken_for_raw_samples() {
-        let (src, jpeg_len) = pdf_with_jpeg(15, 15);
+    fn compress_08_a_small_jpeg_does_not_crash_the_compressor() {
+        let (src, jpeg) = pdf_with_jpeg(15, 15, 80, 200, Space::DeviceRgb);
 
-        // Without this the test proves nothing: the bug needs a JPEG at least as
-        // long as its own pixel count, which is only true of very small images.
-        assert!(jpeg_len >= 15 * 15, "{jpeg_len} bytes cannot reproduce the fault");
+        // Without this the test proves nothing: the fault needed a JPEG at least
+        // as long as its own pixel count, which is only true of tiny images.
+        assert!(jpeg.len() >= 15 * 15, "{} bytes cannot reproduce the fault", jpeg.len());
 
         for preset in ["screen", "ebook", "printer", "prepress"] {
-            let out = compress(
-                &src,
-                Preset::from_name(preset).unwrap(),
-                true,
-                &AtomicBool::new(false),
-                |_, _| {},
-            )
-            .unwrap_or_else(|e| panic!("{preset}: {e}"));
-            assert_eq!(out, src, "{preset}: an encoded stream is not raw samples");
+            let out = compress(&src, Preset::from_name(preset).unwrap(), true, &AtomicBool::new(false), |_, _| {})
+                .unwrap_or_else(|e| panic!("{preset}: {e}"));
+            assert_eq!(pages(&out), 1, "{preset}: the page must survive");
+            let (_, _, w, h) = first_image(&out);
+            assert_eq!((w, h), (15, 15), "{preset}: the picture changed size");
+        }
+    }
+
+    /// The saving this exists for: a photograph inside a PDF.
+    ///
+    /// Until this, /DCTDecode streams were skipped outright -- qpdf does not
+    /// decode them, so what came back was the JPEG file and there was nothing to
+    /// resample. That left the most common kind of large PDF untouched: a
+    /// 2.3 MB scan came back 2.3 MB, one percent smaller at best, while the
+    /// Configure step had promised a number it could not reach.
+    #[test]
+    fn compress_09_shrinks_a_jpeg_heavy_document() {
+        let (src, out) = run("photo_heavy.pdf", "screen");
+
+        let saved = 100.0 - (out.len() as f64 / src.len() as f64) * 100.0;
+        assert!(saved > 30.0, "expected a real saving, got {saved:.1}%");
+        assert_eq!(pages(&out), pages(&src), "pages must survive compression");
+
+        let (_, filters, _, _) = first_image(&out);
+        assert!(filters.iter().any(|f| f == "/DCTDecode"), "expected a JPEG, got {filters:?}");
+    }
+
+    /// The picture that comes back must be the picture that went in.
+    ///
+    /// The failure this guards against is not a crash: it is writing something
+    /// into the stream that is the right *length* and the wrong *content*, which
+    /// a size assertion would happily call a 60% saving. So the image is decoded
+    /// back out of the compressed document and compared to the original.
+    ///
+    /// The page is deliberately wide enough that the image sits below the
+    /// preset's target resolution and is not downsampled, which leaves the two
+    /// the same size and the comparison pixel-for-pixel.
+    #[test]
+    fn compress_10_a_re_encoded_jpeg_still_holds_its_picture() {
+        let (src, original_jpeg) = pdf_with_jpeg(200, 200, 95, 600, Space::DeviceRgb);
+        let out = compress(&src, Preset::from_name("screen").unwrap(), true, &AtomicBool::new(false), |_, _| {}).unwrap();
+
+        assert!(out.len() < src.len(), "a quality-95 photo should shrink at the screen preset");
+
+        let (stored, filters, w, h) = first_image(&out);
+        assert!(filters.iter().any(|f| f == "/DCTDecode"), "expected a JPEG, got {filters:?}");
+        assert_eq!((w, h), (200, 200), "200 pixels over 600 pt is 24 dpi -- nothing to downsample");
+
+        let before = image::load_from_memory_with_format(&original_jpeg, image::ImageFormat::Jpeg).unwrap();
+        let after = image::load_from_memory_with_format(&stored, image::ImageFormat::Jpeg).unwrap();
+
+        // Measured: a faithful round trip scores 2.0 levels, and swapping the
+        // red and blue channels on the way into the encoder scores 47.6. Ten
+        // sits between the two with room on both sides -- far enough above the
+        // honest number not to be brittle, far enough below the broken one to
+        // catch it.
+        let diff = mean_difference(&before, &after);
+        assert!(diff < 10.0, "the picture changed too much: {diff:.1} levels per channel");
+    }
+
+    /// An ICC profile is how a scanner or a phone actually labels its colour, so
+    /// skipping those would have meant skipping most real photographs. Three
+    /// channels through a profile are still three channels.
+    #[test]
+    fn compress_11_an_icc_tagged_jpeg_is_compressed_like_any_other() {
+        let (src, _) = pdf_with_jpeg(200, 200, 95, 600, Space::Icc(3));
+        let out = compress(&src, Preset::from_name("screen").unwrap(), true, &AtomicBool::new(false), |_, _| {}).unwrap();
+        assert!(out.len() < src.len(), "an ICCBased RGB JPEG should compress");
+    }
+
+    /// Colour spaces whose channels we cannot safely interpret are left alone.
+    ///
+    /// A CMYK JPEG carries an Adobe inversion flag that decoders disagree about;
+    /// guessing wrong turns a photograph into its own negative, which is a far
+    /// worse outcome than a file that did not shrink. The samples here are the
+    /// same RGB JPEG every other case uses -- what changes is what the document
+    /// claims about them, because that claim is all we have to go on.
+    #[test]
+    fn compress_12_leaves_colour_spaces_it_cannot_read_alone() {
+        for (label, space) in [
+            ("DeviceCMYK", Space::DeviceCmyk),
+            ("ICCBased /N 4", Space::Icc(4)),
+        ] {
+            let (src, _) = pdf_with_jpeg(200, 200, 95, 600, space);
+            let out = compress(&src, Preset::from_name("screen").unwrap(), true, &AtomicBool::new(false), |_, _| {}).unwrap();
+            assert!(out == src, "{label}: must be left untouched");
         }
     }
 }

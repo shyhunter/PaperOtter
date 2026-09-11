@@ -119,3 +119,10 @@ objc2-vision = { version = "0.3", default-features = false, features = [
 e2e = ["dep:tauri-plugin-webdriver-automation"]
 
 
+
+# Test builds decode, resample and re-encode real photographs. Unoptimized
+# that is minutes; the work is all inside `image` and `flate2`, not our code,
+# so optimizing dependencies only keeps our own crate debuggable and fast to
+# rebuild. Measured on the pdfcompress suite: 55s -> 14s.
+[profile.test.package."*"]
+opt-level = 2
