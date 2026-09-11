@@ -45,6 +45,17 @@ export interface ImageBlock {
   flipH: boolean;
   flipV: boolean;
   isNew: boolean;
+  /**
+   * The stamp this block belongs to, when one Place put it on several pages.
+   *
+   * Signing every page used to produce N unrelated blocks, each at its own
+   * position -- so moving the one on page 1 left the other 437 where they were,
+   * and the document had the signature in a different place on every page.
+   * Blocks sharing a group move, resize, rotate and flip together.
+   *
+   * Absent on a block placed on one page, which has nothing to move with.
+   */
+  groupId?: string;
 }
 
 export interface PageEditState {

@@ -1692,7 +1692,7 @@ function SignPanel() {
   // Which pages a signature goes on. Sign PDF has offered this since it
   // shipped; this panel could only ever stamp the page you were looking at,
   // so signing a contract meant placing it once per page by hand.
-  const [applyTo, setApplyTo] = useState<'current' | 'all' | 'custom'>('current');
+  const [applyTo, setApplyTo] = useState<'current' | 'last' | 'all' | 'custom'>('current');
   const [customRange, setCustomRange] = useState('');
   // What Draw or Upload produced, waiting to be placed or saved.
   const [pendingDataUrl, setPendingDataUrl] = useState<string | null>(null);
@@ -1716,6 +1716,9 @@ function SignPanel() {
   /** The pages a Place will stamp. */
   const signatureTargets = useMemo(() => {
     if (applyTo === 'all') return Array.from({ length: state.pageCount }, (_, i) => i);
+    // Signing at the end is the commonest thing anyone does with a signature,
+    // and reaching it meant paging to the back of the document first.
+    if (applyTo === 'last') return [Math.max(0, state.pageCount - 1)];
     if (applyTo === 'custom') {
       const parsed = parsePageRange(customRange, state.pageCount);
       // An empty or unreadable range means the page in front of you rather than
@@ -1764,12 +1767,20 @@ function SignPanel() {
 
     const { width, height } = signatureBlockSize(dims.w, dims.h, sigSize);
 
+    // One Place is one stamp, wherever it lands. The offset is taken once from
+    // the page in front of the user rather than per page: a stamp that stepped
+    // down the page as it went put the signature in a different place on every
+    // sheet, and then moving one of them moved only that one.
+    const { x, y } = nextStampPosition(state.pages[state.currentPage]?.imageBlocks.length ?? 0);
+    // Only when it spans pages. A single-page stamp has nothing to move with,
+    // and giving it a group would make a later second stamp on the same page
+    // drag the first one along with it.
+    const groupId = signatureTargets.length > 1 ? crypto.randomUUID() : undefined;
+
     for (const target of signatureTargets) {
-      // Stepped per page from what that page already carries, so signing every
-      // page twice does not hide the second stamp under the first.
-      const { x, y } = nextStampPosition(state.pages[target]?.imageBlocks.length ?? 0);
       addImageBlock(target, {
         id: crypto.randomUUID(),
+        groupId,
         pageIndex: target,
         x,
         y,
@@ -1786,7 +1797,7 @@ function SignPanel() {
       });
     }
     markDirty();
-  }, [signatureTargets, state.pages, sigSize, addImageBlock, markDirty]);
+  }, [signatureTargets, state.pages, state.currentPage, sigSize, addImageBlock, markDirty]);
 
   /** Whether there is a signature to place at all, on whichever tab is open. */
   const canPlace = sigTab === 'type' ? sigText.trim().length > 0 : pendingDataUrl !== null;
@@ -1971,6 +1982,7 @@ function SignPanel() {
         </span>
         {([
           ['current', 'signPdf.currentPageOnly'],
+          ['last', 'signPdf.lastPage'],
           ['all', 'signPdf.allPages'],
           ['custom', 'signPdf.customRange'],
         ] as const).map(([value, key]) => (

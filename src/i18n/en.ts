@@ -16,6 +16,10 @@ export const en = {
   'documentConverter.engineTextutil': 'textutil (macOS)',
   'signatureBackground.label': 'Background',
   'signatureBackground.none': 'None',
+  'signatureBackground.yellow': 'Yellow',
+  'signatureBackground.orange': 'Orange',
+  'signatureBackground.pink': 'Pink',
+  'signatureBackground.red': 'Red',
   'signatureBackground.white': 'White',
   'signatureBackground.cream': 'Cream',
   'signatureBackground.grey': 'Grey',
@@ -344,6 +348,7 @@ export const en = {
   'signPdf.signatureName': 'Signature name…',
 
   // ── signPdf ─────────────────────────────────────────────────────────────
+  'signPdf.lastPage': 'Last page',
   'signPdf.allPages': 'All pages',
   'signPdf.applyTo': 'Apply To',
   'signPdf.currentPageOnly': 'Current page only',

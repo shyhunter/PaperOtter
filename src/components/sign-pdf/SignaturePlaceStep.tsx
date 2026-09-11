@@ -19,7 +19,7 @@ interface SignaturePlaceStepProps {
   onBack: () => void;
 }
 
-type PageRangeMode = 'current' | 'all' | 'custom';
+type PageRangeMode = 'current' | 'last' | 'all' | 'custom';
 
 /** Parse "1-3, 5, 7-10" into zero-based indices, clamped to [0, maxPage) */
 function parsePageRange(input: string, maxPage: number): number[] {
@@ -227,6 +227,10 @@ export function SignaturePlaceStep({
       let pageIndices: number[];
       if (rangeMode === 'current') {
         pageIndices = [pageIndex];
+      } else if (rangeMode === 'last') {
+        // Signing at the end is the commonest thing anyone does with a
+        // signature, and reaching it meant paging to the back first.
+        pageIndices = [Math.max(0, totalPages - 1)];
       } else if (rangeMode === 'all') {
         pageIndices = Array.from({ length: totalPages }, (_, i) => i);
       } else {
@@ -440,6 +444,16 @@ export function SignaturePlaceStep({
                 className="accent-primary"
               />
               {t('signPdf.currentPageOnly')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="radio"
+                name="page-range"
+                checked={rangeMode === 'last'}
+                onChange={() => setRangeMode('last')}
+                className="accent-primary"
+              />
+              {t('signPdf.lastPage')}
             </label>
             <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
               <input

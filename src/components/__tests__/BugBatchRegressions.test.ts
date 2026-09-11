@@ -209,3 +209,70 @@ describe('[PRIVACY-02] the app does not describe features it does not have', () 
     }
   });
 });
+
+describe('[SIGN-PARITY] the editor and the standalone tool offer the same signature', () => {
+  const editor = readFileSync('src/components/pdf-editor/ToolSidebarPanel.tsx', 'utf-8');
+  const standalone = readFileSync('src/components/sign-pdf/SignaturePlaceStep.tsx', 'utf-8');
+
+  it('both can sign the last page without paging to it', () => {
+    // Signing at the end is the commonest thing anyone does with a signature.
+    for (const [where, src] of [['editor', editor], ['standalone', standalone]] as const) {
+      expect(src, `${where} cannot target the last page`).toContain("'signPdf.lastPage'");
+      expect(src, `${where} does not resolve it`).toContain('Math.max(0, ');
+    }
+  });
+
+  it('both read their backgrounds from the one picker', () => {
+    for (const [where, src] of [['editor', editor], ['standalone', standalone]] as const) {
+      expect(src, `${where} rolled its own background control`).toContain('<SignatureBackground');
+    }
+  });
+
+  it('offers backgrounds that can be told apart', () => {
+    // The three page stocks are the right default and are indistinguishable
+    // from each other: reported twice as "I do not see background colours".
+    const picker = readFileSync('src/components/SignatureBackground.tsx', 'utf-8');
+    const colours = [...picker.matchAll(/colour: '(#[0-9a-f]{6})'/g)].map((m) => m[1]);
+
+    expect(colours.length, 'fewer presets than there were').toBeGreaterThanOrEqual(6);
+    // At least three that are plainly not paper: a channel spread of 60+ is a
+    // colour, where all three stocks spread by under 15.
+    const channels = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+    const saturated = colours.filter((c) => {
+      const [r, g, b] = channels(c);
+      return Math.max(r, g, b) - Math.min(r, g, b) > 60;
+    });
+    expect(saturated.length, `only ${saturated.length} visible colours: ${colours.join(' ')}`)
+      .toBeGreaterThanOrEqual(4);
+
+    // The three that were asked for by name, each identified by its own hue
+    // rather than by hex, so a shade can be tuned without breaking this.
+    const hue = (c: string) => {
+      const [r, g, b] = channels(c).map((v) => v / 255);
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      if (d === 0) return -1;
+      const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return h * 60;
+    };
+    const hues = saturated.map(hue);
+    const near = (target: number, span = 25) => hues.some((h) => Math.abs(h - target) <= span);
+    expect(near(35), `no orange among ${saturated.join(' ')}`).toBe(true);
+    expect(near(340, 30) || near(0, 20), `no red among ${saturated.join(' ')}`).toBe(true);
+    expect(near(330, 25), `no pink among ${saturated.join(' ')}`).toBe(true);
+  });
+
+  it('groups a stamp that spans pages, and only then', () => {
+    // A single-page stamp must not be grouped: a later second stamp on the same
+    // page would drag the first one with it.
+    expect(editor).toContain('signatureTargets.length > 1 ? crypto.randomUUID() : undefined');
+    // One position for the whole stamp, taken once *before* the loop. It used
+    // to be computed inside it and stepped from each page's own block count, so
+    // the pages did not even start in the same place.
+    const loopAt = editor.indexOf('for (const target of signatureTargets)');
+    const positionAt = editor.indexOf('nextStampPosition(state.pages[state.currentPage]');
+    expect(positionAt, 'the shared position is gone').toBeGreaterThan(-1);
+    expect(positionAt, 'the position is computed inside the loop again').toBeLessThan(loopAt);
+    expect(editor.slice(loopAt, loopAt + 400), 'the loop computes its own position')
+      .not.toContain('nextStampPosition');
+  });
+});
