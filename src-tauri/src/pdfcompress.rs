@@ -167,11 +167,23 @@ fn collect_images(pdf: &QPdf) -> Result<Vec<Candidate>, String> {
             }
 
             let Ok(decoded) = stream.get_data(StreamDecodeLevel::Specialized) else { continue };
-            let pixels = decoded.as_ref().len() as u32;
-            let components = pixels / width.max(1) / height.max(1);
-            if components != 1 && components != 3 {
-                continue; // CMYK and exotic spaces are not handled here.
-            }
+
+            // The component count has to come out exactly, and dividing for it
+            // is not enough. qpdf's specialized decode level leaves /DCTDecode
+            // and /JPXDecode encoded, so for those streams this is the image
+            // *file*, not its samples -- and a file small enough divides by its
+            // own pixel count to a perfectly plausible 1 or 3 once integer
+            // division has dropped the remainder. A 15x15 JPEG of 333 bytes
+            // read as grey, and the encoder downstream asserts on the length it
+            // is handed. An exact fit is what separates samples from a picture
+            // that merely happens to be about the right size.
+            let pixels = width as usize * height as usize;
+            let components = match decoded.as_ref().len() {
+                n if n == pixels => 1,
+                n if n == pixels * 3 => 3,
+                // CMYK, exotic colour spaces, and anything still encoded.
+                _ => continue,
+            };
 
             let stored_bytes = stream
                 .get_data(StreamDecodeLevel::None)
@@ -195,6 +207,15 @@ fn shrink_one(
         .stream
         .get_data(StreamDecodeLevel::Specialized)
         .map_err(|e| first_line(&e.to_string()))?;
+
+    // `from_raw` below accepts any buffer that is merely *long enough* and
+    // keeps the surplus, which is how extra bytes reach an encoder that asserts
+    // on length. The candidate was measured exactly, so a mismatch here means
+    // the stream is not what it was when it was collected.
+    let expected = candidate.width as usize * candidate.height as usize * candidate.components as usize;
+    if raw.as_ref().len() != expected {
+        return Ok(false);
+    }
 
     let image = match candidate.components {
         1 => GrayImage::from_raw(candidate.width, candidate.height, raw.as_ref().to_vec())
@@ -410,5 +431,84 @@ mod tests {
     #[test]
     fn compress_07_rejects_an_unknown_preset() {
         assert!(Preset::from_name("enormous").is_err());
+    }
+
+    /// A PDF holding one small JPEG, built here rather than checked in so the
+    /// dimensions that trigger the bug are visible in the test.
+    ///
+    /// Returns the document and the length of the JPEG inside it.
+    fn pdf_with_jpeg(w: u32, h: u32) -> (Vec<u8>, usize) {
+        let picture = RgbImage::from_fn(w, h, |x, y| {
+            image::Rgb([(x * 9) as u8, (y * 9) as u8, 0x40])
+        });
+        let mut jpeg = Vec::new();
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 80)
+            .encode(picture.as_raw(), w, h, image::ExtendedColorType::Rgb8)
+            .unwrap();
+
+        let pdf = QPdf::empty();
+
+        let image = pdf.new_stream([]);
+        image.replace_data(&jpeg, pdf.new_name("/DCTDecode"), pdf.new_null());
+        let dict = image.get_dictionary();
+        dict.set("/Type", pdf.new_name("/XObject"));
+        dict.set("/Subtype", pdf.new_name("/Image"));
+        dict.set("/Width", pdf.new_integer(w as i64));
+        dict.set("/Height", pdf.new_integer(h as i64));
+        dict.set("/BitsPerComponent", pdf.new_integer(8));
+        dict.set("/ColorSpace", pdf.new_name("/DeviceRGB"));
+        drop(dict);
+
+        let xobjects = pdf.new_dictionary();
+        xobjects.set("/Im0", image.into_indirect());
+        let resources = pdf.new_dictionary();
+        resources.set("/XObject", &xobjects);
+
+        let media = pdf.new_array_from(
+            [0, 0, 200, 200].into_iter().map(|n| pdf.new_integer(n).into()),
+        );
+
+        let content = pdf.new_stream(b"q 150 0 0 150 20 20 cm /Im0 Do Q".to_vec());
+
+        let page = pdf.new_dictionary();
+        page.set("/Type", pdf.new_name("/Page"));
+        page.set("/MediaBox", &media);
+        page.set("/Resources", &resources);
+        page.set("/Contents", content.into_indirect());
+        pdf.add_page(page.into_indirect(), true).unwrap();
+
+        (pdf.writer().write_to_memory().unwrap(), jpeg.len())
+    }
+
+    /// Regression: one small JPEG took the whole compressor down.
+    ///
+    /// qpdf's specialized decode level leaves /DCTDecode alone, so the bytes it
+    /// hands back for such a stream are the JPEG file, not samples. The
+    /// component count was inferred by dividing that length by the pixel count,
+    /// and integer division does not mind dividing unevenly: a 15x15 JPEG of
+    /// 333 bytes came out as "1 component", was accepted as 8-bit grey, and was
+    /// passed to an encoder that asserts on buffer length. The assert fired
+    /// inside a blocking task, so the user saw
+    /// `Compression task failed: task 124 panicked with message "assertion
+    /// `left == right` failed: Invalid buffer length: expected 225 got 333"`.
+    #[test]
+    fn compress_08_a_small_jpeg_is_not_mistaken_for_raw_samples() {
+        let (src, jpeg_len) = pdf_with_jpeg(15, 15);
+
+        // Without this the test proves nothing: the bug needs a JPEG at least as
+        // long as its own pixel count, which is only true of very small images.
+        assert!(jpeg_len >= 15 * 15, "{jpeg_len} bytes cannot reproduce the fault");
+
+        for preset in ["screen", "ebook", "printer", "prepress"] {
+            let out = compress(
+                &src,
+                Preset::from_name(preset).unwrap(),
+                true,
+                &AtomicBool::new(false),
+                |_, _| {},
+            )
+            .unwrap_or_else(|e| panic!("{preset}: {e}"));
+            assert_eq!(out, src, "{preset}: an encoded stream is not raw samples");
+        }
     }
 }

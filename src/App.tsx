@@ -390,6 +390,12 @@ function StandardToolFlow() {
 
   // Called when a file is confirmed (from picker or drop)
   const handleFileSelected = useCallback(async (filePath: string, alsoSelected: string[] = []) => {
+    // A failure message stays on screen until the user tries again, so this is
+    // where it goes. It used to clear itself on a timer instead, which meant a
+    // long message -- a processing error carries the engine's own words -- was
+    // gone before it could be read.
+    setCorruptFileError(null);
+
     if (!filePath) {
       setInvalidDropError(t('file.unsupported'));
       setTimeout(() => setInvalidDropError(null), 2500);
@@ -435,7 +441,6 @@ function StandardToolFlow() {
     } catch {
       // Could not read the file at all — treat as corrupt
       setCorruptFileError(t('app.thisFileAppearsToBe'));
-      setTimeout(() => setCorruptFileError(null), 2500);
       return;
     }
 
@@ -565,7 +570,6 @@ function StandardToolFlow() {
           ? friendlyPdfError(pdfProcessor.error)
           : pdfProcessor.error
       );
-      setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfProcessor.error]);
@@ -575,7 +579,6 @@ function StandardToolFlow() {
     if (imageProcessor.error && currentStep === 1 && fileEntry?.format === 'image') {
       handleStartOver();
       setCorruptFileError(t('app.thisFileAppearsToBe'));
-      setTimeout(() => setCorruptFileError(null), 2500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageProcessor.error]);
