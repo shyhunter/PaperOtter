@@ -7,7 +7,7 @@ import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { rotateImage } from '@/lib/imageRotate';
 import { cn } from '@/lib/utils';
-import type { ImageRotation } from '@/lib/imageRotate';
+import { turnImage, type ImageRotation } from '@/lib/imageRotate';
 import type { ImageOutputFormat } from '@/types/file';
 import { t } from '@/i18n';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
@@ -60,7 +60,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
   // The file this flow opened. Save writes back to it; Save as... writes a copy.
   const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [rotation, setRotation] = useState<ImageRotation>(90);
+  const [rotation, setRotation] = useState<ImageRotation>(0);
   const [outputFormat, setOutputFormat] = useState<ImageOutputFormat>('jpeg');
   const [quality, setQuality] = useState(80);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
@@ -106,24 +106,14 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
 
 
 
-  const handleRotateLeft = useCallback(() => {
-    setRotation((prev) => {
-      if (prev === 90) return 270;
-      if (prev === 180) return 90;
-      return 180;
-    });
-  }, []);
-
-  const handleRotateRight = useCallback(() => {
-    setRotation((prev) => {
-      if (prev === 90) return 180;
-      if (prev === 180) return 270;
-      return 90;
-    });
-  }, []);
+  const handleRotateLeft = useCallback(() => setRotation((prev) => turnImage(prev, 'left')), []);
+  const handleRotateRight = useCallback(() => setRotation((prev) => turnImage(prev, 'right')), []);
 
   const handleApply = useCallback(async () => {
     if (!filePath) return;
+    // Nothing to do at 0, and re-encoding an image to leave it alone would only
+    // cost it quality. The button is disabled there, so this is the second lock.
+    if (rotation === 0) return;
     setIsProcessing(true);
     setProcessError(null);
     try {
@@ -278,7 +268,10 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   size="sm"
                   data-testid="apply-btn"
                   onClick={handleApply}
-                  disabled={isProcessing}
+                  // At 0 the image is as it arrived, so there is nothing to
+                  // apply. Rotate PDF is the same: a page with no turn on it is
+                  // left alone rather than rewritten.
+                  disabled={isProcessing || rotation === 0}
                   className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
