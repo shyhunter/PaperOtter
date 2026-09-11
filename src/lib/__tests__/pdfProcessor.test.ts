@@ -1142,3 +1142,37 @@ describe('processPdf — downsampleImages reaches the compress_pdf command', () 
     }
   });
 });
+
+// ─── Why nothing shrank ───────────────────────────────────────────────────────
+//
+// "File already optimal" was two words in a status strip. The text-only and
+// JPEG 2000 cases explained themselves; the commonest outcome -- a file that
+// has been compressed before -- did not, and left the user nothing to try.
+
+describe('alreadyCompressedMessage', () => {
+  it('[PC-OPT-01] at a middling quality, points at the stronger one', async () => {
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    const message = alreadyCompressedMessage('screen');
+
+    expect(message).toMatch(/already compressed/i);
+    expect(message, 'there is a stronger setting, so say so').toMatch(/stronger/i);
+  });
+
+  it('[PC-OPT-02] at the strongest quality, says there is nothing further', async () => {
+    // 'web' is the bottom of QUALITY_CASCADE. Telling someone to try a stronger
+    // setting when they are already on it is worse than saying nothing.
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    const message = alreadyCompressedMessage('web');
+
+    expect(message).toMatch(/as far as/i);
+    expect(message, 'there is no stronger setting to point at').not.toMatch(/try a stronger/i);
+  });
+
+  it('[PC-OPT-03] says why, not just that', async () => {
+    const { alreadyCompressedMessage } = await import('@/lib/pdfProcessor');
+    for (const quality of ['screen', 'web'] as const) {
+      expect(alreadyCompressedMessage(quality), `${quality} gives no reason`)
+        .toMatch(/resolution/i);
+    }
+  });
+});
