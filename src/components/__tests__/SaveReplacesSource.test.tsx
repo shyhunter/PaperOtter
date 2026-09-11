@@ -200,21 +200,23 @@ describe('Every flow that can replace its source does', () => {
 });
 
 describe('Save Again repeats the choice that was made', () => {
-  it('[SAVE-02h] after Save as..., Save Again writes the copy, not the original', async () => {
+  it('[SAVE-02h] after Save as..., the confirmation offers nothing that could touch the original', async () => {
     // Reported from a real build, in Compress PDF: pick Save as..., name the
     // copy, and it is written correctly. Then press Save Again on the
     // confirmation card and it silently overwrites the ORIGINAL instead.
     //
     // The card's button was wired `canReplace ? handleReplace : handleSave`,
-    // which asks whether replacing is *possible* and never whether the user
-    // had just declined it. Choosing Save as... is exactly the choice to leave
-    // the original alone, so repeating the save must not touch it.
+    // which asks whether replacing is *possible* and never whether the user had
+    // just declined it. Choosing Save as... is exactly the choice to leave the
+    // original alone.
+    //
+    // The card now ends the step rather than offering to repeat it, so the
+    // route to that bug does not exist: the button is a disabled "Saved".
+    // Saving somewhere else is reached by going Back.
     const user = userEvent.setup();
     const COPY = '/docs/report-compressed.pdf';
     vi.mocked(saveDialog).mockResolvedValue(COPY);
 
-    // The parent owns savedFilePath and sets it when a save completes, which is
-    // what brings up the confirmation card carrying Save Again.
     function Harness() {
       const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
       return (
@@ -238,18 +240,14 @@ describe('Save Again repeats the choice that was made', () => {
     });
 
     vi.mocked(writeFile).mockClear();
-    vi.mocked(saveDialog).mockClear();
 
-    await user.click(await screen.findByRole('button', { name: /save a copy/i }));
+    const button = await screen.findByTestId('save-again-btn');
+    expect(button, 'the step is over; it must not invite a repeat').toBeDisabled();
+    expect(button).toHaveTextContent(/saved/i);
 
-    await waitFor(() => {
-      expect(vi.mocked(writeFile)).toHaveBeenCalled();
-    });
-    const targets = vi.mocked(writeFile).mock.calls.map((c) => c[0]);
-    expect(targets, 'Save Again overwrote the original the user chose to keep')
-      .not.toContain('/docs/report.pdf');
-    expect(vi.mocked(saveDialog), 'it should ask again where to put the copy')
-      .toHaveBeenCalled();
+    // And pressing it anyway writes nothing at all, least of all the original.
+    await user.click(button).catch(() => {});
+    expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
   });
 
   it('[SAVE-02i] after a plain Save there is nothing left to save, and it says so', async () => {

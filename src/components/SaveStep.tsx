@@ -359,8 +359,8 @@ function MultiFileSave({
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <Button size="sm" data-testid="save-again-btn" onClick={handleMultiFileSave} className={PRIMARY_ACTION}>
-            {t('save.copy')}
+          <Button size="sm" data-testid="save-again-btn" disabled className={PRIMARY_ACTION}>
+            {t('save.saved')}
           </Button>
         </div>
       </div>
@@ -625,12 +625,12 @@ function SingleFileSave({
   // into a Save as. That is this, and it is unchanged.
   const repeatSave = lastMode === 'replace' ? handleReplace : handleSave;
 
-  // The button in the confirmation footer is a different question. After a
-  // *successful* replace there is nothing left for it to do: it re-wrote the
-  // same bytes to the same path, which the user could not tell from a broken
-  // button. After a Save as, writing a second copy somewhere else is a real
-  // thing to want, so that one stays -- named for what it does.
-  const savedInPlace = lastMode === 'replace';
+  // The button in the confirmation footer is a different question. Once the
+  // file is written the step is over, and the control says so rather than
+  // offering a job that has already been done: after a replace it re-wrote the
+  // same bytes to the same path, and after a Save as it was a second dialog
+  // nobody had asked for. Saving somewhere else is reached by going Back and
+  // choosing Save as, which is where that decision belongs.
 
   // Auto-trigger the save dialog on mount (only if no savedFilePath yet).
   //
@@ -669,11 +669,10 @@ function SingleFileSave({
           <Button
             size="sm"
             data-testid="save-again-btn"
-            onClick={handleSave}
-            disabled={savedInPlace}
+            disabled
             className={PRIMARY_ACTION}
           >
-            {savedInPlace ? t('save.saved') : t('save.copy')}
+            {t('save.saved')}
           </Button>
         </div>
       </div>

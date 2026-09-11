@@ -70,11 +70,21 @@ describe('[PICK-CONTRAST-01] a chosen option is visible on a light page', () => 
 describe('[SAVE-DONE-01] the last step says what is left to do', () => {
   const src = read('src/components/SaveStep.tsx');
 
-  it('offers nothing more after a save that replaced the file', () => {
-    // "Save Again" re-wrote the same bytes to the same path.
-    expect(src).toContain("const savedInPlace = lastMode === 'replace'");
-    expect(src).toMatch(/disabled=\{savedInPlace\}/);
-    expect(src).toMatch(/savedInPlace \? t\('save\.saved'\) : t\('save\.copy'\)/);
+  it('offers nothing more once the file is written, whichever way it was saved', () => {
+    // "Save Again" did one of two useless things: after a replace it re-wrote
+    // the same bytes to the same path, and after a Save as it opened a second
+    // dialog nobody had asked for. Both confirmation footers -- single file and
+    // the multi-file one Convert Document uses -- now end the step.
+    const buttons = [...src.matchAll(/<Button[^>]*data-testid="save-again-btn"[\s\S]{0,260}?<\/Button>/g)]
+      .map((m) => m[0]);
+
+    expect(buttons.length, 'the confirmation button is gone entirely').toBeGreaterThanOrEqual(2);
+    for (const button of buttons) {
+      expect(button, 'this one can still be pressed').toMatch(/\bdisabled\b/);
+      expect(button, 'this one does not say the step is done').toContain("t('save.saved')");
+      expect(button, 'a disabled button with a handler is a handler nobody can reach')
+        .not.toContain('onClick');
+    }
   });
 
   it('still retries a failed replace as a replace', () => {

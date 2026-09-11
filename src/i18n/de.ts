@@ -112,7 +112,6 @@ export const de: Dictionary = {
   'save.toFolder': 'In Ordner speichern',
   'save.asZip': 'Als ZIP speichern',
   'save.saved': 'Gespeichert',
-  'save.copy': 'Kopie speichern',
   'save.again': 'Erneut speichern',
   'save.showInFinder': 'Im Finder anzeigen',
   'save.success': 'Datei erfolgreich gespeichert',

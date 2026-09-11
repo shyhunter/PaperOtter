@@ -84,7 +84,6 @@ export const en = {
   'save.toFolder': 'Save to Folder',
   'save.asZip': 'Save as ZIP',
   'save.saved': 'Saved',
-  'save.copy': 'Save a copy',
   'save.again': 'Save Again',
   'save.showInFinder': 'Show in Finder',
   'save.showInExplorer': 'Show in File Explorer',
