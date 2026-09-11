@@ -3,7 +3,7 @@ import { ZoomIn, ZoomOut, Ban, ArrowRight, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OtterLoader } from '@/components/brand/OtterLoader';
 import { openPdfForLazyRender, type LazyPdfHandle } from '@/lib/pdfThumbnail';
-import { getNonCompressibleReason, nonCompressibleMessage } from '@/lib/pdfProcessor';
+import { getNonCompressibleReason, nonCompressibleMessage, alreadyCompressedMessage } from '@/lib/pdfProcessor';
 import { cn } from '@/lib/utils';
 import { DestinationVerdict } from '@/components/destinations/DestinationVerdict';
 import type { DestinationRequirement } from '@/lib/destinations';
@@ -331,6 +331,21 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
 
   return (
     <div data-testid="compare-step" className="flex flex-1 flex-col overflow-hidden animate-fade-slide-in">
+
+      {/* Why nothing changed.
+          "File already optimal" is two words in a status strip, and it left the
+          commonest outcome -- a file that has been compressed before -- with no
+          explanation and nothing to try next. The text-only and JPEG 2000 cases
+          already said why; this one says why too. */}
+      {result.wasAlreadyOptimal && result.targetMet && nonCompressibleReason !== 'jpx' && (
+        <div data-testid="already-optimal-reason" className="mx-4 mt-3 rounded-md border border-border bg-muted/40 px-4 py-2 flex-none">
+          <p className="text-xs text-muted-foreground">
+            {nonCompressibleReason === 'text-only'
+              ? nonCompressibleMessage(nonCompressibleReason, result.imageCount)
+              : alreadyCompressedMessage(qualityLevel ?? 'screen')}
+          </p>
+        </div>
+      )}
 
       {/* Target not met warning */}
       {!result.targetMet && result.bestAchievableSizeBytes != null && (

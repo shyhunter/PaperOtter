@@ -1035,7 +1035,7 @@ export const fr: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} sélectionnées)',
   'pdfToJpgFlow.renderingPageOf': 'Rendu de la page {current} sur {total}…',
   'pdfaConvert.originalToPdfa': 'Original : {original} → PDF/A : {pdfa}',
-  'privacy.detailNetworkScope': 'L’accès réseau est limité à exactement deux points de terminaison en lecture seule (la recherche de mises à jour et la récupération de l’adresse de contact), imposé par la configuration des capacités Tauri. Aucun autre accès réseau n’est possible.',
+  'privacy.detailNetworkScope': 'L’accès réseau est limité à exactement deux points de terminaison en lecture seule (la recherche de mises à jour et la récupération du lien vers le forum de discussion), imposé par la configuration des capacités Tauri. Aucun autre accès réseau n’est possible.',
   'redactPdf.appliedAcross': '{redactions} appliquées sur {pages}',
   'redactPdf.applyRedactions': 'Appliquer les caviardages ({count})',
   'redactPdf.matchesFound': '{matches} trouvées',

@@ -359,8 +359,8 @@ function MultiFileSave({
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <Button size="sm" onClick={handleMultiFileSave} className={PRIMARY_ACTION}>
-            {t('save.again')}
+          <Button size="sm" data-testid="save-again-btn" onClick={handleMultiFileSave} className={PRIMARY_ACTION}>
+            {t('save.copy')}
           </Button>
         </div>
       </div>
@@ -620,7 +620,17 @@ function SingleFileSave({
 
   // Default to Save as... when nothing has been chosen yet: opening a dialog is
   // the recoverable direction, overwriting is not.
+  // Retrying a *failed* save has to attempt the same thing again -- a replace
+  // that hit a read-only file must be retried as a replace, not quietly turned
+  // into a Save as. That is this, and it is unchanged.
   const repeatSave = lastMode === 'replace' ? handleReplace : handleSave;
+
+  // The button in the confirmation footer is a different question. After a
+  // *successful* replace there is nothing left for it to do: it re-wrote the
+  // same bytes to the same path, which the user could not tell from a broken
+  // button. After a Save as, writing a second copy somewhere else is a real
+  // thing to want, so that one stays -- named for what it does.
+  const savedInPlace = lastMode === 'replace';
 
   // Auto-trigger the save dialog on mount (only if no savedFilePath yet).
   //
@@ -656,8 +666,14 @@ function SingleFileSave({
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <Button size="sm" onClick={repeatSave} className={PRIMARY_ACTION}>
-            {t('save.again')}
+          <Button
+            size="sm"
+            data-testid="save-again-btn"
+            onClick={handleSave}
+            disabled={savedInPlace}
+            className={PRIMARY_ACTION}
+          >
+            {savedInPlace ? t('save.saved') : t('save.copy')}
           </Button>
         </div>
       </div>

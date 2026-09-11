@@ -107,6 +107,8 @@ export const de: Dictionary = {
   // ── Save ──────────────────────────────────────────────────────────────────
   'save.toFolder': 'In Ordner speichern',
   'save.asZip': 'Als ZIP speichern',
+  'save.saved': 'Gespeichert',
+  'save.copy': 'Kopie speichern',
   'save.again': 'Erneut speichern',
   'save.showInFinder': 'Im Finder anzeigen',
   'save.success': 'Datei erfolgreich gespeichert',
@@ -892,6 +894,8 @@ export const de: Dictionary = {
     'Dieses PDF ist passwortgeschützt und konnte nicht geöffnet werden.',
   'docModel.thisDocumentHasNoExtractable':
     'Dieses Dokument enthält keinen auslesbaren Text: es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
+  'pdfProcessor.alreadyCompressedTryStronger': 'Diese Datei ist bei dieser Qualität bereits verkleinert: Ihre Bilder liegen auf oder unter der Auflösung, die diese Einstellung verlangt, und eine erneute Kodierung wurde nicht kleiner. Wählen Sie eine stärkere Qualität, um weiterzukommen.',
+  'pdfProcessor.alreadyCompressedStrongest': 'Diese Datei ist bereits so weit verkleinert, wie PaperOtter es kann: Ihre Bilder liegen auf oder unter der Auflösung der stärksten Einstellung, und eine erneute Kodierung wurde nicht kleiner.',
   'pdfProcessor.thisFileIsMostlyText':
     'Diese Datei besteht überwiegend aus Text ohne eingebettete Bilder: bei reinen Textdokumenten bringt das Verkleinern kaum etwas.',
   'pdfProcessor.customPageSizeRequiresBoth':
@@ -1072,7 +1076,7 @@ export const de: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} ausgewählt)',
   'pdfToJpgFlow.renderingPageOf': 'Seite {current} von {total} wird gerendert…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt (die Suche nach App-Aktualisierungen und das Abrufen der Feedback-Kontaktadresse), durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
+  'privacy.detailNetworkScope': 'Der Netzwerkzugriff ist auf genau zwei lesende Endpunkte beschränkt (die Suche nach App-Aktualisierungen und das Abrufen des Links zum Diskussionsforum), durchgesetzt über die Tauri-Capability-Konfiguration. Kein weiterer Netzwerkzugriff ist möglich.',
   'redactPdf.appliedAcross': '{redactions} auf {pages} angewendet',
   'redactPdf.applyRedactions': 'Schwärzungen anwenden ({count})',
   'redactPdf.matchesFound': '{matches} gefunden',

@@ -702,7 +702,7 @@ export const pl: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '(wybrano: {count})',
   'pdfToJpgFlow.renderingPageOf': 'Renderowanie strony {current} z {total}…',
   'pdfaConvert.originalToPdfa': 'Oryginał: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Dostęp do sieci ogranicza się dokładnie do dwóch punktów tylko do odczytu (sprawdzania aktualizacji aplikacji i pobierania adresu kontaktowego), co wymusza konfiguracja uprawnień Tauri. Żaden inny dostęp do sieci nie jest możliwy.',
+  'privacy.detailNetworkScope': 'Dostęp do sieci ogranicza się dokładnie do dwóch punktów tylko do odczytu (sprawdzania aktualizacji aplikacji i pobierania odnośnika do forum dyskusyjnego), co wymusza konfiguracja uprawnień Tauri. Żaden inny dostęp do sieci nie jest możliwy.',
   'redactPdf.appliedAcross': '{redactions} zastosowano na {pages}',
   'redactPdf.applyRedactions': 'Zastosuj zaczernienia ({count})',
   'redactPdf.matchesFound': 'Znaleziono: {matches}',

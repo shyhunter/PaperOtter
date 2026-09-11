@@ -240,7 +240,7 @@ describe('Save Again repeats the choice that was made', () => {
     vi.mocked(writeFile).mockClear();
     vi.mocked(saveDialog).mockClear();
 
-    await user.click(await screen.findByRole('button', { name: /save again/i }));
+    await user.click(await screen.findByRole('button', { name: /save a copy/i }));
 
     await waitFor(() => {
       expect(vi.mocked(writeFile)).toHaveBeenCalled();
@@ -252,9 +252,11 @@ describe('Save Again repeats the choice that was made', () => {
       .toHaveBeenCalled();
   });
 
-  it('[SAVE-02i] after a plain Save, Save Again still replaces the original', async () => {
-    // The mirror of SAVE-02h: repeating must not turn a replace into a copy
-    // either. Both directions have to keep the choice that was made.
+  it('[SAVE-02i] after a plain Save there is nothing left to save, and it says so', async () => {
+    // This used to offer "Save Again", which re-wrote the same bytes to the same
+    // path: a no-op the user could not tell from a broken button. The two ways
+    // of saving end in genuinely different places, so they end with different
+    // controls -- a replace is finished, a Save as can take another copy.
     const user = userEvent.setup();
 
     function Harness() {
@@ -275,14 +277,10 @@ describe('Save Again repeats the choice that was made', () => {
     render(<Harness />);
 
     await user.click(await screen.findByRole('button', { name: /^save$/i }));
-    await waitFor(() => expectReplaced('/docs/report.pdf'));
+    await waitFor(() => expect(vi.mocked(invoke)).toHaveBeenCalled());
 
-    vi.mocked(invoke).mockClear();
-    vi.mocked(saveDialog).mockClear();
-
-    await user.click(await screen.findByRole('button', { name: /save again/i }));
-
-    await waitFor(() => expectReplaced('/docs/report.pdf'));
-    expect(vi.mocked(saveDialog), 'a repeated Save must not start asking').not.toHaveBeenCalled();
+    const button = await screen.findByTestId('save-again-btn');
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent(/saved/i);
   });
 });

@@ -100,12 +100,24 @@ function toBox(left: number, right: number, baseline: number, height: number, pa
   };
 }
 
-/** Groups spans by the line they sit on. */
+/**
+ * Groups spans by the line they sit on.
+ *
+ * Compared against the line's most recent baseline, not its first. Anchoring on
+ * the first item made a line whose baselines drift -- 719.0, 721.0, 723.0, which
+ * is ordinary for a run of differently-sized glyphs -- break in two the moment
+ * the drift passed the tolerance, even though `inReadingOrder` had already
+ * (correctly) read them as one line by comparing neighbours.
+ *
+ * The visible symptom was a search result appearing twice: one occurrence of
+ * "the Display" came back as two boxes a few points apart, stacked over each
+ * other on the page, and marking them redacted the same words twice.
+ */
 function byLine<T extends { item: TextItem }>(entries: T[]): T[][] {
   const lines: T[][] = [];
   for (const entry of entries) {
     const line = lines.find(
-      (l) => Math.abs(l[0].item.transform[5] - entry.item.transform[5]) <= SAME_LINE_TOLERANCE,
+      (l) => Math.abs(l[l.length - 1].item.transform[5] - entry.item.transform[5]) <= SAME_LINE_TOLERANCE,
     );
     if (line) line.push(entry);
     else lines.push([entry]);
@@ -203,7 +215,10 @@ export async function findTextMatches(doc: DocLike, query: string): Promise<Text
             line,
           });
         }
-        from = at + 1;
+        // Past the whole match, not one character into it. Advancing by one
+        // returned overlapping hits: "aa" found three times in "aaaa", where
+        // there are two.
+        from = at + needle.length;
       }
     } catch {
       // An unreadable page contributes nothing; the rest of the document still counts.

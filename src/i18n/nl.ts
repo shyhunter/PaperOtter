@@ -699,7 +699,7 @@ export const nl: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} geselecteerd)',
   'pdfToJpgFlow.renderingPageOf': 'Pagina {current} van {total} wordt weergegeven…',
   'pdfaConvert.originalToPdfa': 'Origineel: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Netwerktoegang is beperkt tot precies twee alleen-lezen eindpunten (controleren op updates en het ophalen van het feedback-contactadres), afgedwongen door de Tauri-capability-configuratie. Andere netwerktoegang is niet mogelijk.',
+  'privacy.detailNetworkScope': 'Netwerktoegang is beperkt tot precies twee alleen-lezen eindpunten (controleren op updates en het ophalen van de link naar het discussieforum), afgedwongen door de Tauri-capability-configuratie. Andere netwerktoegang is niet mogelijk.',
   'redactPdf.appliedAcross': '{redactions} toegepast op {pages}',
   'redactPdf.applyRedactions': 'Zwartingen toepassen ({count})',
   'redactPdf.matchesFound': '{matches} gevonden',

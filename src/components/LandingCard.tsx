@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { DragState, SupportedFormat } from '@/types/file';
 import { t } from '@/i18n';
+import { OtterLoader } from '@/components/brand/OtterLoader';
 
 interface LandingCardProps {
   dragState: DragState;
@@ -176,13 +177,13 @@ export function LandingCard({
               </div>
             </div>
 
-            {/* Loading bar — visible briefly after valid drop before advancing */}
+            {/* Reading the file. This was a 1.5px pulsing bar under the fold,
+                which for Crop PDF -- several seconds parsing a PDF before the
+                first page can be measured -- read as nothing happening at all.
+                The mark the rest of the app loads with is hard to miss. */}
             {isLoading && (
-              <div data-testid="loading-spinner" className="px-8 pb-6 pt-3 animate-bounce-in">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-2/3 bg-primary rounded-full animate-pulse" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center mt-2">{t('landingCard.loadingFile')}</p>
+              <div data-testid="loading-spinner" className="px-8 pb-6 pt-4 animate-bounce-in">
+                <OtterLoader size="sm" label={t('landingCard.loadingFile')} />
               </div>
             )}
           </CardContent>

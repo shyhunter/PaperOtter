@@ -696,7 +696,7 @@ export const it: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} selezionate)',
   'pdfToJpgFlow.renderingPageOf': 'Rendering della pagina {current} di {total}…',
   'pdfaConvert.originalToPdfa': 'Originale: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'L’accesso alla rete è limitato a esattamente due endpoint in sola lettura (il controllo degli aggiornamenti e il recupero dell’indirizzo di contatto), imposto dalla configurazione delle capability di Tauri. Nessun altro accesso alla rete è possibile.',
+  'privacy.detailNetworkScope': 'L’accesso alla rete è limitato a esattamente due endpoint in sola lettura (il controllo degli aggiornamenti e il recupero del link al forum di discussione), imposto dalla configurazione delle capability di Tauri. Nessun altro accesso alla rete è possibile.',
   'redactPdf.appliedAcross': '{redactions} applicate su {pages}',
   'redactPdf.applyRedactions': 'Applica oscuramenti ({count})',
   'redactPdf.matchesFound': '{matches} trovate',

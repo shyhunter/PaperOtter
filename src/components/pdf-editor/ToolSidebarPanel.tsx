@@ -54,6 +54,9 @@ import { listen } from '@tauri-apps/api/event';
 import { ocrPdf, type OcrSummary } from '@/lib/ocrProcessor';
 import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { dataUrlToBytes } from '@/lib/dataUrl';
+import { cropMarginPresets } from '@/lib/cropPresets';
+import { cn } from '@/lib/utils';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -1520,6 +1523,35 @@ function CropPanel() {
       <PanelHeader toolId="crop-pdf" />
 
       <div className="space-y-2">
+        {/* The presets the standalone tool has always offered. Per-side numbers
+            were here already, so the panel could do more than the tool and still
+            felt like less: reaching a plain 10mm border meant typing 10 four
+            times. */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
+          <div className="flex gap-1">
+            {cropMarginPresets().map((preset) => {
+              const chosen = (['top', 'bottom', 'left', 'right'] as const).every((side) => margins[side] === preset.mm);
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  data-testid="editor-crop-preset"
+                  onClick={() => setMargins({ top: preset.mm, bottom: preset.mm, left: preset.mm, right: preset.mm })}
+                  className={cn(
+                    'flex-1 rounded-md border px-1.5 py-1 text-[10px] font-medium transition-colors',
+                    chosen
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border text-muted-foreground hover:bg-accent',
+                  )}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <label className="text-[10px] font-medium text-muted-foreground">{t('convertDoc.marginsMm')}</label>
           <label className="flex items-center gap-1 text-[10px] cursor-pointer">
@@ -1706,7 +1738,7 @@ function SignPanel() {
 
   const placeSignatureImage = useCallback(async (dataUrl: string, background: SignatureBg) => {
     const composited = background ? await applySignatureBackground(dataUrl, background) : dataUrl;
-    const bytes = new Uint8Array(await (await fetch(composited)).arrayBuffer());
+    const bytes = dataUrlToBytes(composited);
 
     // The stored image carries no size of its own, so the height comes from the
     // size control and the width follows the image's proportions.

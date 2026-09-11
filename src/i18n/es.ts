@@ -823,7 +823,7 @@ export const es: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} seleccionadas)',
   'pdfToJpgFlow.renderingPageOf': 'Renderizando la página {current} de {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'El acceso a la red se limita exactamente a dos extremos de solo lectura: la comprobación de actualizaciones y la obtención de la dirección de contacto, impuesto por la configuración de capacidades de Tauri. No es posible ningún otro acceso a la red.',
+  'privacy.detailNetworkScope': 'El acceso a la red se limita exactamente a dos extremos de solo lectura: la comprobación de actualizaciones y la obtención del enlace al foro de debate, impuesto por la configuración de capacidades de Tauri. No es posible ningún otro acceso a la red.',
   'redactPdf.appliedAcross': '{redactions} aplicadas en {pages}',
   'redactPdf.applyRedactions': 'Aplicar tachaduras ({count})',
   'redactPdf.matchesFound': '{matches} encontradas',

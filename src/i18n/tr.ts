@@ -754,7 +754,7 @@ export const tr: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} seçildi)',
   'pdfToJpgFlow.renderingPageOf': 'Sayfa {current} / {total} işleniyor…',
   'pdfaConvert.originalToPdfa': 'Özgün: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'Ağ erişimi tam olarak iki salt okunur uç noktayla sınırlıdır (uygulama güncellemelerini denetlemek ve geri bildirim iletişim adresini almak). Bu sınır Tauri yetenek yapılandırmasıyla zorunlu kılınır. Başka hiçbir ağ erişimi mümkün değildir.',
+  'privacy.detailNetworkScope': 'Ağ erişimi tam olarak iki salt okunur uç noktayla sınırlıdır (uygulama güncellemelerini denetlemek ve tartışma forumunun bağlantısını almak). Bu sınır Tauri yetenek yapılandırmasıyla zorunlu kılınır. Başka hiçbir ağ erişimi mümkün değildir.',
   'redactPdf.appliedAcross': '{pages} üzerinde {redactions} uygulandı',
   'redactPdf.applyRedactions': 'Karartmaları uygula ({count})',
   'redactPdf.matchesFound': '{matches} bulundu',

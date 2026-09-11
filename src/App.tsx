@@ -844,7 +844,11 @@ function AppContent() {
       {showToolFlow && <ToolFlow key={documentEpoch} />}
       {showDashboard && <Dashboard />}
       {!showEditor && <PrivacyFooter />}
-      <Toaster position="bottom-center" />
+      {/* Clear of the action bar. A toast landing on the button that raised it
+          covers the thing the user is about to press again, and on the merge
+          screen it sat squarely over Save. 200px puts it above the bar with
+          room to spare. */}
+      <Toaster position="bottom-center" offset={200} mobileOffset={200} />
     </div>
   );
 }

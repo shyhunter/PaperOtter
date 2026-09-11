@@ -477,3 +477,52 @@ select {
 /* Every tool card is the same height, whatever the length of its description —
    one-line descriptions were leaving short cards in the grid. */
 [data-testid="tool-card"] { height: 100%; }
+
+/* ── Toasts ──────────────────────────────────────────────────────────────────
+   A toast is a card like every other card here, so it gets the same drawn edge
+   and hard shadow rather than the rounded rectangle the library ships. The
+   description colour is set from our own token too: sonner's stylesheet picks
+   one from its own idea of the theme, which is how a near-white line came to be
+   printed on a light popover. */
+[data-sonner-toast] {
+  border: 3px solid var(--border) !important;
+  border-radius: 18px 7px 20px 8px / 8px 20px 7px 18px !important;
+  box-shadow: 5px 5px 0 var(--border) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
+
+/* The close button is off by default and only appears on hover; a toast that
+   covers something should be dismissible the moment it is seen. */
+[data-sonner-toast] [data-close-button] {
+  opacity: 1 !important;
+  border: 2px solid var(--border) !important;
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-radius: 8px 3px 9px 4px / 4px 9px 3px 8px !important;
+}
+
+/* ── A chosen option has to look chosen ──────────────────────────────────────
+   Thirty-seven controls mark their selected state as `border-primary` plus a
+   tint of the same colour. The tint is 5% or 10% of the brand yellow, which on
+   a page at oklch(0.994 ...) composites to within a couple of levels of the
+   paper: on the Configure steps the chosen format and the chosen resolution
+   were, in practice, indistinguishable from the ones beside them.
+
+   Raised here rather than at thirty-seven call sites, because it is one
+   decision -- how visible "chosen" is -- and it should stay one. The pairing
+   with `border-primary` is what keeps this off hover states and drag overlays,
+   which use the same tints to mean something much weaker.
+
+   Dark mode is left alone: the same alpha over oklch(0.145 ...) already reads. */
+:root:not(.dark) .border-primary.bg-primary\/5 {
+  background-color: color-mix(in oklab, var(--primary) 24%, transparent);
+}
+:root:not(.dark) .border-primary.bg-primary\/10 {
+  background-color: color-mix(in oklab, var(--primary) 34%, transparent);
+}
+:root:not(.dark) .border-primary.bg-primary\/20 {
+  background-color: color-mix(in oklab, var(--primary) 46%, transparent);
+}

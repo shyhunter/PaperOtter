@@ -12,6 +12,7 @@ import { cropPdf, mmToPoints, pointsToMm } from '@/lib/pdfCrop';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { cropMarginPresets } from '@/lib/cropPresets';
 import { OtterLoader } from '@/components/brand/OtterLoader';
 import { OtterSpinner } from '@/components/brand/OtterSpinner';
 import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
@@ -21,13 +22,11 @@ import { FilePickStep } from '@/components/FilePickStep';
  * A function, not a constant: these labels are translated, and a module-level
  * constant resolves them once at import -- before the locale is known.
  */
-function marginPresets(): { label: string; mm: number }[] {
-  return [
-    { label: t('cropPdfFlow.none'), mm: 0 },
-    { label: t('watermarkFlow.small'), mm: 5 },
-    { label: t('watermarkFlow.medium'), mm: 10 },
-    { label: t('watermarkFlow.large'), mm: 20 },
-  ];
+/** Bytes as the rest of the app writes them. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
 interface CropPdfFlowProps {
@@ -180,6 +179,13 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               {/* Left panel: margin inputs */}
               <div className="w-72 flex-none overflow-y-auto border-e border-border p-4 space-y-5">
                 <h2 className="text-sm font-semibold text-foreground">{t('cropPdf.cropMargins')}</h2>
+                {/* Which document this is. Every other tool names the file it
+                    is working on; Crop showed only a page size, so a second
+                    window of the same tool was indistinguishable from the first. */}
+                <p data-testid="crop-file-name" className="truncate text-xs font-medium text-foreground" title={fileName}>
+                  {fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">{formatBytes(pdfBytes?.byteLength ?? 0)}</p>
 
                 {/* Page dimensions info */}
                 <p className="text-xs text-muted-foreground">
@@ -190,7 +196,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t('imageConfigure.presets')}</label>
                   <div className="flex gap-1.5">
-                    {marginPresets().map((p) => (
+                    {cropMarginPresets().map((p) => (
                       <button
                         key={p.label}
                         type="button"

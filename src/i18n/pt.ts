@@ -760,7 +760,7 @@ export const pt: Dictionary = {
   'pdfToJpgFlow.nSelectedParens': '({count} selecionadas)',
   'pdfToJpgFlow.renderingPageOf': 'A desenhar a página {current} de {total}…',
   'pdfaConvert.originalToPdfa': 'Original: {original} → PDF/A: {pdfa}',
-  'privacy.detailNetworkScope': 'O acesso à rede está limitado a exatamente dois pontos de leitura (procurar atualizações da aplicação e obter o endereço de contacto para comentários), imposto pela configuração de capacidades do Tauri. Nenhum outro acesso à rede é possível.',
+  'privacy.detailNetworkScope': 'O acesso à rede está limitado a exatamente dois pontos de leitura (procurar atualizações da aplicação e obter a ligação para o fórum de discussão), imposto pela configuração de capacidades do Tauri. Nenhum outro acesso à rede é possível.',
   'redactPdf.appliedAcross': '{redactions} aplicadas em {pages}',
   'redactPdf.applyRedactions': 'Aplicar ocultações ({count})',
   'redactPdf.matchesFound': '{matches} encontradas',

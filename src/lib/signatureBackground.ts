@@ -59,20 +59,41 @@ export function keyOutBackground(
   }
 }
 
-/** Loads a data URL into a canvas and hands back its 2D context and pixels. */
+/**
+ * Loads a data URL into a canvas and hands back its 2D context and pixels.
+ *
+ * Through an `<img>`, not `fetch`. The app ships
+ *
+ *   connect-src ipc: http://ipc.localhost
+ *
+ * which does not admit `data:`, so `fetch(dataUrl)` was refused by the content
+ * security policy in the packaged app -- and the refusal arrived as a rejected
+ * promise nobody caught, so choosing a background silently did nothing. Loading
+ * an image is governed by `img-src`, which does list `data:`.
+ *
+ * The failure is reported rather than swallowed: this returning `null` is the
+ * difference between "no canvas here" and "the picture would not load", and
+ * both used to look identical from outside.
+ */
 async function rasterise(
   dataUrl: string,
 ): Promise<{ canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; image: ImageData } | null> {
   if (typeof document === 'undefined') return null;
-  const blob = await (await fetch(dataUrl)).blob();
-  const bitmap = await createImageBitmap(blob);
+
+  const img = new Image();
+  img.src = dataUrl;
+  await new Promise<void>((resolve, reject) => {
+    if (img.complete && img.naturalWidth > 0) return resolve();
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('signature image would not load'));
+  });
+
   const canvas = document.createElement('canvas');
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
-  ctx.drawImage(bitmap, 0, 0);
-  bitmap.close?.();
+  ctx.drawImage(img, 0, 0);
   return { canvas, ctx, image: ctx.getImageData(0, 0, canvas.width, canvas.height) };
 }
 
