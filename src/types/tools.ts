@@ -150,7 +150,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     id: 'jpg-to-pdf',
     name: 'tool.jpgToPdf.name',
     description: 'tool.jpgToPdf.desc',
-    category: 'pdf',
+    category: 'image',
     icon: 'FilePlus2',
     acceptsFormats: ['image'],
     acceptsMultipleFiles: true,
