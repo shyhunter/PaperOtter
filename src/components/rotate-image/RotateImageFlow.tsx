@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { stripImageExtension, getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
+import { FileUp, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import type { ImageRotation } from '@/lib/imageRotate';
 import type { ImageOutputFormat } from '@/types/file';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 
@@ -196,7 +198,7 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (
@@ -335,11 +337,11 @@ export function RotateImageFlow({ onStepChange }: RotateImageFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleApply}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('rotateImage.rotating')}
                     </>
                   ) : (

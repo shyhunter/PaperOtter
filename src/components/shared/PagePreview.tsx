@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 export interface PageDimensions {
   /** Rendered width in CSS pixels (at current scale) */
@@ -120,7 +121,7 @@ export function PagePreview({
     >
       {isLoading && (
         <div className="flex items-center justify-center p-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          <OtterSpinner className="size-6" />
         </div>
       )}
 

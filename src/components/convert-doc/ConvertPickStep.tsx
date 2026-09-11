@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getExtension } from '@/lib/fileValidation';
 import type { ConvertFormat } from '@/types/converter';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 const DOC_EXTENSIONS = [
   'pdf', 'docx', 'doc', 'odt', 'epub', 'mobi', 'azw3', 'txt', 'rtf', 'html',
@@ -86,7 +87,7 @@ export function ConvertPickStep({ onFilePicked }: ConvertPickStepProps) {
         <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('common.loading')}
             </>
           ) : (

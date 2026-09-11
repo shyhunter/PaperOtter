@@ -3,7 +3,7 @@ import { stripImageExtension, getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import type { ImageOutputFormat } from '@/types/file';
 import { pngLevelForQuality } from '@/lib/pngCompression';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'gif', 'heic', 'heif'];
 
@@ -227,7 +229,7 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (
@@ -345,11 +347,11 @@ export function ConvertImageFlow({ onStepChange }: ConvertImageFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('convertImage.converting')}
                     </>
                   ) : (

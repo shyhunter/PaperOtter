@@ -4,12 +4,14 @@ import { open } from '@/lib/dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
-import { FileUp, Loader2, Wrench, Info } from 'lucide-react';
+import { FileUp, Wrench, Info } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -161,7 +163,7 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (
@@ -224,11 +226,11 @@ export function RepairPdfFlow({ onStepChange }: RepairPdfFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleRepair}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('repairPdf.repairing')}
                     </>
                   ) : (

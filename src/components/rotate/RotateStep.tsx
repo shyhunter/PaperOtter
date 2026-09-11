@@ -1,7 +1,7 @@
 // RotateStep: Page grid with selection + rotation controls.
 // Click to select/deselect pages, then rotate selected or all pages left/right.
 import { useState, useCallback, useRef } from 'react';
-import { RotateCw, RotateCcw, Loader2, CheckSquare, Square } from 'lucide-react';
+import { RotateCw, RotateCcw, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
@@ -9,6 +9,8 @@ import { turnBy } from '@/lib/pdfRotate';
 import type { RotationDegrees } from '@/lib/pdfRotate';
 import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface RotateStepProps {
   pdfBytes: Uint8Array;
@@ -229,11 +231,12 @@ export function RotateStep({ pdfBytes, pageCount, onApplied, onBack, isProcessin
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
-        <Button size="sm" data-testid="apply-btn" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}>
+        <Button size="sm" data-testid="apply-btn" onClick={handleApply} disabled={rotatedCount === 0 || isProcessing}
+          className={PRIMARY_ACTION}
+        >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('common.applying')}
             </>
           ) : (

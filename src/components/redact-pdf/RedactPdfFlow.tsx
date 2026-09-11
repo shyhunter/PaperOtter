@@ -4,7 +4,7 @@ import { getFileName } from '@/lib/fileValidation';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { applyRedactions } from '@/lib/pdfRedact';
 import type { RedactionRect } from './RedactOverlay';
 import { plural, t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface RedactPdfFlowProps {
   onStepChange?: (step: number) => void;
@@ -137,7 +138,7 @@ export function RedactPdfFlow({ onStepChange }: RedactPdfFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (

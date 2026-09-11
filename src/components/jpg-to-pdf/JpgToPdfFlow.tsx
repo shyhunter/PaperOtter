@@ -4,13 +4,15 @@ import { getFileName } from '@/lib/fileValidation';
 import { readImageBytes } from '@/lib/imageInput';
 import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
-import { FilePlus, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react';
+import { FilePlus, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { useToolContext } from '@/context/ToolContext';
 import { cn } from '@/lib/utils';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -426,7 +428,7 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
               {/* Loading indicator */}
               {isLoading && (
                 <div className="flex items-center justify-center gap-2 py-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  <OtterSpinner className="size-4" />
                   <span className="text-sm text-muted-foreground">{t('jpgToPdf.loadingImages')}</span>
                 </div>
               )}
@@ -570,11 +572,11 @@ export function JpgToPdfFlow({ onStepChange }: JpgToPdfFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleCreatePdf}
                   disabled={isProcessing}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {t('jpgToPdf.creatingPdf')}
                     </>
                   ) : (

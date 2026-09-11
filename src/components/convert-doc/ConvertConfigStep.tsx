@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +21,8 @@ import type {
 } from '@/types/converter';
 import { t } from '@/i18n';
 import { currentPlatform } from '@/lib/platform';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -453,21 +455,21 @@ export function ConvertConfigStep({
         >
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
         <Button
           size="sm"
           data-testid="apply-btn"
           onClick={handleConvert}
           disabled={isProcessing || !canConvert || availableFormats.length === 0}
+          className={PRIMARY_ACTION}
         >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('convertImage.converting')}
             </>
           ) : isDetecting ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('convertDoc.detectingTools')}
             </>
           ) : (

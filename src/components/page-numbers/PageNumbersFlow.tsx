@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { PageNumbersConfigureStep } from './PageNumbersConfigureStep';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
@@ -15,6 +15,7 @@ import { friendlyPdfError } from '@/lib/pdfUtils';
 import { addPageNumbers } from '@/lib/pdfPageNumbers';
 import type { PageNumberOptions } from '@/lib/pdfPageNumbers';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface PageNumbersFlowProps {
   onStepChange?: (step: number) => void;
@@ -128,7 +129,7 @@ export function PageNumbersFlow({ onStepChange }: PageNumbersFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (

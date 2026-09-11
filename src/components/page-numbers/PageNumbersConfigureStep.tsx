@@ -1,6 +1,6 @@
 // PageNumbersConfigureStep: Configure page number position, format, size, and start number.
 import { useState, useCallback, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { addPageNumbersSinglePage, formatNumber } from '@/lib/pdfPageNumbers';
@@ -10,6 +10,8 @@ import { DEFAULT_TEXT_COLOR } from '@/lib/colorPresets';
 import { ColorPicker } from '@/components/ColorPicker';
 import { plural, t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface PageNumbersConfigureStepProps {
   pdfBytes: Uint8Array;
@@ -213,7 +215,7 @@ export function PageNumbersConfigureStep({
             <div className="relative">
               {isLoadingPreview && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-md">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <OtterSpinner className="size-5" />
                 </div>
               )}
               <img
@@ -234,11 +236,12 @@ export function PageNumbersConfigureStep({
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
-        <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing}>
+        <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing}
+          className={PRIMARY_ACTION}
+        >
           {isProcessing ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('common.applying')}
             </>
           ) : (

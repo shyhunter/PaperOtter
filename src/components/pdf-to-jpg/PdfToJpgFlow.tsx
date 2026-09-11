@@ -6,7 +6,7 @@ import { tempDir, join } from '@tauri-apps/api/path';
 import { open } from '@/lib/dialog';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
-import { FileUp, Loader2, CheckSquare, Square } from 'lucide-react';
+import { FileUp, CheckSquare, Square } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,8 @@ import type { MultiFileOutput } from '@/components/SaveStep';
 import type { ConvertFormat } from '@/types/converter';
 import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 // Worker setup — must match pdfThumbnail.ts
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -381,7 +383,7 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (
@@ -517,11 +519,11 @@ export function PdfToJpgFlow({ onStepChange }: PdfToJpgFlowProps) {
                   data-testid="apply-btn"
                   onClick={handleConvert}
                   disabled={isProcessing || selectedPages.size === 0 || !!engineUnavailable}
-                  className="flex-1"
+                  className={PRIMARY_ACTION}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                      <OtterSpinner className="size-4" />
                       {processProgress ?? t('convertImage.converting')}
                     </>
                   ) : (

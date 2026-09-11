@@ -4,9 +4,10 @@ import { applySignatureBackground } from '@/lib/signatureBackground';
 import { PagePreview, type PageDimensions } from '@/components/shared/PagePreview';
 import { addSignature } from '@/lib/pdfSign';
 import { PDFDocument } from 'pdf-lib';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface SignaturePlaceStepProps {
   pdfBytes: Uint8Array;
@@ -276,7 +277,6 @@ export function SignaturePlaceStep({
     return () => { cancelled = true; };
   }, [signatureDataUrl, background]);
 
-
   const corners = ['nw', 'ne', 'sw', 'se'];
   const cornerPositions: Record<string, React.CSSProperties> = {
     nw: { top: -4, left: -4, cursor: 'nw-resize' },
@@ -455,7 +455,7 @@ export function SignaturePlaceStep({
           >
             {isProcessing ? (
               <>
-                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                <OtterSpinner className="size-4" />
                 {t('common.applying')}
               </>
             ) : (

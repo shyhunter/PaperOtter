@@ -5,10 +5,11 @@ import { open } from '@/lib/dialog';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface SplitPickStepProps {
   onFileLoaded: (pdfBytes: Uint8Array, pageCount: number, fileName: string) => void;
@@ -78,7 +79,7 @@ export function SplitPickStep({ onFileLoaded, initialFile }: SplitPickStepProps)
         <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('common.loading')}
             </>
           ) : (

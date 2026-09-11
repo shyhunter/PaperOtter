@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { open } from '@/lib/dialog';
 import { listen } from '@tauri-apps/api/event';
-import { FileUp, Loader2, ScanText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { FileUp, ScanText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { getFileName, isHeicDecodable } from '@/lib/fileValidation';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
 import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const PDF_EXTENSIONS = ['pdf'];
 
@@ -183,7 +185,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
 
             {isProcessing && (
               <div className="space-y-2 text-center">
-                <Loader2 className="w-5 h-5 mx-auto animate-spin text-muted-foreground" />
+                <OtterSpinner className="size-5" />
                 <p className="text-xs text-muted-foreground">
                   {progress
                     ? t('ocr.readingPage', { current: progress.current, total: progress.total })
@@ -210,7 +212,7 @@ export function OcrPdfFlow({ onStepChange }: OcrPdfFlowProps) {
                 data-testid="apply-btn"
                 onClick={handleRecognise}
                 disabled={isProcessing}
-                className="flex-1"
+                className={PRIMARY_ACTION}
               >
                 <ScanText className="w-4 h-4 me-2" />
                 {t('ocr.start')}

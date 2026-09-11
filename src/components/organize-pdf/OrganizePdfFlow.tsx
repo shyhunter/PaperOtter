@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2, ArrowUp, ArrowDown, Trash2, Copy, RotateCcw } from 'lucide-react';
+import { FileUp, ArrowUp, ArrowDown, Trash2, Copy, RotateCcw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { LazyPageThumbnail } from '@/components/shared/LazyPageThumbnail';
 import { cn } from '@/lib/utils';
 import { plural, t } from '@/i18n';
 import { usePdfDocument } from '@/hooks/usePdfDocument';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface PageEntry {
   sourceIndex: number;
@@ -179,7 +181,7 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               )}
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
+                  <><OtterSpinner className="size-4" />{t('common.loading')}</>
                 ) : (
                   <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
@@ -196,7 +198,6 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <span className="text-sm font-medium text-foreground">
                 {plural('count.page', pages.length)}
               </span>
-              <div className="flex-1" />
               <Button variant="outline" size="sm" onClick={reverseOrder} disabled={pages.length < 2}>
                 {t('organizePdf.reverse')}
               </Button>
@@ -304,10 +305,11 @@ export function OrganizePdfFlow({ onStepChange }: OrganizePdfFlowProps) {
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 {t('common.back')}
               </Button>
-              <div className="flex-1" />
-              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}>
+              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || pages.length === 0}
+          className={PRIMARY_ACTION}
+        >
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.processing')}</>
+                  <><OtterSpinner className="size-4" />{t('common.processing')}</>
                 ) : (
                   t('organizePdfFlow.applyPages', { pages: plural('count.page', pages.length) })
                 )}

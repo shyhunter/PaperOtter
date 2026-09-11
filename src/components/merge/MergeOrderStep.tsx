@@ -1,11 +1,13 @@
 // MergeOrderStep: Drag-and-drop reorder with thumbnails and preview.
 // Uses native HTML5 DnD for simple list reorder + arrow button fallback.
 import { useState, useCallback, useRef } from 'react';
-import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import type { MergeInput } from '@/lib/pdfMerge';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -178,11 +180,12 @@ export function MergeOrderStep({ files: initialFiles, onMerged, onBack }: MergeO
         <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
-        <Button data-testid="apply-btn" size="sm" onClick={handleMerge} disabled={isMerging}>
+        <Button data-testid="apply-btn" size="sm" onClick={handleMerge} disabled={isMerging}
+          className={PRIMARY_ACTION}
+        >
           {isMerging ? (
             <>
-              <Loader2 className="w-4 h-4 me-2 animate-spin" />
+              <OtterSpinner className="size-4" />
               {t('merge.merging')}
             </>
           ) : (

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ConvertFormat, ConvertResult } from '@/types/converter';
 import { t } from '@/i18n';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 const FORMAT_LABELS: Record<ConvertFormat, string> = {
   pdf: 'PDF',
@@ -139,8 +140,6 @@ export function ConvertCompareStep({
           {t('common.back')}
         </Button>
 
-        <div className="flex-1" />
-
         <button
           type="button"
           data-testid="process-another-btn"
@@ -150,7 +149,7 @@ export function ConvertCompareStep({
           {t('convertDoc.processAnother')}
         </button>
 
-        <Button size="sm" data-testid="save-btn" onClick={onSave} className="flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className={PRIMARY_ACTION}>
           {t('common.saveEllipsis')}
         </Button>
       </div>

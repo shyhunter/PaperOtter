@@ -20,6 +20,7 @@ import { saveOverFile, classifySaveFailure, saveFailureMessage } from '@/lib/sav
 import { revealLabelKey } from '@/lib/platform';
 import { useOptionalToolContext } from '@/context/ToolContext';
 import { OtterLoader } from '@/components/brand/OtterLoader';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface MultiFileOutput {
   fileName: string;
@@ -354,13 +355,11 @@ function MultiFileSave({
     return (
       <div className="flex flex-1 flex-col">
         <SaveConfirmation savedPath={savedFilePath} onDismiss={onDismissSaveConfirmation} />
-        <div className="flex-1" />
         <div className="border-t bg-background px-4 py-3 flex items-center gap-3 flex-none">
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <div className="flex-1" />
-          <Button size="sm" onClick={handleMultiFileSave}>
+          <Button size="sm" onClick={handleMultiFileSave} className={PRIMARY_ACTION}>
             {t('save.again')}
           </Button>
         </div>
@@ -657,8 +656,7 @@ function SingleFileSave({
           <Button variant="outline" size="sm" onClick={onBack} className="flex-none">
             {t('common.back')}
           </Button>
-          <div className="flex-1" />
-          <Button size="sm" onClick={repeatSave}>
+          <Button size="sm" onClick={repeatSave} className={PRIMARY_ACTION}>
             {t('save.again')}
           </Button>
         </div>

@@ -1,13 +1,14 @@
 // MergePickStep: Multi-file PDF selector with thumbnails, page counts, and "Add More".
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { open } from '@/lib/dialog';
-import { FilePlus, X, Loader2 } from 'lucide-react';
+import { FilePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { loadPdfForMerge } from '@/lib/pdfMerge';
 import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { MergeInput } from '@/lib/pdfMerge';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface FileWithThumb extends MergeInput {
   thumbnailUrl: string;
@@ -122,7 +123,7 @@ export function MergePickStep({ onFilesSelected, initialFiles }: MergePickStepPr
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-4">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            <OtterSpinner className="size-4" />
             <span className="text-sm text-muted-foreground">{t('merge.loadingPdfs')}</span>
           </div>
         )}

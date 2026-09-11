@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2 } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { renderPdfThumbnail } from '@/lib/pdfThumbnail';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 /**
  * A function, not a constant: these labels are translated, and a module-level
@@ -199,7 +201,7 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               )}
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('common.loading')}</>
+                  <><OtterSpinner className="size-4" />{t('common.loading')}</>
                 ) : (
                   <><FileUp className="w-4 h-4 me-2" />{t('pdfToJpg.selectPdf')}</>
                 )}
@@ -315,10 +317,11 @@ export function CropPdfFlow({ onStepChange }: CropPdfFlowProps) {
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 {t('common.back')}
               </Button>
-              <div className="flex-1" />
-              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}>
+              <Button data-testid="apply-btn" size="sm" onClick={handleApply} disabled={isProcessing || !hasCrop}
+          className={PRIMARY_ACTION}
+        >
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 me-2 animate-spin" />{t('cropPdf.cropping')}</>
+                  <><OtterSpinner className="size-4" />{t('cropPdf.cropping')}</>
                 ) : (
                   t('cropPdfFlow.applyCrop')
                 )}

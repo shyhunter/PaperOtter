@@ -9,6 +9,7 @@ import { DestinationVerdict } from '@/components/destinations/DestinationVerdict
 import type { DestinationRequirement } from '@/lib/destinations';
 import type { PdfProcessingResult, PdfQualityLevel } from '@/types/file';
 import { plural, t } from '@/i18n';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 // Pages within this margin (relative to the scroll container's own height, each
 // side) are rendered ahead of being scrolled into view and kept slightly after
@@ -476,8 +477,6 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
           {t('common.back')}
         </Button>
 
-        <div className="flex-1" />
-
         <button
           type="button"
           data-testid="process-another-btn"
@@ -487,8 +486,7 @@ export function CompareStep({ result, destination, qualityLevel, isCancelled, on
           {t('common.startOver')}
         </button>
 
-        <Button size="sm" data-testid="save-btn" onClick={onSave}
-          className="min-w-[clamp(12rem,26vw,20rem)] justify-center flex-none">
+        <Button size="sm" data-testid="save-btn" onClick={onSave} className={PRIMARY_ACTION}>
           {t('common.saveEllipsis')}
         </Button>
       </div>

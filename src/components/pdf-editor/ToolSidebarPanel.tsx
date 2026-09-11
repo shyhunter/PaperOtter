@@ -46,13 +46,14 @@ import {
 import type { PdfQualityLevel, PdfPagePreset } from '@/types/file';
 import { ColorPicker } from '@/components/ColorPicker';
 import { cropPdf, cropPdfSinglePage, type CropMargins, mmToPoints } from '@/lib/pdfCrop';
-import { Loader2, Check, AlertCircle, Expand, RotateCcw, RotateCw } from 'lucide-react';
+import { Check, AlertCircle, Expand, RotateCcw, RotateCw } from 'lucide-react';
 import { diagLog } from '@/lib/diagLog';
 import { plural, t } from '@/i18n';
 import { useLocale } from '@/i18n/context';
 import { listen } from '@tauri-apps/api/event';
 import { ocrPdf, type OcrSummary } from '@/lib/ocrProcessor';
 import { listOcrLanguages, type OcrLanguage } from '@/lib/ocrLanguages';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface ToolSidebarPanelProps {
   toolId: ToolId;
@@ -143,7 +144,7 @@ function ApplyButton({
       >
         {isApplying ? (
           <>
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <OtterSpinner className="size-4" />
             {t('common.applying')}
           </>
         ) : success ? (

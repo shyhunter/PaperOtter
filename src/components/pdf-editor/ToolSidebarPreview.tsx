@@ -5,10 +5,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { renderPdfPageThumbnail } from '@/lib/pdfThumbnail';
 import { useEditorContext } from '@/context/EditorContext';
-import { Loader2, Expand } from 'lucide-react';
+import { Expand } from 'lucide-react';
 import { CompareOverlay } from './CompareOverlay';
 import { diagLog } from '@/lib/diagLog';
 import { t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
 
 interface ToolSidebarPreviewProps {
   originalBytes: Uint8Array;
@@ -108,7 +109,7 @@ export function ToolSidebarPreview({
             <div className="text-[10px] text-muted-foreground mb-1 text-center font-medium">{t('compare.after')}</div>
             <div className="border rounded bg-muted/30 aspect-[3/4] flex items-center justify-center overflow-hidden relative">
               {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <OtterSpinner className="size-4" />
               ) : afterUrl ? (
                 <img src={afterUrl} alt={t('compare.after')} className="w-full h-full object-contain" style={afterImageStyle} />
               ) : beforeUrl ? (

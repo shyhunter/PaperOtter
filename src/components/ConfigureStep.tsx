@@ -17,6 +17,8 @@ import {
 import { offersKbUnit, smallestReachableTarget } from '@/lib/compressTargetSize';
 import type { PdfQualityLevel, PdfPagePreset, PdfProcessingOptions } from '@/types/file';
 import { plural, t } from '@/i18n';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 export interface ConfigureStepProps {
   fileName: string;
@@ -713,7 +715,6 @@ export function ConfigureStep({
         <Button variant="outline" size="sm" data-testid="back-btn" onClick={onBack} disabled={isProcessing} className="flex-none">
           {t('common.back')}
         </Button>
-        <div className="flex-1" />
         {isProcessing && onCancel && (
           <button
             type="button"
@@ -729,11 +730,19 @@ export function ConfigureStep({
           data-testid="generate-preview-btn"
           onClick={handleSubmit}
           disabled={isProcessing || isNonCompressible}
-          className="min-w-[clamp(12rem,26vw,20rem)] justify-center"
+          className={PRIMARY_ACTION}
         >
-          {isProcessing ? t('common.processing') : isNonCompressible ? t('configureStep.compressionNotAvailable') : t('imageConfigureStep.generatePreview')}
+          {isProcessing ? (
+            <>
+              <OtterSpinner className="size-5" />
+              {t('common.processing')}
+            </>
+          ) : isNonCompressible ? (
+            t('configureStep.compressionNotAvailable')
+          ) : (
+            t('imageConfigureStep.generatePreview')
+          )}
         </Button>
-        <div className="flex-1" />
       </div>
     </div>
   );

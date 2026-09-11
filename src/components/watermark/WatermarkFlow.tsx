@@ -5,7 +5,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { PDFDocument } from 'pdf-lib';
 import { open } from '@/lib/dialog';
-import { FileUp, Loader2, RotateCcw, RotateCw } from 'lucide-react';
+import { FileUp, RotateCcw, RotateCw } from 'lucide-react';
 import { SaveStep } from '@/components/SaveStep';
 import { StepErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import type { WatermarkOptions } from '@/lib/pdfWatermark';
 import { ColorPicker } from '@/components/ColorPicker';
 import { t } from '@/i18n';
 import { OtterLoader } from '@/components/brand/OtterLoader';
+import { OtterSpinner } from '@/components/brand/OtterSpinner';
+import { PRIMARY_ACTION } from '@/components/ui/primaryAction';
 
 interface WatermarkFlowProps {
   onStepChange?: (step: number) => void;
@@ -197,7 +199,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
               <Button data-testid="open-file-btn" onClick={handleSelectFile} disabled={isLoadingFile} className="w-full">
                 {isLoadingFile ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.loading')}
                   </>
                 ) : (
@@ -325,7 +327,7 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
                   <div className="relative">
                     {isGeneratingPreview && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-md">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                        <OtterSpinner className="size-5" />
                       </div>
                     )}
                     <img
@@ -348,16 +350,16 @@ export function WatermarkFlow({ onStepChange }: WatermarkFlowProps) {
               <Button variant="outline" size="sm" onClick={() => goToStep(0)} className="flex-none">
                 {t('common.back')}
               </Button>
-              <div className="flex-1" />
               <Button
                 size="sm"
                 data-testid="apply-btn"
                 onClick={handleApply}
                 disabled={isProcessing || !text.trim()}
-              >
+          className={PRIMARY_ACTION}
+        >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                    <OtterSpinner className="size-4" />
                     {t('common.applying')}
                   </>
                 ) : (

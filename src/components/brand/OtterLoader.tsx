@@ -35,9 +35,8 @@ interface OtterLoaderProps {
  * - It flips on Y rather than rotating in the plane, so the face never appears
  *   upside down. `prefers-reduced-motion` stops it upright and fully visible.
  *
- * For the 16px spinners inside buttons, keep using `Loader2`: the mark carries
- * 329 path segments and at that size they collapse into a smudge, and half of
- * every flip is edge-on, which at 16px reads as a blink rather than a turn.
+ * For control-size spinners -- inside a button, beside a label, over a preview
+ * -- use `OtterSpinner`, which is this animation on the simplified mark.
  */
 export function OtterLoader({ label, size = 'lg', className }: OtterLoaderProps) {
   return (
