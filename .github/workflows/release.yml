@@ -424,7 +424,12 @@ jobs:
           cat SHA256SUMS.txt
           # Read them back off disk: a malformed file would otherwise ship happily.
           sha256sum -c SHA256SUMS.txt
-          gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --clobber
+          # --repo, because this runs from $work: `gh` looks for a git repo in
+          # the working directory and this one is a temp dir, so without it the
+          # upload dies with "fatal: not a git repository" after the checksums
+          # have already been computed and verified. The step above this one
+          # runs before the `cd` and never hit it.
+          gh release upload "$GITHUB_REF_NAME" SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
