@@ -53,6 +53,14 @@
   --lilac: oklch(0.818 0.103 296);
   --lime: oklch(0.889 0.174 128);
   --coral: oklch(0.757 0.147 32);
+  /* Green for a job that finished, at a lightness text can actually be set in.
+     --lime is the fill behind a completed step and is far too bright to write
+     on: the success tick shipped as #22c55e, which measures 2.24:1 on this
+     page -- under the 3:1 even a non-text mark is asked for. These two are
+     4.96:1 and 6.58:1, so the saved-file link clears AA at 12px and deepens on
+     hover. See UI-08. */
+  --success: oklch(0.52 0.16 150);
+  --success-strong: oklch(0.45 0.16 150);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -141,6 +149,11 @@ body {
   --lilac: oklch(0.76 0.12 296);
   --lime: oklch(0.82 0.19 128);
   --coral: oklch(0.66 0.16 30);
+  /* The same two roles, inverted: on a dark card the readable green is the
+     light one, and "stronger" means lighter rather than darker. 10.43:1 and
+     13.51:1. */
+  --success: oklch(0.80 0.17 150);
+  --success-strong: oklch(0.88 0.17 150);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);

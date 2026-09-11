@@ -122,3 +122,83 @@ describe('Theme contrast', () => {
     }
   });
 });
+
+/**
+ * Full oklch -> relative luminance, for the tokens that carry chroma.
+ *
+ * `luminance()` above collapses to L**3, which is only true at chroma 0. A
+ * green measured that way looks far lighter than it prints: the success tick
+ * shipped as #22c55e on the strength of exactly that kind of guess, and
+ * measures 2.24:1 on this page.
+ */
+function oklchLuminance(L: number, C: number, hDeg: number): number {
+  const h = (hDeg * Math.PI) / 180;
+  const a = C * Math.cos(h);
+  const b = C * Math.sin(h);
+
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+
+  const clamp = (v: number) => Math.min(1, Math.max(0, v));
+  const r = clamp(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
+  const g = clamp(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
+  const bl = clamp(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
+
+  return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+}
+
+/** Reads a token's full oklch triple out of a theme block. */
+function oklch(css: string, block: ':root' | '.dark', name: string): [number, number, number] {
+  const start = css.indexOf(block === ':root' ? ':root {' : '.dark {');
+  const body = css.slice(start, css.indexOf('}', start));
+  const match = body.match(new RegExp(`--${name}:\\s*oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)`));
+  expect(match, `${block} does not define --${name} as a full oklch triple`).not.toBeNull();
+  return [parseFloat(match![1]), parseFloat(match![2]), parseFloat(match![3])];
+}
+
+function ratioOf(a: [number, number, number], b: [number, number, number]): number {
+  const [hi, lo] = [oklchLuminance(...a), oklchLuminance(...b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('[UI-08] the success green is one you can read', () => {
+  const css = stripComments(readFileSync(GLOBALS, 'utf8'));
+
+  it('clears WCAG AA for the saved-file link, in both themes', () => {
+    // The link is 12px, so AA asks 4.5:1. It is the one piece of green text on
+    // the screen and it names a path the user may want to read back.
+    for (const theme of [':root', '.dark'] as const) {
+      const ratio = ratioOf(oklch(css, theme, 'success'), oklch(css, theme, 'card'));
+      expect(ratio, `${theme}: --success is ${ratio.toFixed(2)}:1 on --card`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('keeps the hover state at least as readable as the resting one', () => {
+    // "Strong" means more contrast, which is darker in light and lighter in
+    // dark. Getting that backwards would dim the link on hover.
+    for (const theme of [':root', '.dark'] as const) {
+      const card = oklch(css, theme, 'card');
+      expect(
+        ratioOf(oklch(css, theme, 'success-strong'), card),
+        `${theme}: --success-strong is the weaker of the two`,
+      ).toBeGreaterThan(ratioOf(oklch(css, theme, 'success'), card));
+    }
+  });
+
+  it('exists because --lime cannot be written in on a light page', () => {
+    // Measured on the light card: --lime is 1.32:1 and --success 4.96:1. This
+    // is only a light-theme problem -- on the dark card --lime is 10.97:1,
+    // perfectly readable -- which is exactly why the bright green stays the
+    // fill behind a completed step and a separate token carries the text.
+    const lime = ratioOf(oklch(css, ':root', 'lime'), oklch(css, ':root', 'card'));
+    expect(lime, '--lime became readable; the second token may be redundant').toBeLessThan(3);
+    expect(ratioOf(oklch(css, ':root', 'success'), oklch(css, ':root', 'card'))).toBeGreaterThan(lime);
+  });
+
+  it('is the colour the success tick is drawn in, so the two cannot drift', () => {
+    const save = readFileSync('src/components/SaveStep.tsx', 'utf8');
+    expect(save, 'the tick is back on a hardcoded hex').not.toMatch(/stroke="#[0-9a-fA-F]{6}"/);
+    expect(save).toContain('stroke="var(--success)"');
+  });
+});

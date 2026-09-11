@@ -5,15 +5,21 @@ import { t } from '@/i18n';
 interface StepBarProps {
   steps: ToolStep[];
   current: number; // 0-based index into the steps array
+  /** The job is finished: the step being shown has nothing left to do.
+   *
+   * Without this the last step is the one step that never goes green, because
+   * `current` has nowhere further to go. Save stayed amber while the saved-file
+   * confirmation sat underneath it saying the opposite. */
+  complete?: boolean;
 }
 
-export function StepBar({ steps, current }: StepBarProps) {
+export function StepBar({ steps, current, complete = false }: StepBarProps) {
   return (
     <header className="flex items-center justify-center gap-0 border-b-[3px] border-border bg-background/95 backdrop-blur-sm px-6 py-0 h-14">
       <div className="flex items-center gap-0">
         {steps.map((step, i) => {
-          const isActive = i === current;
-          const isComplete = i < current;
+          const isActive = i === current && !complete;
+          const isComplete = i < current || (complete && i === current);
           const isLocked = i > current;
 
           return (

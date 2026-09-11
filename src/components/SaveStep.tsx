@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { getFileName } from '@/lib/fileValidation';
 import { saveOverFile, classifySaveFailure, saveFailureMessage } from '@/lib/saveOverFile';
 import { revealLabelKey } from '@/lib/platform';
+import { useOptionalToolContext } from '@/context/ToolContext';
 import { OtterLoader } from '@/components/brand/OtterLoader';
 
 export interface MultiFileOutput {
@@ -113,13 +114,13 @@ function AnimatedCheckmark() {
             cy="26"
             r="25"
             fill="none"
-            stroke="#22c55e"
+            stroke="var(--success)"
             strokeWidth="2"
           />
           <path
             className="checkmark-check"
             fill="none"
-            stroke="#22c55e"
+            stroke="var(--success)"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -134,6 +135,17 @@ function AnimatedCheckmark() {
 // ── Save Confirmation Card ────────────────────────────────────────────────────
 
 function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismiss: () => void }) {
+  // The step bar is in the header, several levels up and in a different tree
+  // from whichever flow rendered this card. Announcing here rather than in each
+  // flow means the last step goes green exactly when this card is on screen,
+  // and stops the moment it is dismissed -- one fact, one owner.
+  const setJobComplete = useOptionalToolContext()?.setJobComplete;
+  useEffect(() => {
+    if (!setJobComplete) return;
+    setJobComplete(true);
+    return () => setJobComplete(false);
+  }, [setJobComplete]);
+
   const handleOpenFile = async () => {
     try {
       await open(savedPath);
@@ -181,7 +193,7 @@ function SaveConfirmation({ savedPath, onDismiss }: { savedPath: string; onDismi
           <button
             type="button"
             onClick={handleOpenFile}
-            className="text-xs text-primary underline cursor-pointer hover:text-primary/80 truncate block max-w-full text-start"
+            className="text-xs text-[var(--success)] underline cursor-pointer hover:text-[var(--success-strong)] truncate block max-w-full text-start"
             title={t('saveStep.openPath', { path: savedPath })}
           >
             {savedPath}
