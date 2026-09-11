@@ -19,7 +19,7 @@ import { openFilePicker } from '@/hooks/useFileOpen';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
 import { useToolContext } from '@/context/ToolContext';
 import {
-  detectFormat, getFileName, getFileSizeBytes, isPdfHeader, FILE_SIZE_LIMIT_BYTES,
+  detectFormat, getFileName, isPdfHeader, FILE_SIZE_LIMIT_BYTES,
   isHeicPath, isHeicDecodable, heicUnsupportedMessage,
 } from '@/lib/fileValidation';
 import { friendlyPdfError, isPermissionError } from '@/lib/pdfUtils';
@@ -61,11 +61,20 @@ export function FilePickStep({
   const [fileSizeLimitBytes, setFileSizeLimitBytes] = useState<number | null>(null);
   const [corruptPdfBlock, setCorruptPdfBlock] = useState<{ name: string } | null>(null);
 
+  // On from the moment a file is handed over, not from when the flow starts
+  // reading it. The guards below have to read the file themselves, and on a
+  // large document that takes seconds -- during which nothing on screen moved,
+  // so a 77 MB PDF looked like a dead click for ten seconds before the loader
+  // finally appeared.
+  const [checking, setChecking] = useState(false);
+
   const handleFileSelected = useCallback(
     async (filePath: string, alsoSelected: string[] = []) => {
       // A failure message stays until the user tries again. It used to clear on
       // a timer, which meant a long message was gone before it could be read.
       setCorruptFileError(null);
+      setChecking(true);
+      try {
 
       if (!filePath) {
         setInvalidDropError(t('file.unsupported'));
@@ -101,13 +110,28 @@ export function FilePickStep({
         return;
       }
 
-      let sizeBytes: number;
+      // One read, two questions.
+      //
+      // `getFileSizeBytes` reads the whole file to return `.byteLength`, and the
+      // magic-byte check then read the whole file again for five bytes -- so a
+      // 77 MB PDF was read twice here and a third time by the flow. The size and
+      // the header both come out of the same buffer now.
+      let bytes: Uint8Array;
       try {
-        sizeBytes = await getFileSizeBytes(filePath);
-      } catch {
-        setCorruptFileError(t('app.thisFileAppearsToBe'));
+        const { readFile } = await import('@tauri-apps/plugin-fs');
+        bytes = await readFile(filePath);
+      } catch (err) {
+        // A file we are not allowed to read is not a damaged file. Saying
+        // "corrupt" sends the user to repair a document that is intact.
+        if (isPermissionError(err)) {
+          toast.error(friendlyPdfError(err));
+        } else {
+          setCorruptFileError(t('app.thisFileAppearsToBe'));
+        }
         return;
       }
+
+      const sizeBytes = bytes.byteLength;
 
       if (sizeBytes === 0) {
         setEmptyFileError(t('app.thisFileIsEmptyPlease'));
@@ -120,27 +144,11 @@ export function FilePickStep({
         return;
       }
 
-      // Magic bytes before loading, so a damaged PDF says so here rather than
-      // as a parse error three steps later.
-      if (format === 'pdf') {
-        try {
-          const { readFile } = await import('@tauri-apps/plugin-fs');
-          const allBytes = await readFile(filePath);
-          if (!isPdfHeader(allBytes.slice(0, 5))) {
-            setCorruptPdfBlock({ name: getFileName(filePath) });
-            return;
-          }
-        } catch (err) {
-          // A file we are not allowed to read is not a damaged file. The corrupt
-          // block offers to repair it, which for a blocked-but-intact scan sends
-          // the user to fix a problem that does not exist.
-          if (isPermissionError(err)) {
-            toast.error(friendlyPdfError(err));
-          } else {
-            setCorruptPdfBlock({ name: getFileName(filePath) });
-          }
-          return;
-        }
+      // Checked here so a damaged PDF says so now, rather than arriving as a
+      // parse error three steps later.
+      if (format === 'pdf' && !isPdfHeader(bytes.slice(0, 5))) {
+        setCorruptPdfBlock({ name: getFileName(filePath) });
+        return;
       }
 
       // Only files of the same type join a batch: the options chosen later are
@@ -153,6 +161,11 @@ export function FilePickStep({
 
       addRecentDir(filePath);
       onFileReady(filePath, sameType);
+      } finally {
+        // The flow takes over the loader from here; on any refusal above, this
+        // is what puts it away again.
+        setChecking(false);
+      }
     },
     [acceptedFormats, addRecentDir, onFileReady],
   );
@@ -209,7 +222,7 @@ export function FilePickStep({
   return (
     <LandingCard
       dragState={dragState}
-      isLoading={isLoading}
+      isLoading={isLoading || checking}
       acceptedFormats={acceptedFormats}
       tagline={tagline}
       onPickerClick={handlePickerClick}

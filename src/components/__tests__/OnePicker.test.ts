@@ -74,7 +74,16 @@ describe('[UI-PICK-01] every tool picks files the same way', () => {
 });
 
 describe('[UI-PICK-02] the guards the shared picker exists for', () => {
-  const src = readFileSync('src/components/FilePickStep.tsx', 'utf-8');
+  // Code lines only. A commented-out guard still contains its own text, so a
+  // whole-file scan calls a disabled guard present -- which is the one state it
+  // most needs to catch.
+  const src = readFileSync('src/components/FilePickStep.tsx', 'utf-8')
+    .split('\n')
+    .filter((line) => {
+      const t = line.trimStart();
+      return t !== '' && !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
+    })
+    .join('\n');
 
   // Each marker is the refusal itself, not the symbol it needs. Checking for
   // the import would pass on a guard whose body had been deleted.
@@ -83,8 +92,12 @@ describe('[UI-PICK-02] the guards the shared picker exists for', () => {
     ['a format this tool does not take', 'if (!acceptedFormats.includes(format)) {'],
     ['a HEIC this platform cannot decode', 'if (isHeicPath(filePath) && !isHeicDecodable()) {'],
     ['a file too large to work on', 'if (sizeBytes > FILE_SIZE_LIMIT_BYTES) {'],
+    // Reading the file once, not three times: the size and the header come out
+    // of the same buffer, and the loader is on before either is asked for.
+    ['without reading the file twice to ask two questions', 'const sizeBytes = bytes.byteLength;'],
+    ['without leaving the screen still while it checks', 'setChecking(true);'],
     ['an empty file', 'if (sizeBytes === 0) {'],
-    ['a PDF without PDF magic bytes', 'if (!isPdfHeader(allBytes.slice(0, 5))) {'],
+    ['a PDF without PDF magic bytes', "if (format === 'pdf' && !isPdfHeader(bytes.slice(0, 5))) {"],
     ['a file we are not allowed to read', 'if (isPermissionError(err)) {'],
   ])('refuses %s', (_case, marker) => {
     expect(src).toContain(marker);

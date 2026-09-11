@@ -87,7 +87,7 @@ export const pt: Dictionary = {
   'save.again': 'Guardar novamente', 'save.showInFinder': 'Mostrar no Finder',
   'save.success': 'Ficheiro guardado com êxito', 'save.failed': 'Não foi possível guardar',
   'pdfEncryption.lockedUseUnlock':
-    'Este PDF está protegido por palavra-passe, por isso não pode ser aberto aqui. Desbloqueie-o primeiro com a ferramenta “Desbloquear PDF” e tente novamente.',
+    'Este PDF está protegido por palavra-passe, por isso não pode ser aberto aqui. Remova a palavra-passe no programa que o criou e tente novamente.',
   'destination.webUpload2mbA4':
     'Carregamento web: menos de 2 MB, A4',
   'destination.email10mb':
@@ -146,8 +146,6 @@ export const pt: Dictionary = {
   'privacy.detailCsp':
     'A Política de Segurança de Conteúdo bloqueia todas as ligações externas a partir da interface da aplicação',
   'privacy.detailNoSdk': 'Não inclui qualquer SDK de análise nem código de rastreio',
-  'privacy.detailPasswords':
-    'As palavras-passe (proteger/desbloquear PDF) nunca são guardadas, registadas nem escritas no disco',
   'privacy.detailTemp':
     'Os ficheiros temporários são criados durante o processamento e eliminados automaticamente no fim',
   'privacy.detailSweep':
@@ -254,22 +252,6 @@ export const pt: Dictionary = {
   'watermarkFlow.failedToApplyWatermark': 'Não foi possível aplicar a marca de água.',
   'watermarkFlow.applyWatermark': 'Aplicar marca de água',
   'watermarkFlow.small': 'Pequena', 'watermarkFlow.medium': 'Média', 'watermarkFlow.large': 'Grande',
-  'protectPdf.addPasswordEncryptionToA': 'Encripte um ficheiro PDF com uma palavra-passe.',
-  'protectPdf.confirmPassword': 'Confirmar palavra-passe',
-  'protectPdf.encrypting': 'A encriptar…', 'protectPdf.enterPassword': 'Escreva a palavra-passe',
-  'protectPdf.acknowledgePassword': 'Compreendo que o PaperOtter não guarda esta palavra-passe e não a consegue recuperar. Se a perder, este ficheiro não poderá voltar a ser aberto.',
-  'protectPdf.savedProtectedCopy': 'Cópia protegida guardada. O documento aberto aqui permanece inalterado.',
-  'protectPdf.saveProtectedCopy': 'Guardar cópia protegida…',
-  'protectPdf.password': 'Palavra-passe',
-  'protectPdf.passwordsDoNotMatch': 'As palavras-passe não coincidem.',
-  'protectPdf.protectPdf': 'Proteger PDF', 'protectPdf.setPassword': 'Definir palavra-passe',
-  'unlockPdf.enterPassword': 'Escreva a palavra-passe',
-  'unlockPdf.enterThePdfPassword': 'Escreva a palavra-passe do PDF',
-  'unlockPdf.pdfPassword': 'Palavra-passe do PDF',
-  'unlockPdf.removePasswordProtectionFromA': 'Remova a proteção por palavra-passe de um ficheiro PDF.',
-  'protectPdf.alreadyProtected': 'Este PDF já está protegido por palavra-passe. Desbloqueie-o primeiro e depois volte a protegê-lo.',
-  'unlockPdf.notProtected': 'Este PDF não está protegido por palavra-passe, portanto não há nada para desbloquear.',
-  'unlockPdf.unlockPdf': 'Desbloquear PDF', 'unlockPdf.unlocking': 'A desbloquear…',
   'unlockPdfFlow.incorrectPasswordOrThePdf':
     'Palavra-passe incorreta ou o PDF não está protegido por palavra-passe.',
   'unlockPdfFlow.wrongPassword': 'Palavra-passe incorreta',
@@ -369,13 +351,6 @@ export const pt: Dictionary = {
   'tool.jpgToPdf.step1': 'Selecionar as imagens a converter',
   'tool.jpgToPdf.step2': 'Definir o tamanho da página e o esquema',
   'tool.jpgToPdf.step3': 'Guardar o PDF',
-  'tool.protectPdf.name': 'Proteger PDF', 'tool.protectPdf.desc': 'Encripte um PDF com uma palavra-passe',
-  'tool.protectPdf.step1': 'Abrir ficheiro PDF', 'tool.protectPdf.step2': 'Definir a palavra-passe',
-  'tool.protectPdf.step3': 'Guardar o PDF protegido',
-  'tool.unlockPdf.name': 'Desbloquear PDF',
-  'tool.unlockPdf.desc': 'Remova a proteção por palavra-passe de um PDF',
-  'tool.unlockPdf.step1': 'Abrir ficheiro PDF', 'tool.unlockPdf.step2': 'Escrever a palavra-passe',
-  'tool.unlockPdf.step3': 'Guardar o PDF desbloqueado',
   'tool.rotateImage.name': 'Rodar imagem', 'tool.rotateImage.desc': 'Rode imagens 90°, 180° ou 270°',
   'tool.rotateImage.step1': 'Abrir ficheiro de imagem',
   'tool.rotateImage.step2': 'Escolher o ângulo de rotação',

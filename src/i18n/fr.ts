@@ -138,7 +138,7 @@ export const fr: Dictionary = {
   'save.showInFinder': 'Afficher dans le Finder',
   'save.success': 'Fichier enregistré',
   'pdfEncryption.lockedUseUnlock':
-    'Ce PDF est protégé par un mot de passe et ne peut pas être ouvert ici. Déverrouillez-le d’abord avec l’outil « Déverrouiller le PDF », puis réessayez.',
+    'Ce PDF est protégé par mot de passe et ne peut pas être ouvert ici. Retirez le mot de passe dans le logiciel qui l’a créé, puis réessayez.',
   'destination.webUpload2mbA4':
     'Envoi web: moins de 2 Mo, A4',
   'destination.email10mb':
@@ -233,8 +233,6 @@ export const fr: Dictionary = {
   'privacy.detailCsp':
     'La Content Security Policy bloque toute connexion externe depuis l’interface',
   'privacy.detailNoSdk': 'Aucun SDK d’analyse ni code de suivi n’est inclus',
-  'privacy.detailPasswords':
-    'Les mots de passe (protection/déverrouillage PDF), ne sont jamais stockés, journalisés ni écrits sur le disque',
   'privacy.detailTemp':
     'Des fichiers temporaires sont créés pendant le traitement puis supprimés automatiquement',
   'privacy.detailSweep':
@@ -391,25 +389,6 @@ export const fr: Dictionary = {
   'watermarkFlow.large': 'Grand',
 
   // ── Protect / unlock ──────────────────────────────────────────────────────
-  'protectPdf.addPasswordEncryptionToA': 'Chiffrer un PDF par mot de passe.',
-  'protectPdf.confirmPassword': 'Confirmer le mot de passe',
-  'protectPdf.encrypting': 'Chiffrement…',
-  'protectPdf.enterPassword': 'Saisissez un mot de passe',
-  'protectPdf.acknowledgePassword': 'Je comprends que PaperOtter n’enregistre pas ce mot de passe et ne peut pas le récupérer. Si je le perds, ce fichier ne pourra plus être ouvert.',
-  'protectPdf.savedProtectedCopy': 'Copie protégée enregistrée. Le document ouvert ici reste inchangé.',
-  'protectPdf.saveProtectedCopy': 'Enregistrer une copie protégée…',
-  'protectPdf.password': 'Mot de passe',
-  'protectPdf.passwordsDoNotMatch': 'Les mots de passe ne correspondent pas.',
-  'protectPdf.protectPdf': 'Protéger le PDF',
-  'protectPdf.setPassword': 'Définir le mot de passe',
-  'unlockPdf.enterPassword': 'Saisir le mot de passe',
-  'unlockPdf.enterThePdfPassword': 'Saisissez le mot de passe du PDF',
-  'unlockPdf.pdfPassword': 'Mot de passe du PDF',
-  'unlockPdf.removePasswordProtectionFromA': 'Retirer la protection par mot de passe d’un PDF.',
-  'unlockPdf.unlockPdf': 'Déverrouiller le PDF',
-  'protectPdf.alreadyProtected': 'Ce PDF est déjà protégé par mot de passe. Déverrouillez-le d\'abord, puis protégez-le à nouveau.',
-  'unlockPdf.notProtected': 'Ce PDF n\'est pas protégé par mot de passe, il n\'y a donc rien à déverrouiller.',
-  'unlockPdf.unlocking': 'Déverrouillage…',
   'unlockPdfFlow.incorrectPasswordOrThePdf':
     'Mot de passe incorrect, ou le PDF n’est pas protégé par mot de passe.',
   'unlockPdfFlow.wrongPassword': 'Mot de passe incorrect',
@@ -570,16 +549,6 @@ export const fr: Dictionary = {
   'tool.jpgToPdf.step1': 'Choisir les images à convertir',
   'tool.jpgToPdf.step2': 'Régler la taille de page et la mise en page',
   'tool.jpgToPdf.step3': 'Enregistrer le PDF',
-  'tool.protectPdf.name': 'Protéger un PDF',
-  'tool.protectPdf.desc': 'Chiffrer un PDF par mot de passe',
-  'tool.protectPdf.step1': 'Ouvrir un fichier PDF',
-  'tool.protectPdf.step2': 'Définir un mot de passe',
-  'tool.protectPdf.step3': 'Enregistrer le PDF protégé',
-  'tool.unlockPdf.name': 'Déverrouiller un PDF',
-  'tool.unlockPdf.desc': 'Retirer la protection par mot de passe d’un PDF',
-  'tool.unlockPdf.step1': 'Ouvrir un fichier PDF',
-  'tool.unlockPdf.step2': 'Saisir le mot de passe',
-  'tool.unlockPdf.step3': 'Enregistrer le PDF déverrouillé',
   'tool.rotateImage.name': 'Pivoter une image',
   'tool.rotateImage.desc': 'Pivoter des images de 90°, 180° ou 270°',
   'tool.rotateImage.step1': 'Ouvrir un fichier image',

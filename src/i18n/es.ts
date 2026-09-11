@@ -129,7 +129,7 @@ export const es: Dictionary = {
   'save.showInFinder': 'Mostrar en el Finder',
   'save.success': 'Archivo guardado correctamente',
   'pdfEncryption.lockedUseUnlock':
-    'Este PDF está protegido con contraseña, así que no se puede abrir aquí. Desbloquéelo primero con la herramienta «Desbloquear PDF» y vuelva a intentarlo.',
+    'Este PDF está protegido con contraseña, por lo que no se puede abrir aquí. Quite la contraseña en el programa que lo creó y vuelva a intentarlo.',
   'destination.webUpload2mbA4':
     'Subida web: menos de 2 MB, A4',
   'destination.email10mb':
@@ -221,8 +221,6 @@ export const es: Dictionary = {
   'privacy.detailCsp':
     'La Content Security Policy bloquea toda conexión externa desde la interfaz',
   'privacy.detailNoSdk': 'No se incluye ningún SDK de analítica ni código de seguimiento',
-  'privacy.detailPasswords':
-    'Las contraseñas (proteger/desbloquear PDF) nunca se almacenan, registran ni escriben en el disco',
   'privacy.detailTemp':
     'Durante el procesamiento se crean archivos temporales que se eliminan automáticamente después',
   'privacy.detailSweep':
@@ -367,25 +365,6 @@ export const es: Dictionary = {
   'watermarkFlow.small': 'Pequeña',
   'watermarkFlow.medium': 'Mediana',
   'watermarkFlow.large': 'Grande',
-  'protectPdf.addPasswordEncryptionToA': 'Cifrar un PDF con una contraseña.',
-  'protectPdf.confirmPassword': 'Confirmar contraseña',
-  'protectPdf.encrypting': 'Cifrando…',
-  'protectPdf.enterPassword': 'Introduzca una contraseña',
-  'protectPdf.acknowledgePassword': 'Entiendo que PaperOtter no guarda esta contraseña y no puede recuperarla. Si la pierdo, este archivo no se podrá volver a abrir.',
-  'protectPdf.savedProtectedCopy': 'Copia protegida guardada. El documento abierto aquí no ha cambiado.',
-  'protectPdf.saveProtectedCopy': 'Guardar copia protegida…',
-  'protectPdf.password': 'Contraseña',
-  'protectPdf.passwordsDoNotMatch': 'Las contraseñas no coinciden.',
-  'protectPdf.protectPdf': 'Proteger PDF',
-  'protectPdf.setPassword': 'Establecer contraseña',
-  'unlockPdf.enterPassword': 'Introducir contraseña',
-  'unlockPdf.enterThePdfPassword': 'Introduzca la contraseña del PDF',
-  'unlockPdf.pdfPassword': 'Contraseña del PDF',
-  'unlockPdf.removePasswordProtectionFromA': 'Quitar la protección por contraseña de un PDF.',
-  'unlockPdf.unlockPdf': 'Desbloquear PDF',
-  'protectPdf.alreadyProtected': 'Este PDF ya está protegido con contraseña. Desbloquéalo primero y vuelve a protegerlo.',
-  'unlockPdf.notProtected': 'Este PDF no está protegido con contraseña, así que no hay nada que desbloquear.',
-  'unlockPdf.unlocking': 'Desbloqueando…',
   'unlockPdfFlow.incorrectPasswordOrThePdf':
     'Contraseña incorrecta, o el PDF no está protegido por contraseña.',
   'unlockPdfFlow.wrongPassword': 'Contraseña incorrecta',
@@ -504,12 +483,6 @@ export const es: Dictionary = {
   'tool.jpgToPdf.name': 'JPG a PDF', 'tool.jpgToPdf.desc': 'Convertir imágenes en un único documento PDF',
   'tool.jpgToPdf.step1': 'Elegir las imágenes a convertir', 'tool.jpgToPdf.step2': 'Ajustar tamaño y diseño de página',
   'tool.jpgToPdf.step3': 'Guardar el PDF',
-  'tool.protectPdf.name': 'Proteger PDF', 'tool.protectPdf.desc': 'Cifrar un PDF con una contraseña',
-  'tool.protectPdf.step1': 'Abrir un archivo PDF', 'tool.protectPdf.step2': 'Establecer una contraseña',
-  'tool.protectPdf.step3': 'Guardar el PDF protegido',
-  'tool.unlockPdf.name': 'Desbloquear PDF', 'tool.unlockPdf.desc': 'Quitar la protección por contraseña de un PDF',
-  'tool.unlockPdf.step1': 'Abrir un archivo PDF', 'tool.unlockPdf.step2': 'Introducir la contraseña',
-  'tool.unlockPdf.step3': 'Guardar el PDF desbloqueado',
   'tool.rotateImage.name': 'Girar imagen', 'tool.rotateImage.desc': 'Girar imágenes 90°, 180° o 270°',
   'tool.rotateImage.step1': 'Abrir un archivo de imagen', 'tool.rotateImage.step2': 'Elegir el ángulo de giro',
   'tool.rotateImage.step3': 'Guardar la imagen girada',

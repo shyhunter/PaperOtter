@@ -81,7 +81,7 @@ export const it: Dictionary = {
   'save.toFolder': 'Salva in una cartella', 'save.asZip': 'Salva come ZIP', 'save.again': 'Salva di nuovo',
   'save.showInFinder': 'Mostra nel Finder', 'save.success': 'File salvato',
   'pdfEncryption.lockedUseUnlock':
-    'Questo PDF è protetto da password e non può essere aperto qui. Lo sblocchi prima con lo strumento «Sblocca PDF», poi riprovi.',
+    'Questo PDF è protetto da password e non può essere aperto qui. Rimuova la password nel programma con cui è stato creato e riprovi.',
   'destination.webUpload2mbA4':
     'Caricamento web: meno di 2 MB, A4',
   'destination.email10mb':
@@ -161,8 +161,6 @@ export const it: Dictionary = {
     'Tutta l’elaborazione dei file avviene localmente tramite Rust, qpdf, LibreOffice e Calibre',
   'privacy.detailCsp': 'La Content Security Policy blocca ogni connessione esterna dall’interfaccia',
   'privacy.detailNoSdk': 'Non è incluso alcun SDK di analisi né codice di tracciamento',
-  'privacy.detailPasswords':
-    'Le password (protezione/sblocco PDF), non vengono mai memorizzate, registrate o scritte su disco',
   'privacy.detailTemp':
     'Durante l’elaborazione vengono creati file temporanei, poi eliminati automaticamente',
   'privacy.detailSweep':
@@ -266,20 +264,6 @@ export const it: Dictionary = {
   'watermarkFlow.failedToApplyWatermark': 'Impossibile applicare la filigrana.',
   'watermarkFlow.applyWatermark': 'Applica la filigrana',
   'watermarkFlow.small': 'Piccola', 'watermarkFlow.medium': 'Media', 'watermarkFlow.large': 'Grande',
-  'protectPdf.addPasswordEncryptionToA': 'Protegga un PDF con una password.',
-  'protectPdf.confirmPassword': 'Conferma password',
-  'protectPdf.encrypting': 'Cifratura…', 'protectPdf.enterPassword': 'Inserisca una password',
-  'protectPdf.acknowledgePassword': 'Ho capito che PaperOtter non memorizza questa password e non può recuperarla. Se la perdo, questo file non potrà più essere aperto.',
-  'protectPdf.savedProtectedCopy': 'Copia protetta salvata. Il documento aperto qui resta invariato.',
-  'protectPdf.saveProtectedCopy': 'Salva copia protetta…',
-  'protectPdf.password': 'Password', 'protectPdf.passwordsDoNotMatch': 'Le password non coincidono.',
-  'protectPdf.protectPdf': 'Proteggi PDF', 'protectPdf.setPassword': 'Imposta password',
-  'unlockPdf.enterPassword': 'Inserisci password', 'unlockPdf.enterThePdfPassword': 'Inserisca la password del PDF',
-  'unlockPdf.pdfPassword': 'Password del PDF',
-  'unlockPdf.removePasswordProtectionFromA': 'Rimuova la protezione con password da un PDF.',
-  'protectPdf.alreadyProtected': 'Questo PDF è già protetto da password. Sbloccalo prima e poi proteggilo di nuovo.',
-  'unlockPdf.notProtected': 'Questo PDF non è protetto da password, quindi non c\'è nulla da sbloccare.',
-  'unlockPdf.unlockPdf': 'Sblocca PDF', 'unlockPdf.unlocking': 'Sblocco…',
   'unlockPdfFlow.incorrectPasswordOrThePdf': 'Password errata, oppure il PDF non è protetto da password.',
   'unlockPdfFlow.wrongPassword': 'Password errata',
   'redactPdf.removeRedaction': 'Rimuovi l’oscuramento',
@@ -373,12 +357,6 @@ export const it: Dictionary = {
   'tool.jpgToPdf.name': 'Da JPG a PDF', 'tool.jpgToPdf.desc': 'Converta immagini in un unico documento PDF',
   'tool.jpgToPdf.step1': 'Scegli le immagini da convertire', 'tool.jpgToPdf.step2': 'Imposta dimensione e layout',
   'tool.jpgToPdf.step3': 'Salva il PDF',
-  'tool.protectPdf.name': 'Proteggi PDF', 'tool.protectPdf.desc': 'Protegga un PDF con una password',
-  'tool.protectPdf.step1': 'Apri un file PDF', 'tool.protectPdf.step2': 'Imposta una password',
-  'tool.protectPdf.step3': 'Salva il PDF protetto',
-  'tool.unlockPdf.name': 'Sblocca PDF', 'tool.unlockPdf.desc': 'Rimuova la protezione con password da un PDF',
-  'tool.unlockPdf.step1': 'Apri un file PDF', 'tool.unlockPdf.step2': 'Inserisci la password',
-  'tool.unlockPdf.step3': 'Salva il PDF sbloccato',
   'tool.rotateImage.name': 'Ruota immagine', 'tool.rotateImage.desc': 'Ruoti le immagini di 90°, 180° o 270°',
   'tool.rotateImage.step1': 'Apri un file immagine', 'tool.rotateImage.step2': 'Scegli l’angolo di rotazione',
   'tool.rotateImage.step3': 'Salva l’immagine ruotata',

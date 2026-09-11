@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { TOOL_REGISTRY } from '@/types/tools';
 
 /**
  * The reported batch, each pinned where it actually broke.
@@ -167,5 +168,44 @@ describe('[SIGN-BG-01] the background picker is not decoration', () => {
     expect(picker).toContain("'h-7 w-7 flex-none rounded-md border-2'");
     expect(picker, 'a hairline border cannot bound a near-white swatch')
       .toContain('border-foreground/40');
+  });
+});
+
+describe('[PRIVACY-02] the app does not describe features it does not have', () => {
+  it('makes no promise about passwords, having no tool that takes one', () => {
+    // "Passwords (PDF protect/unlock) are never stored, logged, or written to
+    // disk" described Protect PDF and Unlock PDF, neither of which is in the
+    // registry. A privacy page that lists a guarantee for a feature that does
+    // not exist is not reassuring, it is wrong.
+    const ids = Object.keys(TOOL_REGISTRY);
+    expect(ids, 'a protect/unlock tool exists again; the claim may belong back')
+      .not.toContain('protect-pdf');
+    expect(ids).not.toContain('unlock-pdf');
+
+    expect(readFileSync('src/components/PrivacyModal.tsx', 'utf-8'))
+      .not.toContain('privacy.detailPasswords');
+  });
+
+  it('has no leftover strings for either tool, in any locale', () => {
+    for (const loc of ['en', 'de', 'es', 'it', 'fr', 'pt', 'nl', 'pl', 'tr']) {
+      const src = readFileSync(`src/i18n/${loc}.ts`, 'utf-8');
+      expect(src.match(/'(?:tool\.)?(?:protectPdf|unlockPdf)\./g) ?? [], `${loc} still carries them`)
+        .toEqual([]);
+      expect(src, `${loc} still promises something about passwords`)
+        .not.toContain('privacy.detailPasswords');
+    }
+  });
+
+  it('does not send the user to a tool that is not there', () => {
+    // The refusal for an encrypted PDF said "Unlock it with the Unlock PDF tool
+    // first" — sending the user to look for something the app does not have.
+    for (const loc of ['en', 'de', 'es', 'it', 'fr', 'pt', 'nl', 'pl', 'tr']) {
+      const line = readFileSync(`src/i18n/${loc}.ts`, 'utf-8')
+        .split('\n')
+        .find((l) => l.includes('pdfEncryption.lockedUseUnlock'));
+      expect(line, `${loc} has no refusal message`).toBeDefined();
+      expect(line!, `${loc} still names a tool that does not exist`)
+        .not.toMatch(/Unlock PDF|Entsperren-Werkzeug|herramienta Desbloquear/i);
+    }
   });
 });

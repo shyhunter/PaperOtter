@@ -36,7 +36,6 @@ export const en = {
   'file.needsImage': 'This tool works on images. To shrink a PDF, use {tool}.',
   'file.needsPdf': 'This tool works on PDFs. To shrink a picture, use {tool}.',
 
-
   // ── Image compare ───────────────────────────────────────────────────────
   'imageCompare.before': 'Before',
   'imageCompare.after': 'After',
@@ -90,7 +89,7 @@ export const en = {
   'save.showInFiles': 'Show in file manager',
   'save.success': 'File saved successfully',
   'pdfEncryption.lockedUseUnlock':
-    'This PDF is password-protected, so it cannot be opened here. Unlock it with the Unlock PDF tool first, then try again.',
+    'This PDF is password-protected, so it cannot be opened here. Remove the password in the program that made it, then try again.',
   'destination.webUpload2mbA4':
     'Web upload: under 2 MB, A4',
   'destination.email10mb':
@@ -156,7 +155,6 @@ export const en = {
   'privacy.detailLocal': 'All file processing runs locally via Rust, qpdf, LibreOffice, and Calibre',
   'privacy.detailCsp': 'Content Security Policy blocks all external connections from the app\'s UI',
   'privacy.detailNoSdk': 'No analytics SDK or tracking code is included',
-  'privacy.detailPasswords': 'Passwords (PDF protect/unlock) are never stored, logged, or written to disk',
   'privacy.detailTemp': 'Temporary files are created during processing and automatically deleted afterwards',
   'privacy.detailSweep': 'Leftover temp files from crashes are swept on app launch',
   'common.close': 'Close',
@@ -283,19 +281,6 @@ export const en = {
   'pdfaConvert.convertToPdfA': 'Convert to PDF/A',
   'pdfaConvert.pdfAIsAnArchival': 'PDF/A is an archival format designed for long-term document preservation.',
 
-  // ── protectPdf ──────────────────────────────────────────────────────────
-  'protectPdf.addPasswordEncryptionToA': 'Add password encryption to a PDF file.',
-  'protectPdf.confirmPassword': 'Confirm password',
-  'protectPdf.encrypting': 'Encrypting…',
-  'protectPdf.enterPassword': 'Enter password',
-  'protectPdf.password': 'Password',
-  'protectPdf.acknowledgePassword': 'I understand PaperOtter does not store this password and cannot recover it. If I lose it, this file cannot be opened again.',
-  'protectPdf.savedProtectedCopy': 'Saved a protected copy. The document open here is unchanged.',
-  'protectPdf.saveProtectedCopy': 'Save protected copy…',
-  'protectPdf.passwordsDoNotMatch': 'Passwords do not match',
-  'protectPdf.protectPdf': 'Protect PDF',
-  'protectPdf.setPassword': 'Set Password',
-
   // ── redactPdf ───────────────────────────────────────────────────────────
   'redactPdf.removeRedaction': 'Remove redaction',
 
@@ -383,16 +368,6 @@ export const en = {
   'split.pageRangesEG1': 'Page ranges (e.g., 1-3, 5, 7-10)',
   'split.splitEveryNPages': 'Split every N pages',
   'split.splitting': 'Splitting…',
-
-  // ── unlockPdf ───────────────────────────────────────────────────────────
-  'unlockPdf.enterPassword': 'Enter password',
-  'unlockPdf.enterThePdfPassword': 'Enter the PDF password',
-  'unlockPdf.pdfPassword': 'PDF Password',
-  'unlockPdf.removePasswordProtectionFromA': 'Remove password protection from a PDF file.',
-  'unlockPdf.unlockPdf': 'Unlock PDF',
-  'protectPdf.alreadyProtected': 'This PDF is already password-protected. Unlock it first, then protect it again.',
-  'unlockPdf.notProtected': 'This PDF is not password-protected, so there is nothing to unlock.',
-  'unlockPdf.unlocking': 'Unlocking…',
 
   // ── watermark ───────────────────────────────────────────────────────────
   'watermark.addWatermark': 'Add Watermark',
@@ -717,15 +692,7 @@ export const en = {
   'tool.jpgToPdf.desc': 'Convert images into a single PDF document',
   'tool.jpgToPdf.step1': 'Select images to convert',
   'tool.jpgToPdf.step2': 'Set page size and layout',
-  'tool.protectPdf.name': 'Protect PDF',
-  'tool.protectPdf.desc': 'Add password encryption to a PDF',
-  'tool.protectPdf.step1': 'Open a PDF file',
   'step.password': 'Password',
-  'tool.protectPdf.step2': 'Set a password',
-  'tool.unlockPdf.name': 'Unlock PDF',
-  'tool.unlockPdf.desc': 'Remove password protection from a PDF',
-  'tool.unlockPdf.step1': 'Open a PDF file',
-  'tool.unlockPdf.step2': 'Enter the password',
   'tool.rotateImage.name': 'Rotate Image',
   'tool.rotateImage.desc': 'Rotate images 90°, 180°, or 270°',
   'tool.rotateImage.step1': 'Open an image file',
@@ -791,8 +758,6 @@ export const en = {
   'tool.rotatePdf.step3': 'Save rotated PDF',
   'tool.pdfToJpg.step3': 'Save images',
   'tool.jpgToPdf.step3': 'Save PDF',
-  'tool.protectPdf.step3': 'Save protected PDF',
-  'tool.unlockPdf.step3': 'Save unlocked PDF',
   'tool.rotateImage.step3': 'Save rotated image',
   'tool.convertImage.step3': 'Save converted image',
   'step.crop': 'Crop',
