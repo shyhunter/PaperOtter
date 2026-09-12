@@ -1342,56 +1342,6 @@
      while keeping the warmth that stops it looking like a blank white page. */
   :root { --paper: #fefbf4; }
 
-  /* ── The band ────────────────────────────────────────────────
-     The background was the one surface on this page doing no work. Rather than
-     wallpaper it, one section is inverted and run full width, so the page has a
-     rhythm -- paper, then a block of solid ink, then paper -- instead of one
-     continuous sheet. Yellow is at its loudest on black, which is the whole
-     argument for putting the demo inside it.
-
-     It is a token swap, not a new palette: these are the values the dark theme
-     already ships, so every card, rule and shadow inside the band follows
-     without a single component knowing about it.
-
-     Full width without a horizontal scrollbar: a spread box-shadow paints the
-     colour out past the sheet, and `clip-path` trims it vertically so it does
-     not bleed into the sections either side. Neither affects layout, so nothing
-     here can widen the page -- `width: 100vw` would have, because 100vw counts
-     the scrollbar. */
-  .band {
-    --paper: #121212; --plate: #1c1c1c; --ink: #ffffff; --ink-soft: #b4b4b4;
-    --rule: #ffffff; --process: #ffffff; --card: #1c1c1c; --card-border: #ffffff;
-    --card-ink: #ffffff; --card-muted: #b4b4b4; --card-shadow: 5px 5px 0 #ffffff;
-    background: #121212; color: #ffffff;
-    clip-path: inset(0 -100vmax);
-    box-shadow: 0 0 0 100vmax #121212;
-    margin-top: clamp(1.6rem, 4vw, 2.6rem);
-    padding-top: clamp(2rem, 5vw, 3rem);
-  }
-  /* The band's own divider is the edge where the ink starts, so the drawn rule
-     that heads every other section would just be a white line inside it. */
-  .band::before { display: none; }
-
-  /* In dark the page is already near black, so a black band is no band at all.
-     It inverts the other way and becomes the light block instead: the rhythm is
-     what matters, not which end of it is dark. */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .band {
-      --paper: #fefbf4; --plate: #fffdf9; --ink: #141210; --ink-soft: #6b645c;
-      --rule: #141210; --process: #141210; --card: #fffdf9; --card-border: #141210;
-      --card-ink: #141210; --card-muted: #6b645c; --card-shadow: 5px 5px 0 #141210;
-      background: #fefbf4; color: #141210;
-      box-shadow: 0 0 0 100vmax #fefbf4;
-    }
-  }
-  [data-theme="dark"] .band {
-    --paper: #fefbf4; --plate: #fffdf9; --ink: #141210; --ink-soft: #6b645c;
-    --rule: #141210; --process: #141210; --card: #fffdf9; --card-border: #141210;
-    --card-ink: #141210; --card-muted: #6b645c; --card-shadow: 5px 5px 0 #141210;
-    background: #fefbf4; color: #141210;
-    box-shadow: 0 0 0 100vmax #fefbf4;
-  }
-
   /* Icons are ink, not accent. Yellow icons were invisible on the yellow badge
      and fought the sky and lilac card fills; black reads on all three. */
   .card-icon { color: #141210 !important; }
@@ -1833,7 +1783,7 @@
     </div>
   </section>
 
-  <section class="band">
+  <section>
     <p class="sig">What it is for</p>
     <h2>The jobs people <em>actually</em> open it for</h2>
     <p class="lede">
@@ -2055,19 +2005,51 @@
     <ol class="steps" data-panel="linux" hidden>
       <li class="step">
         <h3>Download the .deb or the .AppImage</h3>
-        <p>Debian and Ubuntu take the .deb. Anything else, use the AppImage.</p>
+        <p>Debian and Ubuntu take the .deb. Anything else, use the AppImage. Both
+           are 64-bit x86, which Debian calls <span class="mono">amd64</span> &mdash;
+           that is the right file for an Intel processor as well as an AMD one, and
+           the name is only historical. There is no ARM build for Linux yet, so a
+           Raspberry Pi or an ARM virtual machine has nothing to install.</p>
       </li>
       <li class="step">
-        <h3>Install it</h3>
-        <p>The .deb goes through your package manager:</p>
+        <h3>Point the terminal at the file first</h3>
+        <p>The commands below name the file rather than a full path, so the terminal
+           has to be in the folder you downloaded into &mdash; usually Downloads:</p>
+        <div class="cmd">
+          <code>cd ~/Downloads</code>
+          <button type="button" data-copy="cd ~/Downloads">Copy</button>
+        </div>
+        <p style="margin-top:.7rem">Skip this and apt says
+           <span class="mono">E: Unsupported file &hellip; given on command line</span>.
+           That wording is misleading: it means apt could not find the file, not that
+           anything is wrong with it. Giving the whole path works from anywhere and
+           avoids the question:</p>
+        <div class="cmd">
+          <code>sudo apt install ~/Downloads/PaperOtter_1.0.0_amd64.deb</code>
+          <button type="button" data-copy="sudo apt install ~/Downloads/PaperOtter_1.0.0_amd64.deb">Copy</button>
+        </div>
+      </li>
+      <li class="step">
+        <h3>Install the .deb</h3>
         <div class="cmd">
           <code>sudo apt install ./PaperOtter_1.0.0_amd64.deb</code>
           <button type="button" data-copy="sudo apt install ./PaperOtter_1.0.0_amd64.deb">Copy</button>
         </div>
-        <p style="margin-top:.7rem">The AppImage just needs to be executable:</p>
+        <p style="margin-top:.7rem">The <span class="mono">./</span> is doing real work.
+           Without it apt looks for a package of that name in the archives, finds none,
+           and reports the same unsupported-file error.</p>
+      </li>
+      <li class="step">
+        <h3>Or just run the AppImage</h3>
+        <p>Nothing is installed and nothing is added to your system. Make it
+           executable, then run it:</p>
         <div class="cmd">
           <code>chmod +x PaperOtter_1.0.0_amd64.AppImage</code>
           <button type="button" data-copy="chmod +x PaperOtter_1.0.0_amd64.AppImage">Copy</button>
+        </div>
+        <div class="cmd" style="margin-top:.5rem">
+          <code>./PaperOtter_1.0.0_amd64.AppImage</code>
+          <button type="button" data-copy="./PaperOtter_1.0.0_amd64.AppImage">Copy</button>
         </div>
       </li>
       <li class="step">
