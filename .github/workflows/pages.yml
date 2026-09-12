@@ -16,6 +16,11 @@ on:
       - 'site/**'
       - 'docs/screenshots/**'
       - '.github/workflows/pages.yml'
+  # A release changes which files the download buttons point at, and nothing
+  # under site/ changes when it does. Without this the page would go on offering
+  # the previous version until some unrelated site edit happened to redeploy it.
+  release:
+    types: [published]
   workflow_dispatch:
 
 # Least privilege: read the tree, write only Pages, and prove the deployment
@@ -38,8 +43,13 @@ jobs:
     # failed" and leaves a red X on every push that touches the site. Like the
     # CodeQL gate, this removes itself at the visibility flip.
     #
-    # An expression rather than a guard job: this workflow runs only on `push`
-    # and `workflow_dispatch`, and both populate `github.event.repository`.
+    # An expression rather than a guard job: every trigger this workflow has --
+    # `push`, `release` and `workflow_dispatch` -- populates
+    # `github.event.repository`, so the check holds on all three.
+    #
+    # Note for the visibility flip: nothing under site/ changes when the repo
+    # goes public, so no push fires and this will not run on its own. Run it
+    # from the Actions tab once, and pushes take over from there.
     if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     environment:
@@ -65,6 +75,7 @@ jobs:
                    fonts/plex-mono-400.woff2 fonts/plex-mono-500.woff2 \
                    screenshots/dashboard-light.png \
                    media/share-card.jpg \
+                   media/otter-mac.png media/otter-windows.png media/otter-linux.png \
                    media/hero.mp4 media/hero-poster.jpg \
                    media/compress.mp4 media/compress-poster.jpg \
                    media/ebook.mp4 media/ebook-poster.jpg \
@@ -86,6 +97,36 @@ jobs:
             echo "third-party resource host in index.html (listed above)"; exit 1
           fi
           echo "assembled:"; find _site -type f | sort
+
+      - name: Point the download links at the current version
+        # The page ships real, version-stamped URLs rather than a placeholder, so
+        # the file is correct opened straight from the repo or published as a
+        # design artifact. This rewrites them to the version the app is actually
+        # at, which is what stops the site offering the previous release after a
+        # new one ships -- and it catches the two Linux install commands, which
+        # name the .deb and .AppImage by filename and would otherwise go stale
+        # on their own. tauri.conf.json is the version of record: the same file
+        # the installers are built from.
+        run: |
+          set -euo pipefail
+          VER="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          case "$VER" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "tauri.conf.json has no usable version: '$VER'"; exit 1 ;;
+          esac
+          sed -E -i \
+            -e "s#PaperOtter_[0-9]+\.[0-9]+\.[0-9]+_#PaperOtter_${VER}_#g" \
+            -e "s#releases/download/v[0-9]+\.[0-9]+\.[0-9]+/#releases/download/v${VER}/#g" \
+            _site/index.html
+          # A button pointing at a version that was never released is worse than
+          # one pointing at the releases page, so a survivor fails the build
+          # rather than shipping a 404 to every visitor.
+          STRAY="$(grep -oE 'PaperOtter_[0-9]+\.[0-9]+\.[0-9]+_|releases/download/v[0-9]+\.[0-9]+\.[0-9]+/' _site/index.html \
+                   | grep -v "$VER" | sort -u || true)"
+          if [ -n "$STRAY" ]; then
+            echo "a version other than $VER survived the rewrite:"; echo "$STRAY"; exit 1
+          fi
+          echo "download links point at v$VER"
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 

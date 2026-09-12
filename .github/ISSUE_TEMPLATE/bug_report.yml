@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in Papercut
+description: Report a bug in PaperOtter
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -18,7 +18,7 @@ body:
       label: Steps to Reproduce
       description: Step-by-step instructions to reproduce the issue.
       placeholder: |
-        1. Open Papercut
+        1. Open PaperOtter
         2. Select a PDF file
         3. Choose 'Compress' tool
         4. ...
@@ -60,9 +60,9 @@ body:
   - type: input
     id: app-version
     attributes:
-      label: Papercut Version
+      label: PaperOtter Version
       description: Check Help > About or the title bar.
-      placeholder: "1.0.0-beta.1"
+      placeholder: "1.0.0"
     validations:
       required: true
 

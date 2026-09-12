@@ -7,6 +7,8 @@
 //   node scripts/trace-logo.mjs                    full-detail trace
 //   node scripts/trace-logo.mjs --small 140        downscale first, then trace
 //   node scripts/trace-logo.mjs --icon 1024         square transparent PNG for `tauri icon`
+//   node scripts/trace-logo.mjs --icon 1024 --ground '#f4c423'
+//                                                   the same, on a brand tile
 //
 // --small is how the icon-size variant is made: shrinking the bitmap before
 // tracing merges hairlines and fur tufts the way a 32px render would, so the
@@ -20,8 +22,15 @@ import { join } from 'node:path';
 const argv = process.argv.slice(2);
 const smallAt = argv.includes('--small') ? Number(argv[argv.indexOf('--small') + 1]) : 0;
 const iconAt = argv.includes('--icon') ? Number(argv[argv.indexOf('--icon') + 1]) : 0;
+// A transparent mark disappears into a dark desktop -- the icon was black ink on
+// nothing, which is invisible on anything dark and muddy on a coloured taskbar.
+// `--ground` puts it on a tile instead. Optional, so the bare `--icon` behaviour
+// is unchanged for anything that still wants the mark alone.
+const ground = argv.includes('--ground') ? argv[argv.indexOf('--ground') + 1] : null;
+const ruleCol = argv.includes('--rule') ? argv[argv.indexOf('--rule') + 1] : '#141210';
 const positional = argv.filter((a, i) =>
-  !a.startsWith('--') && argv[i - 1] !== '--small' && argv[i - 1] !== '--icon');
+  !a.startsWith('--') && argv[i - 1] !== '--small' && argv[i - 1] !== '--icon'
+  && argv[i - 1] !== '--ground' && argv[i - 1] !== '--rule');
 const src = positional[0] ?? 'brand/source/paperotter-head.png';
 const out = positional[1] ?? (iconAt ? 'brand/icon-source.png'
   : smallAt ? 'brand/paperotter-mark-simple.svg' : 'brand/paperotter-mark.svg');
@@ -76,6 +85,42 @@ if (iconAt) {
     d[i] = d[i + 1] = d[i + 2] = 0;
   });
   canvas.composite(cropped, 0, 0);
+
+  if (ground) {
+    // Jimp has no rounded-rect primitive, so every pixel is decided here and the
+    // tile is built at twice the final size -- the downscale at the end is what
+    // antialiases the corners and the rule.
+    const S = iconAt * 2;
+    const radius = Math.round(S * 0.18);
+    const bw = Math.round(S * 0.055);
+    const rgba = (h) => {
+      const v = parseInt(h.replace('#', '').padEnd(8, 'f'), 16) >>> 0;
+      return [(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255];
+    };
+    const [gr, gg, gb, ga] = rgba(ground);
+    const [rr, rg, rb, ra] = rgba(ruleCol);
+    // Inside a rounded square: push the point to the nearest corner arc centre
+    // and compare against the radius. Straight edges fall out of it for free.
+    const inside = (x, y, r, inset) => {
+      const lo = inset + r, hi = S - 1 - inset - r;
+      const dx = Math.max(lo - x, 0, x - hi), dy = Math.max(lo - y, 0, y - hi);
+      return dx * dx + dy * dy <= r * r;
+    };
+    const tile = new Jimp(S, S, 0x00000000);
+    tile.scan(0, 0, S, S, (x, y, i) => {
+      const d = tile.bitmap.data;
+      if (inside(x, y, radius - bw, bw)) { d[i] = gr; d[i + 1] = gg; d[i + 2] = gb; d[i + 3] = ga; }
+      else if (inside(x, y, radius, 0)) { d[i] = rr; d[i + 1] = rg; d[i + 2] = rb; d[i + 3] = ra; }
+    });
+    const mark = canvas.clone().resize(Math.round(S * 0.68), Jimp.AUTO);
+    tile.composite(mark, Math.round((S - mark.bitmap.width) / 2),
+                         Math.round((S - mark.bitmap.height) / 2));
+    tile.resize(iconAt, iconAt);
+    await tile.writeAsync(out);
+    console.log(`\n  ${out} — ${iconAt}x${iconAt} on ${ground} with a ${ruleCol} rule\n`);
+    process.exit(0);
+  }
+
   canvas.resize(iconAt, iconAt);
   await canvas.writeAsync(out);
   console.log(`\n  ${out} — ${iconAt}x${iconAt}, ink at ${x0},${y0}..${x1},${y1}\n`);

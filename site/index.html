@@ -612,6 +612,51 @@
 
   /* ── Install steps ──────────────────────────────────────── */
 
+  /* The steps ran the full 66rem, which is a punishing measure for prose this
+     detailed -- the macOS panel most of all. Giving the mark a column of its own
+     pulls the text back to something readable and fills the page's plainest
+     section at the same time: the layout is the reason, the otter is the bonus. */
+  .install {
+    display: grid; gap: clamp(1.5rem, 4vw, 3rem);
+    grid-template-columns: minmax(0, 1fr) clamp(12rem, 21vw, 18rem);
+    align-items: start;
+  }
+  /* Every bare `figure` gets the drawn frame, which is right for the plates and
+     wrong here: this is a mark sitting on the paper, like the one in the header,
+     not a plate of content. Unframed, the halftone reads as ink on the sheet. */
+  .install-art {
+    margin: 0; position: sticky; top: 2rem;
+    border: none; box-shadow: none; background: none; border-radius: 0;
+    /* A square box the three take turns in. They are 722x691, 760x760 and
+       706x699, so without it the column would resize every time you changed
+       tab and the steps beside it would jump. */
+    aspect-ratio: 1 / 1;
+  }
+  /* The plates section styles every `figure img` as a framed plate, cropped to
+     16/10 over a solid ground -- correct there, wrong for a transparent mark,
+     which came out as an empty bordered box. This one opts out of all of it. */
+  .install-art img {
+    width: 100%; height: 100%; display: block;
+    aspect-ratio: auto !important;
+    object-fit: contain;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  /* Pure black ink on a transparent ground, so inverting for dark is exact and
+     costs no second file. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .install-art img { filter: invert(1); }
+  }
+  [data-theme="dark"] .install-art img { filter: invert(1); }
+  /* Below this there is no room for a second column, and decoration should not
+     be what pushes the instructions down a phone screen. */
+  @media (max-width: 56rem) {
+    .install { grid-template-columns: minmax(0, 1fr); }
+    .install-art { display: none; }
+  }
+
   .os-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
   .os-tab {
     font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
@@ -767,6 +812,90 @@
     color: var(--ink-soft); margin: .9rem 0 0;
   }
 
+  /* Every build, as cards under the demo. The card for the machine we think
+     this is takes the yellow fill and a rotated stamp -- the same move the
+     Free / Open Source badge makes, so the recommendation reads as something
+     pressed onto the sheet rather than a label that can wrap and break. */
+  .get { margin-top: clamp(1.8rem, 4vw, 2.6rem); scroll-margin-top: 1.2rem; }
+
+  .get-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: .2rem .9rem; margin: 0 0 1rem;
+  }
+  .get-head h2 { font-size: clamp(1.2rem, 2.6vw, 1.6rem); margin: 0; }
+  .get-head p {
+    margin: 0; font-size: .72rem; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+
+  .get-cards {
+    display: grid; gap: 1rem; align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  }
+
+  .get-card {
+    position: relative;
+    background: var(--card); color: var(--card-ink);
+    padding: 1.15rem 1.25rem 1.25rem;
+    display: flex; flex-direction: column; gap: .85rem;
+  }
+  .get-card h3 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+    font-stretch: 90%; font-size: 1.2rem; letter-spacing: -.02em; margin: 0;
+  }
+  .get-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+
+  /* Yellow is constant across both themes here, so the fill and its ink are
+     stated outright rather than left to the theme tokens. */
+  .get-card[data-here] { background: var(--yellow); color: #141210; }
+
+  .get-stamp { display: none; }
+  .get-card[data-here] .get-stamp {
+    display: block;
+    position: absolute; top: -.85rem; inset-inline-end: -.6rem; z-index: 2;
+    transform: rotate(-6deg);
+    /* Constant across both themes, the way the yellow is. It is a label stuck
+       onto the card, so it keeps its own paper: var(--plate) flipped to near
+       black in dark mode and left black ink on a black ground, invisible. */
+    background: #fffdf9; color: #141210;
+    border: 3px solid #141210;
+    border-radius: 11px 4px 12px 5px / 5px 12px 4px 11px;
+    box-shadow: 3px 3px 0 #141210;
+    padding: .32rem .5rem;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 800; font-stretch: 90%; font-size: .58rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    line-height: 1.15; text-align: center;
+  }
+
+  .get-card a {
+    display: flex; flex-direction: column; gap: .1rem;
+    padding: .6rem .7rem; text-decoration: none;
+    background: var(--plate); color: var(--ink);
+    border: 3px solid var(--rule);
+    border-radius: 12px 5px 14px 6px / 6px 14px 5px 12px;
+    box-shadow: 3px 3px 0 var(--rule);
+    transition: transform .06s linear, box-shadow .06s linear;
+  }
+  .get-card li:nth-child(2) a { border-radius: 6px 14px 5px 12px / 12px 5px 14px 6px; }
+  .get-card a b { font-weight: 500; font-size: .92rem; }
+  .get-card a span {
+    font-family: "JetBrains Mono", monospace; font-size: .64rem;
+    letter-spacing: .04em; color: var(--ink-soft);
+  }
+  .get-card a:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--rule); }
+  .get-card a:active { transform: translate(3px, 3px); box-shadow: none; }
+  .get-card a:focus-visible { outline: 3px solid var(--rule); outline-offset: 3px; }
+
+  @media (max-width: 30rem) {
+    .get-card[data-here] .get-stamp { inset-inline-end: .5rem; top: -.75rem; }
+  }
+
+  /* The button jumps rather than downloads on macOS and Linux, so it says so. */
+  .btn[data-jump]::after { content: " \2193"; }
+
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
   .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
   .filter {
     font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
@@ -866,11 +995,16 @@
      radii whose horizontal and vertical values differ so an edge reads as
      drawn rather than computed. Four variants dealt out by position, so a
      grid never looks like one shape stamped twenty times. */
-  .face, figure img, .claim, .net-panel, .support-card, .cmd, .stage, .demo-frame {
+  .face, figure img, .claim, .net-panel, .support-card, .cmd, .stage, .demo-frame,
+  .get-card {
     border: 3px solid var(--rule) !important;
     border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px !important;
     box-shadow: var(--card-shadow) !important;
   }
+  /* Three cards side by side, so they take three different corners -- the same
+     reason the tool grid deals its radii out by position. */
+  .get-card:nth-child(2) { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px !important; }
+  .get-card:nth-child(3) { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px !important; }
   .card:nth-child(4n+2) .face { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px !important; }
   .card:nth-child(4n+3) .face { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px !important; }
   .card:nth-child(4n+4) .face { border-radius: 8px 22px 11px 26px / 26px 10px 22px 8px !important; }
@@ -1201,7 +1335,7 @@
      aspect-ratio a <video> is zero-height until metadata arrives, and the whole
      page below it jumps down the moment it does. The stage already declared
      one; the hero never did. */
-  .demo { aspect-ratio: 1200 / 856; width: 100%; height: auto; }
+  .demo { aspect-ratio: 1200 / 780; width: 100%; height: auto; }
   .demo-frame { aspect-ratio: auto; }
   figure img { aspect-ratio: 16 / 10; object-fit: cover; }
 
@@ -1304,19 +1438,63 @@
       do them on your own computer instead.
     </p>
     <div class="btns">
-      <a class="btn" id="dl" href="https://github.com/shyhunter/PaperOtter/releases/latest">Download</a>
+      <!-- Windows has one file, so this downloads it. macOS and Linux have two
+           apiece and the user agent cannot say which, so for them this is a jump
+           to the cards below the demo -- marked with an arrow by CSS, because a
+           button that says Download and does not download is a small lie. -->
+      <a class="btn" id="dl" href="#get">Download</a>
       <a class="btn ghost" href="https://github.com/shyhunter/PaperOtter">Read the source</a>
     </div>
-    <p class="dl-note" id="dl-note">Every build is on the releases page.</p>
+    <p class="dl-note" id="dl-note">Every build is listed below.</p>
 
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
            autoplay muted loop playsinline controls preload="metadata"
-           aria-label="PaperOtter in use: choosing a tool, opening a document and saving the result">
+           aria-label="PaperOtter's PDF editor with a document open, moving through the watermark, page numbers, make searchable, redact and repair panels">
       <source src="media/hero.mp4" type="video/mp4">
       Your browser cannot play this video. The screenshots below show the same thing.
     </video>
     </div>
+
+    <!-- Every build, always visible, directly under the demo it just sold you.
+         Not a dropdown and not an overlay: the video is the best thing on this
+         page and nothing should cover it, and choosing between two Mac builds
+         deserves more room than a menu. The card for the machine we think this
+         is gets the fill and the stamp; the rest stay plain and clickable. -->
+    <section class="get" id="get" aria-label="Download PaperOtter">
+      <div class="get-head">
+        <h2>Every <em>build</em></h2>
+        <p class="mono" id="get-note">Pick the one for your machine.</p>
+      </div>
+
+      <div class="get-cards">
+        <div class="get-card" data-os="mac">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>macOS</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg"><b>Apple silicon</b><span>M1&ndash;M4 &middot; .dmg</span></a></li>
+            <li><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg"><b>Intel</b><span>2016&ndash;2020 &middot; .dmg</span></a></li>
+          </ul>
+        </div>
+
+        <div class="get-card" data-os="windows">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>Windows</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe"><b>Installer</b><span>64-bit &middot; .exe</span></a></li>
+          </ul>
+        </div>
+
+        <div class="get-card" data-os="linux">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>Linux</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb"><b>Debian &amp; Ubuntu</b><span>amd64 &middot; .deb</span></a></li>
+            <li><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage"><b>Everything else</b><span>amd64 &middot; .AppImage</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </div>
 
   <section>
@@ -1376,7 +1554,7 @@
           <tr>
             <td>When you open About</td>
             <td>&ldquo;Where should feedback go?&rdquo;<br><span class="mono">raw.githubusercontent.com/&hellip;/feedback-config.json</span></td>
-            <td>Nothing of yours. It reads the address of the project&rsquo;s discussion board, so the Feedback button knows where to open it.</td>
+            <td>Nothing of yours. It reads which <a href="https://github.com/shyhunter/PaperOtter/discussions">Discussions</a> board the Feedback button opens. Reports arrive pre-filled; nothing is posted until you press the button yourself.</td>
           </tr>
           <tr>
             <td>Everything else you do</td>
@@ -1392,13 +1570,13 @@
   <section>
     <p class="sig" id="tools">Yours, to go.</p>
     <h2><em>Nineteen</em> tools</h2>
-    <p class="lede">Twenty-one of them need nothing installed. Hover or tap a card to see how it works.</p>
+    <p class="lede">Eighteen of them need nothing installed. Hover or tap a card to see how it works.</p>
     <div class="filters" role="group" aria-label="Filter tools by what you start with">
       <button class="filter" type="button" data-cat="all" aria-pressed="true">All <b>19</b></button>
       <button class="filter" type="button" data-cat="pdf" aria-pressed="false">PDF <b>14</b></button>
       <button class="filter" type="button" data-cat="other" aria-pressed="false">Images &amp; documents <b>5</b></button>
     </div>
-    <p class="filter-status" id="filter-status" role="status">Showing all 22 tools.</p>
+    <p class="filter-status" id="filter-status" role="status">Showing all 19 tools.</p>
     <div class="cards">
       <button class="card" type="button" data-cat="pdf">
         <span class="card-inner">
@@ -1409,7 +1587,7 @@
           </span>
           <span class="face verso">
             <span class="card-how-label">How it works</span>
-            <span class="card-how">Ghostscript re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
+            <span class="card-how">Re-encodes the images and drops what the file does not need. Choose a quality, or a target size to stay under.</span>
           </span>
         </span>
       </button>
@@ -1667,7 +1845,7 @@
           </button>
           <div class="job-panel" id="jp0" role="region" aria-labelledby="jb0">
             <p>Get a scan or a report under an attachment limit without turning the text to mush. The setting says what it will cost before you commit to it.</p>
-          <p class="job-stat">73.80 MB &rarr; 20.49 MB &middot; 72% smaller &middot; 438 pages</p>
+          <p class="job-stat">73.80 MB &rarr; 46.13 MB &middot; 37% smaller &middot; 438 pages</p>
           <p>Measured, not promised: a scanned page went from 127 KB to 40 KB, 68% smaller. A photo PDF already at screen resolution came back unchanged. There was nothing left to downsample, and the app said so instead of pretending otherwise.</p>
           </div>
         </div>
@@ -1696,7 +1874,7 @@
             <span class="job-title">A signature without a signing service</span>
           </button>
           <div class="job-panel" id="jp3" role="region" aria-labelledby="jb3">
-            <p>Draw or upload it once, place it, save the file. Nobody else holds the document, and there is no account in between.</p>
+            <p>Draw, type or upload it once, place it, save the file. Nobody else holds the document, and there is no account in between.</p>
           </div>
         </div>
         <div class="job" data-job="4" data-open="false">
@@ -1725,7 +1903,7 @@
       (function () {
         var SRC = ["media/compress.mp4", "media/ebook.mp4", "media/markdown.mp4", "media/signature.mp4", "media/redact.mp4"];
         var POSTER = ["media/compress-poster.jpg", "media/ebook-poster.jpg", "media/markdown-poster.jpg", "media/signature-poster.jpg", "media/redact-poster.jpg"];
-        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowed into a real page rather than a picture of one.", "PDF to Markdown &middot; 18.9 KB &rarr; 12.5 KB &middot; 34% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn, then applied: opaque black, not a rectangle laid over the text."];
+        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowable rather than a picture of a page: typography and margins set before it converts.", "PDF to Markdown &middot; 22.7 KB &rarr; 12.5 KB &middot; 45% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn in whichever colour you pick, then applied: the page is flattened and the text underneath is gone."];
         var vid = document.getElementById('stage-video');
         // One stage, moved into whichever panel is open, rather than four
         // copies of a clip that already weighs more than the rest of the page.
@@ -1782,6 +1960,8 @@
     <p class="sig">One file</p>
     <h2><em>No data</em> is tracked</h2>
     <p class="lede">One file. Open it and everything it needs is already there. Nothing more to track down afterward.</p>
+    <div class="install">
+      <div class="install-steps">
     <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
       <button class="os-tab" role="tab" type="button" data-os="mac" aria-selected="false">macOS</button>
       <button class="os-tab" role="tab" type="button" data-os="windows" aria-selected="false">Windows</button>
@@ -1849,7 +2029,7 @@
     <ol class="steps" data-panel="windows" hidden>
       <li class="step">
         <h3>Download the .exe</h3>
-        <p>One installer, Ghostscript already inside it.</p>
+        <p>One installer, everything already inside it.</p>
       </li>
       <li class="step">
         <h3>Run it, and let SmartScreen stop you</h3>
@@ -1872,19 +2052,51 @@
     <ol class="steps" data-panel="linux" hidden>
       <li class="step">
         <h3>Download the .deb or the .AppImage</h3>
-        <p>Debian and Ubuntu take the .deb. Anything else, use the AppImage.</p>
+        <p>Debian and Ubuntu take the .deb. Anything else, use the AppImage. Both
+           are 64-bit x86, which Debian calls <span class="mono">amd64</span> &mdash;
+           that is the right file for an Intel processor as well as an AMD one, and
+           the name is only historical. There is no ARM build for Linux yet, so a
+           Raspberry Pi or an ARM virtual machine has nothing to install.</p>
       </li>
       <li class="step">
-        <h3>Install it</h3>
-        <p>The .deb goes through your package manager:</p>
+        <h3>Point the terminal at the file first</h3>
+        <p>The commands below name the file rather than a full path, so the terminal
+           has to be in the folder you downloaded into &mdash; usually Downloads:</p>
+        <div class="cmd">
+          <code>cd ~/Downloads</code>
+          <button type="button" data-copy="cd ~/Downloads">Copy</button>
+        </div>
+        <p style="margin-top:.7rem">Skip this and apt says
+           <span class="mono">E: Unsupported file &hellip; given on command line</span>.
+           That wording is misleading: it means apt could not find the file, not that
+           anything is wrong with it. Giving the whole path works from anywhere and
+           avoids the question:</p>
+        <div class="cmd">
+          <code>sudo apt install ~/Downloads/PaperOtter_1.0.0_amd64.deb</code>
+          <button type="button" data-copy="sudo apt install ~/Downloads/PaperOtter_1.0.0_amd64.deb">Copy</button>
+        </div>
+      </li>
+      <li class="step">
+        <h3>Install the .deb</h3>
         <div class="cmd">
           <code>sudo apt install ./PaperOtter_1.0.0_amd64.deb</code>
           <button type="button" data-copy="sudo apt install ./PaperOtter_1.0.0_amd64.deb">Copy</button>
         </div>
-        <p style="margin-top:.7rem">The AppImage just needs to be executable:</p>
+        <p style="margin-top:.7rem">The <span class="mono">./</span> is doing real work.
+           Without it apt looks for a package of that name in the archives, finds none,
+           and reports the same unsupported-file error.</p>
+      </li>
+      <li class="step">
+        <h3>Or just run the AppImage</h3>
+        <p>Nothing is installed and nothing is added to your system. Make it
+           executable, then run it:</p>
         <div class="cmd">
           <code>chmod +x PaperOtter_1.0.0_amd64.AppImage</code>
           <button type="button" data-copy="chmod +x PaperOtter_1.0.0_amd64.AppImage">Copy</button>
+        </div>
+        <div class="cmd" style="margin-top:.5rem">
+          <code>./PaperOtter_1.0.0_amd64.AppImage</code>
+          <button type="button" data-copy="./PaperOtter_1.0.0_amd64.AppImage">Copy</button>
         </div>
       </li>
       <li class="step">
@@ -1892,6 +2104,19 @@
         <p>Linux has no equivalent of Gatekeeper or SmartScreen, so it simply starts.</p>
       </li>
     </ol>
+      </div>
+
+      <!-- One per platform, switched by the same handler that switches the
+           steps. Decorative, so no alt text: the steps beside it say everything
+           this says, and the joke is only worth having if it costs a screen
+           reader nothing. Apple, a window, a penguin -- each is the otter
+           holding the thing that platform is known by. -->
+      <figure class="install-art" aria-hidden="true">
+        <img src="media/otter-mac.png"     data-os="mac"     width="722" height="691" alt="" loading="lazy" decoding="async" hidden>
+        <img src="media/otter-windows.png" data-os="windows" width="760" height="760" alt="" loading="lazy" decoding="async" hidden>
+        <img src="media/otter-linux.png"   data-os="linux"   width="706" height="699" alt="" loading="lazy" decoding="async" hidden>
+      </figure>
+    </div>
   </section>
 
   <section>
@@ -1901,7 +2126,7 @@
     <div class="notes">
       <div>
         <h3>One tool needs help</h3>
-        <p>EPUB and MOBI use Calibre; some document formats use LibreOffice. The other twenty-one tools need nothing.</p>
+        <p>EPUB and MOBI use Calibre; some document formats use LibreOffice. The other eighteen tools need nothing.</p>
       </div>
       <div>
         <h3>Two features are macOS-only</h3>
@@ -1969,8 +2194,10 @@
     </div>
 
     <p class="lede" style="margin:1.4rem 0 0">
-      Reporting something that broke is worth more than both. Most of what is in
-      this release came from someone taking the time to say what went wrong.
+      Reporting something that broke is worth more than both, and it happens in
+      <a href="https://github.com/shyhunter/PaperOtter/discussions">Discussions</a> rather than an inbox &mdash; ask a question,
+      suggest a tool, or say what went wrong. Most of what is in this release
+      came from someone taking the time to do exactly that.
     </p>
   </section>
 
@@ -1978,9 +2205,11 @@
     <nav>
       <a href="https://github.com/shyhunter/PaperOtter/wiki">Docs</a>
       <a href="https://github.com/shyhunter/PaperOtter/issues">Report</a>
+      <a href="https://github.com/shyhunter/PaperOtter/discussions">Discuss</a>
       <a href="https://github.com/users/shyhunter/projects/9">Roadmap</a>
       <a href="https://github.com/shyhunter/PaperOtter">Source</a>
     </nav>
+    <span>&copy; 2026 PaperOtter Contributors &middot; MIT licensed</span>
   </footer>
 
 </div>
@@ -1991,9 +2220,12 @@
     var panels = Array.prototype.slice.call(document.querySelectorAll('.steps[data-panel]'));
     if (!tabs.length) return;
 
+    var arts = Array.prototype.slice.call(document.querySelectorAll('.install-art img'));
+
     function show(os) {
       tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
       panels.forEach(function (pnl) { pnl.hidden = pnl.dataset.panel !== os; });
+      arts.forEach(function (a) { a.hidden = a.dataset.os !== os; });
     }
 
     // Read only. navigator.userAgent never leaves the page, and this adds no
@@ -2047,23 +2279,52 @@
     // network request: the two in the table above remain the only two.
     var btn = document.getElementById('dl');
     var note = document.getElementById('dl-note');
-    if (!btn) return;
+    var getNote = document.getElementById('get-note');
+    var cards = document.getElementById('get');
+    if (!btn || !cards) return;
+
     var ua = navigator.userAgent || '';
-    var os = /Mac|iPhone|iPad/.test(ua) ? 'mac'
+
+    // Phones and tablets first, because they are easy to mistake for a desktop
+    // we ship for: Android's user agent contains "Linux", and iOS contains
+    // "iPhone"/"iPad" beside Mac-like tokens. Either would otherwise be told a
+    // build is "probably yours" when that machine cannot run any of them. They
+    // keep the plain label and an unmarked set of cards, which is the honest
+    // answer. (An iPad on iPadOS 13+ reports plain "Macintosh" and is genuinely
+    // indistinguishable from a Mac. Nothing in the user agent separates them.)
+    if (/Android|iPhone|iPad|iPod|Mobile/.test(ua)) return;
+
+    var os = /Mac/.test(ua) ? 'mac'
            : /Win/.test(ua) ? 'windows'
            : /Linux|X11/.test(ua) ? 'linux' : null;
-    // Apple Silicon and Intel are indistinguishable from the user agent, so the
-    // note names both rather than guessing and sending someone the wrong file.
-    var copy = {
-      mac:     ['Download for macOS',   'Apple Silicon and Intel builds, plus Windows and Linux, are on the releases page.'],
-      windows: ['Download for Windows', 'macOS and Linux builds are on the same page.'],
-      linux:   ['Download for Linux',   'Both .deb and .AppImage, plus macOS and Windows, are on the same page.']
-    };
-    // No match means an OS we do not ship for. The generic label is correct there.
-    if (os) {
-      btn.textContent = copy[os][0];
-      if (note) note.textContent = copy[os][1];
+    if (!os) return;
+
+    var card = cards.querySelector('.get-card[data-os="' + os + '"]');
+    if (card) card.setAttribute('data-here', '');
+
+    // Windows has exactly one file, so the button is the download. macOS and
+    // Linux have two apiece and the user agent cannot say which, so their
+    // button goes to the cards instead of picking for them -- the wrong Mac
+    // build reports itself as "damaged", the same words as the Gatekeeper
+    // refusal, which sends people to a fix that cannot work.
+    if (os === 'windows') {
+      var one = card && card.querySelector('li[data-pick] a');
+      if (one) btn.href = one.href;
+      btn.textContent = 'Download for Windows';
+      if (note) note.textContent = 'The .exe installer, 64-bit. Every build is listed below.';
+      return;
     }
+
+    var copy = {
+      mac:   ['Download for macOS', '',
+              'Apple silicon unless your Mac is from 2020 or earlier.'],
+      linux: ['Download for Linux', 'Two Linux packages, and a browser cannot tell your distribution.',
+              '.deb for Debian and Ubuntu, .AppImage for everything else.']
+    };
+    btn.textContent = copy[os][0];
+    btn.setAttribute('data-jump', '');
+    if (note && copy[os][1]) note.textContent = copy[os][1];
+    if (getNote) getNote.textContent = copy[os][2];
   })();
 
   (function () {

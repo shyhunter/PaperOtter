@@ -64,6 +64,12 @@
     },
     "linux": {
       "deb": {
+        "conflicts": [
+          "papercut"
+        ],
+        "replaces": [
+          "papercut"
+        ],
         "files": {
           "/usr/share/doc/paperotter/copyright": "../LICENSES/copyright"
         }
