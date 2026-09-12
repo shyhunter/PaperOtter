@@ -809,7 +809,10 @@
     display: block;
     position: absolute; top: -.85rem; inset-inline-end: -.6rem; z-index: 2;
     transform: rotate(-6deg);
-    background: var(--plate); color: #141210;
+    /* Constant across both themes, the way the yellow is. It is a label stuck
+       onto the card, so it keeps its own paper: var(--plate) flipped to near
+       black in dark mode and left black ink on a black ground, invisible. */
+    background: #fffdf9; color: #141210;
     border: 3px solid #141210;
     border-radius: 11px 4px 12px 5px / 5px 12px 4px 11px;
     box-shadow: 3px 3px 0 #141210;
@@ -1334,10 +1337,29 @@
   }
 
 
-  /* A lighter ground. The sand was the reference page's colour; on a full-width
-     site it reads heavier than it did as a swatch, so it moves closer to paper
-     while keeping the warmth that stops it looking like a blank white page. */
-  :root { --paper: #fefbf4; }
+  /* The stock, and the grain on it. A flat off-white left the background as the
+     one surface doing no work on a page whose whole language is drawn borders,
+     hard shadows and stamps -- so it goes warmer and picks up a printed dot
+     grid. The dots sit on the body rather than on a fixed layer, so they travel
+     with the page the way ink does with paper; every card, panel and frame
+     carries its own ground, so nothing shows through behind text that needs to
+     stay crisp. */
+  :root { --paper: #f6e7c4; }
+  body {
+    background-image: radial-gradient(rgba(20, 18, 16, .22) 2.2px, transparent 2.3px);
+    background-size: 22px 22px;
+  }
+  /* Dark keeps the same grain, inverted, at a lower strength: a light dot on a
+     near-black ground reads far louder than a dark one on cream at the same
+     alpha. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body {
+      background-image: radial-gradient(rgba(255, 255, 255, .10) 2.2px, transparent 2.3px);
+    }
+  }
+  [data-theme="dark"] body {
+    background-image: radial-gradient(rgba(255, 255, 255, .10) 2.2px, transparent 2.3px);
+  }
 
   /* Icons are ink, not accent. Yellow icons were invisible on the yellow badge
      and fought the sky and lilac card fills; black reads on all three. */
