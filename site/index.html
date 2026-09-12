@@ -627,14 +627,18 @@
   .install-art {
     margin: 0; position: sticky; top: 2rem;
     border: none; box-shadow: none; background: none; border-radius: 0;
+    /* A square box the three take turns in. They are 722x691, 760x760 and
+       706x699, so without it the column would resize every time you changed
+       tab and the steps beside it would jump. */
+    aspect-ratio: 1 / 1;
   }
   /* The plates section styles every `figure img` as a framed plate, cropped to
      16/10 over a solid ground -- correct there, wrong for a transparent mark,
      which came out as an empty bordered box. This one opts out of all of it. */
   .install-art img {
-    width: 100%; height: auto; display: block;
+    width: 100%; height: 100%; display: block;
     aspect-ratio: auto !important;
-    object-fit: fill;
+    object-fit: contain;
     background: none !important;
     border: none !important;
     box-shadow: none !important;
@@ -2102,12 +2106,15 @@
     </ol>
       </div>
 
-      <!-- Decorative, so it carries no alt text: the steps beside it say
-           everything this says. It is the same otter as the badge above, drawn
-           as a printed halftone rather than a solid mark. -->
+      <!-- One per platform, switched by the same handler that switches the
+           steps. Decorative, so no alt text: the steps beside it say everything
+           this says, and the joke is only worth having if it costs a screen
+           reader nothing. Apple, a window, a penguin -- each is the otter
+           holding the thing that platform is known by. -->
       <figure class="install-art" aria-hidden="true">
-        <img src="media/otter-ink.png" width="662" height="632" alt=""
-             loading="lazy" decoding="async">
+        <img src="media/otter-mac.png"     data-os="mac"     width="722" height="691" alt="" loading="lazy" decoding="async" hidden>
+        <img src="media/otter-windows.png" data-os="windows" width="760" height="760" alt="" loading="lazy" decoding="async" hidden>
+        <img src="media/otter-linux.png"   data-os="linux"   width="706" height="699" alt="" loading="lazy" decoding="async" hidden>
       </figure>
     </div>
   </section>
@@ -2213,9 +2220,12 @@
     var panels = Array.prototype.slice.call(document.querySelectorAll('.steps[data-panel]'));
     if (!tabs.length) return;
 
+    var arts = Array.prototype.slice.call(document.querySelectorAll('.install-art img'));
+
     function show(os) {
       tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.os === os)); });
       panels.forEach(function (pnl) { pnl.hidden = pnl.dataset.panel !== os; });
+      arts.forEach(function (a) { a.hidden = a.dataset.os !== os; });
     }
 
     // Read only. navigator.userAgent never leaves the page, and this adds no
