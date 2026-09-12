@@ -7,21 +7,22 @@ being here means it is agreed and scoped, not that it is scheduled.
 
 ***
 
-## Before 1.0
+## Now
 
-Four things stand between PaperOtter and its first stable release. None of them
-are new features: they are checks and pages that no automated test can produce.
+**1.0.0 is released**, with builds for macOS (Apple silicon and Intel), Windows
+and Linux. Three things are still open. None of them are new features: they are
+checks and pages that no automated test can produce.
 
-| # | Item | What it is |
-|---|------|------------|
-| 2 | Read the German UI | Nine languages ship. German has the most recently written strings, including several warnings about losing work that nobody has yet read in German |
-| 3 | A visual pass over the UI | Automated tests render no pixels, so nothing has checked that the layout still looks right |
-| 4 | A proper home page | PaperOtter is a desktop app, and a desktop app needs somewhere to download it from that is not a source-code repository |
+| Item | Where it stands |
+|------|-----------------|
+| A visual pass over the UI | Open. Automated tests render no pixels, so nothing has checked that the layout still looks right at every window size, in both themes |
+| A proper home page | Written and verified. Waiting on the switch to GitHub Pages |
+| Proof that cancelling a batch stops the work | Reopened. The test that covered this was built around Ghostscript, which has since been removed, so it can no longer run. The cancel itself is unchanged; what is missing is the proof |
 
-Recently closed: the version number is settled at **1.0.0**; the README's
-dependency claims were checked line by line and were already accurate; and
-cancelling a batch is now proven to stop the work by a test that asks the
-operating system, rather than by reading the code and believing it.
+Closed: the version number is settled at **1.0.0**; the README's dependency
+claims were checked line by line and were already accurate; and the German
+interface has now been read end to end, including the six warnings about losing
+work that nobody had read in German before.
 
 ***
 

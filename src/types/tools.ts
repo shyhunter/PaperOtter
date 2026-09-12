@@ -275,7 +275,7 @@ export const TOOL_REGISTRY: Record<ToolId, ToolDefinition> = {
     // No requiresDependency any more: repair goes through qpdf, which is linked
     // into the binary rather than shipped alongside it. The tool used to be
     // greyed out on a machine without Ghostscript; now there is nothing to be
-    // missing. Compress is the only tool that still needs it.
+    // missing. Convert Document is the only tool with an external dependency.
     steps: [
       { label: 'step.pick', description: 'tool.repairPdf.step2' },
       { label: 'step.repair', description: 'tool.editPdf.step1' },

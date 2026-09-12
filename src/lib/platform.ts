@@ -38,8 +38,9 @@ export function isToolAvailableHere(tool: ToolDefinition): boolean {
  * Drops the tools this platform cannot run.
  *
  * Hide, do not disable. `requiresDependency` greys a tool out with an install
- * hint because the user can act on it -- installing Ghostscript is a real
- * option. Vision cannot be installed on Windows, so a greyed Make Searchable
+ * hint because the user can act on it -- installing Calibre for Convert
+ * Document is a real option. Vision cannot be installed on Windows, so a greyed
+ * Make Searchable
  * card would advertise something permanently unattainable.
  */
 export function availableTools(tools: ToolDefinition[]): ToolDefinition[] {

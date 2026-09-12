@@ -94,11 +94,6 @@ fn validate_calibre_extra_args(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// Resolve the system-installed Ghostscript binary path.
-///
-/// - macOS/Linux: tries `which gs`
-/// - Windows: tries `where gswin64c` then `where gs`
-///
 /// Build a child process that never flashes a console window on Windows.
 ///
 /// A GUI app gets `windows_subsystem = "windows"` and so has no console of its
@@ -1565,7 +1560,8 @@ async fn convert_html_to_pdf_macos(
 /// The webview's `navigator.platform` reports "MacIntel" on every Mac —
 /// Apple Silicon included — so a crash report built from it can never tell an
 /// aarch64 build from an x86_64 one. That distinction matters here because the
-/// Ghostscript sidecar is architecture-specific.
+/// macOS builds are per-architecture: the arm64 .dmg will not run on an Intel
+/// Mac, and it reports that as a damaged app rather than a wrong one.
 fn format_system_info(os: &str, arch: &str) -> String {
     let label = match os {
         "macos" => "macOS",
@@ -3380,38 +3376,6 @@ mod tests {
                 .expect_err("must not recognise off macOS");
             assert!(err.contains("macOS"), "got: {err}");
         }
-    }
-
-    // ─── DEP-02 — Ghostscript availability must mean "it works" ────────────────
-    //
-    // is_ghostscript_available returned true whenever a sidecar *command object*
-    // could be constructed, which it always can — the file's existence is never
-    // checked, let alone whether it runs. Three of the four bundled sidecars are
-    // stub scripts that print "gs not bundled on this platform" and exit 1, so
-    // the app reported Ghostscript available on every platform and the disabled
-    // state with its install hint never appeared.
-
-    // ─── PDF-GS-INT-01 — Ghostscript integration (conditional on GS availability) ─
-    //
-    // These tests invoke the actual gs subprocess directly to verify GS
-    // compression behavior. They are silently skipped if GS is not installed
-    // (for CI jobs that don't have GS, only for PR validation).
-
-    mod ghostscript_integration {
-        use std::process::Command;
-
-        fn fixture_path(name: &str) -> std::path::PathBuf {
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .parent()
-                .expect("workspace root")
-                .join("test-fixtures")
-                .join(name)
-        }
-
-        fn has_pdf_magic(bytes: &[u8]) -> bool {
-            bytes.len() >= 4 && &bytes[0..4] == b"%PDF"
-        }
-
     }
 
     // ─── Save must never leave a half-written file over the original ──────────

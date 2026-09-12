@@ -35,9 +35,9 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
     fetchFeedbackUrl().then(setFeedbackUrl);
   }, [open]);
 
-  // Ghostscript ships inside the app under the AGPL, which requires the licence
-  // to travel with the binary rather than live only in the repository. The file
-  // is bundled, so reveal it on disk and stay useful with no network. Revealing
+  // Several of the bundled licences require their notice to travel with the
+  // binary rather than live only in the repository, so the file is bundled and
+  // this reveals it on disk, staying useful with no network. Revealing
   // rather than opening is deliberate: `opener:default` already permits it,
   // whereas opening a path would mean widening the capability for one button.
   const handleNotices = useCallback(() => {

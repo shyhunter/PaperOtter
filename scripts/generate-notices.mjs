@@ -3,7 +3,7 @@
  * Generates LICENSES/NOTICES.txt: the copyright notices PaperOtter owes for the
  * code compiled and bundled into it.
  *
- * Why this exists. Ghostscript is handled by hand in THIRD-PARTY-LICENSES.md
+ * Why this exists. The prose notes live by hand in THIRD-PARTY-LICENSES.md
  * because it is one component, it is AGPL, and the reasoning around it needs
  * prose. Everything else is 600-odd permissive dependencies, and those licences
  * still carry obligations: MIT requires its copyright notice to travel with
@@ -261,10 +261,11 @@ PaperOtter's own source is MIT, in LICENSE. This file covers the third-party cod
 compiled and bundled into the application, and reproduces the copyright notices
 those licences require to travel with a binary distribution.
 
-Ghostscript is NOT in this file. It ships as a separate executable rather than
-compiled in, it is AGPL-3.0 rather than permissive, and it is documented in
-THIRD-PARTY-LICENSES.md with its full licence in AGPL-3.0.txt. Both are in this
-same folder.
+Everything PaperOtter ships is in this file. It once carried a caveat for
+Ghostscript, which was AGPL-3.0 and shipped as a separate executable rather than
+compiled in; that dependency is gone, and with it the only copyleft in the
+distribution. Nothing is now distributed alongside the binary rather than within
+it.
 
   Rust crates compiled into the application    ${String(crates.length).padStart(4)}
   JavaScript packages bundled into the UI      ${String(packages.length).padStart(4)}

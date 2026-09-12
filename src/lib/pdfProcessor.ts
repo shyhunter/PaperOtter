@@ -1,14 +1,19 @@
-// PDF processing engine — pdf-lib + Ghostscript sidecar for real image recompression.
+// PDF processing engine — pdf-lib for structure, the Rust compressor for real
+// image recompression (in-process; see src-tauri/src/pdfcompress.rs).
 // CRITICAL: Never use useCompression: true with pdf-lib (issue #1445 — corrupts output).
-// For real compression, GS sidecar is invoked via invoke('compress_pdf').
+// Real compression goes through invoke('compress_pdf').
 import { readFile } from '@tauri-apps/plugin-fs';
 import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream, PDFArray, PDFRef } from 'pdf-lib';
 import { invoke } from '@tauri-apps/api/core';
 import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset, PdfQualityLevel } from '@/types/file';
 import { plural, t } from '@/i18n';
 
-// Quality level → Ghostscript -dPDFSETTINGS preset mapping.
-// These are GS native preset names — must match the compress_pdf allow-list in Rust.
+// Quality level → compressor preset name.
+// The names are Ghostscript's, kept when its compression moved in-process so the
+// wire format between the UI and Rust did not have to change. They are not
+// decorative: compress_pdf matches on these exact strings and maps each to a dpi
+// and a JPEG quality, so they must stay in step with the allow-list in
+// src-tauri/src/pdfcompress.rs.
 const QUALITY_TO_GS_PRESET: Record<PdfQualityLevel, string> = {
   web:     'screen',    // 72 dpi — smallest output
   screen:  'ebook',     // 150 dpi — balanced
