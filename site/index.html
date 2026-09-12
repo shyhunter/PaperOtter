@@ -767,25 +767,62 @@
     color: var(--ink-soft); margin: .9rem 0 0;
   }
 
-  /* The full list, kept quiet. The detected build is promoted into the button
-     above; these stay legible rather than hidden, so a wrong guess costs a
-     glance instead of a trip to the releases page. */
-  .dl-all {
-    list-style: none; margin: .9rem 0 0; padding: 0;
-    display: flex; flex-wrap: wrap; gap: .45rem 1.1rem;
-    font-family: "JetBrains Mono", monospace; font-size: .72rem;
-    letter-spacing: .04em;
+  /* The chooser. A native <details>, so it opens without JavaScript, takes
+     keyboard focus and announces its state to a screen reader for free. The
+     panel is positioned out of flow so opening it lays over the page instead of
+     shoving the hero video down the screen. */
+  .dl-choose { position: relative; }
+  .dl-choose > summary {
+    list-style: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .55rem;
   }
-  .dl-all a { color: var(--ink-soft); text-decoration: none; }
-  .dl-all b { font-weight: 500; color: var(--ink); }
-  .dl-all a:hover { color: var(--ink); }
-  .dl-all a:hover b { text-decoration: underline; }
-  /* Marked by the script as this machine's, in the page's own highlight. */
-  .dl-all li[data-here] b {
+  .dl-choose > summary::-webkit-details-marker { display: none; }
+  .dl-choose > summary::after { content: "\25be"; font-size: .85em; line-height: 1; }
+  .dl-choose[open] > summary::after { content: "\25b4"; }
+
+  .dl-all {
+    position: absolute; z-index: 8;
+    top: calc(100% + .75rem); inset-inline-start: 0;
+    min-width: 22rem; max-width: min(27rem, 86vw);
+    list-style: none; margin: 0; padding: .5rem;
+    display: grid; gap: .15rem;
+    background: var(--card); color: var(--card-ink);
+    border: 3px solid var(--rule);
+    border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px;
+    box-shadow: var(--card-shadow);
+    font-family: "JetBrains Mono", monospace;
+  }
+  /* Narrow enough that an overlay would cover the page: let it push instead. */
+  @media (max-width: 34rem) {
+    .dl-all { position: static; min-width: 0; max-width: none; margin-top: .7rem; }
+  }
+
+  .dl-all a {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: .9rem; padding: .5rem .6rem;
+    text-decoration: none; color: var(--card-ink);
+    border-radius: 10px 4px 11px 5px / 5px 11px 4px 10px;
+  }
+  .dl-all b { font-weight: 500; font-size: .78rem; }
+  .dl-all span { font-size: .68rem; color: var(--card-muted); text-align: end; }
+  .dl-all a:hover, .dl-all a:focus-visible {
+    background: var(--yellow); color: #141210; outline: none;
+  }
+  .dl-all a:hover span, .dl-all a:focus-visible span { color: #141210; }
+
+  /* The rows for the machine we think this is. The marked one carries the
+     guess in words, because a guess presented as a fact is how someone ends up
+     with a build their Mac cannot run. */
+  .dl-all li[data-here] b::before {
+    content: "\2022 "; color: var(--card-muted);
+  }
+  .dl-all li[data-yours] b::after {
+    content: " probably yours";
+    font-size: .62rem; letter-spacing: .04em;
     background: var(--yellow); color: #141210;
-    padding: .06em .3em;
-    border-radius: 9px 3px 10px 4px / 4px 10px 3px 9px;
-    box-shadow: 2px 2px 0 var(--rule);
+    padding: .1em .35em; margin-inline-start: .4rem;
+    border: 2px solid var(--rule);
+    border-radius: 8px 3px 9px 4px / 4px 9px 3px 8px;
   }
 
   .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
@@ -1325,23 +1362,38 @@
       do them on your own computer instead.
     </p>
     <div class="btns">
-      <a class="btn" id="dl" href="https://github.com/shyhunter/PaperOtter/releases/latest">Download</a>
+      <!-- Shown only when the visitor's platform has exactly one file to offer,
+           which today means Windows. It stays hidden without JavaScript, so the
+           chooser below is what everyone gets by default rather than a button
+           that guessed. -->
+      <a class="btn" id="dl-direct" href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe" hidden>Download for Windows</a>
+
+      <!-- A native <details>: it opens with no JavaScript, takes keyboard focus
+           and announces its own state to a screen reader, none of which a div
+           and a click handler would do for free.
+
+           It exists because the user agent cannot answer the question. Apple
+           silicon and Intel are indistinguishable from it, and the Apple silicon
+           .dmg is arm64-only -- an Intel Mac cannot execute it. Worse, since the
+           app is unsigned, macOS reports that failure as "PaperOtter is damaged
+           and can't be opened", the same words it uses for the Gatekeeper
+           refusal. A wrong guess would send that user to the xattr instructions,
+           which cannot help, and they would conclude the app is broken. One
+           deliberate click is cheaper than that. -->
+      <details class="dl-choose" id="dl-choose">
+        <summary class="btn" id="dl-summary">Download</summary>
+        <ul class="dl-all" id="dl-all">
+          <li data-os="mac" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg"><b>macOS &middot; Apple silicon</b><span>M1&ndash;M4 &middot; .dmg</span></a></li>
+          <li data-os="mac"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg"><b>macOS &middot; Intel</b><span>2016&ndash;2020 Macs &middot; .dmg</span></a></li>
+          <li data-os="windows" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe"><b>Windows</b><span>installer &middot; .exe</span></a></li>
+          <li data-os="linux" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb"><b>Linux &middot; .deb</b><span>Debian &amp; Ubuntu</span></a></li>
+          <li data-os="linux"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage"><b>Linux &middot; .AppImage</b><span>everything else</span></a></li>
+        </ul>
+      </details>
+
       <a class="btn ghost" href="https://github.com/shyhunter/PaperOtter">Read the source</a>
     </div>
     <p class="dl-note" id="dl-note">Every build is on the releases page.</p>
-
-    <!-- Every build, in the markup, always. The script promotes whichever one
-         matches the visitor into the button above; it never removes the rest.
-         People download for someone else's machine, arrive on a phone, and get
-         detected wrong, and a hidden list turns each of those into a dead end.
-         With JavaScript off this list *is* the download UI, and it works. -->
-    <ul class="dl-all" id="dl-all">
-      <li data-os="mac" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg">macOS <b>Apple silicon</b></a></li>
-      <li data-os="mac"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg">macOS <b>Intel</b></a></li>
-      <li data-os="windows" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe">Windows <b>.exe</b></a></li>
-      <li data-os="linux" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb">Linux <b>.deb</b></a></li>
-      <li data-os="linux"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage">Linux <b>.AppImage</b></a></li>
-    </ul>
 
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
@@ -2080,57 +2132,51 @@
     // Name the platform the visitor is actually on. Same read-only
     // navigator.userAgent as the install steps below, so this still adds no
     // network request: the two in the table above remain the only two.
-    var btn = document.getElementById('dl');
+    var direct = document.getElementById('dl-direct');
+    var choose = document.getElementById('dl-choose');
+    var summary = document.getElementById('dl-summary');
     var note = document.getElementById('dl-note');
     var list = document.getElementById('dl-all');
-    if (!btn || !list) return;
+    if (!direct || !choose || !list) return;
+
     var ua = navigator.userAgent || '';
 
     // Phones and tablets first, because they are easy to mistake for a desktop
     // we ship for: Android's user agent contains "Linux", and iOS contains
-    // "iPhone"/"iPad" alongside Mac-like tokens. Either would otherwise be
-    // handed an installer that machine cannot open. They keep the generic
-    // button and the releases page. (An iPad on iPadOS 13+ reports plain
-    // "Macintosh" and is genuinely indistinguishable from a Mac; nothing in the
-    // user agent can separate those two, so it is left alone.)
+    // "iPhone"/"iPad" beside Mac-like tokens. Either would otherwise be shown a
+    // chooser full of installers that machine cannot run. They keep the plain
+    // Download label and every build listed, which is the honest answer.
+    // (An iPad on iPadOS 13+ reports plain "Macintosh" and is genuinely
+    // indistinguishable from a Mac. Nothing in the user agent separates them.)
     if (/Android|iPhone|iPad|iPod|Mobile/.test(ua)) return;
 
     var os = /Mac/.test(ua) ? 'mac'
            : /Win/.test(ua) ? 'windows'
            : /Linux|X11/.test(ua) ? 'linux' : null;
-
-    // The operating system is all the user agent can honestly give us.
-    //
-    // Apple silicon and Intel are indistinguishable: every Mac browser reports
-    // "Intel Mac OS X" whatever the chip, because Apple froze that string. The
-    // two APIs that would tell us -- userAgentData.getHighEntropyValues and the
-    // WebGL renderer -- are Chromium-only and a fingerprinting surface
-    // respectively, and this page's whole argument is that the product does not
-    // do that sort of thing. Distro is the same story: Ubuntu, Fedora and Arch
-    // all say "Linux x86_64", so .deb versus .AppImage is not knowable either.
-    //
-    // So each platform names a default -- Apple silicon, because every Mac sold
-    // since 2020 is one, and .deb, because Ubuntu is the common case -- and the
-    // note says plainly what was assumed, with the alternative one line below.
-    var copy = {
-      mac:     ['Download for macOS',   'Apple silicon. On an Intel Mac, take the Intel build below.'],
-      windows: ['Download for Windows', 'The .exe installer. macOS and Linux are below.'],
-      linux:   ['Download for Linux',   'The .deb, for Debian and Ubuntu. AppImage is below.']
-    };
-
-    // No match means an OS we do not ship for. The button keeps its generic
-    // label and its link to the releases page, which is the right answer there.
     if (!os) return;
 
-    var pick = list.querySelector('li[data-os="' + os + '"][data-pick] a');
-    if (pick) {
-      btn.href = pick.href;
-      btn.textContent = copy[os][0];
-      if (note) note.textContent = copy[os][1];
+    // Windows has exactly one file, so there is nothing to ask: the button
+    // downloads it. macOS and Linux have two apiece and the user agent cannot
+    // tell us which, so their button opens the chooser with a guess marked
+    // rather than silently acting on one.
+    if (os === 'windows') {
+      choose.hidden = true;
+      direct.hidden = false;
+      if (note) note.textContent = 'The .exe installer. macOS and Linux builds are on the releases page.';
+      return;
     }
+
+    var copy = {
+      mac:   ['Download for macOS', 'Two Mac builds, and a browser cannot tell which this is. Apple silicon unless your Mac is from 2020 or earlier.'],
+      linux: ['Download for Linux', '.deb for Debian and Ubuntu, .AppImage for everything else.']
+    };
+    if (summary) summary.firstChild.nodeValue = copy[os][0];
+    if (note) note.textContent = copy[os][1];
 
     var mine = list.querySelectorAll('li[data-os="' + os + '"]');
     for (var i = 0; i < mine.length; i++) mine[i].setAttribute('data-here', '');
+    var yours = list.querySelector('li[data-os="' + os + '"][data-pick]');
+    if (yours) yours.setAttribute('data-yours', '');
   })();
 
   (function () {
