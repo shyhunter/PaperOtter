@@ -767,63 +767,86 @@
     color: var(--ink-soft); margin: .9rem 0 0;
   }
 
-  /* The chooser. A native <details>, so it opens without JavaScript, takes
-     keyboard focus and announces its state to a screen reader for free. The
-     panel is positioned out of flow so opening it lays over the page instead of
-     shoving the hero video down the screen. */
-  .dl-choose { position: relative; }
-  .dl-choose > summary {
-    list-style: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .55rem;
-  }
-  .dl-choose > summary::-webkit-details-marker { display: none; }
-  .dl-choose > summary::after { content: "\25be"; font-size: .85em; line-height: 1; }
-  .dl-choose[open] > summary::after { content: "\25b4"; }
+  /* Every build, as cards under the demo. The card for the machine we think
+     this is takes the yellow fill and a rotated stamp -- the same move the
+     Free / Open Source badge makes, so the recommendation reads as something
+     pressed onto the sheet rather than a label that can wrap and break. */
+  .get { margin-top: clamp(1.8rem, 4vw, 2.6rem); scroll-margin-top: 1.2rem; }
 
-  .dl-all {
-    position: absolute; z-index: 8;
-    top: calc(100% + .75rem); inset-inline-start: 0;
-    min-width: 22rem; max-width: min(27rem, 86vw);
-    list-style: none; margin: 0; padding: .5rem;
-    display: grid; gap: .15rem;
+  .get-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: .2rem .9rem; margin: 0 0 1rem;
+  }
+  .get-head h2 { font-size: clamp(1.2rem, 2.6vw, 1.6rem); margin: 0; }
+  .get-head p {
+    margin: 0; font-size: .72rem; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+
+  .get-cards {
+    display: grid; gap: 1rem; align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  }
+
+  .get-card {
+    position: relative;
     background: var(--card); color: var(--card-ink);
+    padding: 1.15rem 1.25rem 1.25rem;
+    display: flex; flex-direction: column; gap: .85rem;
+  }
+  .get-card h3 {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+    font-stretch: 90%; font-size: 1.2rem; letter-spacing: -.02em; margin: 0;
+  }
+  .get-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+
+  /* Yellow is constant across both themes here, so the fill and its ink are
+     stated outright rather than left to the theme tokens. */
+  .get-card[data-here] { background: var(--yellow); color: #141210; }
+
+  .get-stamp { display: none; }
+  .get-card[data-here] .get-stamp {
+    display: block;
+    position: absolute; top: -.85rem; inset-inline-end: -.6rem; z-index: 2;
+    transform: rotate(-6deg);
+    background: var(--plate); color: #141210;
+    border: 3px solid #141210;
+    border-radius: 11px 4px 12px 5px / 5px 12px 4px 11px;
+    box-shadow: 3px 3px 0 #141210;
+    padding: .32rem .5rem;
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 800; font-stretch: 90%; font-size: .58rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    line-height: 1.15; text-align: center;
+  }
+
+  .get-card a {
+    display: flex; flex-direction: column; gap: .1rem;
+    padding: .6rem .7rem; text-decoration: none;
+    background: var(--plate); color: var(--ink);
     border: 3px solid var(--rule);
-    border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px;
-    box-shadow: var(--card-shadow);
-    font-family: "JetBrains Mono", monospace;
+    border-radius: 12px 5px 14px 6px / 6px 14px 5px 12px;
+    box-shadow: 3px 3px 0 var(--rule);
+    transition: transform .06s linear, box-shadow .06s linear;
   }
-  /* Narrow enough that an overlay would cover the page: let it push instead. */
-  @media (max-width: 34rem) {
-    .dl-all { position: static; min-width: 0; max-width: none; margin-top: .7rem; }
+  .get-card li:nth-child(2) a { border-radius: 6px 14px 5px 12px / 12px 5px 14px 6px; }
+  .get-card a b { font-weight: 500; font-size: .92rem; }
+  .get-card a span {
+    font-family: "JetBrains Mono", monospace; font-size: .64rem;
+    letter-spacing: .04em; color: var(--ink-soft);
+  }
+  .get-card a:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--rule); }
+  .get-card a:active { transform: translate(3px, 3px); box-shadow: none; }
+  .get-card a:focus-visible { outline: 3px solid var(--rule); outline-offset: 3px; }
+
+  @media (max-width: 30rem) {
+    .get-card[data-here] .get-stamp { inset-inline-end: .5rem; top: -.75rem; }
   }
 
-  .dl-all a {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: .9rem; padding: .5rem .6rem;
-    text-decoration: none; color: var(--card-ink);
-    border-radius: 10px 4px 11px 5px / 5px 11px 4px 10px;
-  }
-  .dl-all b { font-weight: 500; font-size: .78rem; }
-  .dl-all span { font-size: .68rem; color: var(--card-muted); text-align: end; }
-  .dl-all a:hover, .dl-all a:focus-visible {
-    background: var(--yellow); color: #141210; outline: none;
-  }
-  .dl-all a:hover span, .dl-all a:focus-visible span { color: #141210; }
+  /* The button jumps rather than downloads on macOS and Linux, so it says so. */
+  .btn[data-jump]::after { content: " \2193"; }
 
-  /* The rows for the machine we think this is. The marked one carries the
-     guess in words, because a guess presented as a fact is how someone ends up
-     with a build their Mac cannot run. */
-  .dl-all li[data-here] b::before {
-    content: "\2022 "; color: var(--card-muted);
-  }
-  .dl-all li[data-yours] b::after {
-    content: " probably yours";
-    font-size: .62rem; letter-spacing: .04em;
-    background: var(--yellow); color: #141210;
-    padding: .1em .35em; margin-inline-start: .4rem;
-    border: 2px solid var(--rule);
-    border-radius: 8px 3px 9px 4px / 4px 9px 3px 8px;
-  }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 
   .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
   .filter {
@@ -924,11 +947,16 @@
      radii whose horizontal and vertical values differ so an edge reads as
      drawn rather than computed. Four variants dealt out by position, so a
      grid never looks like one shape stamped twenty times. */
-  .face, figure img, .claim, .net-panel, .support-card, .cmd, .stage, .demo-frame {
+  .face, figure img, .claim, .net-panel, .support-card, .cmd, .stage, .demo-frame,
+  .get-card {
     border: 3px solid var(--rule) !important;
     border-radius: 22px 8px 26px 10px / 10px 26px 8px 22px !important;
     box-shadow: var(--card-shadow) !important;
   }
+  /* Three cards side by side, so they take three different corners -- the same
+     reason the tool grid deals its radii out by position. */
+  .get-card:nth-child(2) { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px !important; }
+  .get-card:nth-child(3) { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px !important; }
   .card:nth-child(4n+2) .face { border-radius: 9px 25px 8px 22px / 22px 8px 26px 9px !important; }
   .card:nth-child(4n+3) .face { border-radius: 26px 10px 20px 8px / 8px 22px 10px 26px !important; }
   .card:nth-child(4n+4) .face { border-radius: 8px 22px 11px 26px / 26px 10px 22px 8px !important; }
@@ -1362,38 +1390,14 @@
       do them on your own computer instead.
     </p>
     <div class="btns">
-      <!-- Shown only when the visitor's platform has exactly one file to offer,
-           which today means Windows. It stays hidden without JavaScript, so the
-           chooser below is what everyone gets by default rather than a button
-           that guessed. -->
-      <a class="btn" id="dl-direct" href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe" hidden>Download for Windows</a>
-
-      <!-- A native <details>: it opens with no JavaScript, takes keyboard focus
-           and announces its own state to a screen reader, none of which a div
-           and a click handler would do for free.
-
-           It exists because the user agent cannot answer the question. Apple
-           silicon and Intel are indistinguishable from it, and the Apple silicon
-           .dmg is arm64-only -- an Intel Mac cannot execute it. Worse, since the
-           app is unsigned, macOS reports that failure as "PaperOtter is damaged
-           and can't be opened", the same words it uses for the Gatekeeper
-           refusal. A wrong guess would send that user to the xattr instructions,
-           which cannot help, and they would conclude the app is broken. One
-           deliberate click is cheaper than that. -->
-      <details class="dl-choose" id="dl-choose">
-        <summary class="btn" id="dl-summary">Download</summary>
-        <ul class="dl-all" id="dl-all">
-          <li data-os="mac" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg"><b>macOS &middot; Apple silicon</b><span>M1&ndash;M4 &middot; .dmg</span></a></li>
-          <li data-os="mac"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg"><b>macOS &middot; Intel</b><span>2016&ndash;2020 Macs &middot; .dmg</span></a></li>
-          <li data-os="windows" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe"><b>Windows</b><span>installer &middot; .exe</span></a></li>
-          <li data-os="linux" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb"><b>Linux &middot; .deb</b><span>Debian &amp; Ubuntu</span></a></li>
-          <li data-os="linux"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage"><b>Linux &middot; .AppImage</b><span>everything else</span></a></li>
-        </ul>
-      </details>
-
+      <!-- Windows has one file, so this downloads it. macOS and Linux have two
+           apiece and the user agent cannot say which, so for them this is a jump
+           to the cards below the demo -- marked with an arrow by CSS, because a
+           button that says Download and does not download is a small lie. -->
+      <a class="btn" id="dl" href="#get">Download</a>
       <a class="btn ghost" href="https://github.com/shyhunter/PaperOtter">Read the source</a>
     </div>
-    <p class="dl-note" id="dl-note">Every build is on the releases page.</p>
+    <p class="dl-note" id="dl-note">Every build is listed below.</p>
 
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
@@ -1403,6 +1407,46 @@
       Your browser cannot play this video. The screenshots below show the same thing.
     </video>
     </div>
+
+    <!-- Every build, always visible, directly under the demo it just sold you.
+         Not a dropdown and not an overlay: the video is the best thing on this
+         page and nothing should cover it, and choosing between two Mac builds
+         deserves more room than a menu. The card for the machine we think this
+         is gets the fill and the stamp; the rest stay plain and clickable. -->
+    <section class="get" id="get" aria-label="Download PaperOtter">
+      <div class="get-head">
+        <h2>Every <em>build</em></h2>
+        <p class="mono" id="get-note">Pick the one for your machine.</p>
+      </div>
+
+      <div class="get-cards">
+        <div class="get-card" data-os="mac">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>macOS</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg"><b>Apple silicon</b><span>M1&ndash;M4 &middot; .dmg</span></a></li>
+            <li><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg"><b>Intel</b><span>2016&ndash;2020 &middot; .dmg</span></a></li>
+          </ul>
+        </div>
+
+        <div class="get-card" data-os="windows">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>Windows</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe"><b>Installer</b><span>64-bit &middot; .exe</span></a></li>
+          </ul>
+        </div>
+
+        <div class="get-card" data-os="linux">
+          <span class="get-stamp" aria-hidden="true">Probably<br>yours</span>
+          <h3>Linux</h3>
+          <ul>
+            <li data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb"><b>Debian &amp; Ubuntu</b><span>amd64 &middot; .deb</span></a></li>
+            <li><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage"><b>Everything else</b><span>amd64 &middot; .AppImage</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </div>
 
   <section>
@@ -2132,21 +2176,20 @@
     // Name the platform the visitor is actually on. Same read-only
     // navigator.userAgent as the install steps below, so this still adds no
     // network request: the two in the table above remain the only two.
-    var direct = document.getElementById('dl-direct');
-    var choose = document.getElementById('dl-choose');
-    var summary = document.getElementById('dl-summary');
+    var btn = document.getElementById('dl');
     var note = document.getElementById('dl-note');
-    var list = document.getElementById('dl-all');
-    if (!direct || !choose || !list) return;
+    var getNote = document.getElementById('get-note');
+    var cards = document.getElementById('get');
+    if (!btn || !cards) return;
 
     var ua = navigator.userAgent || '';
 
     // Phones and tablets first, because they are easy to mistake for a desktop
     // we ship for: Android's user agent contains "Linux", and iOS contains
-    // "iPhone"/"iPad" beside Mac-like tokens. Either would otherwise be shown a
-    // chooser full of installers that machine cannot run. They keep the plain
-    // Download label and every build listed, which is the honest answer.
-    // (An iPad on iPadOS 13+ reports plain "Macintosh" and is genuinely
+    // "iPhone"/"iPad" beside Mac-like tokens. Either would otherwise be told a
+    // build is "probably yours" when that machine cannot run any of them. They
+    // keep the plain label and an unmarked set of cards, which is the honest
+    // answer. (An iPad on iPadOS 13+ reports plain "Macintosh" and is genuinely
     // indistinguishable from a Mac. Nothing in the user agent separates them.)
     if (/Android|iPhone|iPad|iPod|Mobile/.test(ua)) return;
 
@@ -2155,28 +2198,32 @@
            : /Linux|X11/.test(ua) ? 'linux' : null;
     if (!os) return;
 
-    // Windows has exactly one file, so there is nothing to ask: the button
-    // downloads it. macOS and Linux have two apiece and the user agent cannot
-    // tell us which, so their button opens the chooser with a guess marked
-    // rather than silently acting on one.
+    var card = cards.querySelector('.get-card[data-os="' + os + '"]');
+    if (card) card.setAttribute('data-here', '');
+
+    // Windows has exactly one file, so the button is the download. macOS and
+    // Linux have two apiece and the user agent cannot say which, so their
+    // button goes to the cards instead of picking for them -- the wrong Mac
+    // build reports itself as "damaged", the same words as the Gatekeeper
+    // refusal, which sends people to a fix that cannot work.
     if (os === 'windows') {
-      choose.hidden = true;
-      direct.hidden = false;
-      if (note) note.textContent = 'The .exe installer. macOS and Linux builds are on the releases page.';
+      var one = card && card.querySelector('li[data-pick] a');
+      if (one) btn.href = one.href;
+      btn.textContent = 'Download for Windows';
+      if (note) note.textContent = 'The .exe installer, 64-bit. Every build is listed below.';
       return;
     }
 
     var copy = {
-      mac:   ['Download for macOS', 'Two Mac builds, and a browser cannot tell which this is. Apple silicon unless your Mac is from 2020 or earlier.'],
-      linux: ['Download for Linux', '.deb for Debian and Ubuntu, .AppImage for everything else.']
+      mac:   ['Download for macOS', 'Two Mac builds, and a browser cannot tell which this is.',
+              'Apple silicon unless your Mac is from 2020 or earlier.'],
+      linux: ['Download for Linux', 'Two Linux packages, and a browser cannot tell your distribution.',
+              '.deb for Debian and Ubuntu, .AppImage for everything else.']
     };
-    if (summary) summary.firstChild.nodeValue = copy[os][0];
+    btn.textContent = copy[os][0];
+    btn.setAttribute('data-jump', '');
     if (note) note.textContent = copy[os][1];
-
-    var mine = list.querySelectorAll('li[data-os="' + os + '"]');
-    for (var i = 0; i < mine.length; i++) mine[i].setAttribute('data-here', '');
-    var yours = list.querySelector('li[data-os="' + os + '"][data-pick]');
-    if (yours) yours.setAttribute('data-yours', '');
+    if (getNote) getNote.textContent = copy[os][2];
   })();
 
   (function () {

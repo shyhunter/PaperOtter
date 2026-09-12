@@ -6,12 +6,13 @@ import { createRequire } from 'node:module';
  * [DOWNLOAD] The landing page hands each visitor the installer their machine
  * can actually run, and asks when it cannot know.
  *
- * Windows has one file, so its button downloads it. macOS and Linux have two
- * apiece and `navigator.userAgent` cannot say which: Apple silicon and Intel are
- * indistinguishable from it, and the Apple silicon .dmg is arm64-only, so an
+ * Windows has one file, so the hero button downloads it. macOS and Linux have
+ * two apiece and `navigator.userAgent` cannot say which: Apple silicon and Intel
+ * are indistinguishable from it, and the Apple silicon .dmg is arm64-only, so an
  * Intel Mac given it gets "PaperOtter is damaged and can't be opened" -- the
  * same words macOS uses for the Gatekeeper refusal, which would send them to the
- * xattr instructions that cannot help. Those two platforms open a chooser.
+ * xattr instructions that cannot help. For those two the button jumps to the
+ * cards under the demo instead, where the likely build carries a stamp.
  *
  * The user agent is also a minefield in the other direction: Android's contains
  * "Linux" and iOS's contains Mac-like tokens. Asserting on the source would not
@@ -45,17 +46,16 @@ const asset = (suffix: string) =>
   `https://github.com/shyhunter/PaperOtter/releases/download/v${version}/PaperOtter_${version}_${suffix}`;
 
 interface Rendered {
-  /** The one-click button. Present only when the platform has a single file. */
-  directShown: boolean;
-  directHref: string;
-  directLabel: string;
-  /** The chooser. */
-  chooserShown: boolean;
-  chooserLabel: string;
-  /** Filename of the row marked as the likely one, if any. */
-  marked: string | null;
+  /** The hero button. */
+  label: string;
+  href: string;
+  /** True when the button jumps to the cards instead of downloading. */
+  jumps: boolean;
   note: string;
-  listed: number;
+  /** Platform of the card carrying the "probably yours" stamp, if any. */
+  stamped: string | null;
+  cards: number;
+  links: number;
 }
 
 function render(userAgent: string): Rendered {
@@ -80,18 +80,15 @@ function render(userAgent: string): Rendered {
     },
   });
   const d = dom.window.document;
-  const direct = d.getElementById('dl-direct') as HTMLAnchorElement;
-  const choose = d.getElementById('dl-choose') as HTMLElement;
-  const yours = d.querySelector('#dl-all li[data-yours] a');
+  const btn = d.getElementById('dl') as HTMLAnchorElement;
   const out: Rendered = {
-    directShown: !direct.hidden,
-    directHref: direct.getAttribute('href') ?? '',
-    directLabel: direct.textContent?.trim() ?? '',
-    chooserShown: !choose.hidden,
-    chooserLabel: d.getElementById('dl-summary')?.textContent?.trim() ?? '',
-    marked: yours?.getAttribute('href')?.split('/').pop() ?? null,
+    label: btn.textContent?.trim() ?? '',
+    href: btn.getAttribute('href') ?? '',
+    jumps: btn.hasAttribute('data-jump'),
     note: d.getElementById('dl-note')?.textContent?.trim() ?? '',
-    listed: d.querySelectorAll('#dl-all li').length,
+    stamped: d.querySelector('.get-card[data-here]')?.getAttribute('data-os') ?? null,
+    cards: d.querySelectorAll('.get-card').length,
+    links: d.querySelectorAll('.get-card a').length,
   };
   dom.window.close();
   return out;
@@ -101,40 +98,38 @@ const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.1
 const WINDOWS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
 const UBUNTU = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0';
 
-describe('[DOWNLOAD-01] one file means no question', () => {
-  it('gives Windows the exe straight away, and hides the chooser', () => {
+describe('[DOWNLOAD-01] one file means the button is the download', () => {
+  it('gives Windows the exe straight from the hero', () => {
     const r = render(WINDOWS);
-    expect(r.directShown).toBe(true);
-    expect(r.directHref).toBe(asset('x64-setup.exe'));
-    expect(r.directLabel).toBe('Download for Windows');
-    expect(r.chooserShown).toBe(false);
+    expect(r.href).toBe(asset('x64-setup.exe'));
+    expect(r.label).toBe('Download for Windows');
+    expect(r.jumps).toBe(false);
+    expect(r.stamped).toBe('windows');
   });
 });
 
-describe('[DOWNLOAD-02] two files means it asks', () => {
-  it('opens the chooser on a Mac rather than guessing the architecture', () => {
+describe('[DOWNLOAD-02] two files means the button sends you to the cards', () => {
+  it('does not pick a Mac architecture', () => {
     const r = render(MAC);
-    // The whole point: no Mac download starts from one click, because the wrong
-    // one produces an error that reads as the signing problem.
-    expect(r.directShown).toBe(false);
-    expect(r.chooserShown).toBe(true);
-    expect(r.chooserLabel).toBe('Download for macOS');
-    expect(r.marked).toBe(`PaperOtter_${version}_aarch64.dmg`);
-    // The note has to say it is a guess, not state it as fact.
-    expect(r.note).toMatch(/cannot tell|2020/i);
+    // The point of the whole design: no Mac download starts from one click,
+    // because the wrong build reports itself as the signing problem.
+    expect(r.href).toBe('#get');
+    expect(r.jumps).toBe(true);
+    expect(r.label).toBe('Download for macOS');
+    expect(r.stamped).toBe('mac');
+    expect(r.note).toMatch(/cannot tell/i);
   });
 
-  it('opens the chooser on Linux and marks the deb', () => {
+  it('does not pick a Linux package', () => {
     const r = render(UBUNTU);
-    expect(r.directShown).toBe(false);
-    expect(r.chooserShown).toBe(true);
-    expect(r.chooserLabel).toBe('Download for Linux');
-    expect(r.marked).toBe(`PaperOtter_${version}_amd64.deb`);
-    expect(r.note).toMatch(/AppImage/i);
+    expect(r.href).toBe('#get');
+    expect(r.jumps).toBe(true);
+    expect(r.label).toBe('Download for Linux');
+    expect(r.stamped).toBe('linux');
   });
 });
 
-describe('[DOWNLOAD-03] it never points a machine at something it cannot run', () => {
+describe('[DOWNLOAD-03] it never claims a build is yours when it cannot run', () => {
   // Each of these reads as a desktop we ship for if the regexes are naive.
   const PHONES: [string, string][] = [
     ['Android', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36'],
@@ -142,37 +137,36 @@ describe('[DOWNLOAD-03] it never points a machine at something it cannot run', (
     ['iPad (legacy UA)', 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'],
   ];
 
-  it.each(PHONES)('makes no recommendation to %s', (_name, ua) => {
+  it.each(PHONES)('stamps no card for %s', (_name, ua) => {
     const r = render(ua);
-    expect(r.directShown).toBe(false);
-    expect(r.chooserLabel).toBe('Download');
-    expect(r.marked).toBeNull();
+    expect(r.stamped).toBeNull();
+    expect(r.label).toBe('Download');
+    expect(r.href).toBe('#get');
   });
 
-  it('makes no recommendation on an operating system we do not ship for', () => {
+  it('stamps no card on an operating system we do not ship for', () => {
     const r = render('Mozilla/5.0 (PlayStation; PlayStation 5/2.0) AppleWebKit/605.1.15');
-    expect(r.directShown).toBe(false);
-    expect(r.chooserLabel).toBe('Download');
-    expect(r.marked).toBeNull();
+    expect(r.stamped).toBeNull();
+    expect(r.label).toBe('Download');
   });
 });
 
-describe('[DOWNLOAD-04] every build stays reachable', () => {
-  it('lists all five whatever the visitor is on', () => {
-    // The script marks and promotes; it must never remove. Someone downloading
-    // for another machine, or detected wrong, needs the rest to still be there.
+describe('[DOWNLOAD-04] every build stays visible', () => {
+  it('shows all three cards and all five builds, whatever the visitor is on', () => {
+    // The script stamps; it must never hide. Someone downloading for another
+    // machine, or detected wrong, needs the rest to still be there -- and the
+    // cards sit under the demo precisely so nothing is ever covered up.
     for (const ua of [MAC, WINDOWS, UBUNTU, 'Mozilla/5.0 (Linux; Android 14) Mobile']) {
-      expect(render(ua).listed).toBe(5);
+      const r = render(ua);
+      expect(r.cards).toBe(3);
+      expect(r.links).toBe(5);
     }
   });
 
   it('is a usable download page with no script at all', () => {
     const d = new JSDOM(html).window.document;
-    // The chooser is a native <details>, so it opens unaided. The one-click
-    // button is hidden until a script can prove which platform it is for.
-    expect((d.getElementById('dl-direct') as HTMLElement).hasAttribute('hidden')).toBe(true);
-    expect((d.getElementById('dl-choose') as HTMLElement).tagName).toBe('DETAILS');
-    const links = [...d.querySelectorAll('#dl-all li a')].map((a) => a.getAttribute('href'));
+    expect((d.getElementById('dl') as HTMLAnchorElement).getAttribute('href')).toBe('#get');
+    const links = [...d.querySelectorAll('.get-card a')].map((a) => a.getAttribute('href'));
     expect(links).toEqual([
       asset('aarch64.dmg'),
       asset('x64.dmg'),

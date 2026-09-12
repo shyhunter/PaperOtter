@@ -106,13 +106,14 @@ describe('[INSTALL-02] download links match the shipped version', () => {
     }
   });
 
-  it('keeps a default for each platform we detect', () => {
-    // The script promotes `[data-pick]` for the detected OS into the button. A
-    // platform without one silently leaves the button on the releases page.
+  it('gives every platform a card, and every card a default build', () => {
+    // Each platform is a card under the demo; `[data-pick]` marks the build the
+    // script recommends inside it. A card without one leaves a visitor with no
+    // steer on the choice the user agent could not make for them.
     for (const os of ['mac', 'windows', 'linux']) {
-      expect(site, `${os} has no default build to promote`).toMatch(
-        new RegExp(`data-os="${os}" data-pick`),
-      );
+      const card = new RegExp(`data-os="${os}"[\\s\\S]*?</div>`).exec(site)?.[0];
+      expect(card, `${os} has no download card`).toBeTruthy();
+      expect(card, `${os}'s card marks no default build`).toContain('data-pick');
     }
   });
 });
