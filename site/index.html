@@ -1201,7 +1201,7 @@
      aspect-ratio a <video> is zero-height until metadata arrives, and the whole
      page below it jumps down the moment it does. The stage already declared
      one; the hero never did. */
-  .demo { aspect-ratio: 1200 / 856; width: 100%; height: auto; }
+  .demo { aspect-ratio: 1200 / 780; width: 100%; height: auto; }
   .demo-frame { aspect-ratio: auto; }
   figure img { aspect-ratio: 16 / 10; object-fit: cover; }
 
@@ -1312,7 +1312,7 @@
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
            autoplay muted loop playsinline controls preload="metadata"
-           aria-label="PaperOtter in use: choosing a tool, opening a document and saving the result">
+           aria-label="PaperOtter's PDF editor with a document open, moving through the watermark, page numbers, make searchable, redact and repair panels">
       <source src="media/hero.mp4" type="video/mp4">
       Your browser cannot play this video. The screenshots below show the same thing.
     </video>
@@ -1667,7 +1667,7 @@
           </button>
           <div class="job-panel" id="jp0" role="region" aria-labelledby="jb0">
             <p>Get a scan or a report under an attachment limit without turning the text to mush. The setting says what it will cost before you commit to it.</p>
-          <p class="job-stat">73.80 MB &rarr; 20.49 MB &middot; 72% smaller &middot; 438 pages</p>
+          <p class="job-stat">73.80 MB &rarr; 46.13 MB &middot; 37% smaller &middot; 438 pages</p>
           <p>Measured, not promised: a scanned page went from 127 KB to 40 KB, 68% smaller. A photo PDF already at screen resolution came back unchanged. There was nothing left to downsample, and the app said so instead of pretending otherwise.</p>
           </div>
         </div>
@@ -1696,7 +1696,7 @@
             <span class="job-title">A signature without a signing service</span>
           </button>
           <div class="job-panel" id="jp3" role="region" aria-labelledby="jb3">
-            <p>Draw or upload it once, place it, save the file. Nobody else holds the document, and there is no account in between.</p>
+            <p>Draw, type or upload it once, place it, save the file. Nobody else holds the document, and there is no account in between.</p>
           </div>
         </div>
         <div class="job" data-job="4" data-open="false">
@@ -1725,7 +1725,7 @@
       (function () {
         var SRC = ["media/compress.mp4", "media/ebook.mp4", "media/markdown.mp4", "media/signature.mp4", "media/redact.mp4"];
         var POSTER = ["media/compress-poster.jpg", "media/ebook-poster.jpg", "media/markdown-poster.jpg", "media/signature-poster.jpg", "media/redact-poster.jpg"];
-        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowed into a real page rather than a picture of one.", "PDF to Markdown &middot; 18.9 KB &rarr; 12.5 KB &middot; 34% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn, then applied: opaque black, not a rectangle laid over the text."];
+        var CAPS = ["Configure to compare on a 438-page document, ending held on the figure.", "PDF to EPUB, reflowable rather than a picture of a page: typography and margins set before it converts.", "PDF to Markdown &middot; 22.7 KB &rarr; 12.5 KB &middot; 45% smaller.", "Typed, placed on every page, and applied. No signing service in between.", "Drawn in whichever colour you pick, then applied: the page is flattened and the text underneath is gone."];
         var vid = document.getElementById('stage-video');
         // One stage, moved into whichever panel is open, rather than four
         // copies of a clip that already weighs more than the rest of the page.
