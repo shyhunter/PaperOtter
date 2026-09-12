@@ -4,17 +4,17 @@ name: Pages
 # project; this is for the ones who have not, and a desktop app needs somewhere
 # to download it from that is not a source-code repository.
 #
-# Built from `site/`, which carries the page, the demo video, and the fonts and
-# icons it used to pull from Google and jsDelivr. The page embeds no screenshots
-# any more; the one copied in at publish time is the og:image a link preview
-# renders, and it already lives in docs/screenshots/ for the README to use.
+# Built from `site/`, which carries the page, the demo clips, the fonts and icons
+# it used to pull from Google and jsDelivr, and the share card a link preview
+# renders. That card is the og:image now, so the screenshot that used to be
+# copied in for the purpose is gone -- nothing referenced it, because the page
+# had no og tags at all until they were added.
 
 on:
   push:
     branches: [main]
     paths:
       - 'site/**'
-      - 'docs/screenshots/**'
       - '.github/workflows/pages.yml'
   # A release changes which files the download buttons point at, and nothing
   # under site/ changes when it does. Without this the page would go on offering
@@ -66,14 +66,12 @@ jobs:
           # Provenance for the committed font binaries: repo documentation, not
           # a web asset.
           rm -f _site/fonts/README.md
-          mkdir -p _site/screenshots
-          cp docs/screenshots/dashboard-light.png _site/screenshots/
           # A missing asset on a download page reads as a broken product, so
           # fail the build here rather than ship one.
           for f in index.html \
                    fonts/bricolage-var.woff2 fonts/plex-sans-var.woff2 \
                    fonts/plex-mono-400.woff2 fonts/plex-mono-500.woff2 \
-                   screenshots/dashboard-light.png \
+                   favicon.png apple-touch-icon.png \
                    media/share-card.jpg \
                    media/otter-mac.png media/otter-windows.png media/otter-linux.png \
                    media/hero.mp4 media/hero-poster.jpg \
