@@ -5,8 +5,10 @@ import { invoke } from '@tauri-apps/api/core';
  *
  * The webview's `navigator.platform` says "MacIntel" on every Mac, Apple
  * Silicon included, so it cannot distinguish an aarch64 build from an x86_64
- * one -- a distinction that matters because the Ghostscript sidecar is
- * architecture-specific. The authoritative value comes from the Rust side.
+ * one -- a distinction that matters because the macOS builds are
+ * per-architecture: the arm64 .dmg will not run on an Intel Mac, and it reports
+ * that as a damaged app rather than a wrong one. The authoritative value comes
+ * from the Rust side.
  *
  * Never throws: falls back to `navigator.platform` if the command is
  * unavailable (e.g. running outside Tauri, or in a test environment). */

@@ -76,7 +76,7 @@ ShortDescription: Compress, convert and edit PDFs, images and documents on your 
 Description: >-
   PaperOtter is a local document toolkit. Twenty-two tools for PDFs, images and
   documents run on your own machine, with no account, no uploads and no
-  telemetry. Ghostscript is bundled, so twenty-one of the twenty-two need
+  telemetry. Everything is compiled in, so twenty-one of the twenty-two need
   nothing else installed.
 Tags:
   - pdf
