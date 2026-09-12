@@ -43,8 +43,13 @@ jobs:
     # failed" and leaves a red X on every push that touches the site. Like the
     # CodeQL gate, this removes itself at the visibility flip.
     #
-    # An expression rather than a guard job: this workflow runs only on `push`
-    # and `workflow_dispatch`, and both populate `github.event.repository`.
+    # An expression rather than a guard job: every trigger this workflow has --
+    # `push`, `release` and `workflow_dispatch` -- populates
+    # `github.event.repository`, so the check holds on all three.
+    #
+    # Note for the visibility flip: nothing under site/ changes when the repo
+    # goes public, so no push fires and this will not run on its own. Run it
+    # from the Actions tab once, and pushes take over from there.
     if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     environment:
