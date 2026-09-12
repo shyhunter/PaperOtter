@@ -3,7 +3,7 @@
 ## Your local document toolkit -> private, fast, offline.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="PaperOtter in use: opening a PDF, then moving through the compress, rotate, watermark, sign, crop and redact panels" width="760">
+  <img src="docs/demo.gif" alt="PaperOtter's PDF editor with a document open, moving through the watermark, page numbers, make searchable, redact and repair panels" width="760">
 </p>
 
 <p align="center">
@@ -17,15 +17,15 @@
 ---
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-dark.png" alt="PaperOtter dashboard showing PDF, image, and document tools" width="100%">
+  <img src="docs/screenshots/dashboard-light.png" alt="PaperOtter dashboard in the day theme: favourites across the top, then the PDF tool grid" width="100%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/dashboard-light.png" alt="PaperOtter dashboard in light mode" width="49%">
-  <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF tool - pick a file to open or drop" width="49%">
+  <img src="docs/screenshots/dashboard-dark.png" alt="The same dashboard in the night theme" width="49%">
+  <img src="docs/screenshots/tool-pick-step.png" alt="Compress PDF, step one - open a file, or drop one anywhere on the window" width="49%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/tool-configure-step.png" alt="Compress PDF tool - configure compression level and options" width="49%">
-  <img src="docs/screenshots/tool-select-pages.png" alt="Split PDF tool - select page ranges from a thumbnail grid" width="49%">
+  <img src="docs/screenshots/tool-configure-step.png" alt="Compress PDF, step two - compression level, a custom target size, and page resizing" width="49%">
+  <img src="docs/screenshots/tool-select-pages.png" alt="Rotate PDF - selecting pages from a thumbnail grid and turning them left or right" width="49%">
 </p>
 
 Every tool follows the same four-step flow: Pick, Configure, Compare, Save
