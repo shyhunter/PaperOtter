@@ -52,6 +52,8 @@ interface Rendered {
   /** True when the button jumps to the cards instead of downloading. */
   jumps: boolean;
   note: string;
+  /** The line above the cards, which carries the guess in words. */
+  cardNote: string;
   /** Platform of the card carrying the "probably yours" stamp, if any. */
   stamped: string | null;
   cards: number;
@@ -86,6 +88,7 @@ function render(userAgent: string): Rendered {
     href: btn.getAttribute('href') ?? '',
     jumps: btn.hasAttribute('data-jump'),
     note: d.getElementById('dl-note')?.textContent?.trim() ?? '',
+    cardNote: d.getElementById('get-note')?.textContent?.trim() ?? '',
     stamped: d.querySelector('.get-card[data-here]')?.getAttribute('data-os') ?? null,
     cards: d.querySelectorAll('.get-card').length,
     links: d.querySelectorAll('.get-card a').length,
@@ -117,7 +120,9 @@ describe('[DOWNLOAD-02] two files means the button sends you to the cards', () =
     expect(r.jumps).toBe(true);
     expect(r.label).toBe('Download for macOS');
     expect(r.stamped).toBe('mac');
-    expect(r.note).toMatch(/cannot tell/i);
+    // The guess is stated where the choice is made, not under the button.
+    expect(r.cardNote).toMatch(/Apple silicon unless/i);
+    expect(r.note).toBe('Every build is listed below.');
   });
 
   it('does not pick a Linux package', () => {

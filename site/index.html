@@ -1506,7 +1506,7 @@
           <tr>
             <td>When you open About</td>
             <td>&ldquo;Where should feedback go?&rdquo;<br><span class="mono">raw.githubusercontent.com/&hellip;/feedback-config.json</span></td>
-            <td>Nothing of yours. It reads the address of the project&rsquo;s discussion board, so the Feedback button knows where to open it.</td>
+            <td>Nothing of yours. It reads which <a href="https://github.com/shyhunter/PaperOtter/discussions">Discussions</a> board the Feedback button opens. Reports arrive pre-filled; nothing is posted until you press the button yourself.</td>
           </tr>
           <tr>
             <td>Everything else you do</td>
@@ -2099,8 +2099,10 @@
     </div>
 
     <p class="lede" style="margin:1.4rem 0 0">
-      Reporting something that broke is worth more than both. Most of what is in
-      this release came from someone taking the time to say what went wrong.
+      Reporting something that broke is worth more than both, and it happens in
+      <a href="https://github.com/shyhunter/PaperOtter/discussions">Discussions</a> rather than an inbox &mdash; ask a question,
+      suggest a tool, or say what went wrong. Most of what is in this release
+      came from someone taking the time to do exactly that.
     </p>
   </section>
 
@@ -2108,6 +2110,7 @@
     <nav>
       <a href="https://github.com/shyhunter/PaperOtter/wiki">Docs</a>
       <a href="https://github.com/shyhunter/PaperOtter/issues">Report</a>
+      <a href="https://github.com/shyhunter/PaperOtter/discussions">Discuss</a>
       <a href="https://github.com/users/shyhunter/projects/9">Roadmap</a>
       <a href="https://github.com/shyhunter/PaperOtter">Source</a>
     </nav>
@@ -2215,14 +2218,14 @@
     }
 
     var copy = {
-      mac:   ['Download for macOS', 'Two Mac builds, and a browser cannot tell which this is.',
+      mac:   ['Download for macOS', '',
               'Apple silicon unless your Mac is from 2020 or earlier.'],
       linux: ['Download for Linux', 'Two Linux packages, and a browser cannot tell your distribution.',
               '.deb for Debian and Ubuntu, .AppImage for everything else.']
     };
     btn.textContent = copy[os][0];
     btn.setAttribute('data-jump', '');
-    if (note) note.textContent = copy[os][1];
+    if (note && copy[os][1]) note.textContent = copy[os][1];
     if (getNote) getNote.textContent = copy[os][2];
   })();
 
