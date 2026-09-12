@@ -69,8 +69,9 @@ jobs:
           # A missing asset on a download page reads as a broken product, so
           # fail the build here rather than ship one.
           for f in index.html \
-                   fonts/bricolage-var.woff2 fonts/plex-sans-var.woff2 \
-                   fonts/plex-mono-400.woff2 fonts/plex-mono-500.woff2 \
+                   fonts/bricolage-var.woff2 \
+                   fonts/archivo-latin.woff2 fonts/archivo-latin-ext.woff2 \
+                   fonts/jetbrains-mono-latin.woff2 fonts/jetbrains-mono-latin-ext.woff2 \
                    favicon.png apple-touch-icon.png \
                    media/share-card.jpg \
                    media/otter-mac.png media/otter-windows.png media/otter-linux.png \
