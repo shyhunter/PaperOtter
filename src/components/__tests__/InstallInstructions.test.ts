@@ -68,3 +68,51 @@ describe('[INSTALL-01] one Gatekeeper instruction, everywhere', () => {
       .toMatch(/[Dd]rag the app into Applications/);
   });
 });
+
+/**
+ * [INSTALL-02] The landing page's download links name the version that ships.
+ *
+ * The page carries real, version-stamped URLs rather than a placeholder, so it
+ * is correct opened straight from the repo or published as a design artifact.
+ * The Pages workflow rewrites them from `tauri.conf.json` at deploy time, which
+ * protects the published site but not this file — and the file is what every
+ * artifact and local preview renders. This is the check that keeps the two in
+ * step, and it fails at the version bump rather than after the release.
+ */
+describe('[INSTALL-02] download links match the shipped version', () => {
+  const version = JSON.parse(
+    readFileSync('src-tauri/tauri.conf.json', 'utf-8'),
+  ).version as string;
+  const site = readFileSync('site/index.html', 'utf-8');
+
+  it('names one version, and it is the one in tauri.conf.json', () => {
+    const seen = new Set(
+      [...site.matchAll(/PaperOtter_(\d+\.\d+\.\d+)_/g)].map((m) => m[1]),
+    );
+    for (const tag of site.matchAll(/releases\/download\/v(\d+\.\d+\.\d+)\//g)) {
+      seen.add(tag[1]);
+    }
+    expect(seen.size, `site/index.html names several versions: ${[...seen]}`).toBe(1);
+    expect([...seen][0]).toBe(version);
+  });
+
+  it('offers every installer the release actually publishes', () => {
+    // One per asset on the release. A platform missing here is a visitor sent
+    // to the releases page to work it out for themselves.
+    for (const suffix of ['aarch64.dmg', 'x64.dmg', 'x64-setup.exe', 'amd64.deb', 'amd64.AppImage']) {
+      expect(site, `no direct link to the ${suffix} build`).toContain(
+        `/releases/download/v${version}/PaperOtter_${version}_${suffix}`,
+      );
+    }
+  });
+
+  it('keeps a default for each platform we detect', () => {
+    // The script promotes `[data-pick]` for the detected OS into the button. A
+    // platform without one silently leaves the button on the releases page.
+    for (const os of ['mac', 'windows', 'linux']) {
+      expect(site, `${os} has no default build to promote`).toMatch(
+        new RegExp(`data-os="${os}" data-pick`),
+      );
+    }
+  });
+});

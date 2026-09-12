@@ -767,6 +767,27 @@
     color: var(--ink-soft); margin: .9rem 0 0;
   }
 
+  /* The full list, kept quiet. The detected build is promoted into the button
+     above; these stay legible rather than hidden, so a wrong guess costs a
+     glance instead of a trip to the releases page. */
+  .dl-all {
+    list-style: none; margin: .9rem 0 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: .45rem 1.1rem;
+    font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    letter-spacing: .04em;
+  }
+  .dl-all a { color: var(--ink-soft); text-decoration: none; }
+  .dl-all b { font-weight: 500; color: var(--ink); }
+  .dl-all a:hover { color: var(--ink); }
+  .dl-all a:hover b { text-decoration: underline; }
+  /* Marked by the script as this machine's, in the page's own highlight. */
+  .dl-all li[data-here] b {
+    background: var(--yellow); color: #141210;
+    padding: .06em .3em;
+    border-radius: 9px 3px 10px 4px / 4px 10px 3px 9px;
+    box-shadow: 2px 2px 0 var(--rule);
+  }
+
   .filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .8rem; }
   .filter {
     font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
@@ -1308,6 +1329,19 @@
       <a class="btn ghost" href="https://github.com/shyhunter/PaperOtter">Read the source</a>
     </div>
     <p class="dl-note" id="dl-note">Every build is on the releases page.</p>
+
+    <!-- Every build, in the markup, always. The script promotes whichever one
+         matches the visitor into the button above; it never removes the rest.
+         People download for someone else's machine, arrive on a phone, and get
+         detected wrong, and a hidden list turns each of those into a dead end.
+         With JavaScript off this list *is* the download UI, and it works. -->
+    <ul class="dl-all" id="dl-all">
+      <li data-os="mac" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_aarch64.dmg">macOS <b>Apple silicon</b></a></li>
+      <li data-os="mac"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64.dmg">macOS <b>Intel</b></a></li>
+      <li data-os="windows" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_x64-setup.exe">Windows <b>.exe</b></a></li>
+      <li data-os="linux" data-pick><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.deb">Linux <b>.deb</b></a></li>
+      <li data-os="linux"><a href="https://github.com/shyhunter/PaperOtter/releases/download/v1.0.0/PaperOtter_1.0.0_amd64.AppImage">Linux <b>.AppImage</b></a></li>
+    </ul>
 
     <div class="demo-frame">
     <video class="demo" id="demo" poster="media/hero-poster.jpg"
@@ -2048,23 +2082,55 @@
     // network request: the two in the table above remain the only two.
     var btn = document.getElementById('dl');
     var note = document.getElementById('dl-note');
-    if (!btn) return;
+    var list = document.getElementById('dl-all');
+    if (!btn || !list) return;
     var ua = navigator.userAgent || '';
-    var os = /Mac|iPhone|iPad/.test(ua) ? 'mac'
+
+    // Phones and tablets first, because they are easy to mistake for a desktop
+    // we ship for: Android's user agent contains "Linux", and iOS contains
+    // "iPhone"/"iPad" alongside Mac-like tokens. Either would otherwise be
+    // handed an installer that machine cannot open. They keep the generic
+    // button and the releases page. (An iPad on iPadOS 13+ reports plain
+    // "Macintosh" and is genuinely indistinguishable from a Mac; nothing in the
+    // user agent can separate those two, so it is left alone.)
+    if (/Android|iPhone|iPad|iPod|Mobile/.test(ua)) return;
+
+    var os = /Mac/.test(ua) ? 'mac'
            : /Win/.test(ua) ? 'windows'
            : /Linux|X11/.test(ua) ? 'linux' : null;
-    // Apple Silicon and Intel are indistinguishable from the user agent, so the
-    // note names both rather than guessing and sending someone the wrong file.
+
+    // The operating system is all the user agent can honestly give us.
+    //
+    // Apple silicon and Intel are indistinguishable: every Mac browser reports
+    // "Intel Mac OS X" whatever the chip, because Apple froze that string. The
+    // two APIs that would tell us -- userAgentData.getHighEntropyValues and the
+    // WebGL renderer -- are Chromium-only and a fingerprinting surface
+    // respectively, and this page's whole argument is that the product does not
+    // do that sort of thing. Distro is the same story: Ubuntu, Fedora and Arch
+    // all say "Linux x86_64", so .deb versus .AppImage is not knowable either.
+    //
+    // So each platform names a default -- Apple silicon, because every Mac sold
+    // since 2020 is one, and .deb, because Ubuntu is the common case -- and the
+    // note says plainly what was assumed, with the alternative one line below.
     var copy = {
-      mac:     ['Download for macOS',   'Apple Silicon and Intel builds, plus Windows and Linux, are on the releases page.'],
-      windows: ['Download for Windows', 'macOS and Linux builds are on the same page.'],
-      linux:   ['Download for Linux',   'Both .deb and .AppImage, plus macOS and Windows, are on the same page.']
+      mac:     ['Download for macOS',   'Apple silicon. On an Intel Mac, take the Intel build below.'],
+      windows: ['Download for Windows', 'The .exe installer. macOS and Linux are below.'],
+      linux:   ['Download for Linux',   'The .deb, for Debian and Ubuntu. AppImage is below.']
     };
-    // No match means an OS we do not ship for. The generic label is correct there.
-    if (os) {
+
+    // No match means an OS we do not ship for. The button keeps its generic
+    // label and its link to the releases page, which is the right answer there.
+    if (!os) return;
+
+    var pick = list.querySelector('li[data-os="' + os + '"][data-pick] a');
+    if (pick) {
+      btn.href = pick.href;
       btn.textContent = copy[os][0];
       if (note) note.textContent = copy[os][1];
     }
+
+    var mine = list.querySelectorAll('li[data-os="' + os + '"]');
+    for (var i = 0; i < mine.length; i++) mine[i].setAttribute('data-here', '');
   })();
 
   (function () {
