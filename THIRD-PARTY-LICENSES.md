@@ -1,6 +1,6 @@
 # Third-Party Licences
 
-Papercut itself is MIT licensed (see `LICENSE`). It bundles and invokes the
+PaperOtter itself is MIT licensed (see `LICENSE`). It bundles and invokes the
 following third-party software. This file records what is shipped, under what
 licence, and how to obtain the corresponding source.
 
@@ -14,11 +14,11 @@ licence, and how to obtain the corresponding source.
 - **Upstream:** https://github.com/qpdf/qpdf
 
 Used for: repairing damaged PDFs. Unlike Ghostscript, qpdf is **statically linked
-into the Papercut binary** rather than shipped as a separate executable — there is
+into the PaperOtter binary** rather than shipped as a separate executable — there is
 no sidecar file and no companion DLL on Windows.
 
 Apache-2.0 is permissive: it carries no copyleft, so it places no licence
-requirement on Papercut's own MIT source, and it would place none on a commercial
+requirement on PaperOtter's own MIT source, and it would place none on a commercial
 release either. Its obligations are to keep the licence and attribution, which
 this file and `LICENSES/Apache-2.0.txt` do.
 
@@ -29,7 +29,7 @@ the shipped binary too and their notices are owed:
 
 - **zlib 1.3.1** — © 1995-2024 Jean-loup Gailly and Mark Adler, under the zlib
   licence. Permissive; requires the copyright notice not be misrepresented and
-  altered versions be marked as such. Papercut alters nothing.
+  altered versions be marked as such. PaperOtter alters nothing.
 - **libjpeg (Independent JPEG Group) 9f** — © 1991-2024 Thomas G. Lane, Guido
   Vollbeding. The IJG licence requires, for distribution of executable code:
 
@@ -43,7 +43,7 @@ the shipped binary too and their notices are owed:
   metadata, which knows nothing about C sources vendored inside a crate, so a
   hand-written line there would be erased by the next `notices` run.
 
-Neither is separately downloadable from Papercut because neither is a separate
+Neither is separately downloadable from PaperOtter because neither is a separate
 artifact: both are compiled into the same binary as the Rust code.
 
 ## Signature fonts (bundled)
@@ -65,7 +65,7 @@ The SIL Open Font License 1.1 text is in `LICENSES/OFL-1.1.txt` and ships with t
 installer. The OFL permits bundling, embedding in documents, and commercial use;
 its conditions are that the copyright and licence notice travel with the fonts
 (above), that the fonts are not sold on their own, and that a *modified* version
-must be renamed. Papercut modifies none of them and sells none of them.
+must be renamed. PaperOtter modifies none of them and sells none of them.
 
 Note on the Reserved Font Name: it binds only a modified derivative, which is why
 "Dancing Script" may be named here and rendered in the interface.
@@ -73,13 +73,13 @@ Note on the Reserved Font Name: it binds only a modified derivative, which is wh
 ## Calibre (not bundled)
 
 Used optionally for ebook conversion, invoked as a separate process if the user
-has installed it. Papercut does not distribute Calibre. Calibre is GPL-3.0;
+has installed it. PaperOtter does not distribute Calibre. Calibre is GPL-3.0;
 see https://calibre-ebook.com/.
 
 ## LibreOffice (not bundled)
 
 Used optionally for document conversion, invoked as a separate process if the
-user has installed it. Papercut does not distribute LibreOffice. LibreOffice is
+user has installed it. PaperOtter does not distribute LibreOffice. LibreOffice is
 MPL-2.0; see https://www.libreoffice.org/.
 
 ---
@@ -88,11 +88,11 @@ MPL-2.0; see https://www.libreoffice.org/.
 
 The Linux **AppImage** bundles roughly 110 unmodified system libraries from
 Ubuntu so it can run without those packages being installed. This includes the
-WebKitGTK stack Papercut's user interface runs on, and much of GTK, GLib,
+WebKitGTK stack PaperOtter's user interface runs on, and much of GTK, GLib,
 Pango, Cairo and GStreamer beneath it. Many of these are licensed under the
 **GNU LGPL**, versions 2.1 or 3, and a few are dual GPL/LGPL.
 
-Papercut modifies none of them. They are the stock Ubuntu binaries, linked
+PaperOtter modifies none of them. They are the stock Ubuntu binaries, linked
 dynamically, and they can be replaced inside the extracted AppImage.
 
 **Where the notices are.** Each bundled package carries its own Debian
@@ -102,11 +102,11 @@ copyright file inside the AppImage, at:
 usr/share/doc/<package>/copyright
 ```
 
-Extract the AppImage with `./Papercut_*.AppImage --appimage-extract` to read
+Extract the AppImage with `./PaperOtter_*.AppImage --appimage-extract` to read
 them. Debian copyright files normally point at `/usr/share/common-licenses/`,
 which does not exist inside an AppImage, so those references would otherwise
 dangle. Every licence text they refer to is therefore installed alongside the
-application at `usr/lib/Papercut/licenses/`:
+application at `usr/lib/PaperOtter/licenses/`:
 
 ```
 Apache-2.0  Artistic-1.0  CC0-1.0  GFDL-1.2  GFDL-1.3  GPL-1.0  GPL-2.0
@@ -126,7 +126,7 @@ apt-get source <package>
 ```
 
 or from https://archive.ubuntu.com/ubuntu/pool/ . If you cannot obtain the
-source for a bundled library by those means, open an issue on the Papercut
+source for a bundled library by those means, open an issue on the PaperOtter
 repository and we will provide it.
 
 **The `.deb` and the other platforms are not affected.** The Debian package

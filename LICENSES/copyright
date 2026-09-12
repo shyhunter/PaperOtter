@@ -1,9 +1,9 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Papercut
+Upstream-Name: PaperOtter
 Source: https://github.com/shyhunter/PaperOtter
 
 Files: *
-Copyright: 2026 Papercut Contributors
+Copyright: 2026 PaperOtter Contributors
 License: MIT
 
 License: MIT

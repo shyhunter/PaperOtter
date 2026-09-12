@@ -14,8 +14,8 @@ blank_issues_enabled: false
 contact_links:
   - name: Feature idea or suggestion
     url: https://github.com/shyhunter/PaperOtter/discussions/new?category=ideas
-    about: Suggest something Papercut should do. Ideas live in Discussions, not in the issue tracker.
-  - name: Question about using Papercut
+    about: Suggest something PaperOtter should do. Ideas live in Discussions, not in the issue tracker.
+  - name: Question about using PaperOtter
     url: https://github.com/shyhunter/PaperOtter/discussions/new?category=q-a
     about: Ask how to do something. The wiki may already answer it.
   - name: Security vulnerability
