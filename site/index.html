@@ -612,6 +612,47 @@
 
   /* ── Install steps ──────────────────────────────────────── */
 
+  /* The steps ran the full 66rem, which is a punishing measure for prose this
+     detailed -- the macOS panel most of all. Giving the mark a column of its own
+     pulls the text back to something readable and fills the page's plainest
+     section at the same time: the layout is the reason, the otter is the bonus. */
+  .install {
+    display: grid; gap: clamp(1.5rem, 4vw, 3rem);
+    grid-template-columns: minmax(0, 1fr) clamp(12rem, 21vw, 18rem);
+    align-items: start;
+  }
+  /* Every bare `figure` gets the drawn frame, which is right for the plates and
+     wrong here: this is a mark sitting on the paper, like the one in the header,
+     not a plate of content. Unframed, the halftone reads as ink on the sheet. */
+  .install-art {
+    margin: 0; position: sticky; top: 2rem;
+    border: none; box-shadow: none; background: none; border-radius: 0;
+  }
+  /* The plates section styles every `figure img` as a framed plate, cropped to
+     16/10 over a solid ground -- correct there, wrong for a transparent mark,
+     which came out as an empty bordered box. This one opts out of all of it. */
+  .install-art img {
+    width: 100%; height: auto; display: block;
+    aspect-ratio: auto !important;
+    object-fit: fill;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  /* Pure black ink on a transparent ground, so inverting for dark is exact and
+     costs no second file. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .install-art img { filter: invert(1); }
+  }
+  [data-theme="dark"] .install-art img { filter: invert(1); }
+  /* Below this there is no room for a second column, and decoration should not
+     be what pushes the instructions down a phone screen. */
+  @media (max-width: 56rem) {
+    .install { grid-template-columns: minmax(0, 1fr); }
+    .install-art { display: none; }
+  }
+
   .os-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.4rem; }
   .os-tab {
     font-family: "JetBrains Mono", monospace; font-size: .74rem; letter-spacing: .05em;
@@ -1915,6 +1956,8 @@
     <p class="sig">One file</p>
     <h2><em>No data</em> is tracked</h2>
     <p class="lede">One file. Open it and everything it needs is already there. Nothing more to track down afterward.</p>
+    <div class="install">
+      <div class="install-steps">
     <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
       <button class="os-tab" role="tab" type="button" data-os="mac" aria-selected="false">macOS</button>
       <button class="os-tab" role="tab" type="button" data-os="windows" aria-selected="false">Windows</button>
@@ -2057,6 +2100,16 @@
         <p>Linux has no equivalent of Gatekeeper or SmartScreen, so it simply starts.</p>
       </li>
     </ol>
+      </div>
+
+      <!-- Decorative, so it carries no alt text: the steps beside it say
+           everything this says. It is the same otter as the badge above, drawn
+           as a printed halftone rather than a solid mark. -->
+      <figure class="install-art" aria-hidden="true">
+        <img src="media/otter-ink.png" width="662" height="632" alt=""
+             loading="lazy" decoding="async">
+      </figure>
+    </div>
   </section>
 
   <section>
