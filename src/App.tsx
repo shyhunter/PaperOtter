@@ -17,6 +17,7 @@ import { useLocale } from '@/i18n/context';
 import { TOOL_REGISTRY, type ToolId } from '@/types/tools';
 import { detectFormat, getFileName, stripImageExtension } from '@/lib/fileValidation';
 import { friendlyPdfError, isPdfLoadError } from '@/lib/pdfUtils';
+import { encryptedPdfRefusal } from '@/lib/pdfEncryption';
 import { usePdfProcessor } from '@/hooks/usePdfProcessor';
 import { useImageProcessor } from '@/hooks/useImageProcessor';
 import { useRecentDirs } from '@/hooks/useRecentDirs';
@@ -385,10 +386,31 @@ function StandardToolFlow() {
   // Everything the picker needs -- the guards, the dialog, the drop listener --
   // now lives in FilePickStep, which every tool shares. What is left here is
   // what happens *after* a file has been accepted.
-  const handleFileReady = useCallback((filePath: string, alsoSelected: string[]) => {
+  const handleFileReady = useCallback(async (filePath: string, alsoSelected: string[]) => {
     const format = detectFormat(filePath);
     if (!format) return;
+    setProcessingError(null);
     setIsLoading(true);
+    // Compress was the one PDF tool with no door check, so it was left to
+    // pdf-lib to refuse a locked file -- which it did by throwing on every
+    // encrypted document, password-required or not. Now that the load ignores
+    // encryption, this is what stops a genuinely locked PDF from getting in and
+    // failing later with nothing on screen.
+    if (format === 'pdf') {
+      try {
+        const { readFile } = await import('@tauri-apps/plugin-fs');
+        const refusal = await encryptedPdfRefusal(await readFile(filePath));
+        if (refusal) {
+          setIsLoading(false);
+          setProcessingError(refusal);
+          return;
+        }
+      } catch {
+        // Unreadable here means unreadable in the steps that follow, which
+        // report it with their own message. Waving the file through keeps this
+        // check from inventing a second, worse explanation.
+      }
+    }
     setTimeout(() => {
       setFileEntry({ path: filePath, format, name: getFileName(filePath) });
       setBatchPaths(alsoSelected.length > 0 ? [filePath, ...alsoSelected] : []);
