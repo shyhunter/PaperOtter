@@ -3,7 +3,7 @@ import { join } from 'path';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
-import { processPdf } from '@/lib/pdfProcessor';
+import { processPdf, getPdfImageCount } from '@/lib/pdfProcessor';
 import type { PdfProcessingOptions } from '@/types/file';
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
@@ -114,6 +114,39 @@ describe('pdfProcessor with real fixtures', () => {
       const result = await processPdf('/test.pdf', { ...baseOpts });
       expect(result.inputSizeBytes).toBe(bytes.length);
       expect(result.outputSizeBytes).toBe(result.bytes.length);
+    });
+  });
+
+  /**
+   * [ISSUE-3] Compress refused an ordinary PDF as "password-protected".
+   *
+   * permissions-only.pdf carries an encryption dictionary with an empty user
+   * password -- the shape most corporate report generators produce. Every
+   * reader opens it without prompting, and twelve other tools already accepted
+   * it, but processPdf loaded without `ignoreEncryption`, so pdf-lib threw
+   * "Input document to `PDFDocument.load` is encrypted" and friendlyPdfError
+   * turned the word "encrypted" into a password lock on the user's screen.
+   *
+   * pdfEncryption.test.ts already proves this fixture needs no password. What
+   * was missing is the other half: that compress can actually process it.
+   */
+  describe('permissions-only.pdf (encrypted, but no password required)', () => {
+    it('PF-07: compresses a PDF whose encryption asks for no password', async () => {
+      const bytes = readFixture('permissions-only.pdf');
+      mockReadFile(bytes);
+      mockCompressPdf(bytes);
+
+      const result = await processPdf('/test.pdf', { ...baseOpts });
+      expect(result.pageCount).toBeGreaterThan(0);
+      expect(result.inputSizeBytes).toBe(bytes.length);
+      expect(new TextDecoder().decode(result.bytes.slice(0, 5))).toBe('%PDF-');
+    });
+
+    it('PF-08: getPdfImageCount reads the same document', async () => {
+      const bytes = readFixture('permissions-only.pdf');
+      mockReadFile(bytes);
+
+      await expect(getPdfImageCount('/test.pdf')).resolves.toBeGreaterThanOrEqual(0);
     });
   });
 });

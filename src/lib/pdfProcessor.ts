@@ -270,7 +270,7 @@ export function estimateOutputSizeBytes(
 
 export async function getPdfImageCount(sourcePath: string): Promise<number> {
   const bytes = await readFile(sourcePath);
-  const pdfDoc = await PDFDocument.load(bytes);
+  const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const { imageCount } = await scanPdfImages(pdfDoc);
   return imageCount;
 }
@@ -377,7 +377,16 @@ export async function processPdf(
   const inputSizeBytes = sourceBytes.byteLength;
 
   // 2. Load into pdf-lib
-  const pdfDoc = await PDFDocument.load(sourceBytes);
+  //
+  // `ignoreEncryption` because a great many ordinary PDFs -- annual reports,
+  // statements, anything from a corporate template -- carry an encryption
+  // dictionary with an empty user password and an owner password that only
+  // restricts printing. Every reader opens them without prompting; pdf-lib
+  // refuses them all the same, and its message says "is encrypted", which
+  // friendlyPdfError then reported to the user as a password lock on a file
+  // that has no password. The door check in App.tsx is what turns away a
+  // document that genuinely needs one.
+  const pdfDoc = await PDFDocument.load(sourceBytes, { ignoreEncryption: true });
   const pageCount = pdfDoc.getPageCount();
 
   // 3. Pre-scan: count image XObjects to populate compressibility metadata
