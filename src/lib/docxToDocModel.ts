@@ -16,7 +16,26 @@ const ENTITIES: Record<string, string> = {
   '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ',
 };
 
-/** Strip inline tags and decode entities from a block's inner HTML. */
+/**
+ * Strip inline tags and decode entities from a block's inner HTML.
+ *
+ * The two steps are in this order on purpose, and swapping them is a bug that
+ * looks like a fix. A document showing the literal text `<b>` encodes it as
+ * `&lt;b&gt;`; decode first and the stripper then eats it as markup, losing
+ * content the document actually displayed.
+ *
+ * The consequence is that this returns plain text which may legitimately
+ * contain `<` and `>`. It is not HTML-safe and is not meant to be: every
+ * consumer that puts it into an HTML context escapes it, which is what
+ * renderers/html.ts does and says it does. SEC-01 to SEC-04 in
+ * docxToDocModel.fixture.test.ts hold that guarantee end to end, because
+ * nothing else would fail if a future renderer forgot to escape.
+ *
+ * A single stripping pass is enough, which is not obvious. `[^>]+` spans a
+ * nested `<`, so the greedy match already swallows `<a<b>c>` whole and no tag
+ * can be reassembled by an earlier removal. Looping it was tried and reverted:
+ * it provably changed no input.
+ */
 function toText(inner: string): string {
   return inner
     .replace(/<[^>]+>/g, '')
