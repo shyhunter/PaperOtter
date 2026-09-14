@@ -9,6 +9,7 @@ import { join } from 'path';
 import { describe, it, expect } from 'vitest';
 import mammoth from 'mammoth';
 import { htmlToDocModel } from '@/lib/docxToDocModel';
+import { renderHtml } from '@/lib/renderers/html';
 
 describe('htmlToDocModel (pure mapping)', () => {
   it('maps h1–h6 → headings, p → paragraphs, li → list items, in order', () => {
@@ -37,5 +38,50 @@ describe('DOCX → DocModel (sample.docx)', () => {
     expect(blocks).toContainEqual({ type: 'heading', level: 1, text: 'Financials', page: 1 });
     // Body text is present as paragraphs.
     expect(blocks).toContainEqual({ type: 'paragraph', text: 'This is the introduction paragraph of the report.', page: 1 });
+  });
+});
+
+/**
+ * [SEC] The DOCX path deliberately produces plain text that may contain < and >.
+ *
+ * toText strips tags first and decodes entities second, so a document that
+ * displayed the literal text "<b>" keeps it. The cost of that correctness is
+ * that block text is not HTML-safe, and the only thing standing between a
+ * crafted DOCX and live markup in the HTML output is the escaping in
+ * renderers/html.ts.
+ *
+ * renderers.test.ts already proves that renderer escapes a hand-built block.
+ * What was missing is the join: that the DOCX path actually produces the
+ * dangerous string, and that it still comes out escaped. Without this, the two
+ * halves could drift apart and every test would stay green.
+ */
+describe('htmlToDocModel escaping guarantee', () => {
+  it('SEC-01: entity-encoded markup survives extraction as literal text', () => {
+    const { blocks } = htmlToDocModel('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
+    expect(blocks).toEqual([
+      { type: 'paragraph', text: '<script>alert(1)</script>', page: 1 },
+    ]);
+  });
+
+  it('SEC-02: and is escaped again by the HTML renderer', () => {
+    const doc = htmlToDocModel('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
+    const html = renderHtml(doc);
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('<script>');
+  });
+
+  it('SEC-03: a nested, malformed tag is swallowed whole, leaving no tag behind', () => {
+    // `[^>]+` spans the inner `<`, so the greedy match takes `<scr<b>` entire.
+    // The stray `>` that survives is not a tag and cannot become one, and the
+    // renderer escapes it regardless. Asserted exactly rather than loosely,
+    // so a change in this behaviour is visible rather than quietly tolerated.
+    const { blocks } = htmlToDocModel('<p>safe<scr<b>ipt>text</p>');
+    expect(blocks[0].text).toBe('safeipt>text');
+    expect(blocks[0].text).not.toContain('<');
+  });
+
+  it('SEC-04: literal angle brackets the document showed are not lost', () => {
+    const { blocks } = htmlToDocModel('<p>Use the &lt;b&gt; tag.</p>');
+    expect(blocks[0].text).toBe('Use the <b> tag.');
   });
 });
