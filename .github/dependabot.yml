@@ -8,18 +8,27 @@
 # weekly, a hard cap per ecosystem, and minor/patch bundled into a single PR.
 # Majors are deliberately left ungrouped — they need reading, not a merge button.
 #
-# PAUSED 2026-08-24: open-pull-requests-limit is 0 on every ecosystem, which is
-# the documented way to switch version updates off while keeping SECURITY
-# updates flowing. The first sweep opened 17 PRs and burned most of a month's
-# Actions budget. Raise these back to 3 once there is headroom — the grouping
-# and monthly schedule below are already tuned so it stays at ~4 PRs.
+# Paused 2026-08-24 and resumed 2026-09-14. The pause set
+# open-pull-requests-limit to 0 on every ecosystem, which is the documented way
+# to switch version updates off while SECURITY updates keep flowing: the first
+# sweep opened 17 PRs and, on a private repo, burned most of a month's Actions
+# budget. The repo is public now, so Actions are free and that cost is gone.
+#
+# Back to 3 per ecosystem. The grouping and monthly schedule below were already
+# tuned for this and should hold it near four PRs a month.
+#
+# Expect each PR touching a lockfile to fail `validate` until the notices are
+# regenerated: the check hashes both lockfiles against the hash recorded in
+# LICENSES/NOTICES.txt, so any bump invalidates it by design. Dependabot cannot
+# do that itself. Run `node scripts/generate-notices.mjs` and commit onto the
+# branch.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(ci)"
     groups:
@@ -31,7 +40,7 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -47,7 +56,7 @@ updates:
     directory: "/src-tauri"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
     groups:
