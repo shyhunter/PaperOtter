@@ -112,7 +112,14 @@ jobs:
       # through Tauri and cannot be fixed here, so warnings do not block a merge.
       # Actual vulnerabilities do.
       - name: cargo audit (fail on vulnerabilities, not on unmaintained warnings)
-        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        # Pinned past the v2.0.0 tag on purpose. GitHub removes Node 20 from
+        # hosted runners on 2026-09-16 and the v2.0.0 release still declares it,
+        # so the tagged version stops running. Upstream fixed it in 858dc40f
+        # (Mar 2026) and never cut a release. The delta from the tag is three
+        # commits: a changelog, two README edits, and node20 -> node24 in
+        # action.yml. dist/index.js is untouched, so the code we execute is
+        # identical. Move back to a tag as soon as one exists.
+        uses: rustsec/audit-check@858dc40f52ca2b8570b7a997c1c4e35c6fc9a432 # v2.0.0 + node24
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           working-directory: src-tauri
