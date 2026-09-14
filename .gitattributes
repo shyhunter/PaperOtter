@@ -1,0 +1,18 @@
+# Generated files. Two different problems, two different attributes.
+#
+# NOTICES.txt is a function of BOTH lockfiles, so when two branches each
+# regenerate it neither version is correct once the lockfiles are combined. A
+# line-level three-way merge produces a plausible-looking file that is wrong,
+# with no conflict markers where anyone would think to look. `merge=binary`
+# stops git trying: it leaves the current branch's copy and marks the file
+# conflicted, so the only resolution left is the correct one.
+#
+#   node scripts/generate-notices.mjs
+#
+LICENSES/NOTICES.txt   merge=binary linguist-generated=true
+
+# Lockfiles merge fine; they are marked generated so GitHub collapses them in
+# diffs. Not cosmetic: a Dependabot PR is 1,300 lines of lockfile around 26
+# lines of manifest, and those 26 lines are the whole review.
+package-lock.json      linguist-generated=true
+src-tauri/Cargo.lock   linguist-generated=true
