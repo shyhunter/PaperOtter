@@ -724,6 +724,8 @@ export const es: Dictionary = {
     'No se pudo cargar el PDF. El archivo puede estar dañado o no ser un documento PDF válido.',
   'pdfUtils.thisFileIsNotA': 'Este archivo no es un documento PDF válido. Elija un PDF válido.',
   'pdfUtils.thisPdfIsPasswordProtected': 'Este PDF está protegido por contraseña y no se pudo abrir.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Este PDF se abre sin contraseña, pero su propietario lo ha protegido contra cambios. Comprimirlo eliminaría esa protección, así que PaperOtter deja el archivo como está.',
   'colorPresets.black': 'Negro', 'colorPresets.white': 'Blanco', 'colorPresets.charcoal': 'Carbón',
   'colorPresets.grey': 'Gris', 'colorPresets.red': 'Rojo', 'colorPresets.orange': 'Naranja',
   'colorPresets.green': 'Verde', 'colorPresets.blue': 'Azul', 'colorPresets.navy': 'Azul marino',

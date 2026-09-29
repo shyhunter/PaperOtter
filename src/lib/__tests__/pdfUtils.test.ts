@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError, isPdfLoadError, isPermissionError } from '@/lib/pdfUtils';
+import { parseSizeInput, parsePageRange, formatBytes, friendlyPdfError, isPdfLoadError, isPermissionError, PERMISSIONS_RESTRICTED } from '@/lib/pdfUtils';
 
 // ─── parseSizeInput ───────────────────────────────────────────────────────────
 
@@ -202,6 +202,22 @@ describe('friendlyPdfError', () => {
     expect(friendlyPdfError(new Error('PDF is encrypted with a password'))).toBe(
       'This PDF is password-protected and could not be opened.',
     );
+  });
+
+  // #8: a PDF that opens freely but restricts changes is refused by Compress,
+  // and must not be blamed on a password that was never set.
+  it('explains a permissions-restricted PDF without mentioning a password', () => {
+    const msg = friendlyPdfError(
+      new Error(`${PERMISSIONS_RESTRICTED}: encrypted against changes, opens without a password`),
+    );
+    expect(msg).toBe(
+      'This PDF opens without a password, but its owner has protected it against changes. Compressing it would remove that protection, so PaperOtter leaves the file as it is.',
+    );
+    expect(msg).not.toMatch(/password-protected/i);
+  });
+
+  it('still classes a permissions-restricted refusal as a load failure', () => {
+    expect(isPdfLoadError(new Error(`${PERMISSIONS_RESTRICTED}: encrypted`))).toBe(true);
   });
 
   it('returns user-friendly message for generic parse failures', () => {
