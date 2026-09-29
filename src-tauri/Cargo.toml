@@ -1,6 +1,6 @@
 [package]
 name = "tauri-app"
-version = "1.0.0"
+version = "1.0.1"
 description = "Compress, convert and edit PDFs, images and documents on your own machine."
 authors = ["shyhunter <shyhunter@users.noreply.github.com>"]
 homepage = "https://github.com/shyhunter/PaperOtter"

@@ -9,8 +9,11 @@ being here means it is agreed and scoped, not that it is scheduled.
 
 ## Now
 
-**1.0.0 is released**, with builds for macOS (Apple silicon and Intel), Windows
-and Linux. Three things are still open. None of them are new features: they are
+**1.0.1 is released**, with builds for macOS (Apple silicon and Intel), Windows
+and Linux. It is a bug-fix release: the Linux AppImage now starts inside
+sandboxes such as firejail, and Compress no longer blames a password that was
+never set on PDFs that are only protected against changes. Three things are
+still open. None of them are new features: they are
 checks and pages that no automated test can produce.
 
 | Item | Where it stands |

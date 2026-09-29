@@ -279,7 +279,7 @@ export function Dashboard() {
   const { dirs: recentDirs } = useRecentDirs();
   const { favorites, toggleFavorite, reorderFavorites, isFavorite } = useFavorites();
   const { isAvailable, getHint } = useDependencies();
-  const [appVersion, setAppVersion] = useState('1.0.0');
+  const [appVersion, setAppVersion] = useState('1.0.1');
 
   useEffect(() => {
     import('@tauri-apps/api/app')

@@ -36,6 +36,22 @@ Click **More info**, then **Run anyway**. Same cause as above, but for
 Windows code-signing: it's on the roadmap, not a sign of a broken
 installer.
 
+## Linux AppImage closes straight away: "AppRun.wrapped: Permission denied"
+
+Fixed in **v1.0.1**. In v1.0.0, one file inside the AppImage could only be run
+by the user who owned it. Started normally that is you, so it worked; started
+inside a sandbox such as firejail, which runs it as someone else, it closed
+immediately. Download the current AppImage from
+[Releases](https://github.com/shyhunter/PaperOtter/releases/latest).
+
+## Compress says a PDF "opens without a password, but its owner has protected it against changes"
+
+That is deliberate. Many published PDFs (annual reports, statements) open in any
+reader without a password but are encrypted to stop copying, printing or
+editing. Compressing one would have to remove that protection, and PaperOtter
+will not do that behind your back, so it leaves the file alone. Up to v1.0.0
+this case was wrongly reported as "password-protected".
+
 ## DOC/DOCX or EPUB/MOBI conversion isn't available
 
 You need [LibreOffice or Calibre](Required-Dependencies) installed and on
