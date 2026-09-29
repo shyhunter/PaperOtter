@@ -19,6 +19,7 @@
     "version:check": "node scripts/check-version.mjs",
     "notices": "node scripts/generate-notices.mjs",
     "notices:check": "node scripts/generate-notices.mjs --check",
+    "tauri:versions:check": "node scripts/check-tauri-versions.mjs",
     "lint": "eslint .",
     "test:regressions": "npm run e2e:build && npm run pretest:e2e && wdio run src/e2e/wdio.conf.ts --suite regressions",
     "test:regressions:only": "wdio run src/e2e/wdio.conf.ts --suite regressions",
