@@ -11,7 +11,7 @@ const ROADMAP_URL = 'https://github.com/users/shyhunter/projects/9';
 /** Read from the bundle first; this is only the fallback if that path fails. */
 const NOTICES_URL = 'https://github.com/shyhunter/PaperOtter/blob/main/THIRD-PARTY-LICENSES.md';
 
-const APP_VERSION_FALLBACK = '1.0.0';
+const APP_VERSION_FALLBACK = '1.0.1';
 
 interface AboutDialogProps {
   open: boolean;

@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  # Only for linking the Announcements discussion when a release publishes.
+  discussions: write
 
 jobs:
   # Gate: all tests must pass before building release artifacts
@@ -473,6 +475,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # What changed, above the install table. Written per release in
+      # docs/release-notes/<tag>.md; a release without one keeps the plain
+      # install notes. Never blocks a release that is otherwise ready.
+      - name: Add "What's new" to the release notes
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          NOTES="docs/release-notes/${GITHUB_REF_NAME}.md"
+          if [ ! -f "$NOTES" ]; then
+            echo "no $NOTES, keeping the install notes as they are"
+            exit 0
+          fi
+          gh release view "$GITHUB_REF_NAME" --json body --jq .body > current-body.md
+          { cat "$NOTES"; echo; cat current-body.md; } > release-body.md
+          gh release edit "$GITHUB_REF_NAME" --notes-file release-body.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Promote draft to published release
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -481,6 +501,17 @@ jobs:
           else
             gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Opens a discussion in Announcements linked to the release, with the
+      # release notes as its text. Stable releases only. The category must
+      # already exist; if it does not, the release is still published and this
+      # step's log says why.
+      - name: Announce the release in Discussions
+        if: ${{ !contains(github.ref_name, '-') }}
+        continue-on-error: true
+        run: gh release edit "$GITHUB_REF_NAME" --discussion-category "Announcements"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

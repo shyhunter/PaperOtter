@@ -34,6 +34,14 @@ If you turn on **Target file size** instead of picking a preset directly, PaperO
 - **It's already small relative to its content.** If the result would be *larger* than the input — which happens on text-only or already-optimized PDFs, where there is nothing to take away — PaperOtter keeps the original instead. A document with no images is returned byte-for-byte unchanged. You'll see a note that the file was already optimal rather than a bigger "compressed" file.
 - **Few or no images.** Compression here works by recompressing embedded images. A PDF that's mostly text has little to shrink: try a lower preset, but don't expect the same reduction you'd see on a scan-heavy or photo-heavy PDF.
 
+## Protected PDFs are left alone
+
+A PDF that needs a password to open cannot be compressed; unlock it first with
+PaperOtter's Unlock PDF tool if you have the right to. A PDF that opens freely but
+is protected against changes (common for annual reports and statements) is also
+refused: compressing it would strip that protection, and PaperOtter will not do
+that silently. PaperOtter tells you which of the two it is.
+
 ---
 
 See also: [Repair PDF](Repair-PDF) · [Required Dependencies](Required-Dependencies)

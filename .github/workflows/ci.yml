@@ -301,8 +301,10 @@ jobs:
     # recent CI run. PR coverage for these flows comes from rust-integration.
     # Still runnable on demand via the Actions "Run workflow" button, and on
     # release.
+    # Not when the Dependabot notices workflow dispatches CI to re-run the PR
+    # checks: that stands in for a pull_request run, which never includes these.
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.triggering_actor != 'github-actions[bot]') ||
       github.event_name == 'release'
 
     steps:
@@ -380,8 +382,10 @@ jobs:
     # recent CI run. PR coverage for these flows comes from rust-integration.
     # Still runnable on demand via the Actions "Run workflow" button, and on
     # release.
+    # Not when the Dependabot notices workflow dispatches CI to re-run the PR
+    # checks: that stands in for a pull_request run, which never includes these.
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.triggering_actor != 'github-actions[bot]') ||
       github.event_name == 'release'
 
     steps:
