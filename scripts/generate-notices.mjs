@@ -136,6 +136,13 @@ function npmPackages() {
     } catch {
       continue;
     }
+    // A package pinned to an os or cpu is a prebuilt native Node addon (the
+    // @napi-rs/canvas-* family, pulled in optionally by pdfjs-dist). A webview
+    // bundle cannot contain one, so it is never shipped. Leaving it in made the
+    // output depend on the machine that ran this script: npm installs only the
+    // variant for the host, so a Mac listed darwin-arm64 and Linux listed
+    // linux-x64, and each regeneration churned the file.
+    if (pkg.os || pkg.cpu) continue;
     const spdx =
       typeof pkg.license === 'string'
         ? pkg.license
@@ -273,7 +280,9 @@ it.
 
 The Rust list is the union across every target PaperOtter ships (macOS arm64 and
 x86_64, Windows x86_64, Linux x86_64), so it covers each platform's build rather
-than the machine that generated it.
+than the machine that generated it. The JavaScript list leaves out prebuilt native
+Node addons, which a webview bundle cannot contain, so it too is the same whichever
+machine generated it.
 
 `;
 

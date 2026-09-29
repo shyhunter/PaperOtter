@@ -1,0 +1,101 @@
+name: Dependabot notices
+
+# Every Dependabot PR that touches a lockfile fails `validate`: the notices
+# check hashes both lockfiles against the hash recorded in LICENSES/NOTICES.txt,
+# and Dependabot cannot regenerate that file itself. This job does it for it and
+# commits the result onto the Dependabot branch.
+#
+# Two GitHub rules shape the design:
+#
+# - Dependabot-triggered runs get a read-only token and no repository secrets.
+#   `permissions:` below is the documented way to widen the token for exactly
+#   this workflow; nothing else is granted.
+# - A push made with GITHUB_TOKEN never starts `pull_request` workflows, so CI
+#   would never run on the new commit and the required checks would sit pending
+#   forever. workflow_dispatch is the one event that token may start, so the
+#   last step dispatches each PR workflow against the branch. Their check runs
+#   attach to the new head commit, which is what branch protection looks at.
+#
+# Side effect: once a commit that is not Dependabot's lands on the branch,
+# Dependabot stops rebasing that PR on its own. Comment `@dependabot recreate`
+# if it ever needs rebuilding; this job will regenerate the notices again.
+
+on:
+  pull_request:
+    paths:
+      - 'package-lock.json'
+      - 'src-tauri/Cargo.lock'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    # Dependabot only, and never a fork: this job holds a write token.
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout the Dependabot branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Check whether the notices are stale
+        id: stale
+        run: |
+          if node scripts/generate-notices.mjs --check; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.stale.outputs.stale == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 20
+          cache: npm
+
+      # --ignore-scripts: this job holds a write token, and the packages being
+      # installed are the very ones this PR just changed. No install script of
+      # theirs runs here. The generator only reads package.json files and
+      # licence texts, so nothing it needs is lost.
+      - name: Install frontend dependencies
+        if: steps.stale.outputs.stale == 'true'
+        run: npm ci --ignore-scripts
+
+      # The runner image ships cargo. The generator only calls `cargo metadata`,
+      # which downloads crate sources to read their licence files but compiles
+      # nothing and runs no build script.
+      - name: Regenerate notices
+        if: steps.stale.outputs.stale == 'true'
+        run: |
+          node scripts/generate-notices.mjs
+          node scripts/generate-notices.mjs --check
+
+      - name: Commit and push
+        if: steps.stale.outputs.stale == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add LICENSES/NOTICES.txt
+          git commit -m 'chore(notices): regenerate NOTICES.txt for updated lockfile'
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
+
+      - name: Run the PR checks on the new commit
+        if: steps.stale.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in ci.yml security.yml codeql.yml; do
+            gh workflow run "$wf" --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_HEAD_REF"
+          done

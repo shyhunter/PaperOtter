@@ -17,11 +17,11 @@
 # Back to 3 per ecosystem. The grouping and monthly schedule below were already
 # tuned for this and should hold it near four PRs a month.
 #
-# Expect each PR touching a lockfile to fail `validate` until the notices are
-# regenerated: the check hashes both lockfiles against the hash recorded in
-# LICENSES/NOTICES.txt, so any bump invalidates it by design. Dependabot cannot
-# do that itself. Run `node scripts/generate-notices.mjs` and commit onto the
-# branch.
+# Each PR touching a lockfile invalidates LICENSES/NOTICES.txt by design: the
+# `validate` check hashes both lockfiles against the hash recorded there.
+# Dependabot cannot regenerate it, so .github/workflows/dependabot-notices.yml
+# does, commits the result onto the branch and re-runs the PR checks. If that
+# ever fails, run `node scripts/generate-notices.mjs` and commit onto the branch.
 version: 2
 updates:
   - package-ecosystem: github-actions

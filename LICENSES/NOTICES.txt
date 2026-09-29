@@ -15,12 +15,14 @@ distribution. Nothing is now distributed alongside the binary rather than within
 it.
 
   Rust crates compiled into the application     668
-  JavaScript packages bundled into the UI       130
+  JavaScript packages bundled into the UI       129
   Packages with no declared licence               0
 
 The Rust list is the union across every target PaperOtter ships (macOS arm64 and
 x86_64, Windows x86_64, Linux x86_64), so it covers each platform's build rather
-than the machine that generated it.
+than the machine that generated it. The JavaScript list leaves out prebuilt native
+Node addons, which a webview bundle cannot contain, so it too is the same whichever
+machine generated it.
 
 
 ==============================================================================
@@ -46140,12 +46142,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ==============================================================================
-The following 4 packages ship no licence file. Their terms are as
+The following 3 packages ship no licence file. Their terms are as
 stated below; canonical texts are at https://spdx.org/licenses/ and the
 copyright notice is held at each source.
 
-  @napi-rs/canvas-darwin-arm64 0.1.93  MIT
-    git+https://github.com/Brooooooklyn/canvas.git
   dingbat-to-unicode 1.0.1  BSD-2-Clause
     git+https://github.com/mwilliamson/dingbat-to-unicode.git
   isarray 1.0.0  MIT
