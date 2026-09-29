@@ -2111,7 +2111,7 @@
         </div>
       </li>
       <li class="step">
-        <h3>Install the .deb</h3>
+        <h3>Install the .deb, or update to it</h3>
         <div class="cmd">
           <code>sudo apt install ./PaperOtter_1.0.1_amd64.deb</code>
           <button type="button" data-copy="sudo apt install ./PaperOtter_1.0.1_amd64.deb">Copy</button>
@@ -2119,6 +2119,17 @@
         <p style="margin-top:.7rem">The <span class="mono">./</span> is doing real work.
            Without it apt looks for a package of that name in the archives, finds none,
            and reports the same unsupported-file error.</p>
+        <p style="margin-top:.7rem"><strong>Updating from an older version is the same
+           command.</strong> apt sees the newer version and replaces the old one; your
+           settings stay. Double-clicking the file opens Ubuntu&rsquo;s App Center instead,
+           which labels every .deb from outside Ubuntu&rsquo;s own store
+           &ldquo;potentially unsafe&rdquo;, and when an older PaperOtter is already
+           installed it only shows <strong>Installed</strong> and does nothing. Use the
+           terminal. To see which version you have:</p>
+        <div class="cmd">
+          <code>dpkg -s paper-otter | grep Version</code>
+          <button type="button" data-copy="dpkg -s paper-otter | grep Version">Copy</button>
+        </div>
       </li>
       <li class="step">
         <h3>Or just run the AppImage</h3>
@@ -2135,7 +2146,9 @@
       </li>
       <li class="step">
         <h3>Open it. No warning to click through</h3>
-        <p>Linux has no equivalent of Gatekeeper or SmartScreen, so it simply starts.</p>
+        <p>Linux has no equivalent of Gatekeeper or SmartScreen, so once installed it
+           simply starts. The only warning you may meet is App Center&rsquo;s, above, and
+           the terminal install skips it.</p>
       </li>
     </ol>
       </div>

@@ -209,6 +209,17 @@ describe('[INSTALL-04] the Linux steps cannot strand someone in the wrong folder
       'chmod is given but never the command that starts the app').toBe(true);
   });
 
+  it('says how to update, and warns off App Center', () => {
+    // The first 1.0.0 -> 1.0.1 upgrade on Ubuntu was attempted by double-click:
+    // App Center showed "potentially unsafe", then "Installed", and did nothing.
+    // The apt command above does the update; the page has to say so, and name
+    // App Center's behaviour so it can be recognised.
+    expect(prose).toMatch(/Updating from an older version/);
+    expect(prose).toMatch(/App Center/);
+    expect(prose).toMatch(/potentially unsafe/);
+    expect(commands, 'no way to check the installed version').toContain('dpkg -s paper-otter | grep Version');
+  });
+
   it('says which architecture the Linux builds are', () => {
     // amd64 reads as "AMD only" to a lot of people on Intel machines, and there
     // is no ARM build at all, so both facts have to be on the page.

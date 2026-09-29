@@ -36,6 +36,33 @@ Click **More info**, then **Run anyway**. Same cause as above, but for
 Windows code-signing: it's on the roadmap, not a sign of a broken
 installer.
 
+## Ubuntu App Center says "potentially unsafe", or "Installed" and nothing happens
+
+Both come from opening the `.deb` by double-clicking it, which hands it to
+Ubuntu's App Center:
+
+- **"Potentially unsafe"** is shown for every `.deb` that does not come from
+  Ubuntu's own store. It is not specific to PaperOtter.
+- **"Installed"** is shown when an older PaperOtter is already installed. App
+  Center does not offer to update from a downloaded file, so nothing happens.
+
+Install or update from a terminal instead, in the folder you downloaded to:
+
+```
+cd ~/Downloads
+sudo apt install ./PaperOtter_<version>_amd64.deb
+```
+
+apt replaces the older version and your settings stay. Check which version you
+have with:
+
+```
+dpkg -s paper-otter | grep Version
+```
+
+If apt says `E: Unsupported file … given on command line`, the terminal is not
+in the folder with the file: `cd` there first, or give the full path.
+
 ## Linux AppImage closes straight away: "AppRun.wrapped: Permission denied"
 
 Fixed in **v1.0.1**. In v1.0.0, one file inside the AppImage could only be run
