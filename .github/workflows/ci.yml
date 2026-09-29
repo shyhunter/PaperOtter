@@ -123,6 +123,13 @@ jobs:
         if: needs.detect-changes.outputs.deps-changed != 'false'
         run: npm run notices:check
 
+      # tauri build refuses to run when a Tauri npm package and its Rust crate
+      # differ in major.minor, and only release.yml runs tauri build. Checked
+      # here so a one-sided dependency bump fails its PR, not the next release.
+      - name: Tauri npm and Rust versions agree
+        if: needs.detect-changes.outputs.deps-changed != 'false'
+        run: npm run tauri:versions:check
+
       - name: TypeScript type check
         if: needs.detect-changes.outputs.code-changed != 'false'
         run: npx tsc --noEmit
