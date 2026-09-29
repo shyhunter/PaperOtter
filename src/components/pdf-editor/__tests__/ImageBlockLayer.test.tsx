@@ -11,6 +11,13 @@ import { EditorProvider, useEditorContext, createEditorViewState } from '@/conte
 import { ImageBlockLayer } from '@/components/pdf-editor/ImageBlockLayer';
 import type { ImageBlock } from '@/types/editor';
 
+// Stubbed like the other component tests. jsdom 30 ships its own
+// createObjectURL, which only accepts jsdom's Blob; the component is handed
+// Node's, so the real one throws. What these tests check is placement and
+// interaction, not the image URL.
+Object.defineProperty(URL, 'createObjectURL', { value: vi.fn(() => 'blob:fake'), writable: true });
+Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), writable: true });
+
 afterEach(cleanup);
 
 const PAGE_H = 800;

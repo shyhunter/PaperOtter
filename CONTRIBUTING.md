@@ -21,7 +21,7 @@ For anything security-related, do not open an issue: see [SECURITY.md](SECURITY.
 
 ## Getting set up
 
-Requires Node 20 and a stable Rust toolchain.
+Requires Node 22 (22.22.2 or newer) and a stable Rust toolchain.
 
 ```bash
 npm install
