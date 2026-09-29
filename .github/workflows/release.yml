@@ -177,6 +177,15 @@ jobs:
 
             > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it is safe to use.
 
+            > **Ubuntu / Debian users:** install **and update** from a terminal, in the folder you downloaded to:
+            >
+            > ```
+            > cd ~/Downloads
+            > sudo apt install ./PaperOtter_${{ steps.version.outputs.version }}_amd64.deb
+            > ```
+            >
+            > Updating from an older PaperOtter is the same command: apt replaces the old version and your settings stay. Double-clicking the file opens Ubuntu's App Center instead, which labels every `.deb` from outside Ubuntu's own store _"potentially unsafe"_ and, when an older PaperOtter is already installed, only shows **Installed** and does nothing. `dpkg -s paper-otter | grep Version` shows which version you have.
+
             > **Note:** Ebook conversion (EPUB, MOBI) requires [Calibre](https://calibre-ebook.com/download): most users won't need this.
 
             ---

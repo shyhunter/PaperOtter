@@ -164,6 +164,15 @@ The links above always point to the latest release on [GitHub Releases](https://
 
 > **Windows users:** If you see _"Windows protected your PC"_ (a SmartScreen warning), click **More info**, then **Run anyway**. This happens because the app is not yet signed with a Windows code-signing certificate: it's a cost/trust step still on the roadmap, not a sign of a problem with the installer.
 
+> **Ubuntu / Debian users:** install **and update** the `.deb` from a terminal, in the folder you downloaded it to:
+>
+> ```
+> cd ~/Downloads
+> sudo apt install ./PaperOtter_<version>_amd64.deb
+> ```
+>
+> Updating from an older PaperOtter is the same command: apt replaces the old version and your settings stay. Double-clicking the file opens Ubuntu's App Center instead, which labels every `.deb` from outside Ubuntu's own store _"potentially unsafe"_ and, when an older PaperOtter is already installed, only shows **Installed** and does nothing. `dpkg -s paper-otter | grep Version` shows which version you have.
+
 ### Optional Dependencies
 
 Most tools work out of the box. These are only needed for specific features:

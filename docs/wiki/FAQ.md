@@ -40,6 +40,21 @@ If you see the older _"damaged and can't be opened"_ message instead, run
 Same reason, for Windows code-signing: it's on the roadmap, not a sign of
 a problem with the installer. Click **More info**, then **Run anyway**.
 
+### How do I install or update PaperOtter on Ubuntu?
+
+From a terminal, in the folder you downloaded the `.deb` to:
+
+```
+cd ~/Downloads
+sudo apt install ./PaperOtter_<version>_amd64.deb
+```
+
+The same command updates an older PaperOtter; your settings stay. Don't
+double-click the file: Ubuntu's App Center calls every `.deb` from outside its
+own store "potentially unsafe", and when an older PaperOtter is already
+installed it only shows **Installed** and does nothing. See
+[Troubleshooting](Troubleshooting).
+
 ### Do I need to install anything else?
 
 LibreOffice and Calibre are
