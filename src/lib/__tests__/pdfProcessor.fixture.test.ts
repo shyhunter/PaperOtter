@@ -4,6 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { processPdf } from '@/lib/pdfProcessor';
+import { friendlyPdfError } from '@/lib/pdfUtils';
 import type { PdfProcessingOptions } from '@/types/file';
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
@@ -115,5 +116,29 @@ describe('pdfProcessor with real fixtures', () => {
       expect(result.inputSizeBytes).toBe(bytes.length);
       expect(result.outputSizeBytes).toBe(result.bytes.length);
     });
+  });
+});
+
+// #8. Compress refuses every encrypted PDF (#6) -- but the reason it gives must
+// match the file. Both fixtures make pdf-lib throw the identical "is encrypted".
+describe('processPdf refusal of encrypted PDFs', () => {
+  async function refusal(name: string): Promise<string> {
+    mockReadFile(readFixture(name));
+    try {
+      await processPdf('/fake/in.pdf', baseOpts);
+    } catch (err) {
+      return friendlyPdfError(err);
+    }
+    throw new Error(`${name} was not refused`);
+  }
+
+  it('says a permissions-only PDF is protected against changes, not password-protected', async () => {
+    const msg = await refusal('permissions-only.pdf');
+    expect(msg).toMatch(/opens without a password/);
+    expect(msg).not.toMatch(/password-protected/);
+  });
+
+  it('still says a PDF with a real user password is password-protected', async () => {
+    expect(await refusal('locked.pdf')).toBe('This PDF is password-protected and could not be opened.');
   });
 });

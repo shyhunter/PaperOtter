@@ -605,6 +605,8 @@ export const nl: Dictionary = {
     'Kon de PDF niet laden. Het bestand is mogelijk beschadigd of geen geldig PDF-document.',
   'pdfUtils.thisFileIsNotA': 'Dit bestand is geen geldig PDF-document. Kies een geldige PDF.',
   'pdfUtils.thisPdfIsPasswordProtected': 'Deze PDF is met een wachtwoord beveiligd en kon niet worden geopend.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Deze PDF opent zonder wachtwoord, maar de eigenaar heeft hem beveiligd tegen wijzigingen. Comprimeren zou die beveiliging verwijderen, dus PaperOtter laat het bestand zoals het is.',
   'colorPresets.black': 'Zwart', 'colorPresets.white': 'Wit', 'colorPresets.charcoal': 'Antraciet',
   'colorPresets.grey': 'Grijs', 'colorPresets.red': 'Rood', 'colorPresets.orange': 'Oranje',
   'colorPresets.green': 'Groen', 'colorPresets.blue': 'Blauw', 'colorPresets.navy': 'Marineblauw',

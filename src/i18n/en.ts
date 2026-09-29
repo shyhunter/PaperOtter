@@ -914,6 +914,8 @@ export const en = {
   'pdfUtils.failedToLoadPdfThe': 'Failed to load PDF. The file may be corrupted or not a valid PDF document.',
   'pdfUtils.thisFileIsNotA': 'This file is not a valid PDF document. Please select a valid PDF file.',
   'pdfUtils.thisPdfIsPasswordProtected': 'This PDF is password-protected and could not be opened.',
+  'pdfUtils.thisPdfIsRestricted':
+    'This PDF opens without a password, but its owner has protected it against changes. Compressing it would remove that protection, so PaperOtter leaves the file as it is.',
   'redactionScope.coversTheWholeLineIt': 'Covers the whole line it sits on',
   'redactionScope.coversOnlyTheFoundText': 'Covers only the found text',
   'redactionScope.justTheMatch': 'Just the match',

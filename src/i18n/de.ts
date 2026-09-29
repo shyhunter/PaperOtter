@@ -865,6 +865,8 @@ export const de: Dictionary = {
     'Diese Datei ist kein gültiges PDF-Dokument. Bitte wählen Sie eine gültige PDF-Datei.',
   'pdfUtils.thisPdfIsPasswordProtected':
     'Dieses PDF ist passwortgeschützt und konnte nicht geöffnet werden.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Dieses PDF lässt sich ohne Passwort öffnen, ist vom Ersteller aber gegen Änderungen geschützt. Beim Verkleinern ginge dieser Schutz verloren, daher lässt PaperOtter die Datei unverändert.',
   'docModel.thisDocumentHasNoExtractable':
     'Dieses Dokument enthält keinen auslesbaren Text: es scheint eingescannt zu sein oder nur aus Bildern zu bestehen.',
   'pdfProcessor.alreadyCompressedTryStronger': 'Diese Datei ist bei dieser Qualität bereits verkleinert: Ihre Bilder liegen auf oder unter der Auflösung, die diese Einstellung verlangt, und eine erneute Kodierung wurde nicht kleiner. Wählen Sie eine stärkere Qualität, um weiterzukommen.',

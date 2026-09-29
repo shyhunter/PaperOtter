@@ -660,6 +660,8 @@ export const tr: Dictionary = {
     'PDF yüklenemedi. Dosya bozuk olabilir veya geçerli bir PDF belgesi olmayabilir.',
   'pdfUtils.thisFileIsNotA': 'Bu dosya geçerli bir PDF belgesi değil. Lütfen geçerli bir PDF seçin.',
   'pdfUtils.thisPdfIsPasswordProtected': 'Bu PDF parola korumalı ve açılamadı.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Bu PDF parola olmadan açılıyor, ancak sahibi onu değişikliklere karşı korumuş. Sıkıştırmak bu korumayı kaldırır, bu yüzden PaperOtter dosyayı olduğu gibi bırakır.',
   'colorPresets.black': 'Siyah', 'colorPresets.white': 'Beyaz', 'colorPresets.charcoal': 'Antrasit',
   'colorPresets.grey': 'Gri', 'colorPresets.red': 'Kırmızı', 'colorPresets.orange': 'Turuncu',
   'colorPresets.green': 'Yeşil', 'colorPresets.blue': 'Mavi', 'colorPresets.navy': 'Lacivert',

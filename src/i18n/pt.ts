@@ -612,6 +612,8 @@ export const pt: Dictionary = {
   'pdfUtils.thisFileIsNotA': 'Este ficheiro não é um documento PDF válido. Selecione um PDF válido.',
   'pdfUtils.thisPdfIsPasswordProtected':
     'Este PDF está protegido por palavra-passe e não foi possível abri-lo.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Este PDF abre sem palavra-passe, mas o proprietário protegeu-o contra alterações. Comprimi-lo removeria essa proteção, por isso o PaperOtter deixa o ficheiro como está.',
   'colorPresets.black': 'Preto', 'colorPresets.white': 'Branco', 'colorPresets.charcoal': 'Antracite',
   'colorPresets.grey': 'Cinzento', 'colorPresets.red': 'Vermelho', 'colorPresets.orange': 'Laranja',
   'colorPresets.green': 'Verde', 'colorPresets.blue': 'Azul', 'colorPresets.navy': 'Azul-escuro',

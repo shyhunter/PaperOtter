@@ -923,6 +923,8 @@ export const fr: Dictionary = {
     'Ce fichier n’est pas un document PDF valide. Choisissez un fichier PDF valide.',
   'pdfUtils.thisPdfIsPasswordProtected':
     'Ce PDF est protégé par mot de passe et n’a pas pu être ouvert.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Ce PDF s’ouvre sans mot de passe, mais son propriétaire l’a protégé contre les modifications. Le compresser supprimerait cette protection. PaperOtter laisse donc le fichier tel quel.',
 
   // ── Colours ───────────────────────────────────────────────────────────────
   'colorPresets.black': 'Noir',

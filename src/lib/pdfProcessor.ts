@@ -7,6 +7,8 @@ import { PDFDocument, PageSizes, PDFName, PDFDict, PDFStream, PDFArray, PDFRef }
 import { invoke } from '@tauri-apps/api/core';
 import type { PdfProcessingOptions, PdfProcessingResult, PdfPagePreset, PdfQualityLevel } from '@/types/file';
 import { plural, t } from '@/i18n';
+import { pdfNeedsPassword } from '@/lib/pdfEncryption';
+import { PERMISSIONS_RESTRICTED } from '@/lib/pdfUtils';
 
 // Quality level → compressor preset name.
 // The names are Ghostscript's, kept when its compression moved in-process so the
@@ -368,6 +370,31 @@ export function resizePagesInDocument(pdfDoc: PDFDocument, options: PageResizeOp
   }
 }
 
+/**
+ * Loads a PDF for compression, refusing encrypted documents -- but saying which
+ * kind of refusal it is.
+ *
+ * Compression stays refused for every encrypted file (#6): a document encrypted
+ * against copying and printing would come out with that protection silently
+ * gone. What changes is the reason given. pdf-lib throws the same "is
+ * encrypted" for a file that needs a password to open and for one that opens
+ * freely and only restricts changes, and friendlyPdfError used to turn both
+ * into "password-protected", sending people hunting for a password that was
+ * never set (#8). pdfNeedsPassword tells the two apart; a permissions-only file
+ * is rethrown with the PERMISSIONS_RESTRICTED marker so it gets its own message.
+ */
+async function loadForCompression(bytes: Uint8Array): Promise<PDFDocument> {
+  try {
+    return await PDFDocument.load(bytes);
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (/encrypted/i.test(raw) && !(await pdfNeedsPassword(bytes))) {
+      throw new Error(`${PERMISSIONS_RESTRICTED}: encrypted against changes, opens without a password`);
+    }
+    throw err;
+  }
+}
+
 export async function processPdf(
   sourcePath: string,
   options: PdfProcessingOptions,
@@ -377,7 +404,7 @@ export async function processPdf(
   const inputSizeBytes = sourceBytes.byteLength;
 
   // 2. Load into pdf-lib
-  const pdfDoc = await PDFDocument.load(sourceBytes);
+  const pdfDoc = await loadForCompression(sourceBytes);
   const pageCount = pdfDoc.getPageCount();
 
   // 3. Pre-scan: count image XObjects to populate compressibility metadata

@@ -608,6 +608,8 @@ export const pl: Dictionary = {
     'Nie udało się wczytać pliku PDF. Plik może być uszkodzony lub nie być prawidłowym dokumentem PDF.',
   'pdfUtils.thisFileIsNotA': 'Ten plik nie jest prawidłowym dokumentem PDF. Wybierz prawidłowy plik PDF.',
   'pdfUtils.thisPdfIsPasswordProtected': 'Ten plik PDF jest zabezpieczony hasłem i nie udało się go otworzyć.',
+  'pdfUtils.thisPdfIsRestricted':
+    'Ten plik PDF otwiera się bez hasła, ale jego właściciel zabezpieczył go przed zmianami. Kompresja usunęłaby to zabezpieczenie, dlatego PaperOtter pozostawia plik bez zmian.',
   'colorPresets.black': 'Czarny', 'colorPresets.white': 'Biały', 'colorPresets.charcoal': 'Grafitowy',
   'colorPresets.grey': 'Szary', 'colorPresets.red': 'Czerwony', 'colorPresets.orange': 'Pomarańczowy',
   'colorPresets.green': 'Zielony', 'colorPresets.blue': 'Niebieski', 'colorPresets.navy': 'Granatowy',

@@ -4,6 +4,13 @@ import { formatNumber } from '@/i18n';
 import { t } from '@/i18n';
 
 /**
+ * Marker for a PDF that opens without a password but is encrypted against
+ * changes. Thrown by the compress path, matched here; never shown to the user.
+ * Contains "encrypted", so isPdfLoadError still classes it as a load failure.
+ */
+export const PERMISSIONS_RESTRICTED = 'PDF is permissions-restricted';
+
+/**
  * Convert a raw PDF parsing/loading error into a short, user-friendly message.
  * The raw errors from pdf-lib (e.g. "Failed to parse PDF document (line:10443
  * col:114 offset=1693099): No PDF header found") are not actionable for users.
@@ -19,6 +26,11 @@ export function friendlyPdfError(err: unknown): string {
   }
   if (/no pdf header/i.test(raw) || /not a pdf/i.test(raw)) {
     return t('pdfUtils.thisFileIsNotA');
+  }
+  // Before the password branch: this message also says "encrypted", and the
+  // whole point is not to tell the user about a password that does not exist.
+  if (raw.includes(PERMISSIONS_RESTRICTED)) {
+    return t('pdfUtils.thisPdfIsRestricted');
   }
   if (/password/i.test(raw) || /encrypted/i.test(raw)) {
     return t('pdfUtils.thisPdfIsPasswordProtected');
