@@ -76,7 +76,8 @@ export async function pdfText(path: string, pageIndex?: number): Promise<string>
   // The legacy build is the one that runs outside a browser.
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const data = new Uint8Array(readFileSync(path));
-  const doc = await pdfjs.getDocument({ data, useSystemFonts: true }).promise;
+  const loadingTask = pdfjs.getDocument({ data, useSystemFonts: true });
+  const doc = await loadingTask.promise;
 
   const indices = pageIndex === undefined
     ? Array.from({ length: doc.numPages }, (_, i) => i)
@@ -92,7 +93,7 @@ export async function pdfText(path: string, pageIndex?: number): Promise<string>
         .join(' '),
     );
   }
-  await doc.destroy();
+  await loadingTask.destroy();
   return parts.join('\n').replace(/\s+/g, ' ').trim();
 }
 

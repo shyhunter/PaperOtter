@@ -27,7 +27,7 @@ vi.mock('pdfjs-dist', () => {
     destroy: vi.fn(),
   };
   return {
-    getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve(mockPdfDoc) }),
+    getDocument: vi.fn().mockReturnValue({ destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve(mockPdfDoc) }),
     GlobalWorkerOptions: { workerSrc: '' },
   };
 });

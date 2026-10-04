@@ -102,14 +102,13 @@ export function useDocumentSearch(pdfBytes: Uint8Array): DocumentSearch {
     // Opened here rather than shared from elsewhere: pdf.js transfers the buffer
     // to its worker, so a document built from these bytes elsewhere may hold a
     // detached one. `.slice()` for the same reason.
-    let doc: pdfjsLib.PDFDocumentProxy | null = null;
+    const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
     try {
-      doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
-      setMatches(await findTextMatches(doc, query));
+      setMatches(await findTextMatches(await loadingTask.promise, query));
     } catch {
       setMatches([]);
     } finally {
-      doc?.destroy();
+      loadingTask.destroy();
       setSearched(true);
       setIsSearching(false);
     }

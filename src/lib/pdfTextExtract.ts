@@ -156,7 +156,7 @@ export async function extractAllPagesText(
 
     return result;
   } finally {
-    pdfDoc.destroy();
+    loadingTask.destroy();
   }
 }
 
@@ -184,6 +184,6 @@ export async function getPageDimensions(
 
     return { width: viewport.width, height: viewport.height };
   } finally {
-    pdfDoc.destroy();
+    loadingTask.destroy();
   }
 }

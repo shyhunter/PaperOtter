@@ -47,7 +47,7 @@ const OriginalPageRenderer = memo(function OriginalPageRenderer({
           canvas.height = viewport.height;
           await page.render({ canvas, viewport }).promise;
         } finally {
-          pdfDoc.destroy();
+          loadingTask.destroy();
         }
       } catch {
         // Non-fatal
@@ -100,7 +100,7 @@ export function CompareCanvas({ scrollRef, onScroll }: CompareCanvasProps) {
         }
         if (!cancelled) setPageInfos(infos);
       } finally {
-        pdfDoc.destroy();
+        loadingTask.destroy();
       }
     }
     load();

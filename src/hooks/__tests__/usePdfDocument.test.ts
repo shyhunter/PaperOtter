@@ -30,7 +30,7 @@ vi.mock('pdfjs-dist', () => ({
 beforeEach(() => {
   getDocument.mockReset();
   getDocument.mockReturnValue({
-    promise: Promise.resolve({ numPages: 134, getPage: vi.fn(), destroy: vi.fn() }),
+    destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve({ numPages: 134, getPage: vi.fn() }),
   });
 });
 

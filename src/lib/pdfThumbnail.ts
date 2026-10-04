@@ -5,7 +5,8 @@
 // Use import.meta.url so Vite resolves and bundles the .mjs worker correctly.
 // Never use a CDN URL — the app runs offline.
 //
-// CRITICAL: Call pdfDoc.destroy() after rendering to prevent memory leaks.
+// CRITICAL: Call loadingTask.destroy() after rendering to prevent memory leaks
+// (pdf.js 6 removed PDFDocumentProxy.destroy(); the loading task owns the document).
 // Each getDocument() call creates a new PDFDocumentProxy; not destroying it
 // causes unbounded memory growth if the user triggers Generate Preview repeatedly.
 //
@@ -31,17 +32,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 // concurrently, on every scroll — enough to starve the UI thread indefinitely.
 // Callers must NOT call .destroy() on a document obtained this way; it's shared
 // and is released via releaseSharedPdfDocument once every caller is done with it.
-const sharedDocCache = new Map<Uint8Array, { promise: Promise<pdfjsLib.PDFDocumentProxy>; refCount: number }>();
+const sharedDocCache = new Map<Uint8Array, { task: pdfjsLib.PDFDocumentLoadingTask; refCount: number }>();
 
 /** Acquire a shared, parsed document for `pdfBytes`. Pair with releaseSharedPdfDocument. */
 export function acquireSharedPdfDocument(pdfBytes: Uint8Array): Promise<pdfjsLib.PDFDocumentProxy> {
   let entry = sharedDocCache.get(pdfBytes);
   if (!entry) {
-    entry = { promise: pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise, refCount: 0 };
+    entry = { task: pdfjsLib.getDocument({ data: pdfBytes.slice() }), refCount: 0 };
     sharedDocCache.set(pdfBytes, entry);
   }
   entry.refCount++;
-  return entry.promise;
+  return entry.task.promise;
 }
 
 /** Release a document obtained via acquireSharedPdfDocument; destroys it once unused. */
@@ -51,7 +52,7 @@ export function releaseSharedPdfDocument(pdfBytes: Uint8Array): void {
   entry.refCount--;
   if (entry.refCount <= 0) {
     sharedDocCache.delete(pdfBytes);
-    entry.promise.then((doc) => doc.destroy()).catch(() => {});
+    entry.task.destroy().catch(() => {});
   }
 }
 
@@ -146,7 +147,7 @@ export async function renderAllPdfPages(
     return urls;
   } finally {
     // Always destroy to free pdfjs-dist internal memory
-    pdfDoc.destroy();
+    loadingTask.destroy();
   }
 }
 
@@ -197,7 +198,7 @@ export async function openPdfForLazyRender(pdfBytes: Uint8Array): Promise<LazyPd
       return canvas.toDataURL('image/png');
     },
     destroy(): void {
-      pdfDoc.destroy();
+      loadingTask.destroy();
     },
   };
 }

@@ -20,7 +20,7 @@ const fixtureDir = join(process.cwd(), 'test-fixtures');
 /** Extract one ExtractedTextItem[] per page from a real PDF fixture. */
 async function extractFixture(name: string): Promise<ExtractedTextItem[][]> {
   const data = new Uint8Array(readFileSync(join(fixtureDir, name)));
-  const doc = await getDocument({ data, useSystemFonts: true, isEvalSupported: false }).promise;
+  const doc = await getDocument({ data, useSystemFonts: true }).promise;
   const pages: ExtractedTextItem[][] = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);

@@ -42,7 +42,8 @@ export async function outlineToBoundaries(
 
 /** Extract top-level outline boundaries from a PDF's bytes ([] if none). */
 export async function extractPdfOutline(pdfBytes: Uint8Array): Promise<PageBoundary[]> {
-  const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+  const pdfDoc = await loadingTask.promise;
   try {
     const outline = (await pdfDoc.getOutline()) as OutlineNode[] | null;
     if (!outline || outline.length === 0) return [];
@@ -61,6 +62,6 @@ export async function extractPdfOutline(pdfBytes: Uint8Array): Promise<PageBound
 
     return await outlineToBoundaries(outline, resolve);
   } finally {
-    pdfDoc.destroy();
+    loadingTask.destroy();
   }
 }

@@ -85,8 +85,8 @@ export async function pdfNeedsPassword(pdfBytes: Uint8Array): Promise<boolean> {
 
   try {
     const task = pdfjsLib.getDocument({ data: pdfBytes.slice(), password: '' });
-    const doc = await task.promise;
-    await doc.destroy();
+    await task.promise;
+    await task.destroy();
     return false;
   } catch (err) {
     if ((err as { name?: string })?.name === 'PasswordException') return true;
