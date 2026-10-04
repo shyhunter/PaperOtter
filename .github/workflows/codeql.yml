@@ -88,6 +88,12 @@ jobs:
           # is a file-handling app that shells out to Ghostscript, so the
           # injection and path-traversal queries are the point of running it.
           queries: security-extended
+          # Third-party code vendored only to carry an upstream fix (see
+          # src-tauri/vendor/*/PAPEROTTER-PATCH.md). It is scanned upstream, and
+          # findings in glib's own FFI internals here are not ours to act on.
+          config: |
+            paths-ignore:
+              - src-tauri/vendor
 
       - name: Install Linux system dependencies
         if: matrix.language == 'rust'
