@@ -51,16 +51,14 @@ npm run test:regressions
 
 The build flag is not portable and the script handles it: macOS needs
 `--bundles app`, because the session launches
-`Papercut.app/Contents/MacOS/tauri-app` with the Ghostscript sidecar beside it
-inside the bundle; Linux and Windows launch the plain binary from
+`PaperOtter.app/Contents/MacOS/tauri-app`; Linux and Windows launch the plain binary from
 `target/debug/` and bundling there is wasted work that also fails.
 
 On Linux you need `tauri-wd` once — `cargo install tauri-webdriver-automation` —
 and a display. A desktop session is enough; headless wants `xvfb-run`.
 
 Individual specs still skip themselves where the *behaviour* is platform-bound
-rather than the driver: file modes are POSIX, OCR is macOS-only, and the
-Ghostscript process check needs `pgrep`. A skip is recorded with its reason
+rather than the driver: file modes are POSIX and OCR is macOS-only. A skip is recorded with its reason
 rather than passing quietly.
 
 ## What is here

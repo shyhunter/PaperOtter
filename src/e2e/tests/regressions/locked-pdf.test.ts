@@ -32,7 +32,7 @@ const ws = new Workspace('locked-pdf');
  */
 const TOOLS = [
   'Rotate PDF', 'Crop PDF', 'Organise PDF', 'Page Numbers', 'Watermark',
-  'Split PDF', 'PDF to JPG', 'Sign PDF', 'Redact PDF', 'Repair PDF', 'PDF/A',
+  'Split PDF', 'PDF to JPG', 'Sign PDF', 'Redact PDF', 'Repair PDF',
 ];
 
 after(() => ws.cleanup());
