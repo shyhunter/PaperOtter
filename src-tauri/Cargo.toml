@@ -141,3 +141,15 @@ opt-level = 2
 opt-level = 2
 [profile.test.package.miniz_oxide]
 opt-level = 2
+
+# Only for the GLIB-PATCH test in lib.rs; resolves to the patched copy below.
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+glib = "0.18"
+
+# glib 0.18 is pinned by Tauri's Linux GTK3 stack (gtk -> tao/muda/wry) and has
+# no 0.18.x release fixing RUSTSEC-2024-0429 (unsound VariantStrIter). This is
+# 0.18.5 from crates.io with only the upstream one-line fix applied; see
+# vendor/glib-0.18.5/PAPEROTTER-PATCH.md. Delete both once Tauri moves to
+# glib >= 0.20.
+[patch.crates-io]
+glib = { path = "vendor/glib-0.18.5" }
