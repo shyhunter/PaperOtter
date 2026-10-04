@@ -1,7 +1,6 @@
 import type { Browser } from 'webdriverio';
 import { mkdirSync, rmSync, existsSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { spawnSync } from 'child_process';
 import { testIdDisplayed, testIdExists, clickTestId, waitForTestId, getTestIdText } from './testid';
 
 // Fixture directories — overridable via env vars so CI can place them inside
@@ -403,44 +402,3 @@ export async function captureFailure(browser: Browser, testTitle: string): Promi
   }
 }
 
-/**
- * PIDs of the Ghostscript children belonging to the app under test.
- *
- * Matched on the bundled sidecar's full path, never on the name `gs`: the
- * machine running this may well have its own Ghostscript installed, and a test
- * that killed — or worse, reported on — someone's unrelated process would be
- * both wrong and rude.
- *
- * Ghostscript is the one subprocess this app can leave behind. Cancelling is
- * supposed to end it, and until now nothing had ever checked that it does; an
- * orphan carries on compressing a document the user abandoned, holding CPU and
- * a temp file, with no window left to stop it from.
- */
-export function ghostscriptPids(): number[] {
-  // Both layouts, because the build differs by platform: macOS bundles the
-  // sidecar inside the .app beside the binary, Linux and Windows leave it next
-  // to the plain binary in target/debug. Checking both means this helper does
-  // not silently return an empty list — and therefore a passing test — on the
-  // platform whose build shape it did not anticipate.
-  const candidates = [
-    'src-tauri/target/debug/bundle/macos/PaperOtter.app/Contents/MacOS/gs',
-    'src-tauri/target/debug/gs',
-  ].map((rel) => join(process.cwd(), rel));
-
-  const found = spawnSync('pgrep', ['-f', candidates.join('|')], { encoding: 'utf8' });
-  // pgrep exits 1 when nothing matches, which is the common case, not an error.
-  return (found.stdout ?? '')
-    .split('\n')
-    .map((line) => Number(line.trim()))
-    .filter((pid) => Number.isInteger(pid) && pid > 0);
-}
-
-/** Whether a process is still alive, without signalling it. */
-export function isAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
