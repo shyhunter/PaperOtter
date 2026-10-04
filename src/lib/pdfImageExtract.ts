@@ -244,7 +244,7 @@ async function extractImagePositions(
         }
       }
     } finally {
-      doc.destroy();
+      loadingTask.destroy();
     }
   } catch {
     // Position extraction failed — fall back to centered placement
@@ -303,7 +303,7 @@ async function renderImageRegionToCanvas(
       const buffer = await blob.arrayBuffer();
       return new Uint8Array(buffer);
     } finally {
-      doc.destroy();
+      loadingTask.destroy();
     }
   } catch {
     return new Uint8Array(0);

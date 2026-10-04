@@ -18,7 +18,7 @@ import { EditorView } from '@/components/pdf-editor/EditorView';
 
 vi.mock('pdfjs-dist', () => ({
   getDocument: vi.fn().mockReturnValue({
-    promise: Promise.resolve({
+    destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve({
       numPages: 1,
       getPage: vi.fn().mockResolvedValue({
         getViewport: vi.fn().mockReturnValue({ width: 612, height: 792 }),

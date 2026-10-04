@@ -35,7 +35,7 @@ export function usePdfDocument(
     // every effect twice in development, and the second run must not adopt a
     // document the first run is already tearing down.
     let cancelled = false;
-    let loaded: pdfjsLib.PDFDocumentProxy | null = null;
+    let task: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     (async () => {
       try {
@@ -43,10 +43,10 @@ export function usePdfDocument(
         // to its worker, so handing it the caller's array detaches it — and
         // under StrictMode the second effect run would then receive an empty
         // buffer and render nothing.
-        const task = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        loaded = await task.promise;
+        task = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+        const loaded = await task.promise;
         if (cancelled) {
-          loaded.destroy();
+          task.destroy();
           return;
         }
         setDoc(loaded);
@@ -60,7 +60,7 @@ export function usePdfDocument(
     return () => {
       cancelled = true;
       setDoc(null);
-      loaded?.destroy();
+      task?.destroy();
     };
   }, [pdfBytes]);
 

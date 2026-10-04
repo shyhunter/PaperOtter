@@ -36,7 +36,7 @@ function match(text: string, pageIndex = 0) {
 
 beforeEach(() => {
   vi.mocked(pdfjsLib.getDocument).mockReturnValue(
-    { promise: Promise.resolve({ numPages: 1, destroy }) } as never,
+    { destroy, promise: Promise.resolve({ numPages: 1 }) } as never,
   );
   vi.mocked(findTextMatches).mockResolvedValue([]);
   vi.mocked(findTextMatchesInOcr).mockReturnValue([]);

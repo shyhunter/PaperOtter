@@ -177,7 +177,7 @@ vi.mock('pdfjs-dist', () => {
     destroy: function() {},
   };
   return {
-    getDocument: function() { return { promise: Promise.resolve(mockDoc) }; },
+    getDocument: function() { return { destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve(mockDoc) }; },
     GlobalWorkerOptions: { workerSrc: '' },
   };
 });

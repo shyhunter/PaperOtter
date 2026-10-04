@@ -170,7 +170,8 @@ export async function applyRedactions(
 
   // pdf.js only: the source is no longer opened with pdf-lib here, because the
   // pdf-lib half of the work now happens in a worker.
-  const pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+  const pdfJsDoc = await loadingTask.promise;
   const pageCount = pdfJsDoc.numPages;
 
   try {
@@ -254,6 +255,6 @@ export async function applyRedactions(
 
     return await assembleOffThread(pdfBytes, plan);
   } finally {
-    pdfJsDoc.destroy();
+    loadingTask.destroy();
   }
 }

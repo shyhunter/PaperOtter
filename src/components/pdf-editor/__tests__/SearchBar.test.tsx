@@ -23,7 +23,7 @@ Object.defineProperty(window.navigator, 'userAgent', {
 
 
 vi.mock('pdfjs-dist', () => ({
-  getDocument: vi.fn(() => ({ promise: Promise.resolve({ numPages: 3, destroy: vi.fn() }) })),
+  getDocument: vi.fn(() => ({ destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve({ numPages: 3 }) })),
   GlobalWorkerOptions: { workerSrc: '' },
 }));
 vi.mock('@/lib/pdfTextSearch', () => ({ findTextMatches: vi.fn() }));

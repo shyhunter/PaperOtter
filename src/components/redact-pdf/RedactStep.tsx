@@ -59,13 +59,14 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
   // Load PDF once and store reference
   useEffect(() => {
     let cancelled = false;
+    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     async function loadDoc() {
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+        loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
         const doc = await loadingTask.promise;
         if (cancelled) {
-          doc.destroy();
+          loadingTask.destroy();
           return;
         }
         pdfDocRef.current = doc;
@@ -79,7 +80,7 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
 
     return () => {
       cancelled = true;
-      pdfDocRef.current?.destroy();
+      loadingTask?.destroy();
       pdfDocRef.current = null;
     };
   }, [pdfBytes]);
@@ -128,14 +129,13 @@ export function RedactStep({ pdfBytes, sourcePath, onComplete, onBack }: RedactS
       return;
     }
 
-    let doc: pdfjsLib.PDFDocumentProxy | null = null;
+    const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
     try {
-      doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
-      setSearchResults(await findTextMatches(doc, searchQuery));
+      setSearchResults(await findTextMatches(await loadingTask.promise, searchQuery));
     } catch {
       setSearchResults([]);
     } finally {
-      doc?.destroy();
+      loadingTask.destroy();
       setSearchRan(true);
       setIsSearching(false);
     }

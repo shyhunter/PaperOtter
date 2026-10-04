@@ -29,7 +29,7 @@ Object.defineProperty(window.navigator, 'userAgent', {
 
 vi.mock('pdfjs-dist', () => ({
   getDocument: vi.fn(() => ({
-    promise: Promise.resolve({
+    destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve({
       numPages: 2,
       getPage: vi.fn(),
       destroy: vi.fn(),

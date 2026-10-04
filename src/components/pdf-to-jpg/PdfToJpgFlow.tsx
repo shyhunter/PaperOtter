@@ -108,7 +108,7 @@ async function renderSelectedPagesToBlobs(
 
     return results;
   } finally {
-    doc.destroy();
+    loadingTask.destroy();
   }
 }
 

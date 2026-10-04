@@ -50,15 +50,15 @@ export function PagePreview({
 
   useEffect(() => {
     let cancelled = false;
-    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     async function render() {
       setIsLoading(true);
       setError(null);
 
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
-        pdfDoc = await loadingTask.promise;
+        loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice() });
+        const pdfDoc = await loadingTask.promise;
 
         if (cancelled) return;
 
@@ -101,7 +101,7 @@ export function PagePreview({
           setIsLoading(false);
         }
         // Always destroy to free pdfjs-dist internal memory
-        pdfDoc?.destroy();
+        loadingTask?.destroy();
       }
     }
 

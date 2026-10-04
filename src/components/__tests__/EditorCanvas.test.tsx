@@ -45,7 +45,7 @@ vi.mock('pdfjs-dist', () => {
     destroy: vi.fn(),
   };
   return {
-    getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve(mockPdfDoc) }),
+    getDocument: vi.fn().mockReturnValue({ destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve(mockPdfDoc) }),
     GlobalWorkerOptions: { workerSrc: '' },
   };
 });
@@ -309,7 +309,7 @@ describe('EditorCanvas — large PDF page-dimension loading', () => {
       destroy: vi.fn(),
     };
     vi.mocked(pdfjsLib.getDocument).mockReturnValue({
-      promise: Promise.resolve(mockPdfDoc),
+      destroy: vi.fn(() => Promise.resolve()), promise: Promise.resolve(mockPdfDoc),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
