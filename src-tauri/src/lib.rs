@@ -2029,6 +2029,22 @@ pub fn run_with_file(open_file: Option<String>) {
 
 #[cfg(test)]
 mod tests {
+    /// [GLIB-PATCH] The vendored glib 0.18 keeps its RUSTSEC-2024-0429 fix.
+    ///
+    /// Tauri's GTK3 stack pins glib 0.18, which read a NULL pointer in
+    /// `VariantStrIter` (vendor/glib-0.18.5/PAPEROTTER-PATCH.md). Linux only,
+    /// because glib is only built there. Fails if the `[patch.crates-io]` entry
+    /// is dropped while glib is still 0.18 and the miscompile shows up again.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn patched_glib_reads_string_arrays() {
+        use glib::prelude::*;
+        let v = vec!["alpha", "beta", "gamma"].to_variant();
+        let got: Vec<&str> = v.array_iter_str().unwrap().collect();
+        assert_eq!(got, ["alpha", "beta", "gamma"]);
+        assert_eq!(v.array_iter_str().unwrap().rev().next(), Some("gamma"));
+    }
+
     /// [NO-GS] Ghostscript is gone, and stays gone.
     ///
     /// The inverse of a test that used to assert a `papercut-gs-*` binary was
