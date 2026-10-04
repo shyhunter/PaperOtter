@@ -31,7 +31,14 @@ tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-http = "2"
-image = "0.25"
+# Default formats minus `avif` and `rayon`. `avif` is an AVIF *encoder*
+# (ravif -> rav1e) that nothing here writes, and it dragged in the yanked
+# `core2` and the unmaintained `paste` (RUSTSEC-2026-0105, RUSTSEC-2024-0436).
+# `rayon` has to go too: it names `ravif?/threading`, and that weak feature
+# alone keeps the whole encoder in Cargo.lock.
+image = { version = "0.25", default-features = false, features = [
+  "bmp", "dds", "exr", "ff", "gif", "hdr", "ico", "jpeg", "png", "pnm", "qoi", "tga", "tiff", "webp",
+] }
 flate2 = "1"
 # qpdf, statically linked. `vendored` builds qpdf, zlib and libjpeg from the
 # crate's own source tree with cc, so there is no sidecar binary, no companion
