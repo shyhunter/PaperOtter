@@ -133,6 +133,14 @@ OCR on Windows and Linux is planned. HEIC is bounded by patent licensing rather
 than effort: PaperOtter never ships an HEVC decoder, and uses the operating
 system's where one is licensed.
 
+### Minimum versions
+
+| | Minimum | Why |
+|---|---|---|
+| **macOS** | 13 Ventura, with Safari 18 or newer installed | PDFs are shown with pdf.js 6, which needs the Safari 18 engine. 1.0.1 is the last release for macOS 12 Monterey |
+| **Windows** | Windows 10 | The WebView2 runtime; the installer fetches it if it is missing |
+| **Linux** | glibc 2.35 (Ubuntu 22.04, Debian 12, Fedora 36 or newer) | The release is built on Ubuntu 22.04 and links against its system libraries, including WebKitGTK 4.1 |
+
 ---
 
 ## Download

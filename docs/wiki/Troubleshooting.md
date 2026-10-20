@@ -30,6 +30,16 @@ one-hour window expired. Clear the quarantine flag directly:
 xattr -dr com.apple.quarantine /Applications/PaperOtter.app
 ```
 
+### "You can't use this version of the application PaperOtter with this version of macOS"
+
+From **v1.0.2**, PaperOtter needs **macOS 13 Ventura** or newer. It shows PDFs
+with pdf.js 6, which needs the Safari 18 engine, and Safari 18 is not available
+for macOS 12 Monterey or older. Update macOS, or keep using
+[v1.0.1](https://github.com/shyhunter/PaperOtter/releases/tag/v1.0.1).
+
+On Ventura, if PaperOtter opens but PDFs stay blank, install the latest Safari
+from **System Settings → General → Software Update**.
+
 ## "Windows protected your PC" (SmartScreen warning)
 
 Click **More info**, then **Run anyway**. Same cause as above, but for
