@@ -108,10 +108,15 @@ jobs:
         # the installers are built from.
         run: |
           set -euo pipefail
-          VER="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          # The latest PUBLISHED release, not the source's version: merging a
+          # version bump deploys this before release.yml has built anything,
+          # and buttons built from the source then 404'd until it finished.
+          # The `release: published` trigger redeploys once the new one is out.
+          VER="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)"
+          VER="${VER#v}"
           case "$VER" in
             [0-9]*.[0-9]*.[0-9]*) ;;
-            *) echo "tauri.conf.json has no usable version: '$VER'"; exit 1 ;;
+            *) echo "no usable latest release version: '$VER'"; exit 1 ;;
           esac
           sed -E -i \
             -e "s#PaperOtter_[0-9]+\.[0-9]+\.[0-9]+_#PaperOtter_${VER}_#g" \
@@ -126,6 +131,8 @@ jobs:
             echo "a version other than $VER survived the rewrite:"; echo "$STRAY"; exit 1
           fi
           echo "download links point at v$VER"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 

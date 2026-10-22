@@ -1,4 +1,19 @@
 const RELEASES_URL = 'https://api.github.com/repos/shyhunter/PaperOtter/releases/latest';
+const RELEASES_PAGE = 'https://github.com/shyhunter/PaperOtter/releases';
+
+/** The update button opens this link, so only this repo's releases on
+ * github.com over https get through; anything else opens the releases page.
+ * Same rule as the Feedback link in feedbackConfig.ts. */
+function safeReleaseUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const ok = url.protocol === 'https:' && url.host === 'github.com'
+      && url.pathname.startsWith('/shyhunter/PaperOtter/releases/');
+    return ok ? url.toString() : RELEASES_PAGE;
+  } catch {
+    return RELEASES_PAGE;
+  }
+}
 
 export interface LatestRelease {
   version: string;
@@ -38,7 +53,7 @@ export async function fetchLatestRelease(): Promise<LatestRelease | null> {
     return {
       version: data.tag_name.replace(/^v/, ''),
       notes: typeof data.body === 'string' ? data.body : '',
-      url: data.html_url,
+      url: safeReleaseUrl(data.html_url),
     };
   } catch {
     return null;

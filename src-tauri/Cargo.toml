@@ -1,6 +1,6 @@
 [package]
 name = "tauri-app"
-version = "1.0.1"
+version = "1.0.2"
 description = "Compress, convert and edit PDFs, images and documents on your own machine."
 authors = ["shyhunter <shyhunter@users.noreply.github.com>"]
 homepage = "https://github.com/shyhunter/PaperOtter"
@@ -83,7 +83,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = [
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFNumber"] }
 objc2-web-kit = { version = "0.3", default-features = false, features = [
     "std", "WKWebView", "WKNavigation", "WKPDFConfiguration", "block2",
-    "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
+    "WKWebViewConfiguration", "WKPreferences", "WKWebpagePreferences", "objc2-core-foundation",
 ] }
 objc2-pdf-kit = { version = "0.3", default-features = false, features = [
     "std", "PDFDocument", "PDFPage", "objc2-core-graphics",
@@ -140,6 +140,23 @@ opt-level = 2
 [profile.test.package.flate2]
 opt-level = 2
 [profile.test.package.miniz_oxide]
+opt-level = 2
+
+# The same crates for debug app builds, which is what the e2e suite drives
+# (`tauri build --debug`). Unoptimized, one 17-megapixel photo took 32s to
+# encode as WebP and 12s to resize (2.2s and 0.8s optimized), so a preview
+# plus a save outran the suite's 90s wait and four image specs timed out on
+# work that was merely slow. libwebp-sys is the C encoder behind lossy WebP.
+# Release builds are unaffected: they are optimized throughout.
+[profile.dev.package.image]
+opt-level = 2
+[profile.dev.package.zune-jpeg]
+opt-level = 2
+[profile.dev.package.flate2]
+opt-level = 2
+[profile.dev.package.miniz_oxide]
+opt-level = 2
+[profile.dev.package.libwebp-sys]
 opt-level = 2
 
 # Only for the GLIB-PATCH test in lib.rs; resolves to the patched copy below.

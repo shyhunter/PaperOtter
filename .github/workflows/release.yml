@@ -444,6 +444,14 @@ jobs:
   publish-release:
     needs: smoke-test
     runs-on: ubuntu-22.04
+    # Job-level permissions replace the workflow's, so the existing two are
+    # restated. id-token mints the OIDC token Sigstore signs with;
+    # attestations stores the result. Only this job gets either.
+    permissions:
+      contents: write
+      discussions: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout
@@ -462,7 +470,9 @@ jobs:
         # too. Authenticity needs code signing, which is a separate decision.
         run: |
           set -euo pipefail
-          work="$(mktemp -d)"
+          # A fixed path, so the attest step below hashes these same files.
+          work="$RUNNER_TEMP/release-assets"
+          mkdir -p "$work"
           gh release download "$GITHUB_REF_NAME" --dir "$work"
           cd "$work"
           rm -f SHA256SUMS.txt
@@ -484,6 +494,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # The answer to the limit above: a Sigstore-signed statement that each
+      # installer in SHA256SUMS.txt was built by this workflow from this commit.
+      # Check one with `gh attestation verify <file> --repo shyhunter/PaperOtter`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/release-assets/SHA256SUMS.txt
+
       # What changed, above the install table. Written per release in
       # docs/release-notes/<tag>.md; a release without one keeps the plain
       # install notes. Never blocks a release that is otherwise ready.
@@ -502,13 +520,23 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # "Latest" is what every older install's update notice and the landing
+      # page's download buttons follow, so it must always be the NEWEST version.
+      # GitHub's default is the most recently published, which an old-line
+      # hotfix (1.0.3 after 1.1.0) would steal. Version-sorted, not by date.
       - name: Promote draft to published release
         run: |
+          set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           if [[ "$VERSION" == *-* ]]; then
             gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
           else
-            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false
+            CURRENT="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name 2>/dev/null || true)"
+            CURRENT="${CURRENT#v}"
+            NEWEST="$(printf '%s\n%s\n' "$VERSION" "${CURRENT:-0.0.0}" | sort -V | tail -n1)"
+            if [[ "$NEWEST" == "$VERSION" ]]; then LATEST=--latest=true; else LATEST=--latest=false; fi
+            echo "this: $VERSION, current latest: ${CURRENT:-none}, so $LATEST"
+            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false "$LATEST"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
