@@ -34,6 +34,25 @@ describe('[LATEST-01] publishing sets "latest" only for the newest version', () 
   });
 });
 
+// [LATEST-03] A release published with GITHUB_TOKEN never fires `release:
+// published` in other workflows (GitHub suppresses token-created events except
+// workflow_dispatch), so v1.0.2 went out with the site still offering 1.0.1.
+// The publish job has to start the Pages deploy itself.
+describe('[LATEST-03] publishing a release redeploys the landing page', () => {
+  const publishJob = release.slice(release.indexOf('  publish-release:'));
+
+  it('dispatches pages.yml once the release is live', () => {
+    const dispatch = publishJob.indexOf('gh workflow run pages.yml');
+    expect(dispatch).toBeGreaterThan(publishJob.indexOf('- name: Promote draft to published release'));
+  });
+
+  it('grants the publish job actions: write for that, and nothing broader', () => {
+    expect(publishJob).toMatch(/permissions:\n(\s+\S+: \S+\n)*\s+actions: write/);
+    const header = release.slice(0, release.indexOf('jobs:'));
+    expect(header).not.toContain('actions:');
+  });
+});
+
 describe('[LATEST-02] the download buttons follow the latest published release', () => {
   it('reads the version from GitHub, not from tauri.conf.json', () => {
     const rewrite = pages.slice(pages.indexOf('VER='), pages.indexOf('sed -E -i'));
