@@ -13,7 +13,7 @@
  * that has nothing to do with what is being tested.
  */
 import {
-  mkdirSync, rmSync, copyFileSync, chmodSync, renameSync,
+  mkdirSync, mkdtempSync, rmSync, copyFileSync, chmodSync, renameSync,
   readFileSync, writeFileSync, existsSync, statSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -24,14 +24,21 @@ import { REAL_FIXTURES_DIR } from './driver';
 export const KNOWN_FIXTURES_DIR = process.env.E2E_KNOWN_DIR
   ?? join(tmpdir(), 'papercut-e2e', 'known');
 
-/** One directory per run, so a crashed run never poisons the next one. */
-const RUN_ID = `${process.pid}-${Date.now().toString(36)}`;
+/**
+ * One directory per run, so a crashed run never poisons the next one.
+ *
+ * mkdtemp, not a name built from the pid and the clock: those are guessable,
+ * so another user on the machine could create the folder (or a symlink) first
+ * and receive every file the specs write. mkdtemp picks a random name and
+ * creates it owner-only in one step (E2E-TMP-01; CodeQL js/insecure-temporary-file).
+ */
+const RUN_DIR = mkdtempSync(join(tmpdir(), 'papercut-e2e-'));
 
 export class Workspace {
   readonly dir: string;
 
   constructor(name: string) {
-    this.dir = join(tmpdir(), `papercut-e2e-${RUN_ID}`, name);
+    this.dir = join(RUN_DIR, name);
     mkdirSync(this.dir, { recursive: true });
   }
 
@@ -138,7 +145,7 @@ export class Workspace {
 /** Remove the whole run directory — called once after the last spec. */
 export function cleanupAllWorkspaces(): void {
   try {
-    rmSync(join(tmpdir(), `papercut-e2e-${RUN_ID}`), { recursive: true, force: true });
+    rmSync(RUN_DIR, { recursive: true, force: true });
   } catch {
     /* see above */
   }
