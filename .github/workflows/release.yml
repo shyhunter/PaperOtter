@@ -446,12 +446,13 @@ jobs:
     runs-on: ubuntu-22.04
     # Job-level permissions replace the workflow's, so the existing two are
     # restated. id-token mints the OIDC token Sigstore signs with;
-    # attestations stores the result. Only this job gets either.
+    # attestations stores the result. Only this job gets any of these.
     permissions:
       contents: write
       discussions: write
       id-token: write
       attestations: write
+      actions: write  # only to start pages.yml once the release is live
 
     steps:
       - name: Checkout
@@ -588,3 +589,13 @@ jobs:
           name: winget-manifests
           path: _winget/manifests
           if-no-files-found: ignore
+
+      # pages.yml listens for `release: published`, but a release published with
+      # GITHUB_TOKEN never fires it: GitHub suppresses token-created events in
+      # other workflows, except workflow_dispatch. v1.0.2 shipped with the site
+      # still offering 1.0.1 until it was deployed by hand. Last on purpose: if
+      # this fails, the release and everything above it are already done.
+      - name: Redeploy the landing page for the new release
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
