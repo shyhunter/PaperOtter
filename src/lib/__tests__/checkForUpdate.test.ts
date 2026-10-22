@@ -57,6 +57,27 @@ describe('fetchLatestRelease', () => {
     expect(await fetchLatestRelease()).toBeNull();
   });
 
+  // CFU-08: the button opens whatever html_url says, so it gets the same rule as
+  // the Feedback link: only this repo's releases on github.com over https. A bad
+  // value keeps the notice (the version is still news) but opens the plain page.
+  it.each([
+    'http://github.com/shyhunter/PaperOtter/releases/tag/v1.1.0',
+    'https://evil.example/shyhunter/PaperOtter/releases/tag/v1.1.0',
+    'https://github.com.evil.example/shyhunter/PaperOtter/releases/tag/v1.1.0',
+    'https://github.com/someone-else/PaperOtter/releases/tag/v1.1.0',
+    'https://github.com:8443/shyhunter/PaperOtter/releases/tag/v1.1.0',
+    'javascript:alert(1)',
+    'not a url',
+  ])('CFU-08: never opens an unexpected release link: %s', async (html_url) => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ tag_name: 'v1.1.0', body: '', html_url }),
+    } as Response);
+    const result = await fetchLatestRelease();
+    expect(result?.version).toBe('1.1.0');
+    expect(result?.url).toBe('https://github.com/shyhunter/PaperOtter/releases');
+  });
+
   it('CFU-07: returns null on malformed JSON payload', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
