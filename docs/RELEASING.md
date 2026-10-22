@@ -23,7 +23,11 @@ already cost a release once.
   `npm run e2e:build`, `npm run pretest:e2e`, then
   `npx wdio run src/e2e/wdio.conf.ts`. The test app opens and closes on screen.
 - **Test real installers before tagging.** Start `linux-test-build.yml` and
-  `windows-test-build.yml` from the Actions tab with the branch as `ref`.
+  `windows-test-build.yml` **from the branch itself**:
+  `gh workflow run linux-test-build.yml --ref <branch> -f ref=<branch>`.
+  `--ref` picks which copy of the workflow runs and `-f ref=` picks the code;
+  starting it from `main` runs `main`'s steps, so a step added on the branch
+  silently doesn't run.
 
 ## 2. Merge, then tag
 
@@ -75,6 +79,10 @@ that nobody removes one by accident.
 - **Every CI job has a time limit.** On PR #66 `apt-get install` hung for
   33 minutes; a rerun took 27 seconds. Without a limit, a required check can
   block for six hours (CI-TIMEOUT-01). If a step hangs, cancel and rerun it.
+- **A test build started from `main` runs `main`'s workflow.** The first
+  metainfo validation "passed" without running at all: the new
+  `appstreamcli` step only existed on the branch. When it did run, it
+  caught a link type Ubuntu 22.04's validator rejects.
 - **A Dependabot PR can be superseded by the release.** When a release branch
   makes the same bump, don't merge the Dependabot PR too; it only conflicts
   on the lockfile and NOTICES.
