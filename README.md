@@ -181,6 +181,18 @@ The links above always point to the latest release on [GitHub Releases](https://
 >
 > Updating from an older PaperOtter is the same command: apt replaces the old version and your settings stay. Double-clicking the file opens Ubuntu's App Center instead, which labels every `.deb` from outside Ubuntu's own store _"potentially unsafe"_ and, when an older PaperOtter is already installed, only shows **Installed** and does nothing. `dpkg -s paper-otter | grep Version` shows which version you have.
 
+> **AppImage users:** make the file executable, then run it:
+>
+> ```
+> chmod +x PaperOtter_<version>_amd64.AppImage
+> ./PaperOtter_<version>_amd64.AppImage
+> ```
+>
+> - **"dlopen(): error loading libfuse.so.2"** means FUSE 2 is missing. It is not installed by default on Ubuntu 22.04 and newer: `sudo apt install libfuse2t64` (Ubuntu 24.04 and newer) or `sudo apt install libfuse2` (22.04).
+> - **Sandbox (optional):** `firejail --appimage ./PaperOtter_<version>_amd64.AppImage`.
+> - **App menu (optional):** [appimaged](https://github.com/probonopd/go-appimage) adds AppImages to your menu.
+> - **Updating:** download the new AppImage and delete the old one. PaperOtter tells you when a newer version is out; it does not update itself.
+
 ### Optional Dependencies
 
 Most tools work out of the box. These are only needed for specific features:

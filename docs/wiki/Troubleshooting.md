@@ -73,6 +73,31 @@ dpkg -s paper-otter | grep Version
 If apt says `E: Unsupported file … given on command line`, the terminal is not
 in the folder with the file: `cd` there first, or give the full path.
 
+## Running the AppImage (Linux)
+
+Make the file executable once, then run it:
+
+```
+chmod +x PaperOtter_<version>_amd64.AppImage
+./PaperOtter_<version>_amd64.AppImage
+```
+
+- **Nothing happens, or "dlopen(): error loading libfuse.so.2":** FUSE 2 is
+  missing. Ubuntu 22.04 and newer do not install it by default:
+  `sudo apt install libfuse2t64` on 24.04 and newer, `sudo apt install libfuse2`
+  on 22.04.
+- **Running it sandboxed (optional):** `firejail --appimage ./PaperOtter_<version>_amd64.AppImage`.
+  This works since v1.0.1 (see the next section).
+- **Adding it to the app menu (optional):** install
+  [appimaged](https://github.com/probonopd/go-appimage), which picks up
+  AppImages in your home folder.
+- **Updating:** download the new AppImage and delete the old one. PaperOtter
+  shows a notice when a newer version is out; it does not update itself, and
+  AppImageUpdate is not supported.
+- **Requirements:** glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36 or
+  newer). The release is built on Ubuntu 22.04 against its system libraries,
+  including WebKitGTK 4.1, so older distributions are not supported.
+
 ## Linux AppImage closes straight away: "AppRun.wrapped: Permission denied"
 
 Fixed in **v1.0.1**. In v1.0.0, one file inside the AppImage could only be run

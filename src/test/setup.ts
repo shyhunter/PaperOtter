@@ -47,11 +47,6 @@ vi.mock('@tauri-apps/api/event', () => ({
   emit: vi.fn(),
 }));
 
-// Mock @tauri-apps/plugin-updater — native updater not available in Node.
-vi.mock('@tauri-apps/plugin-updater', () => ({
-  check: vi.fn().mockResolvedValue(null),
-}));
-
 // Mock @tauri-apps/plugin-process — native process APIs not available in Node.
 vi.mock('@tauri-apps/plugin-process', () => ({
   relaunch: vi.fn(),

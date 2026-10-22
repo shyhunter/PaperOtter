@@ -71,7 +71,13 @@
           "papercut"
         ],
         "files": {
-          "/usr/share/doc/paperotter/copyright": "../LICENSES/copyright"
+          "/usr/share/doc/paperotter/copyright": "../LICENSES/copyright",
+          "/usr/share/metainfo/com.paperotter.app.metainfo.xml": "linux/com.paperotter.app.metainfo.xml"
+        }
+      },
+      "appimage": {
+        "files": {
+          "/usr/share/metainfo/com.paperotter.app.metainfo.xml": "linux/com.paperotter.app.metainfo.xml"
         }
       }
     },
