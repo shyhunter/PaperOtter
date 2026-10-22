@@ -118,7 +118,9 @@ You don't need to choose one; we'll assign it when we look at the report.
 
 PaperOtter is maintained by a small team, so we promise what we can keep:
 
-- We'll acknowledge your report and thank you for it.
+- We aim to reply to every report within two weeks, to acknowledge it and
+  thank you. That's a reply, not a fix: fixing can take longer, and we'll say
+  so on the issue.
 - We'll assign a severity, and explain what we know: the cause if we've found
   it, any limits we can't get around, and a workaround if there is one.
 - Critical and serious barriers come before new features.
