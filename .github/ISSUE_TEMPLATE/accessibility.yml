@@ -1,0 +1,77 @@
+name: Accessibility barrier
+description: Something in PaperOtter is hard or impossible to use with your setup
+title: "[Accessibility] "
+labels: ["accessibility"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for telling us. Only the first box is required; fill in whatever else you can.
+        You never need to tell us about a disability or a diagnosis.
+        What we aim for and what we already know about is in [ACCESSIBILITY.md](https://github.com/shyhunter/PaperOtter/blob/main/ACCESSIBILITY.md).
+
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What were you trying to do, and what happened?
+      description: In your own words. No technical terms needed.
+      placeholder: I wanted to save the converted file using only the keyboard, but focus never reached the Save button.
+    validations:
+      required: true
+
+  - type: input
+    id: tool
+    attributes:
+      label: Which tool, and which step?
+      description: For example "Compress PDF, the Configure step". Leave empty if it's not about one tool.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Not sure
+    validations:
+      required: false
+
+  - type: input
+    id: os-version
+    attributes:
+      label: System version, and PaperOtter version if you know them
+      placeholder: macOS 15.2, PaperOtter 1.0.2 (About shows the version)
+    validations:
+      required: false
+
+  - type: textarea
+    id: assistive-tech
+    attributes:
+      label: Assistive technology or settings you use
+      description: For example a screen reader (VoiceOver, Narrator, NVDA, JAWS, Orca), keyboard only, magnification, high contrast, reduced motion, voice control. Include versions if you know them.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much does it get in your way?
+      description: Optional. We'll assign a severity either way.
+      options:
+        - I can't complete the task at all
+        - I can complete it, but only with real difficulty or a workaround
+        - It works, but it's confusing, inconsistent or tiring
+        - A small issue
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: A screenshot or recording helps, but only if you're comfortable sharing one.
+    validations:
+      required: false

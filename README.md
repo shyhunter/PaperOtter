@@ -206,6 +206,13 @@ Converting to **Markdown, HTML, JSON, plain text, or DOCX** runs entirely in-app
 
 ---
 
+## Accessibility
+
+PaperOtter aims to be usable with a keyboard, a screen reader and your system's
+accessibility settings. [ACCESSIBILITY.md](ACCESSIBILITY.md) says what already
+works, the barriers we know about with their workarounds, and how to
+[report a barrier](https://github.com/shyhunter/PaperOtter/issues/new?template=accessibility.yml).
+
 ## Privacy
 
 **PaperOtter processes everything on YOUR machine. No uploads, no cloud, no telemetry. Your files never leave your computer.**
