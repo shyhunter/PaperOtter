@@ -22,6 +22,10 @@ describe('[CI-APT-01] Linux packages are cached and fail over fast', () => {
     expect(action).toMatch(/uses: actions\/cache@[0-9a-f]{40} # v\d/);
     expect(action).toContain('libwebkit2gtk-4.1-dev');
     expect(action).toContain('Dir::Cache::Archives=');
+    // env.ImageOS is empty inside an expression; the key must take the image
+    // from the shell, or 22.04 and 24.04 runners share one cache.
+    expect(action).not.toContain('env.ImageOS');
+    expect(action).toMatch(/key: apt-\$\{\{ steps\.key\.outputs\.image \}\}/);
   });
 
   it('no workflow installs the build packages itself', () => {

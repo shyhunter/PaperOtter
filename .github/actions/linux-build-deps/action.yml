@@ -21,14 +21,18 @@ runs:
     - name: Cache key
       id: key
       shell: bash
-      run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      # ImageOS (e.g. ubuntu22) is the runner's own variable: the shell sees it,
+      # but `env.` in an expression only sees what the workflow defines.
+      run: |
+        echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+        echo "image=${ImageOS:?runner did not set ImageOS}" >> "$GITHUB_OUTPUT"
 
     - name: Restore downloaded packages
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/apt-archives
-        key: apt-${{ runner.os }}-${{ env.ImageOS }}-webkit41-${{ steps.key.outputs.week }}
-        restore-keys: apt-${{ runner.os }}-${{ env.ImageOS }}-webkit41-
+        key: apt-${{ steps.key.outputs.image }}-webkit41-${{ steps.key.outputs.week }}
+        restore-keys: apt-${{ steps.key.outputs.image }}-webkit41-
 
     # Retries and a short timeout move apt on to the next mirror instead of
     # waiting the better part of a minute on a stalled one.
