@@ -97,9 +97,7 @@ jobs:
 
       - name: Install Linux system dependencies
         if: matrix.language == 'rust'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        uses: ./.github/actions/linux-build-deps
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@486fec2a3ea2626afcd8c7e9208b4f515078dd7e # codeql-bundle-v2.26.4

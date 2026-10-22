@@ -162,8 +162,8 @@ jobs:
       - name: "Linux: Install display dependencies"
         if: matrix.type == 'appimage'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-0 libfuse2 xvfb
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10
+          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 libwebkit2gtk-4.1-0 libfuse2 xvfb
 
       - name: "Linux: Verify AppImage launches"
         if: matrix.type == 'appimage'
