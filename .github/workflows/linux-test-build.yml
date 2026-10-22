@@ -81,6 +81,19 @@ jobs:
           echo "--- control metadata ---"
           dpkg-deb -I "$DEB"
 
+      # What GNOME Software, KDE Discover and AppImageHub read. METAINFO-01
+      # checks the content; only appstreamcli knows the spec, and only a real
+      # package proves the file is installed where the stores look.
+      - name: Validate the AppStream metainfo
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y appstream
+          appstreamcli validate --no-net --explain src-tauri/linux/com.paperotter.app.metainfo.xml
+          DEB="$(find src-tauri/target/release/bundle/deb -name '*.deb' | head -1)"
+          dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/share/metainfo/com\.paperotter\.app\.metainfo\.xml$' \
+            || { echo "FAIL: the .deb does not install the metainfo"; exit 1; }
+          echo "PASS: metainfo is valid and installed by the .deb"
+
       - name: Upload the .deb
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

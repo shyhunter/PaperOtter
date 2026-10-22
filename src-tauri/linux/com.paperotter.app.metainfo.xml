@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata, read by GNOME Software, KDE Discover and AppImageHub.
+     Installed to /usr/share/metainfo by both the .deb and the AppImage (see
+     bundle.linux in tauri.conf.json). On each release, add a <release> line at
+     the top: METAINFO-01 fails until the newest one matches the app version. -->
+<component type="desktop-application">
+  <id>com.paperotter.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>PaperOtter</name>
+  <summary>Compress, convert and edit PDFs, images and documents offline</summary>
+
+  <description>
+    <p>
+      PaperOtter is a local document toolkit. Its 19 tools for PDFs, images
+      and documents all run on your own computer, and 18 of them need nothing
+      else installed.
+    </p>
+    <ul>
+      <li>PDF: compress, merge, split, rotate, crop, organize, watermark, sign, redact, repair and add page numbers</li>
+      <li>Images: compress, resize, rotate and convert between formats</li>
+      <li>Documents: convert between PDF, Word, Markdown, HTML, EPUB and more</li>
+    </ul>
+    <p>
+      Every tool follows the same steps: pick a file, configure, compare the
+      result with the original, and save. PaperOtter itself sends nothing about
+      your documents; its only network requests check for a new version and
+      fetch where the Feedback button points.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">PaperOtter.desktop</launchable>
+
+  <url type="homepage">https://shyhunter.github.io/PaperOtter/</url>
+  <url type="bugtracker">https://github.com/shyhunter/PaperOtter/issues</url>
+  <url type="vcs-browser">https://github.com/shyhunter/PaperOtter</url>
+  <url type="donation">https://buymeacoffee.com/shyhunter</url>
+
+  <developer id="io.github.shyhunter">
+    <name>PaperOtter Contributors</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Every tool on one dashboard</caption>
+      <image>https://raw.githubusercontent.com/shyhunter/PaperOtter/main/docs/screenshots/dashboard-light.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Configuring a tool</caption>
+      <image>https://raw.githubusercontent.com/shyhunter/PaperOtter/main/docs/screenshots/tool-configure-step.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Choosing pages</caption>
+      <image>https://raw.githubusercontent.com/shyhunter/PaperOtter/main/docs/screenshots/tool-select-pages.png</image>
+    </screenshot>
+  </screenshots>
+
+  <categories>
+    <category>Office</category>
+    <category>Utility</category>
+  </categories>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.0.2" date="2026-10-22">
+      <url type="details">https://github.com/shyhunter/PaperOtter/releases/tag/v1.0.2</url>
+    </release>
+    <release version="1.0.1" date="2026-09-29" />
+    <release version="1.0.0" date="2026-09-12" />
+  </releases>
+</component>
