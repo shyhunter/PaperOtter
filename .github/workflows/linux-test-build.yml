@@ -85,7 +85,7 @@ jobs:
       - name: Validate the AppStream metainfo
         run: |
           set -euo pipefail
-          sudo apt-get install -y appstream
+          sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 appstream
           appstreamcli validate --no-net --explain src-tauri/linux/com.paperotter.app.metainfo.xml
           DEB="$(find src-tauri/target/release/bundle/deb -name '*.deb' | head -1)"
           dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/share/metainfo/com\.paperotter\.app\.metainfo\.xml$' \
