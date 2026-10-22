@@ -58,6 +58,11 @@ These are worth knowing, because they are enforced in review:
 - **No secrets in the repo**, including base64-encoded ones. `gitleaks` runs on
   every PR with extra rules for exactly that trick.
 
+## Releasing
+
+Cutting a release, and the mistakes that have already cost one: see
+[docs/RELEASING.md](docs/RELEASING.md).
+
 ## Commit messages
 
 Conventional commits: `fix(editor): …`, `feat(convert): …`, `chore(ci): …`.
