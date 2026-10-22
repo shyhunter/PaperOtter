@@ -520,13 +520,23 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # "Latest" is what every older install's update notice and the landing
+      # page's download buttons follow, so it must always be the NEWEST version.
+      # GitHub's default is the most recently published, which an old-line
+      # hotfix (1.0.3 after 1.1.0) would steal. Version-sorted, not by date.
       - name: Promote draft to published release
         run: |
+          set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           if [[ "$VERSION" == *-* ]]; then
             gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease
           else
-            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false
+            CURRENT="$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name 2>/dev/null || true)"
+            CURRENT="${CURRENT#v}"
+            NEWEST="$(printf '%s\n%s\n' "$VERSION" "${CURRENT:-0.0.0}" | sort -V | tail -n1)"
+            if [[ "$NEWEST" == "$VERSION" ]]; then LATEST=--latest=true; else LATEST=--latest=false; fi
+            echo "this: $VERSION, current latest: ${CURRENT:-none}, so $LATEST"
+            gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease=false "$LATEST"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
