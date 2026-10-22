@@ -34,6 +34,7 @@ jobs:
   # wired straight back up when those suites are revived.
   detect-changes:
     runs-on: ubuntu-22.04
+    timeout-minutes: 5
     outputs:
       pdf-changed: ${{ steps.filter.outputs.pdf }}
       image-changed: ${{ steps.filter.outputs.image }}
@@ -94,6 +95,7 @@ jobs:
 
   validate:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     needs: [detect-changes]
     # Steps are gated, not the job — a job-level `if` reports "skipped", which a
     # required status check never accepts, and the PR would be unmergeable.
@@ -143,6 +145,7 @@ jobs:
   # window, and nothing here would object. That happened twice (D2, then R1).
   browser-tests:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: [detect-changes]
     # Steps are gated, not the job -- a job-level `if` reports "skipped", which a
     # required status check never accepts. Same note as validate and rust-checks.
@@ -216,6 +219,7 @@ jobs:
 
   rust-checks:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: [detect-changes]
     # The job always RUNS so its required status check reports; the steps below
     # are what get skipped. A job-level `if` would report "skipped", which a
@@ -262,6 +266,7 @@ jobs:
 
   rust-integration:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: [detect-changes]
     # See the note on rust-checks.
 
@@ -298,6 +303,7 @@ jobs:
 
   e2e-pdf:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [validate, rust-checks]
     # NOTE: deliberately NOT run on pull_request. These WebDriver suites are
     # blocked by an upstream panic in tauri-plugin-webdriver-automation 0.1.3:
@@ -379,6 +385,7 @@ jobs:
 
   e2e-image:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [validate, rust-checks]
     # NOTE: deliberately NOT run on pull_request. These WebDriver suites are
     # blocked by an upstream panic in tauri-plugin-webdriver-automation 0.1.3:
