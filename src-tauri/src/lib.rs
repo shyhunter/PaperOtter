@@ -153,6 +153,56 @@ fn word_save_format(output_format: &str) -> Option<&'static str> {
     }
 }
 
+/// The AppleScript that drives Word for Mac. Takes no path: osascript hands
+/// the source and output paths in as `argv`, so a folder name can never be
+/// read as script. `word_format` comes from `word_save_format`, a fixed table.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn word_applescript(word_format: &str) -> String {
+    format!(
+        r#"on run argv
+set srcPath to item 1 of argv
+set outPath to item 2 of argv
+tell application "Microsoft Word"
+    activate
+    -- Capture the document the open returns; relying on "active document"
+    -- races against Word's open (it can be missing value → -1708 on save as).
+    set theDoc to open POSIX file srcPath
+    save as theDoc file name POSIX file outPath file format {word_format}
+    close theDoc saving no
+end tell
+end run"#
+    )
+}
+
+/// Environment variables that carry the paths into the PowerShell script.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+const WORD_SRC_ENV: &str = "PAPEROTTER_WORD_SRC";
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+const WORD_OUT_ENV: &str = "PAPEROTTER_WORD_OUT";
+
+/// The PowerShell that drives Word on Windows through COM. Like the
+/// AppleScript, it takes no path: both arrive as environment variables.
+/// `wd_format` is a WdSaveFormat number from a fixed table.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+fn word_powershell_script(wd_format: &str) -> String {
+    format!(
+        r#"
+$src = $env:{WORD_SRC_ENV}
+$out = $env:{WORD_OUT_ENV}
+$word = New-Object -ComObject Word.Application
+$word.Visible = $false
+try {{
+    $doc = $word.Documents.Open($src)
+    $doc.SaveAs2([ref]$out, [ref]{wd_format})
+    $doc.Close([ref]0)
+}} finally {{
+    $word.Quit()
+    [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null
+}}
+"#
+    )
+}
+
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn format_word_automation_error(stderr: &str) -> String {
     const HINT: &str =
@@ -1060,24 +1110,9 @@ async fn convert_with_word(
             None => return Err(format!("Word does not support '{}' output", output_format)),
         };
 
-        let applescript = format!(
-            r#"
-            tell application "Microsoft Word"
-                activate
-                -- Capture the document the open returns; relying on "active document"
-                -- races against Word's open (it can be missing value → -1708 on save as).
-                set theDoc to open POSIX file "{}"
-                save as theDoc file name POSIX file "{}" file format {}
-                close theDoc saving no
-            end tell
-            "#,
-            source_path.replace('"', "\\\""),
-            output_path_str.replace('"', "\\\""),
-            word_format,
-        );
-
+        // Paths go after `--` as argv, never into the script text.
         let output = quiet_command("osascript")
-            .args(["-e", &applescript])
+            .args(["-e", &word_applescript(word_format), "--", &source_path, &output_path_str])
             .output()
             .map_err(|e| format!("Failed to run Word via AppleScript: {}", e))?;
 
@@ -1101,26 +1136,11 @@ async fn convert_with_word(
             _ => return Err(format!("Word does not support '{}' output", output_format)),
         };
 
-        let ps_script = format!(
-            r#"
-            $word = New-Object -ComObject Word.Application
-            $word.Visible = $false
-            try {{
-                $doc = $word.Documents.Open("{}")
-                $doc.SaveAs2([ref]"{}", [ref]{})
-                $doc.Close([ref]0)
-            }} finally {{
-                $word.Quit()
-                [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null
-            }}
-            "#,
-            source_path.replace('\\', "\\\\").replace('"', "`\""),
-            output_path_str.replace('\\', "\\\\").replace('"', "`\""),
-            wd_format,
-        );
-
+        // Paths travel as environment variables, never as script text.
         let output = quiet_command("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", &ps_script])
+            .args(["-NoProfile", "-NonInteractive", "-Command", &word_powershell_script(wd_format)])
+            .env(WORD_SRC_ENV, &source_path)
+            .env(WORD_OUT_ENV, &output_path_str)
             .output()
             .map_err(|e| format!("Failed to run Word via PowerShell: {}", e))?;
 
@@ -3650,6 +3670,52 @@ mod tests {
 
     use crate::word_outcome;
     use crate::word_save_format;
+    use crate::{word_applescript, word_powershell_script, WORD_OUT_ENV, WORD_SRC_ENV};
+
+    /// [S1] Paths reach Word as data, never as script text.
+    ///
+    /// The scripts used to be built with format!() around the full source and
+    /// output paths. The filename allow-list checks only the last component, so
+    /// a folder named `x" & (do shell script "…") & "` ran as AppleScript, and
+    /// the PowerShell twin had the same hole. The builders now take no path at
+    /// all: AppleScript reads `argv`, PowerShell reads environment variables.
+    #[test]
+    fn word_applescript_reads_both_paths_from_argv() {
+        let s = word_applescript("format PDF");
+        assert!(s.contains("on run argv"));
+        assert!(s.contains("item 1 of argv"));
+        assert!(s.contains("item 2 of argv"));
+        assert!(s.contains("file format format PDF"));
+        assert!(!s.contains("{}"));
+    }
+
+    #[test]
+    fn word_powershell_script_reads_both_paths_from_the_environment() {
+        let s = word_powershell_script("17");
+        assert!(s.contains(&format!("$env:{WORD_SRC_ENV}")));
+        assert!(s.contains(&format!("$env:{WORD_OUT_ENV}")));
+        assert!(s.contains("[ref]17"));
+        assert!(!s.contains("{}"));
+    }
+
+    /// The argv handoff, run for real: a hostile path comes back verbatim and
+    /// its embedded AppleScript never executes. Uses the builder's own prologue
+    /// with the Word block cut off, since Word is not on CI or this Mac.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn word_applescript_argv_handoff_keeps_hostile_paths_inert() {
+        let script = word_applescript("format PDF");
+        let prologue = script.split("tell application").next().unwrap();
+        let probe = format!("{prologue}return srcPath & \"|\" & outPath\nend run");
+        let hostile = r#"/tmp/a"b/" & (do shell script "touch /tmp/po-s1-pwned") & "/x.docx"#;
+        let out = std::process::Command::new("osascript")
+            .args(["-e", &probe, "--", hostile, "/tmp/out.pdf"])
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), format!("{hostile}|/tmp/out.pdf"));
+        assert!(!std::path::Path::new("/tmp/po-s1-pwned").exists());
+    }
 
     /// [WORD] The save-format constants are AppleScript, not English.
     ///
