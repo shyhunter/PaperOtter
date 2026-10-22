@@ -1268,6 +1268,12 @@ async fn convert_html_to_pdf_macos(
                 let key = objc2_foundation::NSString::from_str("allowFileAccessFromFileURLs");
                 let value = objc2_foundation::NSNumber::numberWithBool(true);
                 preferences.setValue_forKey(Some(value.as_ref()), &key);
+                // [S2] The HTML is a user file, possibly a saved web page:
+                // its own scripts must not run. Our evaluateJavaScript calls
+                // are unaffected; this flag only covers the page's content.
+                configuration
+                    .defaultWebpagePreferences()
+                    .setAllowsContentJavaScript(false);
                 configuration
             };
 

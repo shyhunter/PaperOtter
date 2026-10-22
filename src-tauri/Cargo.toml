@@ -83,7 +83,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = [
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFNumber"] }
 objc2-web-kit = { version = "0.3", default-features = false, features = [
     "std", "WKWebView", "WKNavigation", "WKPDFConfiguration", "block2",
-    "WKWebViewConfiguration", "WKPreferences", "objc2-core-foundation",
+    "WKWebViewConfiguration", "WKPreferences", "WKWebpagePreferences", "objc2-core-foundation",
 ] }
 objc2-pdf-kit = { version = "0.3", default-features = false, features = [
     "std", "PDFDocument", "PDFPage", "objc2-core-graphics",
