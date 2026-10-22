@@ -55,6 +55,9 @@ These are worth knowing, because they are enforced in review:
 - **Never widen the Tauri capabilities** in `src-tauri/capabilities/` without
   saying why in the PR. Each permission is potential file or shell access from
   JavaScript.
+- **Keep it accessible.** Anything people interact with must work from the
+  keyboard and have a clear accessible name. The checklist is in
+  [ACCESSIBILITY.md](ACCESSIBILITY.md#contributor-expectations).
 - **No secrets in the repo**, including base64-encoded ones. `gitleaks` runs on
   every PR with extra rules for exactly that trick.
 

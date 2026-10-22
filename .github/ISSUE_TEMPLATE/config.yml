@@ -1,5 +1,7 @@
-# Keeps the issue chooser to bugs, and routes everything else to a surface that
-# is not a task list.
+# Keeps the issue chooser to bugs and accessibility barriers, and routes
+# everything else to a surface that is not a task list. Accessibility has its own
+# form because those reports need different details (assistive technology,
+# impact) and can block someone from using the app at all; see ACCESSIBILITY.md.
 #
 # Feature ideas go to Discussions → Ideas rather than to Issues. An issue list
 # reads as a queue of commitments with a maintainer's name on the delay; a
