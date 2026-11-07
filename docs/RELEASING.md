@@ -86,3 +86,15 @@ that nobody removes one by accident.
 - **A Dependabot PR can be superseded by the release.** When a release branch
   makes the same bump, don't merge the Dependabot PR too; it only conflicts
   on the lockfile and NOTICES.
+- **A Dependabot cargo PR can break the next release on its own.** In
+  November 2026 one bumped `tauri-plugin-fs` to 2.7 and `tauri-plugin-shell`
+  to 2.6 while the npm packages stayed on 2.6 and 2.4; its own CI never ran
+  (Dependabot runs wait for approval), so nothing flagged it. Run
+  `npm run tauri:versions:check` on every Tauri bump and move the npm side
+  with it. Folding a batch of Dependabot PRs into one branch is cheaper than
+  merging them one by one: they all conflict on the lockfile and NOTICES.
+- **`cmd | grep -q` under `pipefail` fails on a match.** `grep -q` exits at
+  the first hit, the producer dies on the closed pipe, and the pipeline
+  reports failure. The Linux metainfo check went red on a correct .deb this
+  way, and the `/usr/bin/gs` guard inside an `if` could have passed a bad
+  one. Use `grep … >/dev/null` so grep reads to the end.
