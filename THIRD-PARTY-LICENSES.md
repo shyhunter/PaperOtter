@@ -70,6 +70,17 @@ must be renamed. PaperOtter modifies none of them and sells none of them.
 Note on the Reserved Font Name: it binds only a modified derivative, which is why
 "Dancing Script" may be named here and rendered in the interface.
 
+## shadcn/ui stylesheet (bundled)
+
+- **Version:** shadcn@4.23.0 (`dist/tailwind.css`), copied to `src/styles/shadcn-tailwind.css`
+- **Copyright:** © 2023 shadcn
+- **Licence:** MIT
+- **Upstream:** https://github.com/shadcn-ui/ui
+
+Tailwind variants and accordion keyframes, compiled into the app stylesheet.
+Vendored rather than installed because the `shadcn` package is a CLI whose
+dependency tree has no place in this project otherwise.
+
 ## Calibre (not bundled)
 
 Used optionally for ebook conversion, invoked as a separate process if the user
