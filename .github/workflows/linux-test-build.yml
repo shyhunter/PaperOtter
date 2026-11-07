@@ -70,7 +70,7 @@ jobs:
           # Asserted against a real built package rather than inferred.
           # Both path forms, because the archive may or may not carry a ./ prefix
           # and a guard that misses the case it exists for is worse than none.
-          if dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/bin/gs$'; then
+          if dpkg-deb -c "$DEB" | grep -E '(\./)?usr/bin/gs$' >/dev/null; then
             echo "FAIL: the package still ships /usr/bin/gs, which ghostscript owns"
             exit 1
           fi
@@ -88,7 +88,9 @@ jobs:
           sudo apt-get install -y -o Acquire::Retries=3 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 appstream
           appstreamcli validate --no-net --explain src-tauri/linux/com.paperotter.app.metainfo.xml
           DEB="$(find src-tauri/target/release/bundle/deb -name '*.deb' | head -1)"
-          dpkg-deb -c "$DEB" | grep -qE '(\./)?usr/share/metainfo/com\.paperotter\.app\.metainfo\.xml$' \
+          # Not grep -q: it exits on the first match, dpkg-deb then dies on a
+          # closed pipe, and pipefail reports the match as a failure.
+          dpkg-deb -c "$DEB" | grep -E '(\./)?usr/share/metainfo/com\.paperotter\.app\.metainfo\.xml$' >/dev/null \
             || { echo "FAIL: the .deb does not install the metainfo"; exit 1; }
           echo "PASS: metainfo is valid and installed by the .deb"
 
