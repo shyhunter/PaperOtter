@@ -46,6 +46,11 @@ no telemetry, so the interesting surface is narrower than for a web app:
 ## Standing dependency advisories
 
 `npm audit --omit=dev` runs on every pull request and currently reports nothing.
+The full `npm audit`, dev and test tooling included, has also reported nothing
+since 2026-11-07. Where a dev tool pins a vulnerable transitive package, the fix
+is a `package.json` override scoped to that one consumer (glob under
+`@wdio/config`, minimatch under typescript-eslint and readdir-glob), so packages
+that never had the bug are not forced onto a new major.
 Per project rule P015, a high or critical advisory blocks a merge.
 
 Two Rust advisories are open against `src-tauri/Cargo.lock` and cannot be closed

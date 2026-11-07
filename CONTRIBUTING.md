@@ -58,6 +58,10 @@ These are worth knowing, because they are enforced in review:
 - **Keep it accessible.** Anything people interact with must work from the
   keyboard and have a clear accessible name. The checklist is in
   [ACCESSIBILITY.md](ACCESSIBILITY.md#contributor-expectations).
+- **Adding a shadcn/ui component:** run `npx shadcn@latest add <component>`.
+  The `shadcn` package is deliberately not a dependency; its stylesheet is
+  vendored in `src/styles/shadcn-tailwind.css`. Refresh that file from the same
+  CLI version if a new component needs newer variants.
 - **No secrets in the repo**, including base64-encoded ones. `gitleaks` runs on
   every PR with extra rules for exactly that trick.
 
